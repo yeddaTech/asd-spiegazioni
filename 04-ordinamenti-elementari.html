@@ -1,0 +1,1051 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mettere in ordine</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 4 · lezioni 7–8 · slide 2</span>
+</div>
+
+<h1>Mettere in ordine</h1>
+<p class="sottotitolo">Il problema dell'ordinamento e i tre metodi «semplici»: selectionSort, insertionSort e bubbleSort. È la storia di tre modi diversi di sistemare un mazzo di carte, e di quanti confronti costa ciascuno.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#perche">Perché ordinare</a></li>
+    <li><a href="#interno">Ordinamento interno ed esterno</a></li>
+    <li><a href="#chiave">Cosa ordiniamo: record e chiave</a></li>
+    <li><a href="#stabile">Stabilità</a></li>
+    <li><a href="#misura">Come si misura un ordinamento</a></li>
+    <li><a href="#mappa">La mappa degli algoritmi</a></li>
+    <li><a href="#selection">selectionSort: scegli il più piccolo (Codice 2.1)</a></li>
+    <li><a href="#insertion">insertionSort: le carte in mano (Codice 2.2)</a></li>
+    <li><a href="#bubble">bubbleSort: le bolle (Codici 2.3 e 2.4)</a></li>
+    <li><a href="#gara">I tre a confronto</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="perche"><span class="num">1</span>Perché ordinare</h2>
+
+<p>Nel <a href="03-ricerca.html#binaria">pacco 3</a> hai visto un trucco potentissimo: in un array <strong>ordinato</strong> la ricerca binaria trova un elemento tra un miliardo con 31 chiamate, mentre quella sequenziale può dover aprire un miliardo di cassetti. Però c'è una condizione: l'array deve essere già in ordine. E chi lo mette in ordine?</p>
+
+<p>Questa è la domanda della lezione 7. Mettere in ordine i dati serve continuamente (la rubrica del telefono, i risultati di una ricerca, le transazioni per data), e per questo il corso dedica parecchio spazio agli algoritmi di ordinamento, in inglese <strong>sort</strong>.</p>
+
+<div class="box def">
+  <span class="etichetta">Problema dell'ordinamento</span>
+  <p><strong>Input:</strong> un array <code>A[0..n−1]</code>.<br>
+  <strong>Output:</strong> lo stesso array, con gli elementi disposti in ordine <strong>non decrescente</strong>: <code>A[0] ≤ A[1] ≤ … ≤ A[n−1]</code>. Il risultato resta nell'array <code>A</code> stesso.</p>
+</div>
+
+<p>Perché «non decrescente» e non «crescente»? Perché ci possono essere <strong>doppioni</strong>. La sequenza 2, 2, 3 è in ordine, ma non è strettamente crescente (2 non è minore di 2). «Non decrescente» vuol dire: non si scende mai.</p>
+
+<!-- ============================================================ 2 -->
+<h2 id="interno"><span class="num">2</span>Ordinamento interno ed esterno</h2>
+
+<p>Immagina di dover mettere in ordine dei libri. Se sono tutti sulla tua scrivania, puoi prendere in mano qualunque libro all'istante. Se invece sono in un magazzino dall'altra parte della città, e puoi solo farti portare <em>scatoloni interi</em> con un furgone, la musica cambia: ogni viaggio del furgone è lentissimo rispetto a spostare un libro sulla scrivania. Lì conviene una strategia che faccia <strong>pochi viaggi</strong>, anche a costo di pensare di più.</p>
+
+<div class="box def">
+  <span class="etichetta">Interno ed esterno</span>
+  <ul>
+    <li><strong>Ordinamento interno:</strong> i dati sono nella <strong>memoria centrale</strong> (la RAM), in strutture ad accesso diretto come gli array: leggere un elemento costa O(1), qualunque sia la sua posizione. È la scrivania.</li>
+    <li><strong>Ordinamento esterno:</strong> i dati sono nella <strong>memoria di massa</strong>. Non si accede ai singoli elementi ma a <strong>blocchi</strong>, che vanno trasferiti in memoria centrale per essere elaborati, e le periferiche sono molto più lente della memoria centrale. È il magazzino.</li>
+  </ul>
+  <p>Sono situazioni diverse, e richiedono tecniche diverse.</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Interno: focus, accesso in memoria centrale O(1) costante. Esterno: memoria di massa ??»</p>
+  <p>La <strong>memoria di massa</strong> è il disco: SSD, hard disk, chiavetta. È enorme e non si cancella quando spegni, ma è lenta e si legge a pezzi grossi. Serve l'ordinamento esterno quando i dati <strong>non ci stanno in RAM</strong>. Esempio: devi ordinare 2 TB di registrazioni e hai 16 GB di RAM. Leggi un blocco, lo ordini in RAM, lo riscrivi sul disco, e alla fine combini i blocchi ordinati. Il tempo lo decide soprattutto il <em>numero di blocchi trasferiti</em>, non il numero di confronti.</p>
+  <p>Hai scritto bene «focus»: nel corso si studia l'<strong>ordinamento interno</strong>, cioè ordinare un array in RAM. L'esterno resta sullo sfondo. (Curiosità dalle slide: il mergeSort del <a href="05-mergesort.html">pacco 5</a>, con qualche adattamento, si usa anche per l'ordinamento esterno.)</p>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="chiave"><span class="num">3</span>Cosa ordiniamo: record e chiave</h2>
+
+<p>Nella realtà non si ordinano quasi mai numeri da soli. Si ordinano <strong>record</strong> (in Go e in C, le <code>struct</code>; in Java, gli oggetti), fatti di tanti campi. I due esempi della lavagna:</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>record</th><th>campi</th></tr>
+  <tr><td>persona</td><td>nome, <mark>cognome</mark>, data di nascita, codice fiscale, …</td></tr>
+  <tr><td>libro</td><td>autore, titolo, editore, anno, …</td></tr>
+</table></div>
+
+<p>Per ordinare si sceglie <strong>un campo</strong>, che diventa la <strong>chiave</strong>: per esempio il cognome. Gli altri campi viaggiano insieme alla chiave, come i bagagli attaccati al passeggero.</p>
+
+<pre class="go">type Persona struct {
+    Nome, Cognome string   // Cognome = la chiave scelta
+    Nascita       string
+    CF            string
+}</pre>
+
+<div class="box def">
+  <span class="etichetta">Ordinamento interno: cosa ordiniamo</span>
+  <ul>
+    <li>Vettori (array) di strutture complesse, come oggetti o record (<code>struct</code> in Go e in C).</li>
+    <li>Un particolare <strong>campo</strong> è scelto come <strong>chiave</strong> per l'ordinamento.</li>
+    <li><em>Per semplicità</em> negli esempi ordiniamo array di interi.</li>
+  </ul>
+</div>
+
+<p>Hai scritto: <span class="viola">«ora noi facciamo interi, ma in realtà si ordinano strutture complesse, dati organizzati in campi, scelgo un campo chiave»</span>. Perfetto, è esattamente questo. Negli esempi un numero intero fa da chiave «nuda», senza bagagli.</p>
+
+<!-- ============================================================ 4 -->
+<h2 id="stabile"><span class="num">4</span>Stabilità</h2>
+
+<p>Se ordini dei record per chiave, cosa succede a due record con la <strong>stessa</strong> chiave? Pensa alla coda alla posta con i numerini per tipo di servizio: tra due persone con la stessa priorità, è giusto che passi prima chi è arrivato prima. Un algoritmo che rispetta questa regola si dice <strong>stabile</strong>.</p>
+
+<div class="box def">
+  <span class="etichetta">Stabilità</span>
+  <p>Un algoritmo di ordinamento è detto <strong>stabile</strong> se preserva l'ordine relativo tra record con la medesima chiave.</p>
+</div>
+
+<p>L'esempio della lavagna, con la chiave a sinistra:</p>
+<div class="recs"><span class="rec"><b>10</b>cane</span><span class="rec"><b>15</b>gatto</span><span class="rec"><b>16</b>lepre</span><span class="rec"><b>10</b>formica</span><span class="rec"><b>15</b>cagnolino</span></div>
+<p>Un ordinamento stabile deve dare per forza:</p>
+<div class="recs"><span class="rec"><b>10</b>cane</span><span class="rec"><b>10</b>formica</span><span class="rec"><b>15</b>gatto</span><span class="rec"><b>15</b>cagnolino</span><span class="rec"><b>16</b>lepre</span></div>
+<p>cane prima di formica (come all'inizio), gatto prima di cagnolino (come all'inizio). Un algoritmo non stabile potrebbe invece dare «10 formica, 10 cane, …»: le chiavi sono comunque in ordine, ma l'ordine di arrivo si è perso.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Ordine relativo rimane stabile: 10 gatto, 12 cane, 10 lepre → 10 gatto, 10 lepre: STABILE»</p>
+  <p>Giusto: gatto era prima di lepre e resta prima di lepre. (Nelle slide lo stesso esempio è con la tigre: ⟨10, tigre⟩ ⟨12, cane⟩ ⟨10, lepre⟩.)</p>
+</div>
+
+<p><strong>A cosa serve?</strong> A ordinare per più criteri uno dopo l'altro. Hai la lista degli studenti in ordine alfabetico e la riordini <em>per voto</em> con un algoritmo stabile: dentro ogni voto gli studenti restano in ordine alfabetico, senza fare niente di speciale.</p>
+
+<div class="widget" id="w-stab">
+  <h4>PROVA LA STABILITÀ</h4>
+  <div class="controlli">
+    <select id="stab-in" style="width:auto">
+      <option value="lav">lavagna: cane, gatto, lepre, formica, cagnolino</option>
+      <option value="tuoi">i tuoi appunti: gatto, cane, lepre</option>
+      <option value="dieci">lavagna: 10, 10, 5</option>
+      <option value="tre">tre chiavi uguali: 3, 3, 3, 1</option>
+    </select>
+    <select id="stab-alg" style="width:auto">
+      <option value="sel">selectionSort</option>
+      <option value="ins">insertionSort</option>
+      <option value="bub">bubbleSort</option>
+    </select>
+  </div>
+  <div class="etich-array">Prima (il numerino in basso dice chi arriva prima tra chiavi uguali)</div>
+  <div class="recs" id="stab-prima"></div>
+  <div class="etich-array">Dopo</div>
+  <div class="recs" id="stab-dopo"></div>
+  <div class="narrazione" id="stab-txt"></div>
+</div>
+
+<p>Il bilancio completo, algoritmo per algoritmo, con il simbolo da cambiare per renderli instabili (le «domande da rispondere» della lezione 8), è nel <a href="05-mergesort.html#stabilita">pacco 5</a>.</p>
+
+<!-- ============================================================ 5 -->
+<h2 id="misura"><span class="num">5</span>Come si misura un ordinamento</h2>
+
+<p>Gli algoritmi che vedremo (quasi tutti) sono <strong>basati su confronti</strong>: l'unico modo che hanno per sapere qualcosa sulle chiavi è prenderne due e chiedersi «chi è più piccola?». Come una bilancia a due piatti: non leggi il peso, puoi solo vedere quale piatto scende.</p>
+
+<div class="box def">
+  <span class="etichetta">Complessità degli algoritmi di ordinamento</span>
+  <ul>
+    <li>Studieremo principalmente algoritmi di ordinamento <strong>basati su confronti tra chiavi</strong>.</li>
+    <li><strong>Spazio:</strong> la memoria utilizzata <strong>in aggiunta</strong> all'array da ordinare (inclusa la memoria sullo stack nel caso di algoritmi ricorsivi).</li>
+    <li><strong>Tempo:</strong> stimato in funzione della lunghezza n del vettore, calcolando prima di tutto il <strong>numero di confronti tra chiavi</strong>.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«per stimare numero di confronti. Confronto tra chiavi più costosa. Stima confronti → stima tempo, e altro non ho capito bene»</p>
+  <p>Il ragionamento del prof è in tre passi. Immagina di pesare pacchi con la bilancia a due piatti.</p>
+  <ol>
+    <li><strong>Il confronto è l'operazione «più costosa».</strong> In questi algoritmi tutto il resto (aumentare un indice, spostare un elemento) succede <em>intorno</em> ai confronti: per ogni confronto c'è al massimo un numero fisso di altre operazioni. Quindi se conti le pesate, sai già quanto lavoro c'è, a meno di una costante.</li>
+    <li><strong>Se ogni confronto costa tempo costante</strong> (chiavi <code>int</code>, <code>long</code>: un'istruzione della macchina), allora tempo ≈ numero di confronti × una costante. Fanno n(n−1)/2 confronti? Allora il tempo è Θ(n²). Stesso ordine di grandezza.</li>
+    <li><strong>In generale</strong> (ed è la parte «altro» che ti era sfuggita): tempo ≈ numero di confronti × <em>costo di un confronto</em>. Se ordini <strong>parole</strong> lunghe fino a m lettere, confrontarne due costa fino a m (lettera per lettera, come nel <a href="01-quanto-costa.html#elementare">pacco 1</a>). Allora il tempo è numero di confronti × O(m), per esempio O(m · n²).</li>
+  </ol>
+  <p>È lo stesso ragionamento che hai visto per la ricerca binaria nel <a href="03-ricerca.html#costo-bin">pacco 3</a>: «chiamate × costo di una chiamata».</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Studio dello spazio? Cosa uso in aggiunta?»</p>
+  <p>«In aggiunta» vuol dire: tutto quello che serve <strong>oltre</strong> all'array che ti hanno dato da ordinare. L'array stesso non si conta, c'è comunque. Si contano:</p>
+  <ul>
+    <li>le <strong>variabili</strong> (indici come k, j, m, una variabile temporanea per gli scambi): se sono un numero fisso, lo spazio è <strong>O(1)</strong>;</li>
+    <li>gli <strong>array ausiliari</strong>: un secondo array grande come A costa <strong>Θ(n)</strong>;</li>
+    <li>lo <strong>stack della ricorsione</strong>: un record di attivazione per ogni chiamata in sospeso, come nel <a href="03-ricerca.html#record">pacco 3</a>.</li>
+  </ul>
+  <p>Con i libri: se li riordini sullo stesso scaffale scambiandoli di posto, ti serve al massimo una mano libera (O(1)). Se ti serve un secondo scaffale vuoto grande come il primo, quello è spazio Θ(n).</p>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="mappa"><span class="num">6</span>La mappa degli algoritmi</h2>
+
+<p>Prima di entrare nei dettagli, ecco la cartina di tutto il viaggio. Il prof l'ha scritta alla lavagna, con i numeri di confronti aggiunti a mano.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>algoritmo</th><th>confronti</th><th>in loco?</th></tr>
+  <tr><td rowspan="3"><strong>elementari</strong></td><td>per selezione · <code>selectionSort</code></td><td rowspan="3">Θ(n²)</td><td>sì</td></tr>
+  <tr><td>per inserimento · <code>insertionSort</code></td><td>sì</td></tr>
+  <tr><td>«a bolle» · <code>bubbleSort</code></td><td>sì</td></tr>
+  <tr><td rowspan="3"><strong>avanzati</strong></td><td>per fusione · <code>mergeSort</code></td><td>Θ(n log n)</td><td class="rosso">no</td></tr>
+  <tr><td>veloce · <code>quickSort</code></td><td>Θ(n²) nel caso peggiore, che però è raro</td><td>quasi</td></tr>
+  <tr><td>basato su «heap» · <code>heapSort</code></td><td>Θ(n log n)</td><td>sì</td></tr>
+</table></div>
+
+<div class="box def">
+  <span class="etichetta">In loco</span>
+  <p>Sono tutti <strong>in loco</strong>, cioè non necessitano di strutture ausiliarie, eccetto <code>mergeSort</code> e, per certi aspetti, <code>quickSort</code>. <strong>Non tutti sono stabili.</strong></p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Avanzati: fusione Θ(n log n) cfr, veloce worst case raro Θ(n²), heap. Non tutti sono stabili. Algoritmi in loco: merge sort, quick sort → invece loro sì»</p>
+  <p>Attenzione al verso: merge e quick sono le <strong>eccezioni</strong>, cioè quelli che la memoria in più la usano. Tutti gli altri sono in loco.</p>
+  <ul>
+    <li><strong>mergeSort</strong> non è in loco: per fondere due metà ordinate serve un array di appoggio grande come A, quindi spazio Θ(n). Lo vedi nel <a href="05-mergesort.html">pacco 5</a>.</li>
+    <li><strong>quickSort</strong> non usa array di appoggio, ma è ricorsivo e la pila dei record di attivazione cresce: per questo «per certi aspetti».</li>
+  </ul>
+  <p>«Worst case raro» è giusto: quickSort nel caso peggiore fa Θ(n²) confronti, ma succede di rado. Si vedrà più avanti.</p>
+</div>
+
+<p>Gli algoritmi elementari e quelli per selezione e inserimento lavorano tutti <strong>a passi</strong>: all'inizio di ogni passo l'array ha a sinistra una parte già sistemata e a destra una parte da sistemare. Ogni passo allarga di uno la parte sistemata. Dopo n − 1 passi è finito.</p>
+
+<!-- ============================================================ 7 -->
+<h2 id="selection"><span class="num">7</span>selectionSort: scegli il più piccolo</h2>
+
+<div class="box idea">
+  <span class="etichetta">Idea · l'esempio con le carte</span>
+  <p>Hai le carte scoperte sul tavolo, in fila. Le guardi tutte, trovi la più piccola e la scambi con la prima della fila. La prima ora è a posto <strong>per sempre</strong>: nessuna carta è più piccola di lei. Poi fai finta che la prima non ci sia: trovi la più piccola tra le rimanenti e la scambi con la seconda. E così via.</p>
+  <p>Ogni passo <strong>seleziona</strong> la carta giusta per la prossima posizione: da qui il nome.</p>
+</div>
+
+<p>Prima del passo k la situazione è sempre questa (il disegno della lavagna):</p>
+
+<div class="box def">
+  <span class="etichetta">Situazione prima del passo k (k = 0, …, n−2)</span>
+  <ul>
+    <li><code>A[0..k−1]</code> sono <strong>ordinati</strong> e già nella <strong>posizione definitiva</strong>: <code>A[0] ≤ A[1] ≤ … ≤ A[k−1]</code>;</li>
+    <li>quelli da ordinare sono <strong>tutti più grandi o uguali</strong>: <code>A[k−1] ≤ A[j]</code> per ogni <code>j ≥ k</code>.</li>
+  </ul>
+  <p>Il passo k cerca il minimo di <code>A[k..n−1]</code> e lo scambia con <code>A[k]</code>. Dopo, la parte sistemata arriva fino a <code>A[k]</code>.</p>
+</div>
+
+<p class="titolo-codice">Codice 2.1 · Ordinamento per selezione</p>
+<pre class="pseudo"><b>Algoritmo</b> selectionSort (array A[0..n−1])
+  <b>for</b> k ← 0 <b>to</b> n − 2 <b>do</b>
+    <span class="com">// ricerca dell'indice del minimo in A[k..n−1]</span>
+    m ← k                   <span class="com">// posizione del minimo finora</span>
+    <b>for</b> j ← k + 1 <b>to</b> n − 1 <b>do</b>
+      <b>if</b> A[j] &lt; A[m] <b>then</b> m ← j
+    scambia A[m] con A[k]   <span class="com">// minimo al posto definitivo</span></pre>
+
+<p><strong>Perché k arriva solo a n − 2?</strong> Quando hai sistemato le prime n − 1 posizioni, resta un solo elemento, nell'ultima casella. Per la situazione descritta sopra è maggiore o uguale a tutti gli altri, quindi è già al suo posto. Il passo n − 1 non servirebbe a niente.</p>
+
+<div class="widget" id="w-sel">
+  <h4>SELECTIONSORT PASSO PER PASSO</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="sel-in" value="7, 2, 4, 5, 3, 1" style="width:190px"></label>
+    <button class="primario" id="sel-passo">Passo →</button>
+    <button id="sel-fine">Fino alla fine</button>
+    <button id="sel-reset">Ricomincia</button>
+  </div>
+  <div class="array" id="sel-arr"></div>
+  <div class="contatori" id="sel-cont"></div>
+  <div class="narrazione" id="sel-txt"></div>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Simulazione: 7 2 4 5 3 1 → k₀, m₀ … e così via…»</p>
+  <p>La tua simulazione è giusta. Ecco come prosegue, con lo stesso array della lavagna:</p>
+  <div class="tabella-wrap"><table>
+    <tr><th>passo</th><th>minimo di A[k..5]</th><th>scambio</th><th>array dopo</th></tr>
+    <tr><td>k = 0</td><td>1, in m = 5</td><td>A[5] ↔ A[0]</td><td><strong>1</strong> 2 4 5 3 7</td></tr>
+    <tr><td>k = 1</td><td>2, in m = 1</td><td>nessuno (m = k)</td><td><strong>1 2</strong> 4 5 3 7</td></tr>
+    <tr><td>k = 2</td><td>3, in m = 4</td><td>A[4] ↔ A[2]</td><td><strong>1 2 3</strong> 5 4 7</td></tr>
+    <tr><td>k = 3</td><td>4, in m = 4</td><td>A[4] ↔ A[3]</td><td><strong>1 2 3 4</strong> 5 7</td></tr>
+    <tr><td>k = 4</td><td>5, in m = 4</td><td>nessuno (m = k)</td><td><strong>1 2 3 4 5</strong> 7</td></tr>
+  </table></div>
+  <p>Il ciclo si ferma a k = 4 = n − 2, e il 7 rimasto in fondo è già al suo posto. Hai anche scritto bene il ciclo esterno: <code>for k ← 0 to n − 2</code>.</p>
+</div>
+
+<h3>Quanti confronti?</h3>
+
+<p>L'unico confronto tra chiavi è <code>A[j] &lt; A[m]</code>, nel ciclo interno. Al passo k, j va da k + 1 a n − 1: sono <strong>n − k − 1</strong> confronti. Sommando su tutti i passi:</p>
+
+<p class="formula grande">C(n) = Σ<sub>k=0</sub><sup>n−2</sup> (n − k − 1) = (n−1) + (n−2) + … + 2 + 1 = Σ<sub>i=1</sub><sup>n−1</sup> i = n(n−1)/2 = Θ(n²)</p>
+
+<div class="box domanda">
+  <span class="etichetta">La tua domanda</span>
+  <p class="citazione">«Dici n − k − 1 ma non capisco perché, come ci arrivo. E da dove esce fuori (n−1) + (n−2) + …?»</p>
+
+  <p><strong>Passo 1 · Perché n − k − 1.</strong> Un ciclo <code>for j ← a to b</code> fa un giro per ogni numero da a a b, cioè <strong>b − a + 1</strong> giri. Da 3 a 5: 3, 4, 5, tre giri = 5 − 3 + 1. Il «+1» c'è perché si contano entrambi gli estremi.</p>
+  <p>Qui il ciclo interno è <code>for j ← k + 1 to n − 1</code>: a = k + 1 e b = n − 1. I giri sono</p>
+  <p class="formula">(n − 1) − (k + 1) + 1 = n − k − 1</p>
+  <p>e in ogni giro c'è esattamente un confronto, <code>A[j] &lt; A[m]</code>. Quindi al passo k i confronti sono n − k − 1.</p>
+
+  <p><strong>Lo stesso, a parole.</strong> Al passo k la parte da ordinare è A[k..n−1], che ha <strong>n − k</strong> elementi. Il primo, A[k], fa da «candidato minimo» (m ← k), e va confrontato con <em>ognuno degli altri</em>, che sono n − k − 1. È il problema del minimo del <a href="01-quanto-costa.html#minimo">pacco 1</a>: per trovare il più piccolo tra N elementi servono N − 1 confronti. Qui N = n − k.</p>
+
+  <p><strong>Passo 2 · Da dove esce (n−1) + (n−2) + ….</strong> Il ciclo esterno fa k = 0, 1, 2, …, n − 2. Basta mettere ogni valore di k dentro n − k − 1:</p>
+  <div class="tabella-wrap"><table>
+    <tr><th>passo</th><th>j va da … a …</th><th>confronti n − k − 1</th><th>con n = 6 (7 2 4 5 3 1)</th></tr>
+    <tr><td>k = 0</td><td>1 … n−1</td><td>n − 0 − 1 = <strong>n − 1</strong></td><td>j = 1..5 → 5</td></tr>
+    <tr><td>k = 1</td><td>2 … n−1</td><td>n − 1 − 1 = <strong>n − 2</strong></td><td>j = 2..5 → 4</td></tr>
+    <tr><td>k = 2</td><td>3 … n−1</td><td>n − 2 − 1 = <strong>n − 3</strong></td><td>j = 3..5 → 3</td></tr>
+    <tr><td>…</td><td>…</td><td>…</td><td>k = 3: j = 4..5 → 2</td></tr>
+    <tr><td>k = n − 2</td><td>n−1 … n−1</td><td>n − (n−2) − 1 = <strong>1</strong></td><td>k = 4: j = 5..5 → 1</td></tr>
+  </table></div>
+  <p>Il totale è la somma dell'ultima colonna dall'alto in basso: <strong>(n−1) + (n−2) + … + 2 + 1</strong>. Ogni passo fa un confronto in meno del precedente, perché la parte da ordinare ha perso un elemento (quello appena sistemato). Con n = 6: 5 + 4 + 3 + 2 + 1 = 15, ed è il numero che vedi nel contatore del riquadro qui sopra alla fine.</p>
+  <p>La Σ della formula è solo il modo corto di scrivere questa somma. Letta al contrario, da 1 fino a n − 1, è Σ<sub>i=1</sub><sup>n−1</sup> i. Quanto fa te lo dice il trucco qui sotto.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Il trucco del piccolo Gauss</span>
+  <p>Per sommare 1 + 2 + … + (n−1), scrivi la somma due volte, una al contrario, e sommale in colonna:</p>
+  <p class="formula">1 + 2 + … + (n−1)<br>(n−1) + (n−2) + … + 1<br>ogni colonna fa n, e le colonne sono n − 1</p>
+  <p>Il doppio della somma è n(n−1), quindi la somma è <strong>n(n−1)/2</strong>. Con n = 6: 15. Con n = 100: 4950.</p>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Sempre, non solo nel caso peggiore</span>
+  <p>Il ciclo interno non ha un'uscita anticipata: guarda <strong>tutta</strong> la parte rimasta, anche se l'array è già ordinato. Quindi selectionSort fa <strong>esattamente n(n−1)/2 confronti con qualunque input</strong>. Caso migliore = caso peggiore = Θ(n²).</p>
+</div>
+
+<p><strong>Spazio:</strong> oltre all'array usa k, j, m e una variabile per lo scambio. Numero fisso di variabili: <strong>O(1)</strong>, è in loco.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Algoritmo in loco. K, m, A: O(1). n − K − 1 perché il primo lo assegna. Best case Θ(n²), worst case Θ(n²). Θ(n²·m) se stringhe»</p>
+  <p>Tutto giusto. Tre ritocchi:</p>
+  <ul>
+    <li><strong>«Perché il primo lo assegna»</strong> è esattamente il motivo del −1. La parte da ordinare ha n − k elementi: il primo non si confronta, si <em>assegna</em> (m ← k), e gli altri n − k − 1 si confrontano uno per uno con il minimo trovato finora.</li>
+    <li><strong>Lo spazio in più</strong> sono le variabili k, j, m, più quella d'appoggio per lo scambio. A non si conta: è l'input, c'era già. E siccome è passato per riferimento, anche il parametro A occupa solo O(1).</li>
+    <li><strong>Con le stringhe</strong> lunghe fino a m lettere, Θ(n²·m) è giusto come caso peggiore (per esempio parole tutte uguali: ogni confronto le legge fino in fondo). In generale si scrive O(n²·m), perché un confronto può finire prima, alla prima lettera diversa. E attenzione alla lettera: qui m è la lunghezza delle parole, come nelle slide, non la m del codice, che è la posizione del minimo. Stessa lettera, due cose diverse.</li>
+  </ul>
+</div>
+
+<p><strong>Stabile? No.</strong> L'esempio della lavagna, con i pedici per distinguere i due 10:</p>
+<div class="recs"><span class="rec"><b>10</b><sub>1</sub></span><span class="rec"><b>10</b><sub>2</sub></span><span class="rec"><b>5</b></span></div>
+<p>Al passo 0 il minimo è il 5, in posizione 2: si scambia con A[0] = 10<sub>1</sub>. Risultato:</p>
+<div class="recs"><span class="rec"><b>5</b></span><span class="rec"><b>10</b><sub>2</sub></span><span class="rec invertito"><b>10</b><sub>1</sub></span></div>
+<p>Il 10<sub>1</sub> è stato spedito in fondo e ha <strong>scavalcato</strong> il 10<sub>2</sub>. È lo scambio «a lunga distanza» che rovina la stabilità. Provalo nel riquadro della <a href="#stabile">sezione 4</a>.</p>
+
+<!-- ============================================================ 8 -->
+<h2 id="insertion"><span class="num">8</span>insertionSort: le carte in mano</h2>
+
+<div class="box idea">
+  <span class="etichetta">Idea</span>
+  <p>È come si sistemano le carte quando le peschi. In mano hai carte già in ordine. Peschi una nuova carta e la fai scorrere da destra verso sinistra, finché trovi il suo posto. Poi peschi la prossima.</p>
+  <p>Ogni passo <strong>inserisce</strong> una carta al posto giusto tra quelle in mano: da qui il nome.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Situazione prima del passo k (k = 1, …, n−1)</span>
+  <p><code>A[0..k−1]</code> sono <strong>ordinati tra loro</strong>: <code>A[0] ≤ A[1] ≤ … ≤ A[k−1]</code>. Il passo k inserisce <code>A[k]</code> al posto giusto tra loro, e dopo è ordinato <code>A[0..k]</code>.</p>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">La differenza con selectionSort</span>
+  <p>In selectionSort la parte sinistra è <strong>definitiva</strong>: quegli elementi non si muoveranno più. In insertionSort è solo <strong>ordinata tra sé</strong>: può ancora arrivare da destra un elemento più piccolo che li spinge tutti avanti. Il disegno della lavagna dice infatti «ordinati tra loro», non «posizione definitiva».</p>
+</div>
+
+<p>Come si inserisce, in tre mosse:</p>
+<ol>
+  <li>si copia <code>A[k]</code> in una variabile <code>x</code> (prendi la carta in mano: la sua casella ora si può sovrascrivere);</li>
+  <li>si guarda la parte ordinata da destra a sinistra, partendo da <code>k − 1</code>, e ogni elemento <strong>più grande</strong> di x si sposta avanti di una casella, per fargli posto;</li>
+  <li>quando si trova un elemento non più grande di x, o si arriva all'inizio, si mette x nella casella libera.</li>
+</ol>
+
+<p class="titolo-codice">Codice 2.2 · Ordinamento per inserimento</p>
+<pre class="pseudo"><b>Algoritmo</b> insertionSort (array A[0..n−1])
+  <b>for</b> k ← 1 <b>to</b> n − 1 <b>do</b>
+    <span class="com">// inserisci A[k] al posto giusto tra gli elementi precedenti</span>
+    x ← A[k]
+    j ← k − 1
+    <b>while</b> j ≥ 0 <b>and</b> A[j] &gt; x <b>do</b>
+      A[j + 1] ← A[j]              <span class="com">// sposta avanti A[j]</span>
+      j ← j − 1
+    A[j + 1] ← x                   <span class="com">// inserisce x</span></pre>
+
+<p>Riconosci <code>j ≥ 0 and A[j] &gt; x</code>? È la stessa struttura della ricerca dal fondo del <a href="03-ricerca.html#lazy">pacco 3</a>: prima si controlla che j sia un indice valido, poi si legge A[j]. Grazie alla <strong>lazy evaluation</strong>, quando j = −1 la lettura di A[−1] non avviene.</p>
+
+<div class="widget" id="w-ins">
+  <h4>INSERTIONSORT PASSO PER PASSO</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="ins-in" value="7, 2, 4, 5, 3, 1" style="width:190px"></label>
+    <button class="primario" id="ins-passo">Passo →</button>
+    <button id="ins-fine">Fino alla fine</button>
+    <button id="ins-reset">Ricomincia</button>
+  </div>
+  <div class="array" id="ins-arr"></div>
+  <div class="mano" id="ins-mano"></div>
+  <div class="contatori" id="ins-cont"></div>
+  <div class="narrazione" id="ins-txt"></div>
+</div>
+<p class="piccolo">Durante gli spostamenti vedrai lo stesso numero in due caselle vicine: è normale. La casella di destra è la copia appena spostata, quella di sinistra verrà sovrascritta (da un altro spostamento o da x).</p>
+
+<h3>Quanti confronti?</h3>
+
+<p>Al passo k, x viene confrontato al massimo con tutti gli elementi prima di lui, da <code>A[k−1]</code> fino ad <code>A[0]</code>: <strong>al più k confronti</strong>. Ma il while si può fermare prima! Quindi qui il numero di confronti <strong>dipende dall'input</strong>.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>caso</th><th>quando succede</th><th>confronti</th></tr>
+  <tr><td class="rosso">peggiore</td><td>array <strong>ordinato al contrario</strong>: ogni x deve arrivare fino in posizione 0</td><td>Σ<sub>k=1</sub><sup>n−1</sup> k = n(n−1)/2 = Θ(n²)</td></tr>
+  <tr><td class="verde">migliore</td><td>array <strong>già ordinato</strong>: a ogni passo il primo confronto dice «A[k−1] ≤ x» e il while si ferma subito</td><td>1 per passo: <strong>n − 1</strong></td></tr>
+</table></div>
+
+<p>Per questo insertionSort è ottimo su array <strong>quasi ordinati</strong>: ogni carta si sposta di poco.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Iterazione k: al più k confronti. Worst case se decrescente Θ(n²). Best case array ordinato Θ(n−1) cfr. Molti spostamenti»</p>
+  <p>Giusto. Due precisazioni:</p>
+  <ul>
+    <li>Il caso migliore fa <strong>esattamente n − 1</strong> confronti. Nella notazione Θ però le costanti e i termini più piccoli si buttano via: Θ(n − 1) è la stessa cosa di Θ(n), e si scrive <strong>Θ(n)</strong>. È come il minimo del <a href="01-quanto-costa.html#minimo">pacco 1</a>: n − 1 confronti, cioè Θ(n).</li>
+    <li><strong>«Molti spostamenti»</strong>: sì. Ogni confronto che risponde «A[j] &gt; x» provoca uno spostamento, quindi nel caso peggiore (array al contrario) gli spostamenti sono n(n−1)/2. selectionSort invece fa al più n − 1 scambi. Conta quando i record sono grandi: vedi <a href="#spostamenti">confronti e spostamenti</a>.</li>
+  </ul>
+</div>
+
+<p><strong>Spazio:</strong> k, j, x. <strong>O(1)</strong>, in loco.</p>
+
+<p><strong>Stabile? Sì.</strong> Il while sposta solo gli elementi <strong>strettamente</strong> più grandi di x (<code>A[j] &gt; x</code>). Quando incontra un elemento uguale a x si ferma, e x va subito <em>dopo</em> di lui. Quindi un elemento non scavalca mai un suo uguale che stava prima. È il «4 … 4 stabile» scritto sulla lavagna. Nelle slide il prof chiede cosa cambia scrivendo <code>A[j] ≥ x</code>: lo trovi negli <a href="#esercizi">esercizi</a>.</p>
+
+<div class="box domanda">
+  <span class="etichetta">La tua domanda</span>
+  <p class="citazione">«insertionSort è tipo un selectionSort ma al contrario, di base?»</p>
+  <p>Sì, in un senso preciso: sono due facce della stessa idea. Tutti e due allargano di uno, a ogni passo, la parte sinistra ordinata. Il lavoro però lo fanno in due momenti opposti.</p>
+  <ul>
+    <li><strong>selectionSort: scelta difficile, sistemazione facile.</strong> Per decidere <em>quale</em> elemento va in posizione k deve guardare tutta la parte destra e trovare il minimo. Poi metterlo a posto costa un solo scambio.</li>
+    <li><strong>insertionSort: scelta facile, sistemazione difficile.</strong> Quale elemento sistemare non lo sceglie: prende il prossimo, A[k], a occhi chiusi. La fatica è trovare <em>dove</em> metterlo, scorrendo la parte sinistra e spostando avanti gli elementi più grandi.</li>
+  </ul>
+  <p>Con le carte: nel selection guardi tutte le carte sul tavolo per prendere la più piccola. Nell'insertion peschi la prima che capita e cerchi il suo posto tra quelle in mano.</p>
+  <div class="tabella-wrap"><table>
+    <tr><th></th><th>selectionSort</th><th>insertionSort</th></tr>
+    <tr><td>quale elemento sistema</td><td>il minimo della parte destra (va cercato)</td><td>il prossimo, A[k] (nessuna ricerca)</td></tr>
+    <tr><td>dove guarda</td><td>la parte <strong>non ordinata</strong>, sempre tutta</td><td>la parte <strong>ordinata</strong>, da destra, solo finché serve</td></tr>
+    <tr><td>la parte sinistra è</td><td>definitiva</td><td>ordinata tra sé</td></tr>
+    <tr><td>confronti</td><td>sempre n(n−1)/2</td><td>da n − 1 a n(n−1)/2</td></tr>
+    <tr><td>movimenti</td><td>al più n − 1 scambi</td><td>fino a n(n−1)/2 spostamenti</td></tr>
+    <tr><td>stabile</td><td>no</td><td>sì</td></tr>
+  </table></div>
+  <p>Da qui viene la differenza sui confronti. Selection non può fermarsi prima: la parte destra è in disordine, e il minimo potrebbe essere proprio l'ultimo elemento. Insertion invece guarda una parte già <em>ordinata</em>. Appena trova un elemento ≤ x sa che tutti quelli più a sinistra sono ancora più piccoli, e si ferma.</p>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="bubble"><span class="num">9</span>bubbleSort: le bolle</h2>
+
+<div class="box idea">
+  <span class="etichetta">Idea</span>
+  <p>Pensa alle bollicine in un bicchiere d'acqua frizzante: le più grosse salgono in superficie. bubbleSort scorre l'array da sinistra a destra e, ogni volta che trova due <strong>vicini</strong> nell'ordine sbagliato, li scambia. Così l'elemento più grande, ovunque sia, viene spinto passo dopo passo fino in fondo, come una bolla che sale.</p>
+  <p>Poi si ricomincia da capo. Quando una scansione intera finisce <strong>senza nessuno scambio</strong>, vuol dire che tutti i vicini sono in ordine: l'array è ordinato.</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · «da capire meglio»</span>
+  <p class="citazione">«Controllo elementi adiacenti finché non scambio nulla. Controllo adiacenti 1 2 3 4 5 6: 12 ✓ 23 ✓ 34 ✓ 45 ✓ 56 ✓»</p>
+  <p>La tua frase è già tutto l'algoritmo, e il tuo esempio è il <strong>caso migliore</strong>: una scansione, tutte coppie ✓, nessuno scambio, fine. Vediamo cosa succede quando c'è disordine, con l'array della lavagna 7 2 4 5 3 1. Prima scansione, coppia per coppia:</p>
+  <div class="tabella-wrap"><table>
+    <tr><th>j</th><th>coppia (A[j−1], A[j])</th><th>in ordine?</th><th>array dopo</th></tr>
+    <tr><td>1</td><td>(7, 2)</td><td class="rosso">no → scambio</td><td>2 <strong>7</strong> 4 5 3 1</td></tr>
+    <tr><td>2</td><td>(7, 4)</td><td class="rosso">no → scambio</td><td>2 4 <strong>7</strong> 5 3 1</td></tr>
+    <tr><td>3</td><td>(7, 5)</td><td class="rosso">no → scambio</td><td>2 4 5 <strong>7</strong> 3 1</td></tr>
+    <tr><td>4</td><td>(7, 3)</td><td class="rosso">no → scambio</td><td>2 4 5 3 <strong>7</strong> 1</td></tr>
+    <tr><td>5</td><td>(7, 1)</td><td class="rosso">no → scambio</td><td>2 4 5 3 1 <strong>7</strong></td></tr>
+  </table></div>
+  <ul>
+    <li><strong>La bolla.</strong> Il 7 è il più grande: ogni volta che lo confronti con il vicino di destra «perde» il confronto e si sposta. Una volta incontrato, viene trascinato fino in fondo. Dopo la prima scansione il più grande è all'ultimo posto, per sempre.</li>
+    <li><strong>Perché bisogna ripetere.</strong> Guarda l'1: in tutta la scansione si è spostato a sinistra di <em>un</em> posto solo, da 5 a 4. I piccoli camminano piano, e servono altre scansioni (nella seconda la bolla è il 5).</li>
+    <li><strong>Quando fermarsi.</strong> Se in una scansione tutte le coppie sono ✓, come nel tuo esempio, allora A[0] ≤ A[1] ≤ … ≤ A[n−1]: una catena di ≤ tra vicini vuol dire array ordinato.</li>
+    <li><strong>A cosa serve scambiato.</strong> È una bandierina, come pos nella ricerca binaria: all'inizio di ogni scansione vale false, e diventa true al primo scambio. Se alla fine è ancora false, tutte le coppie erano ✓ e il <code>while scambiato</code> si ferma.</li>
+  </ul>
+  <p>Hai anche scritto: <span class="viola">«i numeri finali saranno sempre già in ordine, quindi sì»</span>. Proprio così: dopo la scansione i, gli ultimi i elementi sono al posto definitivo. È da qui che nasce la versione migliorata, poco più sotto.</p>
+</div>
+
+<p class="titolo-codice">Codice 2.3 · Ordinamento «a bolle» (versione base)</p>
+<pre class="pseudo"><b>Algoritmo</b> bubbleSort (array A[0..n−1])
+  <b>do</b>
+    scambiato ← false   <span class="com">// ho scambiato qualcosa in questa scansione?</span>
+    <b>for</b> j ← 1 <b>to</b> n − 1 <b>do</b>
+      <b>if</b> A[j] &lt; A[j − 1] <b>then</b>
+        scambia A[j] e A[j − 1]
+        scambiato ← true
+  <b>while</b> scambiato</pre>
+
+<p>Nota il <code>do … while</code>: il corpo si esegue <strong>almeno una volta</strong>, e la condizione si controlla alla fine. Ecco l'esempio delle slide, una riga per scansione (in grassetto gli elementi arrivati al posto definitivo):</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>indici</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td></td></tr>
+  <tr><th>iniziale</th><td>7</td><td>2</td><td>4</td><td>5</td><td>3</td><td>1</td><td></td></tr>
+  <tr><th>dopo la 1ª</th><td>2</td><td>4</td><td>5</td><td>3</td><td>1</td><td><strong>7</strong></td><td></td></tr>
+  <tr><th>dopo la 2ª</th><td>2</td><td>4</td><td>3</td><td>1</td><td><strong>5</strong></td><td><strong>7</strong></td><td></td></tr>
+  <tr><th>dopo la 3ª</th><td>2</td><td>3</td><td>1</td><td><strong>4</strong></td><td><strong>5</strong></td><td><strong>7</strong></td><td></td></tr>
+  <tr><th>dopo la 4ª</th><td>2</td><td>1</td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td><td><strong>7</strong></td><td></td></tr>
+  <tr><th>dopo la 5ª</th><td><strong>1</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td><td><strong>7</strong></td><td></td></tr>
+  <tr><th>dopo la 6ª</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>7</td><td class="piccolo">nessuno scambio: fine</td></tr>
+</table></div>
+
+<h3>Due osservazioni, una versione migliore</h3>
+
+<p><strong>1.</strong> Dopo la scansione i, gli ultimi i elementi sono già al posto definitivo (la 1ª porta in fondo il più grande, la 2ª il secondo più grande, …). Quindi la scansione i può fermarsi prima, a <code>n − i</code>: guardare la parte finale è tempo sprecato.</p>
+<p><strong>2.</strong> Dopo n − 1 scansioni, gli n − 1 elementi più grandi sono a posto, e il più piccolo è per forza nell'unica casella rimasta, la 0. Quindi dopo n − 1 scansioni si può smettere, anche se l'ultima ha fatto scambi.</p>
+
+<p class="titolo-codice">Codice 2.4 · Ordinamento «a bolle» (versione migliorata)</p>
+<pre class="pseudo"><b>Algoritmo</b> bubbleSort (array A[0..n−1])
+  <span class="riga-hl">i ← 1</span>
+  <b>do</b>
+    scambiato ← false
+    <b>for</b> j ← 1 <b>to</b> <span class="riga-hl">n − i</span> <b>do</b>
+      <b>if</b> A[j] &lt; A[j − 1] <b>then</b>
+        scambia A[j] e A[j − 1]
+        scambiato ← true
+    <span class="riga-hl">i ← i + 1</span>
+  <b>while</b> scambiato <span class="riga-hl"><b>and</b> i &lt; n</span></pre>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Si può ottimizzare, si può fermare a n − i. … while scambiato AND i &lt; n: per evitare un'iterazione in più»</p>
+  <p>Esatto: sono le due osservazioni qui sopra, una per modifica.</p>
+  <ul>
+    <li><code>for j ← 1 to n − i</code>: la scansione i non guarda gli ultimi i − 1 elementi, che sono già al posto definitivo.</li>
+    <li><code>while scambiato and i &lt; n</code>: dopo n − 1 scansioni l'array è ordinato di sicuro, quindi ci si ferma anche se l'ultima scansione ha scambiato qualcosa. Senza questa condizione si farebbe un giro in più del tutto inutile: con i = n il for andrebbe da 1 a 0, e non confronterebbe nemmeno niente.</li>
+  </ul>
+  <p>Nella versione base (2.3) invece il giro finale «di controllo», quello senza scambi, c'è sempre e guarda tutto l'array: n − 1 confronti in più.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Lepri e tartarughe · gli esempi della lezione 8</span>
+  <p>Con <code>12 3 4 9 10</code> basta <strong>una</strong> scansione: il 12 è una <strong>lepre</strong>, corre fino in fondo tutto in una volta, perché viene scambiato a ogni passo del for. La seconda scansione non scambia niente e l'algoritmo si ferma.</p>
+  <p>Con <code>4 9 10 12 3</code> invece il 3 è una <strong>tartaruga</strong>: a ogni scansione si sposta a sinistra di <em>una sola</em> casella. Gli servono n − 1 = 4 scansioni per arrivare in posizione 0. È il caso peggiore scritto alla lavagna: <strong>il più piccolo in ultima posizione</strong>.</p>
+</div>
+
+<div class="widget" id="w-bub">
+  <h4>BUBBLESORT PASSO PER PASSO</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="bub-in" value="7, 2, 4, 5, 3, 1" style="width:190px"></label>
+    <select id="bub-ver" style="width:auto">
+      <option value="migl">versione migliorata (2.4)</option>
+      <option value="base">versione base (2.3)</option>
+    </select>
+    <button class="primario" id="bub-passo">Passo →</button>
+    <button id="bub-fine">Fino alla fine</button>
+    <button id="bub-reset">Ricomincia</button>
+  </div>
+  <div class="array" id="bub-arr"></div>
+  <div class="contatori" id="bub-cont"></div>
+  <div class="narrazione" id="bub-txt"></div>
+</div>
+<p class="piccolo">Prova <code>12 3 4 9 10</code> (la lepre) e <code>4 9 10 12 3</code> (la tartaruga), e confronta le due versioni sullo stesso array.</p>
+
+<h3>Quanti confronti? (versione migliorata)</h3>
+
+<p>Nella scansione i il for fa <strong>esattamente n − i confronti</strong>. Le scansioni vanno da i = 1 al massimo fino a i = n − 1:</p>
+
+<p class="formula grande">C(n) ≤ Σ<sub>i=1</sub><sup>n−1</sup> (n − i) = Σ<sub>k=1</sub><sup>n−1</sup> k = n(n−1)/2 = Θ(n²)</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«(n − i) preso dal for interno; 1 … (n − 1) preso dal while esterno»</p>
+  <p>Questa è proprio <strong>la ricetta</strong> per contare i confronti di due cicli uno dentro l'altro, e vale per tutti e tre gli algoritmi: <strong>sotto e sopra la Σ</strong> vanno i valori dell'indice del ciclo <em>esterno</em>; <strong>dentro la Σ</strong> va quanti confronti fa il ciclo <em>interno</em> a quel giro.</p>
+  <div class="tabella-wrap"><table>
+    <tr><th>algoritmo</th><th>ciclo esterno → indici della Σ</th><th>ciclo interno → termine</th><th>totale</th></tr>
+    <tr><td>selectionSort</td><td>k = 0 … n − 2</td><td>j = k+1 … n−1: n − k − 1</td><td>Σ<sub>k=0</sub><sup>n−2</sup> (n − k − 1) = n(n−1)/2</td></tr>
+    <tr><td>insertionSort</td><td>k = 1 … n − 1</td><td>while: al più k</td><td>≤ Σ<sub>k=1</sub><sup>n−1</sup> k = n(n−1)/2</td></tr>
+    <tr><td>bubbleSort 2.4</td><td>i = 1 … al più n − 1</td><td>j = 1 … n−i: n − i</td><td>≤ Σ<sub>i=1</sub><sup>n−1</sup> (n − i) = n(n−1)/2</td></tr>
+  </table></div>
+  <p>Alla fine è sempre la stessa somma 1 + 2 + … + (n − 1), letta in un verso o nell'altro. Il «≤» c'è quando il ciclo può fermarsi prima (while di insertion, do-while di bubble).</p>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th>caso</th><th>quando succede</th><th>confronti</th></tr>
+  <tr><td class="rosso">peggiore</td><td>servono tutte le n − 1 scansioni: per esempio il <strong>più piccolo in ultima posizione</strong>, o l'array al contrario</td><td>n(n−1)/2</td></tr>
+  <tr><td class="verde">migliore</td><td>array <strong>già ordinato</strong>: una sola scansione, senza scambi</td><td><strong>n − 1</strong></td></tr>
+</table></div>
+
+<p><strong>Spazio:</strong> i, j, scambiato. <strong>O(1)</strong>, in loco. <strong>Stabile? Sì:</strong> scambia due vicini solo se <code>A[j] &lt; A[j−1]</code> <em>strettamente</em>, quindi due elementi uguali non si scambiano mai e non si scavalcano.</p>
+
+<p class="piccolo">Nelle slide c'è anche un Codice 2.5, un ulteriore miglioramento proposto da Knuth: ricorda dove è avvenuto l'ultimo scambio e accorcia la scansione successiva di colpo, non di uno alla volta. Aiuta su array quasi ordinati (come 3 2 1 4 5 6 7), ma non cambia il caso peggiore.</p>
+
+<!-- ============================================================ 10 -->
+<h2 id="gara"><span class="num">10</span>I tre a confronto</h2>
+
+<p>Fai gareggiare i tre algoritmi sullo stesso array e conta i confronti. Prova i quattro tipi di array e guarda chi cambia e chi no.</p>
+
+<div class="widget" id="w-gara">
+  <h4>GARA DI CONFRONTI</h4>
+  <div class="controlli">
+    <label>n = <input type="number" id="gara-n" value="10" min="2" max="2000"></label>
+    <select id="gara-tipo" style="width:auto">
+      <option value="casuale">mescolato a caso</option>
+      <option value="ordinato">già ordinato</option>
+      <option value="contrario">ordinato al contrario</option>
+      <option value="piccolo">il più piccolo in fondo</option>
+    </select>
+    <button id="gara-mescola">Rimescola</button>
+  </div>
+  <div id="gara-out"></div>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>selectionSort</th><th>insertionSort</th><th>bubbleSort (2.4)</th></tr>
+  <tr><td>confronti, caso peggiore</td><td>n(n−1)/2</td><td>n(n−1)/2 (al contrario)</td><td>n(n−1)/2 (piccolo in fondo)</td></tr>
+  <tr><td>confronti, caso migliore</td><td>n(n−1)/2 (sempre uguale!)</td><td class="verde">n − 1 (già ordinato)</td><td class="verde">n − 1 (già ordinato)</td></tr>
+  <tr><td>spazio aggiuntivo</td><td>O(1)</td><td>O(1)</td><td>O(1)</td></tr>
+  <tr><td>stabile</td><td class="rosso">no</td><td class="verde">sì</td><td class="verde">sì</td></tr>
+  <tr><td>la parte sinistra è…</td><td>definitiva</td><td>ordinata tra sé</td><td>(è la parte destra a diventare definitiva)</td></tr>
+</table></div>
+
+<h3 id="spostamenti">Confronti e spostamenti</h3>
+
+<p>Contare i confronti va bene finché sono loro l'operazione più costosa. Ma se ordini record <strong>enormi</strong>, anche <em>spostarli</em> costa, perché ogni spostamento copia tutto il record. Su questo selectionSort vince: fa al massimo n − 1 scambi, uno per passo, mentre gli altri due possono spostare gli elementi Θ(n²) volte.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Confronti vs spostamenti. Record → array di puntatori: così non si scambiano/creano copie usando temp, ma con array di puntatori va bene. Anche con array di struct»</p>
+  <p>Giusto. Uno scambio si fa con una variabile d'appoggio: temp ← A[i]; A[i] ← A[j]; A[j] ← temp. Sono <strong>tre copie</strong> dell'elemento, e se l'elemento è un record intero sono tre copie del record intero.</p>
+  <p>«Anche con array di struct» vuol dire proprio questo: il trucco serve quando hai un array di struct. Al suo posto usi un array di <strong>puntatori</strong> alle struct: le struct restano ferme dove sono in memoria, e si scambiano solo le frecce (il <a href="02-array.html#riferimenti">pacco 2</a> ti ha già mostrato che le variabili possono essere frecce).</p>
+</div>
+
+<pre class="go">type Persona struct {
+    Cognome string
+    Nome    string
+    Foto    [50000]byte // un campo grosso: ogni Persona occupa circa 50 KB
+}
+
+// slice di struct: lo scambio copia record interi
+persone := make([]Persona, n)
+persone[i], persone[j] = persone[j], persone[i]
+
+// slice di puntatori: lo scambio copia solo indirizzi da 8 byte
+pp := make([]*Persona, n)
+pp[i], pp[j] = pp[j], pp[i]
+// confronto: pp[i].Cognome &lt; pp[j].Cognome (segue la freccia)</pre>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>array di struct</th><th>array di puntatori a struct</th></tr>
+  <tr><td>in ogni casella c'è</td><td>il record intero</td><td>l'indirizzo del record</td></tr>
+  <tr><td>uno scambio copia</td><td>3 record (≈ 150 KB)</td><td>3 indirizzi (24 byte)</td></tr>
+  <tr><td>un confronto costa</td><td>leggere la chiave</td><td>uguale: si segue la freccia e si legge la chiave</td></tr>
+</table></div>
+<p class="piccolo">In Go lo scambio si scrive in una riga, senza temp, ma la macchina fa comunque le copie. In C sarebbe <code>struct persona a[n]</code> contro <code>struct persona *a[n]</code>.</p>
+
+<!-- ============================================================ 11 -->
+<h2 id="riassunto"><span class="num">11</span>Riassunto ed esame</h2>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li>Ordinare = disporre A in ordine <strong>non decrescente</strong>, lasciando il risultato in A.</li>
+    <li><strong>Interno</strong>: dati in memoria centrale, accesso diretto. <strong>Esterno</strong>: dati in memoria di massa, accesso a blocchi, lento. Il corso studia l'interno.</li>
+    <li>Si ordinano record secondo un campo <strong>chiave</strong>; negli esempi, interi.</li>
+    <li><strong>Stabile</strong> = record con la stessa chiave restano nell'ordine in cui erano.</li>
+    <li><strong>Tempo</strong> = numero di confronti tra chiavi × costo di un confronto. <strong>Spazio</strong> = memoria in aggiunta all'array (variabili, array ausiliari, stack).</li>
+    <li>selectionSort: cerca il minimo e lo scambia in posizione k. Sempre n(n−1)/2 confronti. Non stabile.</li>
+    <li>insertionSort: inserisce A[k] tra i precedenti spostando avanti i più grandi. Da n − 1 a n(n−1)/2 confronti. Stabile.</li>
+    <li>bubbleSort: scambia vicini fuori ordine finché una scansione non fa scambi. Da n − 1 a n(n−1)/2 confronti. Stabile.</li>
+    <li>Tutti e tre: Θ(n²) confronti nel caso peggiore, spazio O(1), in loco.</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>Negli scritti degli ultimi anni gli ordinamenti elementari non hanno un esercizio dedicato: nell'esercizio 2 arrivano quickSort e heapSort, che vedrai più avanti. Questi tre però sono la base, e all'<strong>orale</strong> ti possono chiedere di:</p>
+  <ul>
+    <li>scrivere i Codici 2.1, 2.2 e 2.4 e simularli su un piccolo array;</li>
+    <li>descrivere la situazione dell'array prima del passo k (cosa è ordinato, cosa è definitivo);</li>
+    <li>contare i confronti con la sommatoria, e dire quando c'è il caso migliore e quando il peggiore;</li>
+    <li>dire se sono stabili, con un esempio (10<sub>1</sub> 10<sub>2</sub> 5 per selectionSort);</li>
+    <li>spiegare cosa vuol dire «in loco» e perché questi tre lo sono.</li>
+  </ul>
+  <p>Per provarli in C c'è l'esercizio <code>03-ordinamenti-elementari</code> nella tua cartella <code>asd/c</code> (<code>make 03</code>).</p>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="esercizi"><span class="num">12</span>Esercizi</h2>
+<p>Prova a rispondere prima di aprire la soluzione. Puoi controllare i primi tre con i riquadri interattivi qui sopra.</p>
+
+<details class="esercizio">
+  <summary>1. selectionSort su A = [5, 3, 8, 1, 4]: com'è l'array dopo ogni passo? Quanti confronti?</summary>
+  <div class="soluzione">
+    <p>k = 0: minimo 1 in m = 3, scambio con A[0] → <strong>1</strong> 3 8 5 4<br>
+    k = 1: minimo 3 in m = 1 = k, niente da scambiare → <strong>1 3</strong> 8 5 4<br>
+    k = 2: minimo 4 in m = 4 → <strong>1 3 4</strong> 5 8<br>
+    k = 3: minimo 5 in m = 3 = k → <strong>1 3 4 5</strong> 8</p>
+    <p>Confronti: 4 + 3 + 2 + 1 = <strong>10</strong> = 5 · 4 / 2. Sarebbero 10 con qualunque array di 5 elementi.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. insertionSort su A = [5, 3, 8, 1, 4]: com'è l'array dopo ogni passo? Quanti confronti?</summary>
+  <div class="soluzione">
+    <p>k = 1, x = 3: 5 &gt; 3 sì, sposto; j = −1, stop (1 confronto) → 3 5 8 1 4<br>
+    k = 2, x = 8: 5 &gt; 8 no, stop (1 confronto) → 3 5 8 1 4<br>
+    k = 3, x = 1: 8 &gt; 1, 5 &gt; 1, 3 &gt; 1, poi j = −1 (3 confronti) → 1 3 5 8 4<br>
+    k = 4, x = 4: 8 &gt; 4 sì, 5 &gt; 4 sì, 3 &gt; 4 no (3 confronti) → 1 3 4 5 8</p>
+    <p>Confronti: 1 + 1 + 3 + 3 = <strong>8</strong>. Meno di selectionSort, perché il while si ferma appena può. Nota che con j = −1 non c'è confronto: la lazy evaluation non legge A[−1].</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. bubbleSort migliorato (2.4) su A = [7, 1, 4, 3, 5, 6]: quante scansioni e quanti confronti?</summary>
+  <div class="soluzione">
+    <p>i = 1: 5 confronti → 1 4 3 5 6 7 (il 7 è una lepre: arriva in fondo subito)<br>
+    i = 2: 4 confronti → 1 3 4 5 6 7<br>
+    i = 3: 3 confronti, nessuno scambio → scambiato = false, fine.</p>
+    <p><strong>3 scansioni, 12 confronti</strong>, meno dei 15 = 6 · 5 / 2 del caso peggiore. È l'esempio delle slide di un array che finisce prima di n − 1 scansioni.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. In insertionSort scrivo <code>while j ≥ 0 and A[j] ≥ x</code> invece di <code>A[j] &gt; x</code>. Ordina ancora? Cosa cambia?</summary>
+  <div class="soluzione">
+    <p>Ordina ancora correttamente, ma:</p>
+    <ul>
+      <li><strong>non è più stabile</strong>: ora anche gli elementi <em>uguali</em> a x vengono spostati avanti, e x finisce <em>prima</em> di loro. Con 4<sub>1</sub> 4<sub>2</sub>: al passo 1, x = 4<sub>2</sub>, A[0] = 4<sub>1</sub> ≥ 4<sub>2</sub>, si sposta, e il risultato è 4<sub>2</sub> 4<sub>1</sub>;</li>
+      <li><strong>fa più lavoro</strong> quando ci sono doppioni. Con un array di elementi tutti uguali, con <code>&gt;</code> fa n − 1 confronti (caso migliore), con <code>≥</code> ogni x scorre fino in fondo: n(n−1)/2.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. (Dalle slide) In insertionSort cerco la posizione di x partendo da A[0] verso destra, invece che da A[k−1] verso sinistra. Cosa cambia?</summary>
+  <div class="soluzione">
+    <p>Cercando da sinistra trovi il primo elemento più grande di x, ma poi devi comunque <strong>spostare avanti</strong> tutti quelli da lì fino a k − 1. Prima facevi le due cose insieme (confronto e spostamento nello stesso giro); ora sono due cicli separati.</p>
+    <p>E i casi si invertono. Su un array <strong>già ordinato</strong>, x è più grande di tutti i precedenti, quindi da sinistra li confronti tutti: k confronti a passo, n(n−1)/2 in totale. Era il caso migliore, ora è il peggiore! Su un array al contrario, invece, x è più piccolo di A[0] e lo capisci al primo confronto, ma poi gli spostamenti sono k.</p>
+    <p>Per restare stabile, da sinistra bisogna fermarsi al primo elemento <strong>strettamente</strong> più grande di x.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. Su quale array di n elementi selectionSort fa meno confronti?</summary>
+  <div class="soluzione">
+    <p>Su nessuno: fa <strong>sempre</strong> n(n−1)/2 confronti, perché il ciclo interno scorre sempre tutta la parte non ordinata, senza uscite anticipate. Cambiano solo gli scambi effettivi (nessuno se l'array è già ordinato).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>7. Quanto fa 1 + 2 + … + 99? E quanti confronti fa insertionSort su 100 elementi ordinati al contrario?</summary>
+  <div class="soluzione">
+    <p>1 + 2 + … + 99 = 99 · 100 / 2 = <strong>4950</strong>.</p>
+    <p>insertionSort su 100 elementi al contrario: al passo k fa k confronti, per k da 1 a 99, quindi Σ<sub>k=1</sub><sup>99</sup> k = <strong>4950</strong>. È proprio n(n−1)/2 con n = 100.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="03-ricerca.html">← Pacco 3 · Ricerca</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="05-mergesort.html">Pacco 5 · mergeSort →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+
+  // ---------------------------------------------------------- disegno di un array
+  function disegna(el, valori, opz) {
+    el.innerHTML = "";
+    for (var i = 0; i < valori.length; i++) {
+      var c = document.createElement("div");
+      c.className = "cella" + (opz.cls && opz.cls[i] ? " " + opz.cls[i] : "");
+      var f = document.createElement("div"); f.className = "f"; f.textContent = (opz.fr && opz.fr[i]) || "";
+      var v = document.createElement("div"); v.className = "v"; v.textContent = valori[i];
+      var k = document.createElement("div"); k.className = "i"; k.textContent = i;
+      c.appendChild(f); c.appendChild(v); c.appendChild(k);
+      el.appendChild(c);
+    }
+  }
+  function leggiArray(txt, max) {
+    var parti = String(txt).split(/[\s,;]+/).filter(function (s) { return s !== ""; });
+    if (parti.length < 1 || parti.length > max) return null;
+    var A = [];
+    for (var i = 0; i < parti.length; i++) {
+      var v = Number(parti[i]);
+      if (!isFinite(v)) return null;
+      A.push(v);
+    }
+    return A;
+  }
+  function ord(da, a, c) { c = c || {}; for (var i = da; i < a; i++) c[i] = "ordinata"; return c; }
+  function fr(coppie) {
+    var f = {};
+    for (var i = 0; i < coppie.length; i += 2) {
+      var p = coppie[i];
+      if (p === null || p === undefined) continue;
+      f[p] = f[p] ? f[p] + " " + coppie[i + 1] : coppie[i + 1];
+    }
+    return f;
+  }
+
+  // ---------------------------------------------------------- selectionSort
+  function passiSelection(A0) {
+    var A = A0.slice(), n = A.length, P = [], cfr = 0, sc = 0;
+    function snap(t, cls, f) { P.push({ A: A.slice(), cls: cls || {}, fr: f || {}, t: t, cfr: cfr, sp: sc }); }
+    snap("Array iniziale. In verde comparirà la parte già sistemata, per ora vuota.");
+    if (n < 2) { snap("Con un solo elemento l'array è già ordinato: il ciclo (k da 0 a n − 2 = −1) non parte nemmeno."); return P; }
+    for (var k = 0; k <= n - 2; k++) {
+      var m = k, c = ord(0, k);
+      c[k] = "attiva";
+      snap("<b>Passo k = " + k + "</b>: cerco il minimo in A[" + k + ".." + (n - 1) + "]. Parto con <b>m ← " + k + "</b>: per ora il più piccolo è A[" + k + "] = " + A[k] + ".", c, fr([k, "k", k, "m"]));
+      for (var j = k + 1; j <= n - 1; j++) {
+        cfr++;
+        c = ord(0, k); c[m] = "attiva"; c[j] = "attiva";
+        var f = fr([k, "k", m, "m", j, "j"]);
+        if (A[j] < A[m]) {
+          snap("A[" + j + "] = " + A[j] + " &lt; A[m] = " + A[m] + "? <span class='verde'>sì</span>: nuovo minimo, <b>m ← " + j + "</b>.", c, f);
+          m = j;
+        } else {
+          snap("A[" + j + "] = " + A[j] + " &lt; A[m] = " + A[m] + "? <span class='rosso'>no</span>: il minimo resta in m = " + m + ".", c, f);
+        }
+      }
+      var testo;
+      if (m !== k) {
+        testo = "Fine della ricerca: il minimo è A[" + m + "] = " + A[m] + ". <b>Scambio A[" + m + "] con A[" + k + "]</b>: il " + A[m] + " va in posizione " + k + " e non si muoverà più.";
+        var t = A[m]; A[m] = A[k]; A[k] = t; sc++;
+      } else {
+        testo = "Fine della ricerca: il minimo è già in posizione k = " + k + ". Lo scambio di A[" + k + "] con se stesso non cambia niente.";
+      }
+      c = ord(0, k + 1); if (m !== k) c[m] = "mossa";
+      snap(testo, c, fr([k, "k", m, "m"]));
+    }
+    snap("k ha raggiunto n − 2 = " + (n - 2) + " e il ciclo finisce. L'ultimo elemento è per forza il più grande: è già al suo posto. " +
+      "Confronti: <b>" + cfr + "</b> = n(n−1)/2 = " + n + "·" + (n - 1) + "/2, come sempre.", ord(0, n));
+    return P;
+  }
+
+  // ---------------------------------------------------------- insertionSort
+  function passiInsertion(A0) {
+    var A = A0.slice(), n = A.length, P = [], cfr = 0, sp = 0;
+    function snap(t, cls, f, mano) { P.push({ A: A.slice(), cls: cls || {}, fr: f || {}, t: t, cfr: cfr, sp: sp, mano: mano }); }
+    snap("Array iniziale. A[0..0] (un solo elemento) è già «ordinato tra sé»: in verde la parte ordinata tra sé, che però non è ancora definitiva.", ord(0, Math.min(1, n)));
+    for (var k = 1; k <= n - 1; k++) {
+      var x = A[k], j = k - 1, c = ord(0, k);
+      c[k] = "attiva";
+      snap("<b>Passo k = " + k + "</b>: prendo in mano <b>x ← A[" + k + "] = " + x + "</b> e <b>j ← " + j + "</b>. A[0.." + (k - 1) + "] è ordinato tra sé.", c, fr([k, "k", j, "j"]), x);
+      while (true) {
+        if (j < 0) {
+          snap("j = −1: ho passato tutta la parte ordinata, x è il più piccolo visto finora. <b>j ≥ 0</b> è falso e per la lazy evaluation A[−1] non viene letto: esco dal while.", ord(0, k), fr([0, "j+1"]), x);
+          break;
+        }
+        cfr++;
+        if (A[j] > x) {
+          var v = A[j];
+          A[j + 1] = A[j]; sp++;
+          c = ord(0, k); c[j + 1] = "mossa"; c[j] = "attiva";
+          snap("A[" + j + "] = " + v + " &gt; x = " + x + "? <span class='verde'>sì</span>: lo sposto avanti, <b>A[" + (j + 1) + "] ← A[" + j + "]</b>, poi j ← " + (j - 1) + ".", c, fr([j, "j"]), x);
+          j--;
+        } else {
+          c = ord(0, k); c[j] = "attiva";
+          snap("A[" + j + "] = " + A[j] + " &gt; x = " + x + "? <span class='rosso'>no</span> (" + A[j] + " ≤ " + x + "): mi fermo, x va subito dopo, in posizione " + (j + 1) + ".", c, fr([j, "j"]), x);
+          break;
+        }
+      }
+      A[j + 1] = x;
+      c = ord(0, k + 1); c[j + 1] = "attiva";
+      snap("<b>A[" + (j + 1) + "] ← x = " + x + "</b>. Ora A[0.." + k + "] è ordinato tra sé.", c, fr([j + 1, "x"]));
+    }
+    snap("Fine: k è arrivato a n − 1. Confronti: <b>" + cfr + "</b> (il massimo sarebbe n(n−1)/2 = " + (n * (n - 1) / 2) + ", il minimo n − 1 = " + Math.max(0, n - 1) + ").", ord(0, n));
+    return P;
+  }
+
+  // ---------------------------------------------------------- bubbleSort
+  function passiBubble(A0, migl) {
+    var A = A0.slice(), n = A.length, P = [], cfr = 0, sc = 0, i = 1, scambiato, fatte = 0;
+    function snap(t, cls, f) { P.push({ A: A.slice(), cls: cls || {}, fr: f || {}, t: t, cfr: cfr, sp: sc }); }
+    snap("Array iniziale." + (migl ? " <b>i ← 1</b>." : ""));
+    do {
+      scambiato = false;
+      var lim = migl ? n - i : n - 1;
+      snap("<b>Scansione " + i + "</b>: scambiato ← false. Confronto le coppie di vicini, j da 1 a " + (migl ? "n − i = " : "n − 1 = ") + lim + ".", ord(n - fatte, n));
+      for (var j = 1; j <= lim; j++) {
+        cfr++;
+        var c = ord(n - fatte, n); c[j - 1] = "attiva"; c[j] = "attiva";
+        if (A[j] < A[j - 1]) {
+          var a = A[j], b = A[j - 1];
+          A[j] = b; A[j - 1] = a; sc++; scambiato = true;
+          snap("A[" + j + "] = " + a + " &lt; A[" + (j - 1) + "] = " + b + "? <span class='verde'>sì</span>: <b>scambio</b>, scambiato ← true.", c, fr([j - 1, "j−1", j, "j"]));
+        } else {
+          snap("A[" + j + "] = " + A[j] + " &lt; A[" + (j - 1) + "] = " + A[j - 1] + "? <span class='rosso'>no</span>: sono già in ordine.", c, fr([j - 1, "j−1", j, "j"]));
+        }
+      }
+      fatte = Math.min(n, fatte + 1);
+      if (migl) {
+        i++;
+        var cont = scambiato && i < n;
+        snap("Fine scansione: il " + A[n - fatte] + " è al posto definitivo. <b>i ← " + i + "</b>. Condizione: scambiato = " + scambiato + " and i &lt; n (" + i + " &lt; " + n + ") → " +
+          (cont ? "<span class='verde'>vera</span>, ricomincio." : "<span class='rosso'>falsa</span>, mi fermo."), cont ? ord(n - fatte, n) : ord(0, n));
+      } else {
+        i++;
+        snap("Fine scansione: scambiato = " + scambiato + " → " + (scambiato ? "<span class='verde'>ricomincio</span> da capo." : "<span class='rosso'>nessuno scambio</span>: l'array è ordinato, mi fermo."),
+          scambiato ? ord(n - fatte, n) : ord(0, n));
+      }
+    } while (scambiato && (!migl || i < n));
+    snap("Fine. Scansioni: <b>" + (i - 1) + "</b>, confronti: <b>" + cfr + "</b>, scambi: " + sc + ".", ord(0, n));
+    return P;
+  }
+
+  // ---------------------------------------------------------- stepper generico
+  function stepper(pre, gen, etSp) {
+    var st = { P: [], k: 0 };
+    function init() {
+      var A = leggiArray($(pre + "-in").value, 12);
+      if (!A) {
+        st.P = [];
+        $(pre + "-arr").innerHTML = "";
+        $(pre + "-cont").innerHTML = "";
+        $(pre + "-txt").innerHTML = "Scrivi da 1 a 12 numeri separati da virgole o spazi.";
+        $(pre + "-passo").disabled = true;
+        return;
+      }
+      st.P = gen(A); st.k = 0; show();
+    }
+    function show() {
+      var p = st.P[st.k];
+      disegna($(pre + "-arr"), p.A, p);
+      $(pre + "-cont").innerHTML = "<span>confronti: <b>" + p.cfr + "</b></span><span>" + etSp + ": <b>" + p.sp + "</b></span>";
+      var mano = document.getElementById(pre + "-mano");
+      if (mano && pre === "ins") {
+        mano.style.display = p.mano === undefined ? "none" : "inline-block";
+        mano.innerHTML = p.mano === undefined ? "" : "x in mano = " + p.mano;
+      }
+      $(pre + "-txt").innerHTML = "<span class='piccolo'>passo " + (st.k + 1) + " di " + st.P.length + "</span><br>" + p.t;
+      $(pre + "-passo").disabled = st.k >= st.P.length - 1;
+    }
+    $(pre + "-passo").onclick = function () { if (st.k < st.P.length - 1) { st.k++; show(); } };
+    $(pre + "-fine").onclick = function () { if (st.P.length) { st.k = st.P.length - 1; show(); } };
+    $(pre + "-reset").onclick = init;
+    $(pre + "-in").onchange = init;
+    return init;
+  }
+  stepper("sel", passiSelection, "scambi")();
+  stepper("ins", passiInsertion, "spostamenti")();
+  var bubInit = stepper("bub", function (A) { return passiBubble(A, $("bub-ver").value !== "base"); }, "scambi");
+  $("bub-ver").onchange = bubInit;
+  bubInit();
+
+  // ---------------------------------------------------------- algoritmi "muti" per stabilità e gara
+  function selection(A, minore, cont) {
+    var n = A.length;
+    for (var k = 0; k <= n - 2; k++) {
+      var m = k;
+      for (var j = k + 1; j <= n - 1; j++) { cont.cfr++; if (minore(A[j], A[m])) m = j; }
+      if (m !== k) { var t = A[m]; A[m] = A[k]; A[k] = t; cont.mov++; }
+    }
+  }
+  function insertion(A, minore, cont) {
+    for (var k = 1; k < A.length; k++) {
+      var x = A[k], j = k - 1;
+      while (j >= 0) {
+        cont.cfr++;
+        if (minore(x, A[j])) { A[j + 1] = A[j]; cont.mov++; j--; } else break;   // A[j] > x
+      }
+      A[j + 1] = x;
+    }
+  }
+  function bubble(A, minore, cont) {
+    var n = A.length, i = 1, scambiato;
+    do {
+      scambiato = false;
+      for (var j = 1; j <= n - i; j++) {
+        cont.cfr++;
+        if (minore(A[j], A[j - 1])) { var t = A[j]; A[j] = A[j - 1]; A[j - 1] = t; scambiato = true; cont.mov++; }
+      }
+      i++;
+    } while (scambiato && i < n);
+  }
+  var ALG = { sel: selection, ins: insertion, bub: bubble };
+  var NOMI = { sel: "selectionSort", ins: "insertionSort", bub: "bubbleSort" };
+
+  // ---------------------------------------------------------- stabilità
+  var PRESET = {
+    lav: [[10, "cane"], [15, "gatto"], [16, "lepre"], [10, "formica"], [15, "cagnolino"]],
+    tuoi: [[10, "gatto"], [12, "cane"], [10, "lepre"]],
+    dieci: [[10, "orso"], [10, "volpe"], [5, "riccio"]],
+    tre: [[3, "ape"], [3, "bue"], [3, "cane"], [1, "dodo"]]
+  };
+  function recHTML(r, inv) {
+    return "<span class='rec" + (inv ? " invertito" : "") + "'><b>" + r.k + "</b>" + r.nome + (r.ord ? "<sub>" + r.ord + "</sub>" : "") + "</span>";
+  }
+  function stab() {
+    var base = PRESET[$("stab-in").value] || PRESET.lav, alg = $("stab-alg").value;
+    if (!ALG[alg]) alg = "sel";
+    var conta = {}, tot = {};
+    base.forEach(function (r) { tot[r[0]] = (tot[r[0]] || 0) + 1; });
+    var R = base.map(function (r) { conta[r[0]] = (conta[r[0]] || 0) + 1; return { k: r[0], nome: r[1], ord: tot[r[0]] > 1 ? conta[r[0]] : 0 }; });
+    var S = R.slice();
+    ALG[alg](S, function (a, b) { return a.k < b.k; }, { cfr: 0, mov: 0 });
+    var ultimo = {}, rotti = {};
+    S.forEach(function (r) {
+      if (r.ord && ultimo[r.k] !== undefined && r.ord < ultimo[r.k]) rotti[r.k] = true;
+      if (r.ord) ultimo[r.k] = Math.max(ultimo[r.k] || 0, r.ord);
+    });
+    $("stab-prima").innerHTML = R.map(function (r) { return recHTML(r, false); }).join("");
+    $("stab-dopo").innerHTML = S.map(function (r) { return recHTML(r, rotti[r.k]); }).join("");
+    var chiavi = Object.keys(rotti);
+    var t;
+    if (chiavi.length) {
+      t = "<span class='rosso'><b>Ordine relativo NON rispettato</b></span> per la chiave " + chiavi.join(", ") + ": i record in rosso si sono scavalcati. ";
+    } else {
+      t = "<span class='verde'><b>Ordine relativo rispettato</b></span>: ogni gruppo di chiavi uguali è rimasto nell'ordine di partenza. ";
+    }
+    if (alg === "sel") {
+      t += chiavi.length ? "Colpa dello scambio a lunga distanza di selectionSort: porta il minimo in posizione k e spedisce lontano l'elemento che stava lì."
+        : "Attenzione però: selectionSort <b>non è stabile</b>, qui è andata bene per caso. Prova «10, 10, 5» o «3, 3, 3, 1».";
+    } else {
+      t += NOMI[alg] + " è <b>stabile</b>: confronta con un «&lt;» stretto, quindi non scavalca mai un elemento con la stessa chiave.";
+    }
+    $("stab-txt").innerHTML = t;
+  }
+  $("stab-in").onchange = stab;
+  $("stab-alg").onchange = stab;
+  stab();
+
+  // ---------------------------------------------------------- gara
+  var mescolato = null;
+  function creaArray(n, tipo) {
+    var A = [], i;
+    if (tipo === "ordinato") { for (i = 1; i <= n; i++) A.push(i); }
+    else if (tipo === "contrario") { for (i = n; i >= 1; i--) A.push(i); }
+    else if (tipo === "piccolo") { for (i = 2; i <= n; i++) A.push(i); A.push(1); }
+    else {
+      if (!mescolato || mescolato.length !== n) {
+        mescolato = [];
+        for (i = 1; i <= n; i++) mescolato.push(i);
+        for (i = n - 1; i > 0; i--) { var r = Math.floor(Math.random() * (i + 1)), t = mescolato[i]; mescolato[i] = mescolato[r]; mescolato[r] = t; }
+      }
+      A = mescolato.slice();
+    }
+    return A;
+  }
+  function gara() {
+    var n = parseInt($("gara-n").value, 10), tipo = $("gara-tipo").value, out = $("gara-out");
+    if (!(n >= 2 && n <= 2000)) { out.innerHTML = "<div class='narrazione'>Scegli n tra 2 e 2000.</div>"; return; }
+    var A = creaArray(n, tipo), fmt = function (v) { return v.toLocaleString("it-IT"); };
+    var righe = ["sel", "ins", "bub"].map(function (a) {
+      var B = A.slice(), c = { cfr: 0, mov: 0 };
+      ALG[a](B, function (x, y) { return x < y; }, c);
+      return "<tr><td>" + NOMI[a] + (a === "bub" ? " (2.4)" : "") + "</td><td><b>" + fmt(c.cfr) + "</b></td><td>" + fmt(c.mov) + (a === "ins" ? " spostamenti" : " scambi") + "</td></tr>";
+    });
+    var anteprima = n <= 12 ? " <span class='piccolo'>(" + A.join(" ") + ")</span>" : "";
+    out.innerHTML = "<div class='tabella-wrap'><table><tr><th>algoritmo</th><th>confronti</th><th>movimenti</th></tr>" + righe.join("") + "</table></div>" +
+      "<div class='narrazione'>Riferimenti per n = " + fmt(n) + ": n − 1 = <b>" + fmt(n - 1) + "</b>, n(n−1)/2 = <b>" + fmt(n * (n - 1) / 2) + "</b>." + anteprima + "</div>";
+  }
+  $("gara-n").oninput = gara;
+  $("gara-tipo").onchange = gara;
+  $("gara-mescola").onclick = function () { mescolato = null; gara(); };
+  gara();
+})();
+</script>
+</body>
+</html>

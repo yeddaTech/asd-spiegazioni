@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Array e riferimenti</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 2 · lezioni 5–6 · slide 1</span>
+</div>
+
+<h1>Array e riferimenti</h1>
+<p class="sottotitolo">Cos'è un array, perché leggere una cella costa sempre uguale, e perché scrivendo in B a volte cambia anche A.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#cosa">Cos'è un array</a></li>
+    <li><a href="#accesso">Perché l'accesso costa Θ(1)</a></li>
+    <li><a href="#riferimenti">Le variabili array sono frecce</a></li>
+    <li><a href="#parametri">Passare un array a una procedura</a></li>
+    <li><a href="#go">E in Go?</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="cosa"><span class="num">1</span>Cos'è un array</h2>
+
+<p>Immagina una fila di <strong>scatole tutte uguali</strong>, attaccate una all'altra su uno scaffale, con un numero scritto sotto: 0, 1, 2, … Ogni scatola contiene un oggetto dello stesso tipo (tutti numeri, oppure tutte parole). Per prendere un oggetto non serve cercarlo: dici il numero della scatola.</p>
+
+<div class="box def">
+  <span class="etichetta">Array</span>
+  <p>Collezione di elementi <strong>dello stesso tipo</strong>, ciascuno dei quali è accessibile in base alla <strong>posizione</strong> (l'<strong>indice</strong>).</p>
+  <p><strong>Caratteristiche tipiche:</strong></p>
+  <ul>
+    <li>è memorizzato in una <strong>porzione contigua di memoria</strong> (le scatole sono attaccate);</li>
+    <li>si accede agli elementi tramite <strong>indice</strong>;</li>
+    <li>il tempo di accesso è <strong>indipendente dalla posizione</strong> del dato.</li>
+  </ul>
+  <p><strong>Limitazione:</strong> è una struttura <strong>statica</strong>: non si possono aggiungere posizioni.</p>
+</div>
+
+<div class="array" id="arr-es"></div>
+<p class="piccolo">Un array di n = 6 elementi: gli indici vanno da 0 a n − 1 = 5. Qui A[2] = 2 e A[5] = 6.</p>
+
+<p>Nel corso si scrive <code>A[0..n−1]</code> per dire «array A con indici da 0 a n−1». Come hai annotato tu: <strong>gli indici partono da 0</strong> e <strong>sono interi</strong>. Il range si scrive solo quando serve. Per esempio nella <code>ricercaRic</code> del pacco 3 il parametro è solo <code>array A</code>, perché lì il range non conta.</p>
+
+<p>Perché «statica»? Lo scaffale è stato costruito con quel numero di scatole, e subito dopo l'ultima c'è altra roba. Per avere una scatola in più devi costruire uno scaffale nuovo e spostarci tutto.</p>
+
+<!-- ============================================================ 2 -->
+<h2 id="accesso"><span class="num">2</span>Perché l'accesso costa Θ(1)</h2>
+
+<p>Ricordi la differenza tra la macchina di Turing e la RAM (<a href="01-quanto-costa.html#modelli">pacco 1</a>)? Sul nastro di Turing per arrivare alla cella 1000 devi passare da tutte quelle prima. La RAM invece legge <strong>qualunque cella</strong> dicendo il suo numero, in tempo costante.</p>
+
+<p>Un array sfrutta proprio questo. Le scatole sono <strong>contigue</strong> e <strong>tutte della stessa grandezza</strong>, quindi la posizione di A[i] si calcola con un solo conto:</p>
+
+<div class="formula grande">indirizzo di A[i] = inizio + i · (grandezza di un elemento)</div>
+
+<p>Esempio: l'array inizia all'indirizzo 1000 e ogni elemento occupa 8 byte (un <code>int</code> a 64 bit). Allora A[3] sta a 1000 + 3·8 = <strong>1024</strong>, e A[500] sta a 1000 + 500·8 = <strong>5000</strong>. Una moltiplicazione e una somma, sia per l'indice 3 sia per il 500. Quindi accedere ad A[i] costa <strong>Θ(1)</strong>, qualunque sia i.</p>
+
+<div class="box idea">
+  <span class="etichetta">Perché tutti dello stesso tipo?</span>
+  <p>Se le scatole avessero grandezze diverse, per sapere dove inizia la scatola 500 dovresti sommare le grandezze delle 500 precedenti: non sarebbe più Θ(1). Tipo unico vuol dire grandezza unica, e quindi la formula funziona.</p>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="riferimenti"><span class="num">3</span>Le variabili array sono frecce</h2>
+
+<p>Questa è la parte che sorprende. Quando scrivi <code>A</code>, la variabile <strong>non contiene</strong> le scatole: contiene una <strong>freccia</strong> verso lo scaffale. Il prof lo dice così:</p>
+
+<div class="box def">
+  <span class="etichetta">Variabili array</span>
+  <p>Le variabili array sono <strong>riferimenti</strong> (<strong>puntatori</strong>) all'array.</p>
+</div>
+
+<p>Allora cosa fa <code>B ← A</code>? Copia la <strong>freccia</strong>, non lo scaffale. Dopo, A e B indicano <strong>lo stesso</strong> scaffale. Se scrivi qualcosa usando B, lo trovi anche guardando da A, perché sono lo stesso posto con due nomi.</p>
+
+<div class="widget" id="w-alias">
+  <h4>PROVA TU · l'esempio della lavagna</h4>
+  <pre class="pseudo" id="alias-cod" style="margin:6px 0"></pre>
+  <div class="controlli">
+    <button class="primario" id="alias-passo">Passo →</button>
+    <button id="alias-reset">Ricomincia</button>
+  </div>
+  <svg id="alias-svg" viewBox="0 0 520 150" width="100%" role="img" aria-label="Variabili A e B che puntano a un array"></svg>
+  <div class="narrazione" id="alias-txt"></div>
+</div>
+
+<p>Sulla lavagna: <code>B ← A</code>, poi <code>B[1] ← 0</code>, poi <code>stampa(A[1])</code>. Stampa <strong>0</strong>, non 7! Il 7 è stato cancellato «da B», ma la scatola è la stessa.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Due nomi, una cosa sola</span>
+  <p>Questo fenomeno si chiama <em>aliasing</em>: A e B sono due nomi per lo stesso oggetto. Non è un errore, ma bisogna saperlo. Se vuoi davvero una <strong>copia</strong> indipendente, devi creare un array nuovo e copiare gli elementi uno per uno, e questo costa Θ(n).</p>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="parametri"><span class="num">4</span>Passare un array a una procedura</h2>
+
+<p>Lo stesso succede quando un array viene passato a una procedura. Il parametro è una variabile nuova, ma riceve <strong>la freccia</strong>, non una copia delle scatole.</p>
+
+<p class="titolo-codice">Dalla lavagna</p>
+<pre class="pseudo"><b>Procedura</b> azzera (array X[0..n−1])
+  <b>for</b> i ← 0 <b>to</b> n − 1 <b>do</b>
+    X[i] ← 0
+
+<b>Algoritmo</b> …
+  ⋮
+  azzera(A)        <span class="com">// X riceve la freccia di A</span>
+  ⋮                <span class="com">// qui A contiene tutti 0</span></pre>
+
+<p>Durante la chiamata, <code>X</code> e <code>A</code> indicano lo stesso array. La procedura scrive zeri «tramite X», e quando torna l'algoritmo trova <strong>A tutto azzerato</strong>. È proprio quello che si vuole: gli algoritmi di ordinamento che vedrai più avanti ordinano l'array che gli passi, non una sua copia.</p>
+
+<p>La slide <em>1-RicercaArray</em> mette in chiaro le regole del corso:</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>tipi semplici (interi, indici, …)</th><th>tipi strutturati (array, stringhe, oggetti, struct)</th></tr>
+  <tr><td>come si passano</td><td><strong>per valore</strong></td><td><strong>per riferimento</strong></td></tr>
+  <tr><td>cosa riceve il parametro</td><td>una <strong>copia</strong> del valore</td><td>una copia della <strong>freccia</strong></td></tr>
+  <tr><td>se la procedura lo modifica</td><td class="verde">l'argomento non cambia</td><td class="rosso">l'argomento cambia</td></tr>
+  <tr><td>tempo per passarlo</td><td>Θ(1)</td><td>Θ(1), qualunque sia la lunghezza</td></tr>
+  <tr><td>spazio nel record di attivazione</td><td>Θ(1)</td><td>Θ(1): solo il puntatore</td></tr>
+</table></div>
+
+<div class="widget" id="w-par">
+  <h4>PROVA TU · per valore o per riferimento?</h4>
+  <div class="controlli">
+    <select id="par-scen" style="width:auto">
+      <option value="val">intero: incrementa(a)</option>
+      <option value="rif">array: azzera(A)</option>
+    </select>
+    <button class="primario" id="par-passo">Passo →</button>
+    <button id="par-reset">Ricomincia</button>
+  </div>
+  <pre class="pseudo" id="par-cod" style="margin:6px 0"></pre>
+  <div class="narrazione" id="par-txt"></div>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Perché conta per i costi</span>
+  <p>Grazie al passaggio per riferimento, chiamare una funzione su un array lungo un milione costa quanto chiamarla su un array lungo 3: si copia solo la freccia. Per questo la ricerca binaria ricorsiva usa spazio Θ(log n) e non di più (<a href="03-ricerca.html#costo-bin">pacco 3</a>): ogni record di attivazione contiene solo un puntatore ad A.</p>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="go"><span class="num">5</span>E in Go?</h2>
+
+<p>Le slide avvertono: nei linguaggi veri alcune cose possono essere diverse. In Go c'è proprio una differenza importante.</p>
+
+<ul>
+  <li>Un <strong>array</strong> Go (<code>[6]int</code>, lunghezza scritta nel tipo) è passato <strong>per valore</strong>: la funzione riceve una <strong>copia</strong> di tutte le scatole. Costa Θ(n) in tempo e in spazio, e le modifiche <strong>non</strong> arrivano all'originale.</li>
+  <li>Uno <strong>slice</strong> (<code>[]int</code>, senza lunghezza) contiene un riferimento a un array sottostante, quindi si comporta come il passaggio per riferimento del corso: costa Θ(1) e le modifiche agli elementi si vedono fuori.</li>
+</ul>
+
+<pre class="go">func azzeraArray(x [6]int) { for i := range x { x[i] = 0 } }
+func azzeraSlice(x []int)  { for i := range x { x[i] = 0 } }
+
+func main() {
+    a := [6]int{5, 7, 2, 4, 7, 6}
+    azzeraArray(a)
+    fmt.Println(a)   // [5 7 2 4 7 6]  ← invariato: ha azzerato una copia
+
+    s := []int{5, 7, 2, 4, 7, 6}
+    azzeraSlice(s)
+    fmt.Println(s)   // [0 0 0 0 0 0]  ← cambiato: stessa memoria
+}</pre>
+
+<p>Quindi, quando traduci in Go lo pseudocodice del corso, usa gli <strong>slice</strong>: si comportano come gli array delle slide.</p>
+<p class="piccolo">Un dettaglio per quando userai <code>append</code>: se lo slice è pieno, Go crea un array nuovo più grande e ci copia tutto. Da quel momento lo slice dentro la funzione e quello fuori possono indicare memorie diverse. È il modo in cui Go aggira il limite «struttura statica».</p>
+
+<!-- ============================================================ 6 -->
+<h2 id="riassunto"><span class="num">6</span>Riassunto ed esame</h2>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li>Array: elementi dello stesso tipo, in memoria contigua, accesso tramite indice in Θ(1), struttura statica.</li>
+    <li>Indirizzo di A[i] = inizio + i · grandezza: per questo l'accesso costa Θ(1).</li>
+    <li>Una variabile array è un <strong>riferimento</strong>: <code>B ← A</code> copia la freccia, non gli elementi.</li>
+    <li>Nel corso i tipi semplici si passano per valore, i tipi strutturati per riferimento, in tempo Θ(1).</li>
+    <li>In Go gli array si passano per valore (copia, Θ(n)), gli slice come riferimento.</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>Queste regole servono soprattutto per <strong>fare i conti giusti</strong>. Quando calcoli tempo e spazio di un algoritmo ricorsivo su un array (ricerca binaria, mergesort, quicksort…), ogni chiamata riceve solo un puntatore: il passaggio costa Θ(1) e il record di attivazione occupa Θ(1) per l'array. All'orale ti possono chiedere perché.</p>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="esercizi"><span class="num">7</span>Esercizi</h2>
+
+<details class="esercizio">
+  <summary>1. A ← [1, 2, 3]; B ← A; B[0] ← 9; C ← B; C[2] ← 7. Cosa contiene A?</summary>
+  <div class="soluzione">
+    <p>A, B e C sono tre frecce verso <strong>lo stesso</strong> array. Le due modifiche cambiano quell'array: A = <strong>[9, 2, 7]</strong>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. Procedura raddoppia(intero k): k ← 2·k. Con a ← 5; raddoppia(a); stampa(a), cosa si stampa?</summary>
+  <div class="soluzione">
+    <p><strong>5</strong>. Un intero è un tipo semplice e si passa per valore: k è una copia di a. Raddoppiare k non tocca a.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. Un array inizia all'indirizzo 2000 e ogni elemento occupa 4 byte. Dove sta A[10]?</summary>
+  <div class="soluzione">
+    <p>2000 + 10 · 4 = <strong>2040</strong>. Il calcolo è lo stesso per ogni indice, quindi l'accesso costa Θ(1).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. In Go: <code>func f(a [3]int) { a[0] = 100 }</code>. Dopo <code>v := [3]int{1,2,3}; f(v)</code>, quanto vale v[0]? E con <code>[]int</code>?</summary>
+  <div class="soluzione">
+    <p>Con <code>[3]int</code> l'array è copiato, quindi <code>v[0]</code> resta <strong>1</strong>. Con <code>[]int</code> la funzione modifica la stessa memoria, quindi diventa <strong>100</strong>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. Se nella ricerca binaria ricorsiva l'array fosse passato per valore (copiato a ogni chiamata), quanto costerebbe?</summary>
+  <div class="soluzione">
+    <p>Le chiamate sono al massimo 2 + log<sub>2</sub> n, e ognuna copierebbe <strong>tutto</strong> l'array: si passa sempre A intero, sono sx e dx a delimitare la porzione. Ogni chiamata costerebbe Θ(n), quindi il totale sarebbe Θ(n log n), peggio della ricerca sequenziale Θ(n)! Anche lo spazio diventerebbe Θ(n log n), perché ogni record conterrebbe una copia di A.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="01-quanto-costa.html">← Pacco 1 · Quanto costa</a>
+  <a href="03-ricerca.html">Pacco 3 · Ricerca →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function disegna(el, valori) {
+    el.innerHTML = "";
+    valori.forEach(function (v, i) {
+      var c = document.createElement("div"); c.className = "cella";
+      c.innerHTML = "<div class='f'></div><div class='v'>" + v + "</div><div class='i'>" + i + "</div>";
+      el.appendChild(c);
+    });
+  }
+  disegna(document.getElementById("arr-es"), [5, 7, 2, 4, 7, 6]);
+
+  // ---------------------------------------------------------- aliasing B <- A
+  var COD = ["B ← A", "B[1] ← 0", "stampa(A[1])"];
+  var STATI = [
+    { riga: -1, arr: [5, 7, 2, 4, 7, 6], b: false, cambiata: -1,
+      t: "All'inizio esiste solo A, una freccia verso l'array [5, 7, 2, 4, 7, 6]." },
+    { riga: 0, arr: [5, 7, 2, 4, 7, 6], b: true, cambiata: -1,
+      t: "<b>B ← A</b>: si copia la <b>freccia</b>. Ora A e B indicano lo <b>stesso</b> array. Nessuna scatola è stata copiata." },
+    { riga: 1, arr: [5, 0, 2, 4, 7, 6], b: true, cambiata: 1,
+      t: "<b>B[1] ← 0</b>: seguo la freccia di B e scrivo 0 nella scatola 1. È l'unica scatola 1 che esiste!" },
+    { riga: 2, arr: [5, 0, 2, 4, 7, 6], b: true, cambiata: 1, stampa: true,
+      t: "<b>stampa(A[1])</b>: seguo la freccia di A, arrivo nella stessa scatola e stampo <b>0</b>. Non 7!" }
+  ];
+  var ak = 0;
+  function codice(el, righe, att) {
+    el.innerHTML = righe.map(function (r, i) {
+      return i === att ? "<span class='riga-hl'>" + r + "</span>" : r;
+    }).join("\n");
+  }
+  function aliasShow() {
+    var s = STATI[ak], svg = document.getElementById("alias-svg"), x0 = 200, w = 46;
+    codice(document.getElementById("alias-cod"), COD, s.riga);
+    var h = "<defs><marker id='pt' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='7' markerHeight='7' orient='auto-start-reverse'>" +
+      "<path d='M0 0 L10 5 L0 10z' fill='currentColor'/></marker></defs>";
+    s.arr.forEach(function (v, i) {
+      var fill = i === s.cambiata ? "var(--hl)" : "var(--card)";
+      h += "<rect x='" + (x0 + i * w) + "' y='30' width='" + w + "' height='40' fill='" + fill + "' stroke='var(--orange)' stroke-width='2'/>";
+      h += "<text x='" + (x0 + i * w + w / 2) + "' y='56' text-anchor='middle' font-size='17' font-weight='700' fill='var(--fg)'>" + v + "</text>";
+      h += "<text x='" + (x0 + i * w + w / 2) + "' y='88' text-anchor='middle' font-size='13' fill='var(--green)'>" + i + "</text>";
+    });
+    h += "<g style='color:var(--red)'><text x='40' y='45' font-size='22' font-weight='700' fill='var(--red)'>A</text>" +
+      "<path d='M62 38 C 120 20, 150 30, " + (x0 - 4) + " 42' fill='none' stroke='var(--red)' stroke-width='2.5' marker-end='url(#pt)'/></g>";
+    if (s.b) {
+      h += "<g style='color:var(--accent)'><text x='40' y='125' font-size='22' font-weight='700' fill='var(--accent)'>B</text>" +
+        "<path d='M62 118 C 140 120, 160 90, " + (x0 + 4) + " 66' fill='none' stroke='var(--accent)' stroke-width='2.5' marker-end='url(#pt)'/></g>";
+    }
+    if (s.stampa) h += "<text x='" + (x0 + 6 * w + 16) + "' y='56' font-size='16' fill='var(--fg)'>stampa: <tspan font-weight='700'>0</tspan></text>";
+    svg.innerHTML = h;
+    document.getElementById("alias-txt").innerHTML = s.t;
+    document.getElementById("alias-passo").disabled = ak >= STATI.length - 1;
+  }
+  document.getElementById("alias-passo").onclick = function () { if (ak < STATI.length - 1) { ak++; aliasShow(); } };
+  document.getElementById("alias-reset").onclick = function () { ak = 0; aliasShow(); };
+  aliasShow();
+
+  // ---------------------------------------------------------- per valore / per riferimento
+  var SCEN = {
+    val: {
+      cod: ["Procedura incrementa (intero k)", "  k ← k + 1", "", "a ← 5", "incrementa(a)", "stampa(a)"],
+      passi: [
+        { r: 3, t: "<b>a ← 5</b>. In memoria: a = 5." },
+        { r: 4, t: "<b>incrementa(a)</b>: nasce il record di attivazione con il parametro <b>k</b>. Un intero è un tipo semplice, quindi passa <b>per valore</b>: k riceve una <b>copia</b> del 5. Ora a = 5, k = 5, due variabili distinte." },
+        { r: 1, t: "<b>k ← k + 1</b>: k diventa 6. La variabile a non è stata toccata: a = 5." },
+        { r: 5, t: "La procedura finisce e il suo record (con k) viene buttato via. <b>stampa(a)</b> stampa <b>5</b>." }
+      ]
+    },
+    rif: {
+      cod: ["Procedura azzera (array X[0..n−1])", "  for i ← 0 to n − 1 do", "    X[i] ← 0", "", "A ← [5, 7, 2, 4, 7, 6]", "azzera(A)", "stampa(A)"],
+      passi: [
+        { r: 4, t: "<b>A</b> è una freccia verso l'array [5, 7, 2, 4, 7, 6]." },
+        { r: 5, t: "<b>azzera(A)</b>: nasce il record con il parametro <b>X</b>. Un array è un tipo strutturato, quindi passa <b>per riferimento</b>: X riceve una copia della <b>freccia</b>. X e A indicano lo stesso array. Costo Θ(1), qualunque sia n." },
+        { r: 2, t: "Il ciclo scrive 0 in X[0], X[1], …, X[5], seguendo la freccia X. Sono le scatole di A." },
+        { r: 6, t: "La procedura finisce e il record (con la freccia X) sparisce, ma le scatole sono rimaste azzerate. <b>stampa(A)</b> stampa <b>[0, 0, 0, 0, 0, 0]</b>." }
+      ]
+    }
+  };
+  var pk = 0;
+  function parShow() {
+    var sc = SCEN[document.getElementById("par-scen").value], p = sc.passi[pk];
+    codice(document.getElementById("par-cod"), sc.cod, p.r);
+    document.getElementById("par-txt").innerHTML = "<span class='piccolo'>passo " + (pk + 1) + " di " + sc.passi.length + "</span><br>" + p.t;
+    document.getElementById("par-passo").disabled = pk >= sc.passi.length - 1;
+  }
+  document.getElementById("par-passo").onclick = function () {
+    var sc = SCEN[document.getElementById("par-scen").value];
+    if (pk < sc.passi.length - 1) { pk++; parShow(); }
+  };
+  document.getElementById("par-reset").onclick = function () { pk = 0; parShow(); };
+  document.getElementById("par-scen").onchange = function () { pk = 0; parShow(); };
+  parShow();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1539 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Primi passi</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 0 · lezioni 1–4</span>
+</div>
+
+<h1>Primi passi: algoritmi, induzione, crescita</h1>
+<p class="sottotitolo">Le prime quattro lezioni. Cos'è un algoritmo, come si dimostra che è corretto (con l'induzione, finalmente spiegata con calma), come si conta quanto costa e come si confrontano le crescite. Moltiplicazioni e potenze fanno da filo conduttore.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#algoritmo">Algoritmi, programmi, pseudocodice</a></li>
+    <li><a href="#problemi">Problemi, istanze, e un trucco di Gauss</a></li>
+    <li><a href="#analisi">Sintesi e analisi</a></li>
+    <li><a href="#colonna">Quanto costa moltiplicare in colonna?</a></li>
+    <li><a href="#somme">Moltiplicare con le somme iterate</a></li>
+    <li><a href="#induzione">L'induzione, con calma</a></li>
+    <li><a href="#russa">La moltiplicazione alla russa</a></li>
+    <li><a href="#confronto">Lineare contro logaritmico</a></li>
+    <li><a href="#potenza">La potenza: iterata e ricorsiva</a></li>
+    <li><a href="#asintotiche">Le notazioni asintotiche</a></li>
+    <li><a href="#potenza-russa">La potenza alla russa</a></li>
+    <li><a href="#cifre">Quante cifre ha un numero?</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<div class="box idea">
+  <span class="etichetta">Le prime quattro lezioni in sei domande</span>
+  <p>Le lezioni dal 23 al 30 settembre 2026 sembrano un miscuglio di moltiplicazioni, potenze e simboli strani. In realtà rispondono a sei domande, che poi tornano per tutto il corso.</p>
+  <ol>
+    <li><a href="#algoritmo">Cos'è un algoritmo?</a> Un insieme ordinato e finito di passi eseguibili e non ambigui, che definiscono un procedimento che termina.</li>
+    <li><a href="#analisi">Cosa vuol dire analizzarlo?</a> Dimostrare che è corretto e misurare quante risorse usa, possibilmente prima di scriverlo.</li>
+    <li><a href="#induzione">Come si dimostra che un ciclo è corretto?</a> Con un invariante, una proprietà che resta vera a ogni giro e che si dimostra per induzione.</li>
+    <li><a href="#russa">Si può fare meglio?</a> Spesso sì. Dimezzando invece di togliere 1, la moltiplicazione passa da 3b + 3 passi a circa 5 log<sub>2</sub> b.</li>
+    <li><a href="#asintotiche">Come si confrontano due crescite?</a> Con O, Ω e Θ: conta come cresce il costo, non le costanti.</li>
+    <li><a href="#cifre">Quante cifre ha un numero?</a> ⌊log<sub>b</sub> n⌋ + 1 in base b &gt; 1, cioè Θ(log n). In base 1, ben n.</li>
+  </ol>
+</div>
+
+<!-- ============================================================ 1 -->
+<h2 id="algoritmo"><span class="num">1</span>Algoritmi, programmi, pseudocodice</h2>
+
+<p>Una ricetta di cucina è un algoritmo. Ha degli ingredienti (l'input), una sequenza di passi da seguire in ordine e un piatto finito (l'output). Se la ricetta è scritta bene, chiunque la segua ottiene lo stesso piatto.</p>
+<p>Il prof parte da qui. Molto spesso dobbiamo risolvere problemi. Se un problema si ripresenta e abbiamo già una strategia, la riapplichiamo. Se non l'abbiamo mai affrontato, forse qualcuno l'ha già fatto. Per lo stesso problema ci possono essere strategie diverse, ed è meglio trovarne una «buona». Alcuni problemi non si possono proprio risolvere, altri sono difficilissimi. L'<strong>algoritmica</strong> è la parte dell'informatica che studia tutto questo: come progettare gli algoritmi, le strutture dati che usano, la loro efficienza, i limiti intrinseci dei problemi.</p>
+
+<div class="box def">
+  <span class="etichetta">Algoritmo (lezione 2)</span>
+  <p>Insieme <strong>ordinato e finito</strong> di <strong>passi eseguibili e non ambigui</strong> che definiscono un <strong>procedimento che termina</strong>.</p>
+</div>
+
+<p>Ogni parola conta:</p>
+<ul>
+  <li><strong>ordinato</strong>: si sa qual è il primo passo e, dopo ogni passo, qual è il prossimo;</li>
+  <li><strong>finito</strong>: la descrizione è lunga un numero finito di passi;</li>
+  <li><strong>eseguibili</strong>: ogni passo si può fare davvero («dividi per zero» non lo è);</li>
+  <li><strong>non ambigui</strong>: chiunque lo esegua fa la stessa cosa («aggiungi un po' di sale» è ambiguo, «aggiungi 5 grammi di sale» no);</li>
+  <li><strong>che termina</strong>: prima o poi il procedimento finisce.</li>
+</ul>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 1)</span>
+  <p class="citazione">«che termina — non sempre valido»</p>
+  <p>Giusto. Un sistema operativo, un server web o il server del tuo telecomando, quello che trasforma il telefono in mouse, non si fermano mai, eppure sono programmi utilissimi. Ma non risolvono un problema dando una risposta: rispondono a richieste all'infinito. In questo corso un algoritmo risolve un problema e restituisce la soluzione, quindi deve terminare. Ogni volta che studieremo un algoritmo, una delle domande sarà proprio: <em>termina sempre?</em></p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Programma (lezione 2)</span>
+  <p>Insieme ordinato e finito di <strong>istruzioni</strong> scritte secondo le regole di <strong>uno specifico linguaggio di programmazione</strong>.</p>
+</div>
+
+<p>La differenza: l'<strong>algoritmo</strong> è generale, è l'idea. Il <strong>programma</strong> dipende dalle tecnologie usate, cioè dal linguaggio e dalla macchina. Lo stesso algoritmo può diventare un programma in Go, in C o in Java.</p>
+
+<h3>Lo pseudocodice</h3>
+<p>Per scrivere un algoritmo senza legarsi a un linguaggio vero si usa lo <strong>pseudocodice</strong>, che il prof chiama «ALGOL-like» perché assomiglia al vecchio linguaggio ALGOL. L'intestazione dice il nome, i parametri (l'istanza del problema, cioè l'input) e il tipo del risultato (l'output):</p>
+<pre class="pseudo"><b>ALGORITMO</b> moltiplicazione(intero a, intero b) → intero
+  <b>RETURN</b> a · b</pre>
+<p><code>x ← 5</code> è l'assegnamento (in C e in Go si scrive <code>x = 5</code>), <code>RETURN</code> restituisce il risultato, <code>// …</code> è un commento.</p>
+
+<!-- ============================================================ 2 -->
+<h2 id="problemi"><span class="num">2</span>Problemi, istanze, e un trucco di Gauss</h2>
+
+<p>Un <strong>problema</strong> ha delle <strong>istanze</strong>, cioè i dati di partenza, e una <strong>questione</strong>, cioè quello che vogliamo ottenere. L'esempio della lezione 1 è il <strong>commesso viaggiatore</strong>:</p>
+<ul>
+  <li><em>istanza</em>: n città e le distanze tra ogni coppia di città;</li>
+  <li><em>questione</em>: trovare il percorso più breve che visiti tutte le città.</li>
+</ul>
+<p>Un modo per risolverlo c'è sempre: provare tutti gli ordini possibili delle città e tenere il più corto. È la <strong>forza bruta</strong>. Ma gli ordini sono n · (n − 1) · (n − 2) · … · 1 = <strong>n!</strong>, e il fattoriale esplode: 5! = 120, 9! = 362 880, 10! = 3 628 800. Per stimarlo c'è la formula di Stirling:</p>
+<div class="formula grande">n! ≈ √(2πn) · (n/e)<sup>n</sup></div>
+<p>Con 20 città i percorsi sono circa 2,4 · 10<sup>18</sup>. Anche provandone un miliardo al secondo servono circa 77 anni.</p>
+<p>È un problema «intrinsecamente difficile»: in teoria la soluzione migliore si può trovare, ma per questioni di tempo non così. Si usano allora <strong>algoritmi approssimati</strong>, che trovano una soluzione buona anche se non per forza la migliore.</p>
+
+<h3>Algoritmi probabilistici: tirare a caso</h3>
+<p>Un'altra idea della lezione: per calcolare l'area sotto una curva complicata (un integrale) si possono «lanciare dei dadi». Si scelgono punti a caso nel rettangolo e si conta quanti cadono sotto la curva. La frazione dei punti sotto, moltiplicata per l'area del rettangolo, approssima l'area cercata. Più punti si lanciano, migliore è la stima.</p>
+<svg viewBox="0 0 320 170" role="img" aria-label="Punti a caso in un rettangolo: quelli sotto la curva contano per l'area" style="display:block;width:100%;max-width:360px;margin:8px auto 14px">
+  <rect x="20" y="10" width="280" height="140" fill="none" stroke="var(--muted)" stroke-width="1.5"/>
+  <path d="M20,95 C60,60 90,60 120,80 S180,120 210,85 S270,30 300,40" fill="none" stroke="var(--accent)" stroke-width="2.5"/>
+  <g fill="var(--green)">
+    <circle cx="40" cy="130" r="3"/><circle cx="70" cy="100" r="3"/><circle cx="95" cy="120" r="3"/><circle cx="130" cy="140" r="3"/>
+    <circle cx="160" cy="125" r="3"/><circle cx="185" cy="135" r="3"/><circle cx="215" cy="110" r="3"/><circle cx="240" cy="95" r="3"/>
+    <circle cx="265" cy="70" r="3"/><circle cx="285" cy="120" r="3"/><circle cx="110" cy="95" r="3"/><circle cx="55" cy="140" r="3"/>
+  </g>
+  <g fill="var(--red)">
+    <circle cx="45" cy="40" r="3"/><circle cx="85" cy="30" r="3"/><circle cx="140" cy="50" r="3"/><circle cx="175" cy="70" r="3"/>
+    <circle cx="205" cy="30" r="3"/><circle cx="250" cy="25" r="3"/><circle cx="120" cy="20" r="3"/>
+  </g>
+  <text x="20" y="166" font-size="11" fill="var(--muted)">verdi: sotto la curva, contano · rossi: sopra</text>
+</svg>
+
+<h3>Un problema facile, se conosci il trucco</h3>
+<p>Alla lavagna il prof ha mostrato una fila di numeri da 1 a 10, mescolati, con un numero mancante. Poi da 1 a 100, poi da 1 a 1000. Trovare il mancante a occhio diventa impossibile. Provaci:</p>
+
+<div class="widget" id="w-gauss">
+  <h4>QUALE NUMERO MANCA?</h4>
+  <div class="controlli">
+    <label>Numeri da 1 a <select id="ga-n" style="width:auto"><option value="10">10</option><option value="100">100</option><option value="1000">1000</option></select></label>
+    <button id="ga-nuovi">Nuovi numeri</button>
+  </div>
+  <div class="numeri" id="ga-numeri"></div>
+  <div class="controlli">
+    <label>Manca il <input type="number" id="ga-tent" min="1" style="width:100px"></label>
+    <button id="ga-prova">Controlla</button>
+    <button class="primario" id="ga-trucco">Usa il trucco di Gauss</button>
+  </div>
+  <div class="narrazione" id="ga-txt"></div>
+</div>
+
+<p>Il trucco è la formula di Gauss: la somma dei numeri da 1 a N è</p>
+<div class="formula grande">1 + 2 + … + N = N(N + 1)/2</div>
+<p>Basta sommare i numeri che ci sono e fare la differenza: quello che manca alla somma completa è proprio il numero mancante. Perché la formula è vera? Scrivi la somma due volte, una al dritto e una al rovescio, e somma in colonna:</p>
+<pre class="binario">  S =   1   +   2   + … + (N−1) +   N
+  S =   N   + (N−1) + … +   2   +   1
+ 2S = (N+1) + (N+1) + … + (N+1) + (N+1)   <span class="com">← N colonne</span></pre>
+<p>Ogni colonna fa N + 1 e le colonne sono N, quindi 2S = N(N + 1). Nella <a href="#induzione">sezione 6</a> la dimostriamo anche per induzione.</p>
+
+<!-- ============================================================ 3 -->
+<h2 id="analisi"><span class="num">3</span>Sintesi e analisi</h2>
+
+<p>Davanti a un problema si fanno due lavori diversi.</p>
+<div class="box def">
+  <span class="etichetta">Sintesi e analisi (lezioni 1–2)</span>
+  <p><strong>Sintesi</strong>, cioè progettazione: dato un problema, progettare un algoritmo che lo risolve.</p>
+  <p><strong>Analisi</strong> di un algoritmo:</p>
+  <ul>
+    <li><strong>correttezza</strong>: dato un algoritmo 𝒜 e un problema 𝒫, dimostrare che 𝒜 risolve 𝒫;</li>
+    <li><strong>efficienza</strong>: valutare la quantità di risorse utilizzate dall'algoritmo. Le risorse sono tempo, spazio (memoria), rete, processori, energia.</li>
+  </ul>
+</div>
+
+<p>«Risolve» si può dire in modo preciso. Un problema è una funzione 𝒫 : D<sub>I</sub> → D<sub>S</sub>, dove D<sub>I</sub> è il dominio delle istanze e D<sub>S</sub> quello delle soluzioni. Per la moltiplicazione D<sub>I</sub> = ℕ × ℕ, D<sub>S</sub> = ℕ e 𝒫(x, y) = x · y. Anche l'algoritmo 𝒜 calcola una funzione f<sub>𝒜</sub> : D<sub>I</sub> → D<sub>S</sub>, e</p>
+<div class="formula grande">𝒜 è corretto &nbsp;⇔&nbsp; per ogni x ∈ D<sub>I</sub>: f<sub>𝒜</sub>(x) = 𝒫(x)</div>
+<p>«Per ogni» è il punto: l'algoritmo deve dare la risposta giusta su <em>tutte</em> le istanze, che di solito sono infinite.</p>
+
+<h3>Come si valuta l'efficienza: a posteriori o a priori</h3>
+<ul>
+  <li><strong>A posteriori</strong>: scrivo il programma, lo faccio girare e misuro (testing). Ha due difetti. Gli ingressi possibili sono infiniti, quindi i test non dicono niente su quelli che non ho provato. E i tempi misurati dipendono dalla macchina e dal linguaggio.</li>
+  <li><strong>A priori</strong>: studio l'algoritmo in fase di progettazione, prima di scrivere il codice. Si ragiona su tante idee ad alto livello e si programmano solo le migliori. Si risparmiano tempo e soldi.</li>
+</ul>
+<p>In questo corso si fa l'analisi a priori, contando le operazioni (le righe) che l'algoritmo esegue.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 2)</span>
+  <p class="citazione">«efficienza: si può fare di meglio??»</p>
+  <p>È <em>la</em> domanda di tutto il corso, e la risposta arriva subito. Nella <a href="#somme">sezione 5</a> moltiplichiamo con le somme iterate: 3b + 3 passi. Nella <a href="#russa">sezione 7</a>, con un'idea furba, scendiamo a circa 5 log<sub>2</sub> b. Con b = un milione: tre milioni di passi contro un centinaio. Ogni volta che vedrai un algoritmo, chiediti come hai scritto tu: si può fare di meglio? E sotto, quando i conti a priori fanno risparmiare tempo e soldi, hai scritto «stonks»: esatto.</p>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="colonna"><span class="num">4</span>Quanto costa moltiplicare in colonna?</h2>
+
+<p>Il primo esperimento di analisi del prof è la moltiplicazione in colonna che si impara alle elementari, con a = 19 e b = 114:</p>
+<pre class="binario">      19 ×
+     114 =
+  -------
+      76         <span class="com">← 19 · 4</span>
+     19-         <span class="com">← 19 · 1, spostato di un posto</span>
+    19--         <span class="com">← 19 · 1, spostato di due posti</span>
+  -------
+    2166</pre>
+<ul>
+  <li><strong>Prodotti di una cifra per una cifra:</strong> ogni cifra di a per ogni cifra di b, cioè #cifre(a) · #cifre(b) = 2 · 3 = 6.</li>
+  <li><strong>Somme:</strong> si sommano #cifre(b) numeri, lunghi circa #cifre(a) + #cifre(b).</li>
+</ul>
+<p>Il costo quindi non dipende da quanto valgono a e b, ma da <strong>quante cifre hanno</strong>. Da qui l'esercizio lasciato dal prof alla fine della lezione 2: dato n &gt; 0, quante cifre ha in base 10? E in base 2? La risposta, dimostrata nella lezione 4 (<a href="#cifre">sezione 12</a>):</p>
+<div class="formula grande">cifre in base 10 = ⌊log<sub>10</sub> n⌋ + 1 &nbsp;&nbsp;&nbsp; cifre in base 2 = ⌊log<sub>2</sub> n⌋ + 1</div>
+<p>Per esempio 114: log<sub>10</sub> 114 ≈ 2,06, quindi ⌊2,06⌋ + 1 = 3 cifre. E 19 = 10011 in binario: log<sub>2</sub> 19 ≈ 4,25, quindi ⌊4,25⌋ + 1 = 5 cifre.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 2)</span>
+  <p class="citazione">«come si ottiene lunghezza di una cifra n &gt; 0: base 10 → log<sub>10</sub>(n), base 2 → log<sub>2</sub>(n)»</p>
+  <p>Quasi! Mancano la parte intera e il +1. Il logaritmo da solo non è nemmeno un intero: log<sub>10</sub> 114 ≈ 2,06, e un numero non ha 2,06 cifre. E con le potenze di 10 sbaglia di uno: log<sub>10</sub> 100 = 2, ma 100 ha 3 cifre. La formula giusta è ⌊log<sub>10</sub> n⌋ + 1.</p>
+  <p>Nello stesso foglio hai contato «6 + 2 = 8 operazioni»: 6 prodotti di cifre più 2 somme, perché per sommare 3 numeri bastano 2 somme. Va bene come idea, ma ricorda che quelle 2 somme sono tra numeri di più cifre, quindi ognuna costa più di un'operazione su una cifra.</p>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="somme"><span class="num">5</span>Moltiplicare con le somme iterate</h2>
+
+<p>Primo algoritmo vero. Moltiplicare vuol dire sommare tante volte: a · b = a + a + … + a, con b addendi. È come contare le mele di b cassette, ognuna con a mele, una cassetta alla volta.</p>
+
+<p class="titolo-codice">Lavagna, lezione 2</p>
+<pre class="pseudo"><b>ALGORITMO</b> moltiplicazione(intero a, intero b) → intero
+1  prod ← 0
+2  <b>WHILE</b> b &gt; 0 <b>DO</b>
+3    prod ← prod + a
+4    b ← b − 1
+5  <b>RETURN</b> prod</pre>
+
+<p>Con a = 7 e b = 3: prod passa da 0 a 7, 14, 21, mentre b scende da 3 a 2, 1, 0, e lì il ciclo si ferma. Nel riquadro puoi seguirlo un giro alla volta, con i numeri che preferisci:</p>
+
+<div class="widget" id="i1">
+  <h4>UN GIRO ALLA VOLTA, CON L'INVARIANTE</h4>
+  <div class="controlli">
+    <select id="i1-alg" style="width:auto">
+      <option value="somme">somme iterate</option>
+      <option value="russa">moltiplicazione alla russa</option>
+      <option value="potit">potenza iterata</option>
+      <option value="potrussa">potenza alla russa</option>
+    </select>
+    <label><span id="i1-lx">a</span> = <input type="number" id="i1-x" value="7" style="width:90px"></label>
+    <label><span id="i1-ly">b</span> = <input type="number" id="i1-y" value="3" style="width:90px"></label>
+  </div>
+  <pre class="pseudo" id="i1-cod"></pre>
+  <div class="controlli">
+    <button class="primario" id="i1-passo">Un giro →</button>
+    <button id="i1-fine">Fino alla fine</button>
+    <button id="i1-reset">Ricomincia</button>
+  </div>
+  <div class="tabella-wrap" id="i1-tab"></div>
+  <div class="contatori" id="i1-cont"></div>
+  <div class="narrazione" id="i1-txt"></div>
+</div>
+
+<h3>Una proprietà che non cambia mai</h3>
+<p>Il prof osserva che a non viene mai modificata, e chiama <strong>b<sub>i</sub></strong> e <strong>prod<sub>i</sub></strong> i valori di b e prod <strong>dopo l'i-esima iterazione</strong> (b<sub>0</sub> e prod<sub>0</sub> sono i valori prima di entrare nel ciclo). Poi scrive:</p>
+<div class="box def">
+  <span class="etichetta">Proprietà (invariante) delle somme iterate</span>
+  <p>Per ogni i: &nbsp;<strong>b<sub>i</sub> = b − i</strong> &nbsp;e&nbsp; <strong>prod<sub>i</sub> = i · a</strong>.</p>
+  <p><em>Quando termina?</em> Quando b<sub>i</sub> = 0, cioè dopo i = b iterazioni. E allora prod<sub>b</sub> = b · a: il risultato giusto.</p>
+</div>
+<p>Nella tabella del riquadro le colonne «b − i» e «i · a» coincidono sempre con b<sub>i</sub> e prod<sub>i</sub>. Ma una tabella controlla solo i numeri che hai provato. Per esserne sicuri per <em>ogni</em> a e b serve l'<strong>induzione</strong>: è il «dimostriamo per induzione» della lavagna. La spieghiamo da zero nella prossima sezione.</p>
+
+<h3>Quanto tempo e quanto spazio</h3>
+<p>Ogni riga eseguita costa 1. Se b = 0 si eseguono le righe 1, 2 e 5: tempo 3. Se b &gt; 0:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>righe</th><th>quante volte</th><th>costo</th></tr>
+  <tr><td>1 e 5</td><td>una volta</td><td>2</td></tr>
+  <tr><td>3 e 4</td><td>b volte, una per giro</td><td>2b</td></tr>
+  <tr><td>2 (il test del WHILE)</td><td>b + 1 volte: l'ultimo test è quello falso</td><td>b + 1</td></tr>
+  <tr><td colspan="2"><strong>totale</strong></td><td><strong>3b + 3</strong></td></tr>
+</table></div>
+<p>T(a, b) = 3b + 3, che vale anche per b = 0: il tempo è <strong>lineare</strong> in b. Lo spazio è <strong>costante</strong>: tre variabili, qualunque sia b. Il problema è che con b = 1 000 000 il ciclo fa un milione di giri.</p>
+
+<!-- ============================================================ 6 -->
+<h2 id="induzione"><span class="num">6</span>L'induzione, con calma</h2>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 2)</span>
+  <p class="citazione">«CHIEDI A CLAUDE INDUZIONE»</p>
+  <p>Eccola. E una buona notizia prima di cominciare: nella stessa pagina dei tuoi appunti la dimostrazione per le somme iterate l'hai scritta giusta. Hai scritto: base b<sub>0</sub> = b, prod<sub>0</sub> = 0; passo i − 1 → i, b<sub>i</sub> = b − (i − 1) − 1 = b − i ✓, prod<sub>i</sub> = a(i − 1) + a = a · i ✓. Quindi i passaggi li sai già fare. Ti manca il <em>perché</em> funzionano, ed è quello che spiega questa sezione.</p>
+</div>
+
+<h3>L'idea: il domino</h3>
+<p>Hai una fila infinita di tessere del domino e vuoi la certezza che cadano tutte. Non puoi controllarle una per una, perché sono infinite. Ti bastano due cose:</p>
+<ol>
+  <li><strong>la base</strong>: la prima tessera cade, perché la spingi tu;</li>
+  <li><strong>il passo</strong>: ogni tessera è abbastanza vicina alla successiva da farla cadere, <em>se</em> cade lei.</li>
+</ol>
+<p>Allora cadono tutte: la prima fa cadere la seconda, che fa cadere la terza, e così via, senza fine. Nessuna tessera resta in piedi, perché per arrivare a qualunque tessera basta seguire la catena dalla prima.</p>
+
+<div class="widget" id="w-domino">
+  <h4>IL DOMINO DELL'INDUZIONE</h4>
+  <div class="controlli">
+    <label>Situazione <select id="do-modo" style="width:auto">
+      <option value="ok">base e passo a posto</option>
+      <option value="nobase">manca la base</option>
+      <option value="buco">il passo si rompe tra 4 e 5</option>
+    </select></label>
+  </div>
+  <div class="controlli">
+    <button class="primario" id="do-base">Base: spingi la prima</button>
+    <button id="do-passo">Passo →</button>
+    <button id="do-tutti">Fino in fondo</button>
+    <button id="do-reset">Rialza tutto</button>
+  </div>
+  <div class="domino" id="do-svg"></div>
+  <div class="narrazione" id="do-txt"></div>
+</div>
+
+<p>In matematica le tessere sono frasi. <strong>P(n)</strong> è una proprietà che dipende da un numero naturale n e che può essere vera o falsa: per esempio «1 + 2 + … + n = n(n + 1)/2». La tessera n cade quando P(n) è vera.</p>
+
+<div class="box def">
+  <span class="etichetta">Principio di induzione</span>
+  <p>Per dimostrare che P(n) è vera <strong>per ogni</strong> n ≥ 0 basta dimostrare:</p>
+  <ul>
+    <li><strong>base</strong>: P(0) è vera (o P(1), se si parte da 1);</li>
+    <li><strong>passo</strong>: per ogni n ≥ 1, <strong>se</strong> P(n − 1) è vera, <strong>allora</strong> P(n) è vera.</li>
+  </ul>
+  <p>Nel passo, «P(n − 1) è vera» si chiama <strong>ipotesi induttiva</strong>: non la dimostri, la <em>supponi</em> e la usi.</p>
+</div>
+
+<h3>Primo esempio: la formula di Gauss</h3>
+<p>P(n): 1 + 2 + … + n = n(n + 1)/2.</p>
+<p><strong>Base</strong>, n = 1: a sinistra c'è solo 1, a destra 1 · 2/2 = 1. Vera ✓.</p>
+<p><strong>Passo.</strong> Supponiamo P(n − 1), cioè 1 + 2 + … + (n − 1) = (n − 1)n/2: è l'ipotesi induttiva. Allora</p>
+<div class="formula">1 + 2 + … + (n − 1) + n = <span class="blu">(n − 1)n/2</span> + n = (n² − n + 2n)/2 = n(n + 1)/2 &nbsp;✓</div>
+<p>Il pezzo in blu è dove si usa l'ipotesi induttiva. Fatto: per il principio di induzione la formula vale per ogni n.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Il dubbio di tutti: «ma così uso quello che devo dimostrare!»</span>
+  <p>No. Nel passo non usi P(n) per dimostrare P(n): usi P(n − 1) per dimostrare P(n). È come controllare che ogni tessera sia abbastanza vicina alla successiva. Quel controllo, da solo, non fa cadere niente: dice solo «<em>se</em> questa cade, cade anche la prossima». A far cadere davvero la prima ci pensa la base. Prova nel riquadro «manca la base»: il passo c'è, ma nessuna tessera cade.</p>
+</div>
+
+<h3>Induzione e cicli: l'invariante</h3>
+<p>Ed ecco perché l'induzione serve negli algoritmi. In un ciclo, la tessera i è una frase sui valori delle variabili <strong>dopo i giri</strong>. La base è la situazione prima del ciclo (i = 0). Il passo è un giro del ciclo: se la frase è vera dopo i − 1 giri, il corpo del ciclo la rende vera dopo i giri. Una frase così si chiama <strong>invariante</strong>, perché resta vera giro dopo giro.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">La ricetta per un ciclo</span>
+  <ol>
+    <li><strong>Dai un nome ai valori:</strong> x<sub>i</sub> è il valore della variabile x dopo l'i-esimo giro (x<sub>0</sub> è quello prima del ciclo).</li>
+    <li><strong>Indovina la formula:</strong> esegui a mano i giri i = 0, 1, 2, 3 e guarda che relazione c'è (il riquadro della sezione 5 fa la tabella per te).</li>
+    <li><strong>Base, i = 0:</strong> metti nella formula i valori assegnati prima del ciclo.</li>
+    <li><strong>Passo, da i − 1 a i:</strong> scrivi i nuovi valori con le assegnazioni del corpo del ciclo, poi usa la formula per i valori vecchi (l'ipotesi induttiva).</li>
+    <li><strong>Uscita:</strong> spiega perché il ciclo termina e metti nella formula l'ultimo valore di i. Deve venire fuori il risultato giusto.</li>
+  </ol>
+</div>
+
+<p>Applichiamola alle somme iterate, una mossa alla volta.</p>
+<ol>
+  <li>Nomi: b<sub>i</sub> e prod<sub>i</sub> (a non cambia mai).</li>
+  <li>Formula, dalla tabella: b<sub>i</sub> = b − i e prod<sub>i</sub> = i · a.</li>
+  <li>Base: prima del ciclo b<sub>0</sub> = b = b − 0 ✓ e prod<sub>0</sub> = 0 = 0 · a ✓ (riga 1).</li>
+  <li>Passo: il giro i esegue la riga 3, quindi prod<sub>i</sub> = prod<sub>i−1</sub> + a = <span class="blu">(i − 1) · a</span> + a = i · a ✓, e la riga 4, quindi b<sub>i</sub> = b<sub>i−1</sub> − 1 = <span class="blu">b − (i − 1)</span> − 1 = b − i ✓. In blu, l'ipotesi induttiva.</li>
+  <li>Uscita: b cala di 1 a ogni giro, quindi prima o poi vale 0 e il ciclo si ferma. Succede quando b − i = 0, cioè dopo i = b giri, e allora prod<sub>b</sub> = b · a ✓.</li>
+</ol>
+
+<h3>Quando il passo salta: l'induzione completa</h3>
+<p>A volte da n non si va a n − 1 ma più in basso. Nella potenza ricorsiva (<a href="#potenza">sezione 9</a>) la chiamata su y usa ⌊y/2⌋: per y = 13 usa 6, non 12. Lì serve l'<strong>induzione completa</strong> (o forte): nel passo si suppone che P(z) sia vera <strong>per tutti</strong> gli z &lt; n, non solo per n − 1. Nel domino è come se ogni tessera potesse essere spinta da una qualunque delle precedenti, non per forza da quella subito prima. Funziona per lo stesso motivo: quando arrivi alla tessera n, tutte quelle prima sono già cadute.</p>
+
+<!-- ============================================================ 7 -->
+<h2 id="russa"><span class="num">7</span>La moltiplicazione alla russa</h2>
+
+<p>Le somme iterate tolgono 1 a b a ogni giro. E se lo <strong>dimezzassimo</strong>? Se raddoppio a e dimezzo b, il prodotto non cambia: (2a) · (b/2) = a · b. Il guaio arriva quando b è dispari, perché b/2 non è intero. Allora tolgo 1 a b, così diventa pari, e la a che ho tolto la metto da parte:</p>
+<div class="formula grande">a · b = (2a) · (b/2) se b è pari, &nbsp;&nbsp; a · b = (2a) · (b − 1)/2 + <span class="rosso">a</span> se b è dispari</div>
+<p>La tabella della lavagna, con 19 · 114: a sinistra a raddoppia, al centro b si dimezza (divisione intera), a destra si mettono da parte le a delle righe con b dispari. Alla fine si sommano: 38 + 304 + 608 + 1216 = 2166 ✓. Il riquadro qui sotto fa la stessa tabella e aggiunge una colonna, quella dell'invariante:</p>
+
+<div class="widget" id="i2">
+  <h4>LA TABELLA DELLA LAVAGNA, CON L'INVARIANTE</h4>
+  <div class="controlli">
+    <select id="i2-alg" style="width:auto">
+      <option value="somme">somme iterate</option>
+      <option value="russa" selected>moltiplicazione alla russa</option>
+      <option value="potit">potenza iterata</option>
+      <option value="potrussa">potenza alla russa</option>
+    </select>
+    <label><span id="i2-lx">a</span> = <input type="number" id="i2-x" value="19" style="width:90px"></label>
+    <label><span id="i2-ly">b</span> = <input type="number" id="i2-y" value="114" style="width:90px"></label>
+  </div>
+  <pre class="pseudo" id="i2-cod"></pre>
+  <div class="controlli">
+    <button class="primario" id="i2-passo">Un giro →</button>
+    <button id="i2-fine">Fino alla fine</button>
+    <button id="i2-reset">Ricomincia</button>
+  </div>
+  <div class="tabella-wrap" id="i2-tab"></div>
+  <div class="contatori" id="i2-cont"></div>
+  <div class="narrazione" id="i2-txt"></div>
+</div>
+
+<h3>Perché è corretto: l'esercizio del prof</h3>
+<p>Alla lavagna il prof ha scritto la proprietà e poi «dim. per induzione (esercizio…)». Facciamolo con la ricetta della sezione 6.</p>
+<div class="box def">
+  <span class="etichetta">Invariante della moltiplicazione alla russa</span>
+  <p>Per ogni i: &nbsp;<strong>a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub> = a · b</strong></p>
+  <p>dove a<sub>i</sub>, b<sub>i</sub>, prod<sub>i</sub> sono i valori dopo l'i-esimo giro, e a, b quelli iniziali.</p>
+</div>
+<p>In parole: la «parte ancora da moltiplicare» a<sub>i</sub> · b<sub>i</sub>, più quello che ho già messo da parte, fa sempre il risultato finale. Il lavoro si sposta dalla prima parte alla seconda, ma il totale non cambia mai.</p>
+<p><strong>Base</strong>, i = 0: a<sub>0</sub> = a, b<sub>0</sub> = b, prod<sub>0</sub> = 0, quindi a · b + 0 = a · b ✓.</p>
+<p><strong>Passo.</strong> Supponiamo a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub> = a · b (ipotesi induttiva). Il giro i raddoppia a e dimezza b. Due casi:</p>
+<ul>
+  <li><strong>b<sub>i−1</sub> pari</strong>: a<sub>i</sub> = 2a<sub>i−1</sub>, b<sub>i</sub> = b<sub>i−1</sub>/2, prod<sub>i</sub> = prod<sub>i−1</sub>. Allora a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub> = 2a<sub>i−1</sub> · b<sub>i−1</sub>/2 + prod<sub>i−1</sub> = <span class="blu">a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub></span> = a · b ✓.</li>
+  <li><strong>b<sub>i−1</sub> dispari</strong>: la riga 4 aggiunge a, quindi prod<sub>i</sub> = prod<sub>i−1</sub> + a<sub>i−1</sub>, e la divisione intera dà b<sub>i</sub> = (b<sub>i−1</sub> − 1)/2. Allora a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub> = 2a<sub>i−1</sub> · (b<sub>i−1</sub> − 1)/2 + prod<sub>i−1</sub> + a<sub>i−1</sub> = a<sub>i−1</sub>b<sub>i−1</sub> − a<sub>i−1</sub> + prod<sub>i−1</sub> + a<sub>i−1</sub> = <span class="blu">a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub></span> = a · b ✓.</li>
+</ul>
+<p><strong>Uscita.</strong> Finché b ≥ 1, la divisione intera dà ⌊b/2⌋ &lt; b: b scende sempre e prima o poi arriva a 0, e il ciclo si ferma. In quel momento l'invariante dice a<sub>i</sub> · 0 + prod<sub>i</sub> = a · b, cioè <strong>prod = a · b</strong> ✓.</p>
+
+<h3>Quanto tempo: un giro per ogni cifra binaria di b</h3>
+<p>Chiamiamo m il numero di giri. Il prof l'ha calcolato con una tabellina: b = 0 → 0 giri, b = 1 → 1, b = 2 e 3 → 2, da 4 a 7 → 3, da 8 a 15 → 4. Ogni dimezzamento toglie a b la sua ultima cifra in binario, quindi i giri sono tanti quante le cifre binarie di b:</p>
+<div class="formula grande">m = ⌊log<sub>2</sub> b⌋ + 1 &nbsp;&nbsp;(b &gt; 0)</div>
+
+<p class="titolo-codice">Lavagna, lezione 2</p>
+<pre class="pseudo"><b>ALGORITMO</b> moltiplicazione(intero a, intero b) → intero
+1  prod ← 0
+2  <b>WHILE</b> b &gt; 0 <b>DO</b>
+3    <b>IF</b> b è dispari <b>THEN</b>
+4      prod ← prod + a
+5    b ← b/2                <span class="com">// divisione intera</span>
+6    a ← a * 2
+7  <b>RETURN</b> prod</pre>
+
+<p>Le righe 1 e 7 si eseguono una volta (2), le righe 3, 5 e 6 una volta per giro (3m), la riga 4 al più una volta per giro (≤ m), la riga 2 m + 1 volte. Totale:</p>
+<div class="formula grande">T(a, b) ≤ 5m + 3 = 5(⌊log<sub>2</sub> b⌋ + 1) + 3 = 5⌊log<sub>2</sub> b⌋ + 8</div>
+<p>È il caso peggiore, quando la riga 4 si esegue a ogni giro. La crescita è <strong>logaritmica</strong> rispetto a b, e lo spazio resta costante.</p>
+
+<!-- ============================================================ 8 -->
+<h2 id="confronto"><span class="num">8</span>Lineare contro logaritmico</h2>
+
+<p>La tabella della lezione 3 mette i due algoritmi uno accanto all'altro (per alla russa, il caso peggiore):</p>
+<div class="tabella-wrap"><table>
+  <tr><th>b</th><th>1</th><th>2</th><th>8</th><th>1000</th><th>1 000 000</th></tr>
+  <tr><td>somme iterate: 3b + 3</td><td>6</td><td>9</td><td>27</td><td>3003</td><td>3 000 003</td></tr>
+  <tr><td>alla russa: 5⌊log<sub>2</sub> b⌋ + 8</td><td>8</td><td>13</td><td>23</td><td>53</td><td><strong>103</strong></td></tr>
+</table></div>
+<p>Per b piccoli le somme iterate fanno qualche passo in meno. Poi alla russa le stacca, e il distacco cresce sempre. Il prof l'ha fatto vedere con due grafici: la retta 3x + 3 contro 5 log<sub>2</sub> x + 8, e poi una retta molto più «pigra», x/3 + 1. Anche quella, prima o poi, supera il logaritmo. Prova con la pendenza che vuoi:</p>
+
+<div class="widget" id="w-retta">
+  <h4>UNA RETTA CONTRO IL LOGARITMO</h4>
+  <div class="controlli">
+    <label>Retta <select id="re-k" style="width:auto">
+      <option value="3,3">3b + 3 (somme iterate)</option>
+      <option value="0.3333333333333333,1">b/3 + 1 (la retta della lavagna)</option>
+      <option value="0.1,1">b/10 + 1</option>
+      <option value="0.01,1">b/100 + 1</option>
+    </select></label>
+  </div>
+  <div class="narrazione" id="re-txt"></div>
+  <div class="legenda" id="re-leg"></div>
+  <div class="grafico" id="re-graf">
+    <div id="re-svg"></div>
+    <div class="tooltip" id="re-tip"></div>
+  </div>
+  <details class="esercizio" style="margin-top:10px">
+    <summary>Tabella: i due costi per alcuni valori di b</summary>
+    <div class="tabella-wrap" id="re-tab"></div>
+  </details>
+</div>
+
+<p>È il succo della lezione: per b piccoli può vincere chiunque, ma <strong>da un certo punto in poi</strong> il logaritmo vince sempre, qualunque sia la pendenza della retta. Quel «da un certo punto in poi» diventerà la definizione delle notazioni asintotiche (<a href="#asintotiche">sezione 10</a>).</p>
+
+<!-- ============================================================ 9 -->
+<h2 id="potenza"><span class="num">9</span>La potenza: iterata e ricorsiva</h2>
+
+<p>Nuovo problema, lezioni 3 e 4: dati due interi x, y ≥ 0, calcolare x<sup>y</sup>.</p>
+
+<h3>Prodotti iterati</h3>
+<p>Il primo metodo copia le somme iterate: x<sup>y</sup> = x · x · … · x, con y fattori.</p>
+<pre class="pseudo"><b>ALGORITMO</b> potenza(intero x, intero y) → intero
+1  power ← 1
+2  <b>WHILE</b> y &gt; 0 <b>DO</b>
+3    power ← power * x
+4    y ← y − 1
+5  <b>RETURN</b> power</pre>
+<p>È <strong>lo stesso schema</strong> delle somme iterate, con 1 al posto di 0 e * al posto di +. Anche l'analisi è la stessa: invariante y<sub>i</sub> = y − i e power<sub>i</sub> = x<sup>i</sup>, tempo T(x, y) = 3y + 3, spazio costante. Puoi verificarlo nel riquadro della <a href="#somme">sezione 5</a> scegliendo «potenza iterata». Per 2<sup>1000</sup> servono mille moltiplicazioni. Si può dimezzare l'esponente, come alla russa?</p>
+
+<h3>Potenza ricorsiva: l'idea</h3>
+<p>Per y reale vale x<sup>y</sup> = x<sup>(y/2) · 2</sup> = (x<sup>y/2</sup>)². Quindi, invece di moltiplicare x per sé y volte, posso calcolare x<sup>y/2</sup> una volta sola ed elevarlo al quadrato. Ma per y dispari y/2 non è intero, e noi vogliamo restare negli interi. Si divide in casi:</p>
+<div class="formula grande">x<sup>y</sup> = 1 se y = 0 &nbsp;(caso base), &nbsp;&nbsp; (x<sup>y/2</sup>)² se y &gt; 0 è pari, &nbsp;&nbsp; (x<sup>(y−1)/2</sup>)² · x se y è dispari</div>
+<p>Il caso dispari torna: (x<sup>(y−1)/2</sup>)² · x = x<sup>y−1</sup> · x = x<sup>y</sup> ✓. E c'è un trucco: con la divisione intera, ⌊y/2⌋ = (y − 1)/2 quando y è dispari (per esempio ⌊7/2⌋ = 3 = 6/2). Quindi in tutti e due i casi basta chiamare potenza(x, y/2), con la divisione intera.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 3)</span>
+  <p class="citazione">«y/2 non è detto che sia intero → ℕ» &nbsp; e a margine: &nbsp;«Solo interi, no ℝ»</p>
+  <p>Esatto, è proprio questo il punto. La formula (x<sup>y/2</sup>)² è vera per y reale, ma l'algoritmo lavora sui naturali, e con y dispari y/2 non lo è. Per questo i casi sono tre, e per questo ⌊y/2⌋ è così comodo: resta sempre un naturale, ed è più piccolo di y.</p>
+</div>
+
+<p class="titolo-codice">Lavagna, lezione 3</p>
+<pre class="pseudo"><b>ALGORITMO</b> potenza(intero x, intero y) → intero
+1  <b>IF</b> y = 0 <b>THEN</b>
+2    <b>RETURN</b> 1
+   <b>ELSE</b>
+3    power ← potenza(x, y/2)     <span class="com">// divisione intera</span>
+4    power ← power * power
+5    <b>IF</b> y è dispari <b>THEN</b>
+6      power ← power * x
+7    <b>RETURN</b> power</pre>
+<p>A parole: «chiedo a una copia di me stessa x<sup>⌊y/2⌋</sup>, lo elevo al quadrato e, se y è dispari, moltiplico ancora per x».</p>
+
+<div class="widget" id="w-pot">
+  <h4>LE CHIAMATE SCENDONO, I RISULTATI RISALGONO</h4>
+  <div class="controlli">
+    <label>x = <input type="number" id="po-x" value="2" min="0" max="10" style="width:70px"></label>
+    <label>y = <input type="number" id="po-y" value="13" min="0" max="1000" style="width:90px"></label>
+    <button class="primario" id="po-passo">Passo →</button>
+    <button id="po-fine">Fino alla fine</button>
+    <button id="po-reset">Ricomincia</button>
+  </div>
+  <div class="contatori" id="po-cont"></div>
+  <div class="narrazione" id="po-txt"></div>
+  <div class="pila" id="po-pila"></div>
+</div>
+<p class="piccolo">La pila cresce verso l'alto: il record in cima è la chiamata in corso. Con y = 13 servono 4 quadrati e 3 moltiplicazioni per x: 7 moltiplicazioni invece delle 13 della potenza iterata. Con y = 1000 sono 16 invece di 1000.</p>
+
+<h3>Perché è corretta: induzione completa</h3>
+<p>Non serve seguire tutte le chiamate fino in fondo, come nel riquadro. Basta controllare tre cose: il caso base è giusto; ogni chiamata ricorsiva riceve un y più piccolo, quindi prima o poi si arriva al caso base; e, <em>se</em> la chiamata più piccola restituisce il risultato giusto, <em>allora</em> anche quella corrente lo fa. La terza è il passo induttivo: ci si fida della chiamata ricorsiva e si controlla solo il lavoro fatto dopo. Siccome la chiamata salta da y a ⌊y/2⌋, serve l'induzione <em>completa</em> della <a href="#induzione">sezione 6</a>.</p>
+
+<div class="box def">
+  <span class="etichetta">Teorema</span>
+  <p>Per ogni x e ogni intero y ≥ 0, potenza(x, y) restituisce x<sup>y</sup>.</p>
+  <p><strong>Dimostrazione</strong>, per induzione completa su y.</p>
+  <p><strong>Caso base</strong>, y = 0: la riga 1 è vera, la riga 2 restituisce 1 = x<sup>0</sup> ✓.</p>
+  <p><strong>Passo</strong>, y ≥ 1. Ipotesi induttiva: potenza(x, z) = x<sup>z</sup> <em>per ogni</em> z &lt; y.</p>
+  <ul>
+    <li>Riga 3: ⌊y/2⌋ &lt; y perché y ≥ 1, quindi per l'ipotesi induttiva power = x<sup>⌊y/2⌋</sup>.</li>
+    <li>Riga 4: power = (x<sup>⌊y/2⌋</sup>)² = x<sup>2⌊y/2⌋</sup>.</li>
+    <li>Se y è pari, 2⌊y/2⌋ = y: power = x<sup>y</sup>, la riga 6 si salta e la riga 7 restituisce x<sup>y</sup> ✓.</li>
+    <li>Se y è dispari, 2⌊y/2⌋ = y − 1: power = x<sup>y−1</sup>, la riga 6 dà x<sup>y−1</sup> · x = x<sup>y</sup> e la riga 7 lo restituisce ✓. ∎</li>
+  </ul>
+</div>
+<p>È lo stesso ragionamento della definizione a casi qui sopra: l'algoritmo è corretto perché «copia» una formula vera.</p>
+
+<h3>Quanto tempo</h3>
+<p>Ogni riga costa 1, e la riga 3 costa 1 più il tempo della chiamata ricorsiva. Con y = 0 si eseguono le righe 1 e 2: tempo 2. Con y &gt; 0 si eseguono le righe 1, 3, 4, 5 e 7 (5), la riga 6 al più una volta (≤ 1) e la riga 2 mai, più la chiamata ricorsiva. Ne viene un'<strong>equazione di ricorrenza</strong>:</p>
+<div class="formula grande">T(x, y) = 2 se y = 0, &nbsp;&nbsp; T(x, y) ≤ 6 + T(x, ⌊y/2⌋) altrimenti</div>
+<p>Si risolve <strong>srotolando</strong>. Per semplicità prendiamo y = 2<sup>k</sup>:</p>
+<div class="srotola">T(x, y) ≤ 6 + T(x, y/2)
+        ≤ 6 + 6 + T(x, y/4)
+        ≤ 6 + 6 + 6 + T(x, y/8)
+        ≤ …
+        ≤ 6k + T(x, y/2<sup>k</sup>) = 6k + T(x, 1) = 6k + 6 + T(x, 0) = 6k + 8</div>
+<p>y/2<sup>k</sup> = 1 quando k = log<sub>2</sub> y, quindi <strong>T(x, y) ≤ 6 log<sub>2</sub> y + 8</strong>: crescita logaritmica. Per ogni y ≥ 1, y si dimezza ⌊log<sub>2</sub> y⌋ + 1 volte prima di arrivare a 0, quindi in generale T(x, y) ≤ 6⌊log<sub>2</sub> y⌋ + 8.</p>
+
+<h3>Quanto spazio: la pila</h3>
+<p>Ogni chiamata ancora aperta occupa un <strong>record di attivazione</strong> sulla pila (i suoi parametri e le sue variabili), come nel <a href="03-ricerca.html">pacco 3</a>. Lo spazio è l'altezza massima della pila, H:</p>
+<div class="formula grande">H(x, y) = 1 se y = 0, &nbsp;&nbsp; H(x, y) = 1 + H(x, ⌊y/2⌋) altrimenti &nbsp;&nbsp;⟹&nbsp;&nbsp; H(x, y) = ⌊log<sub>2</sub> y⌋ + 2 &nbsp;(y ≥ 1)</div>
+<p>Per esempio potenza(2, 6): nel momento più alto la pila contiene potenza(2, 6), (2, 3), (2, 1) e (2, 0), cioè 4 record = ⌊log<sub>2</sub> 6⌋ + 2 ✓.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 3, a margine)</span>
+  <p class="citazione">«k + H(x, y/2<sup>k</sup>) … log<sub>2</sub> y + 1 + 1 → 2 + log<sub>2</sub> y»</p>
+  <p>Giusto, è proprio lo srotolamento: dopo k passi H = k + H(x, ⌊y/2<sup>k</sup>⌋). Servono ⌊log<sub>2</sub> y⌋ + 1 dimezzamenti per arrivare a 0, più 1 record per la chiamata con y = 0: ⌊log<sub>2</sub> y⌋ + 2. Ricordati solo la parte intera: con y = 6, log<sub>2</sub> 6 ≈ 2,58, ma i record sono 4 = ⌊2,58⌋ + 2.</p>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>potenza iterata</th><th>potenza ricorsiva</th></tr>
+  <tr><td>tempo</td><td>3y + 3</td><td>≤ 6⌊log<sub>2</sub> y⌋ + 8</td></tr>
+  <tr><td>spazio</td><td>costante</td><td>⌊log<sub>2</sub> y⌋ + 2 record</td></tr>
+  <tr><td>tempo con y = 1000</td><td>3003</td><td>≤ 62</td></tr>
+</table></div>
+<p>La ricorsiva è molto più veloce, ma usa spazio logaritmico invece che costante: <strong>la ricorsione costa memoria</strong>. Nella <a href="#potenza-russa">sezione 11</a> vedremo come avere tutti e due i vantaggi.</p>
+
+<h3>Attenzione: le due versioni viste a lezione</h3>
+<p><strong>1. Due chiamate invece di una.</strong> Alla lavagna il prof ha scritto anche la riga 3 così: <code>power ← potenza(x, y/2) * potenza(x, y/2)</code>. Calcola la stessa cosa due volte! Ora l'equazione è T(x, y) ≤ 5 + 2T(x, ⌊y/2⌋): le chiamate raddoppiano a ogni livello, e il tempo diventa <strong>lineare</strong>. Il prof l'ha sottolineato: è un <strong>algoritmo diverso</strong>, e peggiore. Guarda quante chiamate fa:</p>
+
+<div class="widget" id="w-due">
+  <h4>UNA CHIAMATA O DUE?</h4>
+  <div class="controlli">
+    <label>y = <input type="number" id="du-y" value="4" min="1" max="64" style="width:80px"></label>
+  </div>
+  <div id="du-out"></div>
+  <div class="narrazione" id="du-txt"></div>
+</div>
+
+<p><strong>2. Stessa idea, scritta diversamente.</strong></p>
+<pre class="pseudo">1  power ← 1
+2  <b>IF</b> y &gt; 0 <b>THEN</b>
+3    power ← potenza(x, y/2)
+4    power ← power * power
+5    <b>IF</b> y è dispari <b>THEN</b>
+6      power ← power * x
+7  <b>RETURN</b> power</pre>
+<p>Questo è <strong>lo stesso algoritmo</strong>: T(x, y) = 3 se y = 0, ≤ 7 + T(x, ⌊y/2⌋) altrimenti, cioè T(x, y) ≤ 7 log<sub>2</sub> y + 10. Cambiano le costanti (7 e 10 invece di 6 e 8), non la crescita: resta logaritmica. Per non perdersi in queste costanti si usano le notazioni asintotiche, e la lavagna chiude la lezione 3 così: T(x, y) = O(log y).</p>
+
+<!-- ============================================================ 10 -->
+<h2 id="asintotiche"><span class="num">10</span>Le notazioni asintotiche</h2>
+
+<p>6 log<sub>2</sub> y + 8 o 7 log<sub>2</sub> y + 10? Le costanti dipendono da come contiamo le righe, ma la crescita no. La domanda giusta della lezione 4 è: date due funzioni f e g, <strong>quale «cresce» di più?</strong></p>
+<p>Il prof l'ha fatto vedere con due grafici. f(n) = 2n + 1 e g(n) = n² si incrociano poco dopo n = 2; da n = 3 in poi n² sta sempre sopra, e il distacco cresce: n² cresce di più. Invece 2n² e n² hanno lo stesso andamento, e cambia solo la costante 2: hanno lo stesso ordine di grandezza.</p>
+
+<div class="box def">
+  <span class="etichetta">Notazioni asintotiche (slide della lezione 4)</span>
+  <p>Siano f, g : ℕ → ℝ<sup>+</sup>.</p>
+  <ul>
+    <li><strong>Limitazione superiore.</strong> f(n) è O-grande di g(n), f(n) = O(g(n)), se ∃ c &gt; 0, n<sub>0</sub> ∈ ℕ t.c. ∀ n &gt; n<sub>0</sub>: f(n) ≤ c · g(n).</li>
+    <li><strong>Limitazione inferiore.</strong> f(n) è Ω-grande di g(n), f(n) = Ω(g(n)), se ∃ c &gt; 0, n<sub>0</sub> ∈ ℕ t.c. ∀ n &gt; n<sub>0</sub>: f(n) ≥ c · g(n).</li>
+    <li><strong>Stesso ordine di grandezza.</strong> f(n) è Θ-grande di g(n), f(n) = Θ(g(n)), se ∃ c, d &gt; 0, n<sub>0</sub> ∈ ℕ t.c. ∀ n &gt; n<sub>0</sub>: c · g(n) ≤ f(n) ≤ d · g(n).</li>
+  </ul>
+</div>
+<p>In parole: <strong>da un certo n<sub>0</sub> in poi</strong>, f sta sotto (O), sopra (Ω) o in mezzo (Θ) a dei multipli di g. Prima di n<sub>0</sub> può fare quello che vuole. Θ vuol dire O e Ω insieme: f è chiusa in un panino tra c · g e d · g.</p>
+
+<div class="widget" id="w-theta">
+  <h4>IL PANINO DI Θ</h4>
+  <div class="controlli">
+    <label>f e g <select id="th-f" style="width:auto">
+      <option value="0">f = 7n² + n log n, g = n²</option>
+      <option value="1">f = 5n² + log n + log log n + 2, g = n²</option>
+      <option value="2">f = 2n log n + n + 7, g = n log n</option>
+      <option value="3">f = 2n², g = n²</option>
+      <option value="4">f = 2n + 1, g = n²</option>
+    </select></label>
+  </div>
+  <div class="controlli">
+    <label>c = <input type="range" id="th-c" min="0.1" max="10" step="0.1" value="6"> <b id="th-cv"></b></label>
+    <label>d = <input type="range" id="th-d" min="0.1" max="12" step="0.1" value="9"> <b id="th-dv"></b></label>
+  </div>
+  <div class="narrazione" id="th-txt"></div>
+  <div class="legenda" id="th-leg"></div>
+  <div class="grafico" id="th-graf">
+    <div id="th-svg"></div>
+    <div class="tooltip" id="th-tip"></div>
+  </div>
+  <details class="esercizio" style="margin-top:10px">
+    <summary>Tabella: f, c · g e d · g per alcuni n</summary>
+    <div class="tabella-wrap" id="th-tab"></div>
+  </details>
+</div>
+<p class="piccolo">I logaritmi sono in base 2. Il grafico arriva fino a n = 40, ma la definizione chiede «per ogni n &gt; n<sub>0</sub>», anche oltre: il grafico aiuta a scegliere c e d, la dimostrazione si fa con le disuguaglianze, come qui sotto.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 4)</span>
+  <p class="citazione">«Notazioni asintotiche easy»</p>
+  <p>Ottimo! Allora tre trappole, così resta easy anche all'esame.</p>
+  <ul>
+    <li><strong>O è solo un tetto.</strong> 2n + 1 = O(n²) è <em>vero</em>, perché sta sotto. Ma non è Θ(n²): prova nel riquadro, qualunque c &gt; 0 scegli, c · n² prima o poi supera 2n + 1.</li>
+    <li><strong>Le costanti sono fisse.</strong> c e d sono numeri, non possono dipendere da n. Per dire che n² = O(n) dovresti scegliere c = n, e non vale.</li>
+    <li><strong>Basta un n<sub>0</sub>.</strong> Non serve che la disuguaglianza valga dall'inizio: vale da n<sub>0</sub> in poi, e n<sub>0</sub> lo scegli tu.</li>
+  </ul>
+</div>
+
+<h3>La regola pratica, e la verifica</h3>
+<p>Si tiene il termine che cresce di più e si toglie la sua costante. Gli esempi della lavagna:</p>
+<div class="formula">5n² + log n + log log n + 2 = Θ(n²) &nbsp;&nbsp; 7n² + n log n = Θ(n²) &nbsp;&nbsp; 2n log n + n + 7 = Θ(n log n)</div>
+<p>Verifichiamo il secondo con la definizione. Per n ≥ 1 vale 0 ≤ log n ≤ n, quindi</p>
+<div class="formula">7n² &nbsp;≤&nbsp; 7n² + n log n &nbsp;≤&nbsp; 7n² + n · n = 8n²</div>
+<p>e la definizione di Θ è soddisfatta con c = 7, d = 8 e n<sub>0</sub> = 0 ✓.</p>
+
+<h3>Sui nostri algoritmi</h3>
+<ul>
+  <li>Potenza iterata: T(x, y) = 3y + 3 = <strong>Θ(y)</strong>.</li>
+  <li>Potenza ricorsiva: T(x, y) ≤ 6 log<sub>2</sub> y + 8 nella prima versione e ≤ 7 log<sub>2</sub> y + 10 nella seconda. Tutte e due sono <strong>Θ(log y)</strong>.</li>
+</ul>
+<p>Attenzione: un ≤ da solo dà solo O. Il Θ vale perché ogni chiamata con y &gt; 0 esegue comunque le righe 1, 3, 4, 5 e 7, quindi anche T(x, y) ≥ 5⌊log<sub>2</sub> y⌋ + 7.</p>
+
+<!-- ============================================================ 11 -->
+<h2 id="potenza-russa"><span class="num">11</span>La potenza alla russa</h2>
+
+<p>Ultima idea della lezione 4: fare con la potenza quello che la moltiplicazione alla russa fa con il prodotto. Invece di raddoppiare a e dimezzare b, si <strong>eleva x al quadrato</strong> e si <strong>dimezza y</strong>:</p>
+<div class="formula grande">x<sup>y</sup> = 1 se y = 0, &nbsp;&nbsp; (x²)<sup>y/2</sup> se y &gt; 0 è pari, &nbsp;&nbsp; (x²)<sup>(y−1)/2</sup> · <span class="rosso">x</span> se y è dispari</div>
+<p>Come prima, nel caso dispari si toglie 1 a y e quel fattore x va messo da parte, altrimenti il risultato è sbagliato. Le due tabelle della lavagna: 2<sup>10</sup>, con x: 2 → 4 → 16 → 256 e y: 10 → 5 → 2 → 1, si mettono da parte 4 e 256, e 4 · 256 = 1024 ✓. Poi 3<sup>5</sup>, con x: 3 → 9 → 81 e y: 5 → 2 → 1, si mettono da parte 3 e 81, e 3 · 81 = 243 ✓. Nell'ultima colonna, stavolta, si <strong>moltiplica</strong>.</p>
+
+<p class="titolo-codice">Lavagna, lezione 4</p>
+<pre class="pseudo"><b>ALGORITMO</b> potenza(intero x, intero y) → intero
+1  power ← 1
+2  <b>WHILE</b> y &gt; 0 <b>DO</b>
+3    <b>IF</b> y è dispari <b>THEN</b>
+4      power ← power * x
+5    y ← y/2                <span class="com">// divisione intera</span>
+6    x ← x * x
+7  <b>RETURN</b> power</pre>
+<p>È la moltiplicazione alla russa con * al posto di + e 1 al posto di 0.</p>
+
+<div class="widget" id="i3">
+  <h4>LA POTENZA ALLA RUSSA, GIRO PER GIRO</h4>
+  <div class="controlli">
+    <select id="i3-alg" style="width:auto">
+      <option value="somme">somme iterate</option>
+      <option value="russa">moltiplicazione alla russa</option>
+      <option value="potit">potenza iterata</option>
+      <option value="potrussa" selected>potenza alla russa</option>
+    </select>
+    <label><span id="i3-lx">x</span> = <input type="number" id="i3-x" value="3" style="width:90px"></label>
+    <label><span id="i3-ly">y</span> = <input type="number" id="i3-y" value="5" style="width:90px"></label>
+  </div>
+  <pre class="pseudo" id="i3-cod"></pre>
+  <div class="controlli">
+    <button class="primario" id="i3-passo">Un giro →</button>
+    <button id="i3-fine">Fino alla fine</button>
+    <button id="i3-reset">Ricomincia</button>
+  </div>
+  <div class="tabella-wrap" id="i3-tab"></div>
+  <div class="contatori" id="i3-cont"></div>
+  <div class="narrazione" id="i3-txt"></div>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 4)</span>
+  <p class="citazione">«x<sub>i</sub>, y<sub>i</sub>, power<sub>i</sub> valori di x, y, power dopo i — allora x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = x<sup>y</sup> — per induzione??? in qualunque modo»</p>
+  <p>Hai scritto l'invariante giusto. Ora la dimostrazione, con la ricetta della <a href="#induzione">sezione 6</a>: è la stessa della moltiplicazione alla russa (<a href="#russa">sezione 7</a>), con le potenze al posto dei prodotti.</p>
+  <p><strong>Base</strong>, i = 0: x<sub>0</sub> = x, y<sub>0</sub> = y e power<sub>0</sub> = 1, quindi x<sup>y</sup> · 1 = x<sup>y</sup> ✓.</p>
+  <p><strong>Passo.</strong> Supponiamo x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub> = x<sup>y</sup> (ipotesi induttiva). Il giro i fa x<sub>i</sub> = x<sub>i−1</sub>² e dimezza y. Due casi:</p>
+  <ul>
+    <li><strong>y<sub>i−1</sub> pari</strong>: y<sub>i</sub> = y<sub>i−1</sub>/2 e power<sub>i</sub> = power<sub>i−1</sub>. Allora x<sub>i</sub><sup>y<sub>i</sub></sup> = (x<sub>i−1</sub>²)<sup>y<sub>i−1</sub>/2</sup> = x<sub>i−1</sub><sup>y<sub>i−1</sub></sup>, quindi x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = <span class="blu">x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub></span> = x<sup>y</sup> ✓.</li>
+    <li><strong>y<sub>i−1</sub> dispari</strong>: la riga 4 dà power<sub>i</sub> = power<sub>i−1</sub> · x<sub>i−1</sub>, e y<sub>i</sub> = (y<sub>i−1</sub> − 1)/2. Allora x<sub>i</sub><sup>y<sub>i</sub></sup> = (x<sub>i−1</sub>²)<sup>(y<sub>i−1</sub>−1)/2</sup> = x<sub>i−1</sub><sup>y<sub>i−1</sub>−1</sup>, quindi x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = x<sub>i−1</sub><sup>y<sub>i−1</sub>−1</sup> · power<sub>i−1</sub> · x<sub>i−1</sub> = <span class="blu">x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub></span> = x<sup>y</sup> ✓.</li>
+  </ul>
+  <p><strong>Uscita.</strong> y si dimezza a ogni giro, quindi arriva a 0 e il ciclo si ferma. Lì l'invariante dice x<sub>i</sub><sup>0</sup> · power<sub>i</sub> = power<sub>i</sub> = x<sup>y</sup> ✓. Nel riquadro la colonna dell'invariante resta sempre uguale a x<sup>y</sup>: è la stessa cosa, vista sui numeri.</p>
+</div>
+
+<h3>Quanto tempo e quanto spazio</h3>
+<p>Come alla russa per il prodotto: i giri sono m = ⌊log<sub>2</sub> y⌋ + 1 (y &gt; 0). Le righe 1 e 7 contano 2, le righe 3, 5 e 6 contano 3m, la riga 4 al più m, la riga 2 m + 1:</p>
+<div class="formula grande">T(x, y) ≤ 5⌊log<sub>2</sub> y⌋ + 8 = Θ(log y) &nbsp;&nbsp;&nbsp; spazio: 3 variabili = Θ(1)</div>
+<p>(E T(x, y) ≥ 4⌊log<sub>2</sub> y⌋ + 7, perché solo la riga 4 può essere saltata: per questo è Θ e non solo O.)</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 4)</span>
+  <p class="citazione">«1–7: 2; 3–5–6: 3(log<sub>2</sub> y + 1); 4: ≤ log<sub>2</sub> y + 1; 2: log<sub>2</sub> y + 2 → 5 log<sub>2</sub> y + 2 + 3 + 1 + 2 = 5 log<sub>2</sub>(y) + 8»</p>
+  <p>Il conto è giusto, riga per riga. Manca solo la parte intera: il numero di giri è ⌊log<sub>2</sub> y⌋ + 1, perché log<sub>2</sub> y in generale non è intero. Il risultato preciso è quindi 5⌊log<sub>2</sub> y⌋ + 8.</p>
+</div>
+
+<h3>Facciamo i conti in binario</h3>
+<p>Dividere per 2 con la divisione intera vuol dire <strong>togliere l'ultima cifra binaria</strong>: 111111 → 11111 → 1111 → 111 → 11 → 1 → 0. Quindi il ciclo fa un giro per ogni cifra binaria di y, e la riga 4 si esegue solo quando l'ultima cifra è 1:</p>
+<ul>
+  <li>y = 64 = 1000000 in binario: 7 giri, riga 4 <strong>una</strong> volta. È il caso migliore.</li>
+  <li>y = 63 = 111111 in binario: 6 giri, riga 4 <strong>ogni</strong> volta. È il caso peggiore.</li>
+</ul>
+<p>Il numero con n cifre binarie tutte uguali a 1 vale 2<sup>n</sup> − 1 = 1 + 2 + 4 + … + 2<sup>n−1</sup>. Non è la formula di Gauss: quella è 1 + 2 + 3 + … + n = n(n + 1)/2, come hai annotato tu («Gauss già detto»).</p>
+
+<h3>Le tre potenze a confronto</h3>
+<div class="tabella-wrap"><table>
+  <tr><th>algoritmo</th><th>tempo</th><th>spazio</th></tr>
+  <tr><td>prodotti iterati</td><td>Θ(y)</td><td>Θ(1)</td></tr>
+  <tr><td>potenza ricorsiva</td><td>Θ(log y)</td><td>Θ(log y)</td></tr>
+  <tr><td><strong>potenza alla russa</strong> ★</td><td><strong>Θ(log y)</strong></td><td><strong>Θ(1)</strong></td></tr>
+</table></div>
+<p>Alla russa è la migliore: veloce come la ricorsiva e con lo spazio costante dell'iterata. Nei tuoi appunti: «il migliore».</p>
+
+<!-- ============================================================ 12 -->
+<h2 id="cifre"><span class="num">12</span>Quante cifre ha un numero?</h2>
+
+<p>Chiudiamo l'esercizio della lezione 2. Con k cifre binarie, il numero più piccolo è 100…0 = 2<sup>k−1</sup> e il più grande è 11…1 = 2<sup>k</sup> − 1. Con k = 5: 10000 = 16 = 2<sup>4</sup> e 11111 = 31 = 2<sup>5</sup> − 1. In mezzo, per esempio, c'è 21 = 10101. Quindi, se n ha k cifre in base 2:</p>
+<div class="srotola">2<sup>k−1</sup> ≤ n &lt; 2<sup>k</sup>
+k − 1 ≤ log<sub>2</sub> n &lt; k            <span class="com">applico log<sub>2</sub>, che non cambia l'ordine</span>
+k − 1 = ⌊log<sub>2</sub> n⌋              <span class="com">log<sub>2</sub> n sta tra due interi consecutivi</span>
+<span class="nuova">k = ⌊log<sub>2</sub> n⌋ + 1</span></div>
+<p>Stesso ragionamento in base 10: 10<sup>k−1</sup> ≤ n &lt; 10<sup>k</sup>, quindi <strong>k = ⌊log<sub>10</sub> n⌋ + 1</strong>. Con k = 5: 10000 = 10<sup>4</sup> e 99999 = 10<sup>5</sup> − 1.</p>
+
+<h3>Cambio di base</h3>
+<div class="formula grande">log<sub>2</sub> n = log<sub>10</sub> n / log<sub>10</sub> 2 = (log<sub>2</sub> 10) · log<sub>10</sub> n ≈ 3,32 · log<sub>10</sub> n</div>
+<p>In binario servono circa 3,3 volte le cifre decimali: cambia solo una costante. Per esempio un milione ha 7 cifre decimali e 20 binarie.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 4)</span>
+  <p class="citazione">«log<sub>2</sub> n = log<sub>10</sub> n / log<sub>10</sub> 2 = log<sub>10</sub> n · log<sub>10</sub> …»</p>
+  <p>Il primo passaggio è giusto, il secondo no: dividere per log<sub>10</sub> 2 vuol dire moltiplicare per 1/log<sub>10</sub> 2, che è <strong>log<sub>2</sub> 10</strong> ≈ 3,32, e non un log<sub>10</sub> di qualcosa. In generale log<sub>a</sub> b · log<sub>b</sub> a = 1, quindi 1/log<sub>10</sub> 2 = log<sub>2</sub> 10. Controllo con i numeri: log<sub>10</sub> 2 ≈ 0,301 e 1/0,301 ≈ 3,32 ✓.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Lunghezza di un numero (lavagna, lezione 4)</span>
+  <p>Un numero n scritto in base b &gt; 1 usa ⌊log<sub>b</sub> n⌋ + 1 = <strong>Θ(log n)</strong> cifre.</p>
+</div>
+<p>Siccome cambiare base cambia solo una costante, in Θ(log n) la base del logaritmo non si scrive.</p>
+
+<h3>E la base 1?</h3>
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti (lezione 4)</span>
+  <p class="citazione">«0000 base 1, non ho capito bene»</p>
+  <p>Partiamo da come funziona una base. In base b le cifre sono 0, 1, …, b − 1: in base 10 da 0 a 9, in base 2 solo 0 e 1. Quindi in base 1 ci sarebbe una sola cifra, lo 0, e con soli zeri non si scrive nessun numero positivo. La base 1 «vera» non esiste.</p>
+  <p>Quella che si chiama «base 1» è la <strong>notazione unaria</strong>: n si scrive ripetendo n volte lo stesso simbolo, come le tacche sul muro dei carcerati. Il prof ha scritto 0000 per dire 4, cioè quattro tacche. Il problema è la lunghezza: n tacche, non Θ(log n) cifre. È <strong>esponenzialmente</strong> più lunga: per scrivere un milione servono 7 cifre decimali, 20 cifre binarie e un milione di tacche.</p>
+  <p>Anche la formula si rompe: log<sub>1</sub> n non esiste, perché 1<sup>k</sup> = 1 per ogni k. Per questo il prof dice «in base b &gt; 1». Servirà nel <a href="01-quanto-costa.html#criteri">pacco 1</a>: con il criterio di costo logaritmico un'operazione costa quanto la lunghezza dei suoi numeri, e quella lunghezza è Θ(log n) solo se la base è almeno 2.</p>
+</div>
+
+<div class="widget" id="w-cifre">
+  <h4>LO STESSO NUMERO IN BASI DIVERSE</h4>
+  <div class="controlli">
+    <label>n = <input type="text" id="ci-n" value="21" style="width:240px" inputmode="numeric"></label>
+  </div>
+  <div class="tabella-wrap" id="ci-tab"></div>
+  <div class="narrazione" id="ci-txt"></div>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="riassunto"><span class="num">13</span>Riassunto ed esame</h2>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><strong>Algoritmo:</strong> insieme ordinato e finito di passi eseguibili e non ambigui che definiscono un procedimento che termina. Il <strong>programma</strong> è la sua scrittura in un linguaggio specifico.</li>
+    <li><strong>Analisi</strong> = correttezza (per ogni istanza, f<sub>𝒜</sub>(x) = 𝒫(x)) + efficienza (risorse). In questo corso si fa a priori, contando le righe eseguite.</li>
+    <li><strong>Induzione:</strong> base + passo (se P(n − 1) allora P(n)). Quella <strong>completa</strong> suppone P(z) per tutti gli z &lt; n, e serve quando la ricorsione salta, come da y a ⌊y/2⌋.</li>
+    <li><strong>Invariante di un ciclo:</strong> proprietà dei valori dopo i giri. Base i = 0, passo = un giro, uscita = risultato giusto.</li>
+    <li>Moltiplicazione: somme iterate 3b + 3 = Θ(b); alla russa ≤ 5⌊log<sub>2</sub> b⌋ + 8 = Θ(log b), con invariante a<sub>i</sub>b<sub>i</sub> + prod<sub>i</sub> = a · b.</li>
+    <li>Potenza: iterata Θ(y) tempo e Θ(1) spazio; ricorsiva Θ(log y) e Θ(log y), con altezza della pila ⌊log<sub>2</sub> y⌋ + 2; alla russa Θ(log y) e Θ(1), con invariante x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = x<sup>y</sup>.</li>
+    <li>Due chiamate identiche invece di una: tempo lineare, è un algoritmo diverso.</li>
+    <li><strong>O, Ω, Θ:</strong> da un certo n<sub>0</sub> in poi f ≤ c·g, f ≥ c·g, c·g ≤ f ≤ d·g. Si tiene il termine dominante e si toglie la costante.</li>
+    <li><strong>Cifre:</strong> ⌊log<sub>b</sub> n⌋ + 1 = Θ(log n) in base b &gt; 1. In unario n simboli.</li>
+    <li>Formule: Gauss 1 + … + n = n(n + 1)/2; 1 + 2 + … + 2<sup>n−1</sup> = 2<sup>n</sup> − 1; Stirling n! ≈ √(2πn)(n/e)<sup>n</sup>; log<sub>2</sub> n = (log<sub>2</sub> 10) log<sub>10</sub> n.</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>Nello scritto non c'è un esercizio su queste lezioni, ma le usi in tutti: ogni volta che scrivi un costo con Θ, o che giustifichi perché un ciclo fa log n giri.</p>
+  <p>All'orale sono materia da domanda diretta. Le definizioni (algoritmo, correttezza, O, Ω e Θ con c, d e n<sub>0</sub>), la dimostrazione di un invariante per induzione (somme iterate, alla russa), la correttezza della potenza ricorsiva per induzione completa, perché la ricorsiva usa spazio Θ(log y) mentre alla russa usa Θ(1). La ricetta della sezione 6 funziona per tutti i cicli che incontrerai.</p>
+</div>
+
+<!-- ============================================================ 14 -->
+<h2 id="esercizi"><span class="num">14</span>Esercizi</h2>
+
+<details class="esercizio">
+  <summary>1. Quale numero manca tra 1 e 10 in: 3 8 10 6 4 7 2 1 5? (il primo esempio della lezione 1)</summary>
+  <div class="soluzione">
+    <p>Somma completa: 10 · 11/2 = 55. Somma dei numeri dati: 3 + 8 + 10 + 6 + 4 + 7 + 2 + 1 + 5 = 46. Manca <strong>55 − 46 = 9</strong>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. Somme iterate con a = 4 e b = 5: scrivi la tabella dei valori e il tempo T.</summary>
+  <div class="soluzione">
+    <p>b: 5, 4, 3, 2, 1, 0. prod: 0, 4, 8, 12, 16, 20. Ogni riga rispetta b<sub>i</sub> = 5 − i e prod<sub>i</sub> = 4i. Risultato 20 ✓.</p>
+    <p>T = 3 · 5 + 3 = <strong>18</strong>: righe 1 e 5 (2), righe 3 e 4 per 5 giri (10), riga 2 per 6 volte (6).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. Moltiplica 13 · 11 alla russa. Quanti giri? Quanto vale T?</summary>
+  <div class="soluzione">
+    <p>a: 13, 26, 52, 104. b: 11 (dispari, metto da parte 13), 5 (dispari, 26), 2 (pari), 1 (dispari, 104), poi 0. Risultato 13 + 26 + 104 = <strong>143</strong> ✓.</p>
+    <p>Giri: m = ⌊log<sub>2</sub> 11⌋ + 1 = 3 + 1 = 4 (11 = 1011 in binario, 4 cifre). T = 2 + (m + 1) + 3m + (giri con b dispari) = 2 + 5 + 12 + 3 = <strong>22</strong>, e infatti 22 ≤ 5 · 3 + 8 = 23.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. Dimostra per induzione che 1 + 2 + 4 + … + 2<sup>n−1</sup> = 2<sup>n</sup> − 1 per ogni n ≥ 1.</summary>
+  <div class="soluzione">
+    <p><strong>Base</strong>, n = 1: a sinistra 1, a destra 2 − 1 = 1 ✓.</p>
+    <p><strong>Passo.</strong> Ipotesi induttiva: 1 + 2 + … + 2<sup>n−2</sup> = 2<sup>n−1</sup> − 1. Allora 1 + 2 + … + 2<sup>n−2</sup> + 2<sup>n−1</sup> = (2<sup>n−1</sup> − 1) + 2<sup>n−1</sup> = 2 · 2<sup>n−1</sup> − 1 = 2<sup>n</sup> − 1 ✓.</p>
+    <p>In binario è ovvio: n cifre 1 più 1 fa 1 seguito da n zeri, cioè 2<sup>n</sup>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. Trova e dimostra l'invariante di questo ciclo. Cosa calcola? Quanto costa?</summary>
+  <div class="soluzione">
+<pre class="pseudo">1  s ← 0
+2  i ← 0
+3  <b>WHILE</b> i &lt; n <b>DO</b>
+4    i ← i + 1
+5    s ← s + i
+6  <b>RETURN</b> s</pre>
+    <p>Tabella a mano: dopo 0, 1, 2, 3 giri, i vale 0, 1, 2, 3 e s vale 0, 1, 3, 6. Invariante: <strong>i<sub>k</sub> = k e s<sub>k</sub> = k(k + 1)/2</strong>.</p>
+    <p>Base: i<sub>0</sub> = 0 e s<sub>0</sub> = 0 = 0 · 1/2 ✓. Passo: i<sub>k</sub> = i<sub>k−1</sub> + 1 = k, e s<sub>k</sub> = s<sub>k−1</sub> + i<sub>k</sub> = (k − 1)k/2 + k = k(k + 1)/2 ✓. Uscita: i cresce di 1 a ogni giro, quindi il ciclo si ferma quando i = n, e allora s = n(n + 1)/2.</p>
+    <p>Calcola la somma di Gauss, con tempo 3n + 4 = Θ(n). Ma la formula n(n + 1)/2 la calcola in tempo costante: si può fare di meglio!</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. potenza(3, 10) ricorsiva: quante chiamate, quante moltiplicazioni, quanto alta la pila?</summary>
+  <div class="soluzione">
+    <p>Le chiamate scendono con y = 10, 5, 2, 1, 0: <strong>5 chiamate</strong> = ⌊log<sub>2</sub> 10⌋ + 2, ed è anche l'altezza massima della pila.</p>
+    <p>Moltiplicazioni: un quadrato (riga 4) per ogni chiamata con y &gt; 0, cioè 4, più una moltiplicazione per x (riga 6) per ogni y dispari, cioè 5 e 1. In tutto <strong>6</strong>, contro le 10 dei prodotti iterati. Risultato 3<sup>10</sup> = 59 049.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>7. Dimostra con la definizione che 3n² + 10n = Θ(n²). E n² = O(n log n)?</summary>
+  <div class="soluzione">
+    <p>Sotto: 3n² ≤ 3n² + 10n per ogni n, quindi c = 3. Sopra: 10n ≤ n² per n ≥ 10, quindi 3n² + 10n ≤ 4n² per n ≥ 10: d = 4, n<sub>0</sub> = 10. (Va bene anche d = 13 con n<sub>0</sub> = 0, perché 10n ≤ 10n² per n ≥ 1.)</p>
+    <p>n² = O(n log n)? <strong>No.</strong> Servirebbe n² ≤ c · n log n, cioè n ≤ c · log n, da un certo punto in poi. Ma n/log n cresce senza limiti: qualunque costante c venga scelta, prima o poi n la supera.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>8. Quante cifre binarie ha 1000? Quante cifre decimali ha 2<sup>100</sup>?</summary>
+  <div class="soluzione">
+    <p>1000: 2<sup>9</sup> = 512 ≤ 1000 &lt; 1024 = 2<sup>10</sup>, quindi ⌊log<sub>2</sub> 1000⌋ = 9 e le cifre sono <strong>10</strong>.</p>
+    <p>2<sup>100</sup>: log<sub>10</sub> 2<sup>100</sup> = 100 · log<sub>10</sub> 2 ≈ 30,103, quindi ⌊30,103⌋ + 1 = <strong>31</strong> cifre. Puoi controllarlo nel riquadro della sezione 12 scrivendo 1267650600228229401496703205376.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>9. La potenza con due chiamate: quante chiamate fa con y = 8? E in generale?</summary>
+  <div class="soluzione">
+    <p>Livello per livello: 1 chiamata con y = 8, 2 con 4, 4 con 2, 8 con 1, 16 con 0. Totale 1 + 2 + 4 + 8 + 16 = <strong>31</strong>, invece delle 5 della versione con una chiamata.</p>
+    <p>In generale i livelli sono ⌊log<sub>2</sub> y⌋ + 2 e le chiamate 2<sup>⌊log<sub>2</sub> y⌋+2</sup> − 1, un numero tra 2y e 4y: <strong>Θ(y)</strong>. Con y potenza di 2 sono esattamente 4y − 1.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="index.html">← Tutti i pacchi</a>
+  <a href="01-quanto-costa.html">Pacco 1 · Quanto costa un algoritmo →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function fmt(v) { return Number(v).toLocaleString("it-IT"); }
+  function dec(x, k) { return Number(x).toLocaleString("it-IT", { maximumFractionDigits: k === undefined ? 2 : k }); }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  // BigInt → testo leggibile (le cifre vengono solo da noi: sicuro per innerHTML)
+  function big(b) {
+    var s = b.toString(), neg = s.charAt(0) === "-";
+    if (neg) s = s.slice(1);
+    var out;
+    if (s.length <= 15) out = Number(s).toLocaleString("it-IT");
+    else if (s.length <= 30) out = s;
+    else out = s.charAt(0) + "," + s.slice(1, 3) + "·10<sup>" + (s.length - 1) + "</sup> <span class='piccolo'>(" + s.length + " cifre)</span>";
+    return (neg ? "−" : "") + out;
+  }
+  function log2floor(b) { return b.toString(2).length - 1; }
+  function nice(v) {
+    var e = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)), m = v / e, passi = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+    for (var i = 0; i < passi.length; i++) if (m <= passi[i] + 1e-9) return passi[i] * e;
+    return 10 * e;
+  }
+  function niceTacca(v) {
+    var e = Math.pow(10, Math.floor(Math.log(v) / Math.LN10)), m = v / e;
+    return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * e;
+  }
+  function tacche(max, quante) {
+    var passo = niceTacca(max / quante), out = [];
+    for (var t = 0; t <= max + 1e-9; t += passo) out.push(t);
+    return out;
+  }
+
+  // ---------------------------------------------------------- quale numero manca?
+  var ga = { N: 10, nums: [3, 8, 10, 6, 4, 7, 2, 1, 5], manca: 9 };
+  function rnd(n) { return Math.floor(Math.random() * n); }
+  function gaNuovi(N) {
+    var arr = [], i, k;
+    for (i = 1; i <= N; i++) arr.push(i);
+    var m = 1 + rnd(N);
+    arr.splice(m - 1, 1);
+    for (k = arr.length - 1; k > 0; k--) { var j = rnd(k + 1), t = arr[k]; arr[k] = arr[j]; arr[j] = t; }
+    ga.N = N; ga.nums = arr; ga.manca = m;
+  }
+  function gaShow(msg) {
+    $("ga-numeri").textContent = ga.nums.join(" ");
+    $("ga-txt").innerHTML = msg || "Ci sono " + fmt(ga.N - 1) + " numeri: quale manca tra 1 e " + fmt(ga.N) + "? Prova a indovinare, poi usa il trucco.";
+  }
+  $("ga-n").onchange = function () { gaNuovi(Number($("ga-n").value) || 10); $("ga-tent").value = ""; gaShow(); };
+  $("ga-nuovi").onclick = function () { gaNuovi(Number($("ga-n").value) || 10); $("ga-tent").value = ""; gaShow(); };
+  $("ga-prova").onclick = function () {
+    var t = Number($("ga-tent").value);
+    if (!(t >= 1 && t <= ga.N && Math.floor(t) === t)) { gaShow("Scrivi un numero intero tra 1 e " + fmt(ga.N) + "."); return; }
+    gaShow(t === ga.manca ? "<b>Giusto!</b> Manca proprio il " + fmt(t) + ". Con 1000 numeri, però, a occhio è un'altra storia…" :
+      "No, il " + fmt(t) + " c'è. Riprova, oppure usa il trucco di Gauss.");
+  };
+  $("ga-trucco").onclick = function () {
+    var N = ga.N, S = N * (N + 1) / 2, s = 0;
+    ga.nums.forEach(function (v) { s += v; });
+    gaShow("Somma completa: " + fmt(N) + " · " + fmt(N + 1) + "/2 = <b>" + fmt(S) + "</b>. Somma dei numeri presenti: <b>" + fmt(s) +
+      "</b>. Manca " + fmt(S) + " − " + fmt(s) + " = <b>" + fmt(S - s) + "</b>. Basta una passata per sommare e una sottrazione: niente ricerche, niente confronti.");
+  };
+  gaShow();
+
+  // ---------------------------------------------------------- domino
+  var dom = { n: 10, cadute: 0, gettone: 0 };
+  function doModo() { return $("do-modo").value || "ok"; }
+  function doDisegna() {
+    var modo = doModo(), W = 560, H = 116, parti = [];
+    parti.push("<svg viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Una fila di tessere del domino, da P(0) a P(9), e poi la fila continua'>");
+    parti.push("<line class='terra' x1='8' x2='" + (W - 8) + "' y1='86' y2='86'></line>");
+    for (var k = 0; k < dom.n; k++) {
+      var x = 30 + k * 50 + (modo === "buco" && k >= 5 ? 24 : 0);
+      parti.push("<rect class='tessera' id='do-t" + k + "' x='" + x + "' y='26' width='12' height='60' rx='2'></rect>");
+      parti.push("<text id='do-e" + k + "' x='" + (x + 6) + "' y='104' text-anchor='middle'>P(" + k + ")</text>");
+    }
+    parti.push("<text x='" + (W - 12) + "' y='62' text-anchor='end'>…</text>");
+    parti.push("</svg>");
+    $("do-svg").innerHTML = parti.join("");
+    $("do-base").disabled = modo === "nobase";
+  }
+  function doCadi(k) {
+    var t = document.getElementById("do-t" + k), e = document.getElementById("do-e" + k);
+    if (t && t.setAttribute) t.setAttribute("class", "tessera caduta");
+    if (e && e.setAttribute) e.setAttribute("class", "vera");
+  }
+  function doTesto(h) { $("do-txt").innerHTML = h; }
+  function doPasso() {
+    var modo = doModo(), k = dom.cadute;
+    if (k === 0) {
+      doTesto(modo === "nobase" ? "Il passo c'è: ogni tessera, <em>se</em> cade, fa cadere la successiva. Ma nessuno ha spinto la prima, quindi non cade niente. Senza base non sappiamo nulla di P(0), P(1), P(2)…" :
+        "Prima serve la base: il passo dice solo «se cade la tessera prima», e per ora non è caduta nessuna. Premi «Base».");
+      return false;
+    }
+    if (k >= dom.n) { doTesto("Le tessere disegnate sono tutte cadute, e la fila continua all'infinito: qualunque n tu scelga, la catena dalla prima tessera arriva anche lì. P(n) è vera per ogni n."); return false; }
+    if (modo === "buco" && k === 5) {
+      doTesto("P(4) è vera, ma la tessera 4 cade e non arriva alla 5: il passo «P(4) ⇒ P(5)» non vale. Da qui in poi non sappiamo più niente, e P(5), P(6), … potrebbero essere false. <b>Basta un solo buco nel passo per rovinare tutto</b>: per questo il passo va dimostrato per <em>ogni</em> n.");
+      return false;
+    }
+    doCadi(k); dom.cadute = k + 1;
+    doTesto("<b>Passo:</b> P(" + (k - 1) + ") è vera (la tessera " + (k - 1) + " è caduta) e P(" + (k - 1) + ") ⇒ P(" + k + "), quindi anche P(" + k + ") è vera." +
+      (dom.cadute === dom.n ? " Le tessere disegnate sono tutte cadute, ma la fila continua: la catena arriva a ogni n." : ""));
+    return true;
+  }
+  $("do-base").onclick = function () {
+    if (doModo() === "nobase") return;
+    if (dom.cadute > 0) { doTesto("La prima tessera è già caduta: ora tocca al passo."); return; }
+    doCadi(0); dom.cadute = 1;
+    doTesto("<b>Base:</b> spingi la prima tessera, cioè dimostri P(0). Da sola non basta: ora serve il passo.");
+  };
+  $("do-passo").onclick = function () { doPasso(); };
+  $("do-tutti").onclick = function () {
+    var g = ++dom.gettone;
+    if (dom.cadute === 0 && doModo() !== "nobase") $("do-base").onclick();
+    (function avanti() {
+      if (g !== dom.gettone) return;
+      if (doPasso() && typeof setTimeout === "function") setTimeout(avanti, 160);
+    })();
+  };
+  function doReset() {
+    dom.gettone++; dom.cadute = 0; doDisegna();
+    var modo = doModo();
+    doTesto(modo === "nobase" ? "In questa versione la base manca: non c'è modo di spingere la prima tessera. Prova comunque il passo." :
+      modo === "buco" ? "In questa versione il passo vale per tutte le tessere tranne una: tra la 4 e la 5 c'è troppo spazio." :
+      "Premi <b>Base</b> per spingere la prima tessera, poi <b>Passo</b>.");
+  }
+  $("do-reset").onclick = doReset;
+  $("do-modo").onchange = doReset;
+  doReset();
+
+  // ---------------------------------------------------------- macchina degli invarianti
+  var ALG = {
+    somme: {
+      lx: "a", ly: "b", maxx: 1000000, maxy: 60, def: [7, 3],
+      codice: "<b>ALGORITMO</b> moltiplicazione(intero a, intero b) → intero\n1  prod ← 0\n2  <b>WHILE</b> b &gt; 0 <b>DO</b>\n3    prod ← prod + a\n4    b ← b − 1\n5  <b>RETURN</b> prod",
+      init: function (x, y) { return { a: x, b: y, prod: 0n }; },
+      continua: function (s) { return s.b > 0n; },
+      giro: function (s) {
+        var p = s.prod + s.a, b = s.b - 1n;
+        return { s: { a: s.a, b: b, prod: p }, righe: 2,
+          testo: "b = " + big(s.b) + " &gt; 0. Riga 3: prod ← " + big(s.prod) + " + " + big(s.a) + " = " + big(p) + ". Riga 4: b ← " + big(s.b) + " − 1 = " + big(b) + "." };
+      },
+      intest: ["i", "b<sub>i</sub>", "prod<sub>i</sub>", "b − i", "i · a"],
+      riga: function (s, i, x, y) { var I = BigInt(i); return [i, big(s.b), big(s.prod), big(y - I), big(I * x)]; },
+      ok: function (s, i, x, y) { var I = BigInt(i); return s.b === y - I && s.prod === I * x; },
+      prima: function (x, y) { return "Prima del ciclo la riga 1 assegna prod ← 0, e b vale " + big(y) + ". È la riga i = 0 della tabella, la <b>base</b> dell'induzione: b − 0 = b e 0 · a = 0 ✓."; },
+      fine: function (s, i, x, y) { return "Ora b = 0, il test della riga 2 è falso e il ciclo finisce dopo i = b = " + i + " giri. L'invariante dice prod = i · a = " + big(BigInt(i) * x) + ": proprio a · b ✓."; },
+      formula: function (x, y) { return "3b + 3 = " + fmt(3 * Number(y) + 3); }
+    },
+    russa: {
+      lx: "a", ly: "b", maxx: 1000000, maxy: 1000000000, def: [19, 114],
+      codice: "<b>ALGORITMO</b> moltiplicazione(intero a, intero b) → intero\n1  prod ← 0\n2  <b>WHILE</b> b &gt; 0 <b>DO</b>\n3    <b>IF</b> b è dispari <b>THEN</b>\n4      prod ← prod + a\n5    b ← b/2                <span class='com'>// divisione intera</span>\n6    a ← a * 2\n7  <b>RETURN</b> prod",
+      init: function (x, y) { return { a: x, b: y, prod: 0n }; },
+      continua: function (s) { return s.b > 0n; },
+      giro: function (s) {
+        var disp = s.b % 2n === 1n, p = disp ? s.prod + s.a : s.prod, b = s.b / 2n, a = s.a * 2n;
+        return { s: { a: a, b: b, prod: p }, righe: disp ? 4 : 3,
+          testo: "b = " + big(s.b) + (disp ? " è dispari: riga 4, prod ← " + big(s.prod) + " + " + big(s.a) + " = " + big(p) + " (metto da parte la a)." :
+            " è pari: la riga 4 si salta, prod resta " + big(p) + ".") + " Riga 5: b ← " + big(s.b) + "/2 = " + big(b) + ". Riga 6: a ← " + big(s.a) + " · 2 = " + big(a) + "." };
+      },
+      intest: ["i", "a<sub>i</sub>", "b<sub>i</sub>", "prod<sub>i</sub>", "a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub>"],
+      riga: function (s) { return ["", big(s.a), big(s.b), big(s.prod), "<b>" + big(s.a * s.b + s.prod) + "</b>"]; },
+      ok: function (s, i, x, y) { return s.a * s.b + s.prod === x * y; },
+      prima: function (x, y) { return "Prima del ciclo prod ← 0 (riga 1). Riga i = 0, la <b>base</b>: a · b + 0 = " + big(x * y) + " ✓. Guarda l'ultima colonna mentre il ciclo gira."; },
+      fine: function (s, i, x, y) { return "Ora b = 0 e il ciclo finisce. L'invariante dice a<sub>i</sub> · 0 + prod = a · b, quindi prod = " + big(x * y) + " ✓. L'ultima colonna non è mai cambiata."; },
+      formula: function (x, y) { return y === 0n ? "con b = 0, T = 3" : "≤ 5⌊log<sub>2</sub> b⌋ + 8 = " + fmt(5 * log2floor(y) + 8); }
+    },
+    potit: {
+      lx: "x", ly: "y", maxx: 1000, maxy: 60, def: [2, 10],
+      codice: "<b>ALGORITMO</b> potenza(intero x, intero y) → intero\n1  power ← 1\n2  <b>WHILE</b> y &gt; 0 <b>DO</b>\n3    power ← power * x\n4    y ← y − 1\n5  <b>RETURN</b> power",
+      init: function (x, y) { return { x: x, y: y, power: 1n }; },
+      continua: function (s) { return s.y > 0n; },
+      giro: function (s) {
+        var p = s.power * s.x, y = s.y - 1n;
+        return { s: { x: s.x, y: y, power: p }, righe: 2,
+          testo: "y = " + big(s.y) + " &gt; 0. Riga 3: power ← " + big(s.power) + " · " + big(s.x) + " = " + big(p) + ". Riga 4: y ← " + big(y) + "." };
+      },
+      intest: ["i", "y<sub>i</sub>", "power<sub>i</sub>", "y − i", "x<sup>i</sup>"],
+      riga: function (s, i, x, y) { var I = BigInt(i); return [i, big(s.y), big(s.power), big(y - I), big(x ** I)]; },
+      ok: function (s, i, x, y) { var I = BigInt(i); return s.y === y - I && s.power === x ** I; },
+      prima: function (x, y) { return "Prima del ciclo power ← 1. Riga i = 0, la <b>base</b>: y − 0 = y e x<sup>0</sup> = 1 ✓."; },
+      fine: function (s, i, x, y) { return "Ora y = 0: fine dopo i = y = " + i + " giri, e l'invariante dice power = x<sup>y</sup> = " + big(x ** y) + " ✓."; },
+      formula: function (x, y) { return "3y + 3 = " + fmt(3 * Number(y) + 3); }
+    },
+    potrussa: {
+      lx: "x", ly: "y", maxx: 20, maxy: 1000, def: [3, 5],
+      codice: "<b>ALGORITMO</b> potenza(intero x, intero y) → intero\n1  power ← 1\n2  <b>WHILE</b> y &gt; 0 <b>DO</b>\n3    <b>IF</b> y è dispari <b>THEN</b>\n4      power ← power * x\n5    y ← y/2                <span class='com'>// divisione intera</span>\n6    x ← x * x\n7  <b>RETURN</b> power",
+      init: function (x, y) { return { x: x, y: y, power: 1n }; },
+      continua: function (s) { return s.y > 0n; },
+      giro: function (s) {
+        var disp = s.y % 2n === 1n, p = disp ? s.power * s.x : s.power, y = s.y / 2n, x = s.x * s.x;
+        return { s: { x: x, y: y, power: p }, righe: disp ? 4 : 3,
+          testo: "y = " + big(s.y) + (disp ? " è dispari: riga 4, power ← " + big(s.power) + " · " + big(s.x) + " = " + big(p) + " (metto da parte la x)." :
+            " è pari: la riga 4 si salta, power resta " + big(p) + ".") + " Riga 5: y ← " + big(y) + ". Riga 6: x ← x · x = " + big(x) + "." };
+      },
+      intest: ["i", "x<sub>i</sub>", "y<sub>i</sub>", "power<sub>i</sub>", "x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub>"],
+      riga: function (s) { return ["", big(s.x), big(s.y), big(s.power), "<b>" + big((s.x ** s.y) * s.power) + "</b>"]; },
+      ok: function (s, i, x, y) { return (s.x ** s.y) * s.power === x ** y; },
+      prima: function (x, y) { return "Prima del ciclo power ← 1. Riga i = 0, la <b>base</b>: x<sup>y</sup> · 1 = x<sup>y</sup> = " + big(x ** y) + " ✓. Guarda l'ultima colonna mentre il ciclo gira."; },
+      fine: function (s, i, x, y) { return "Ora y = 0 e il ciclo finisce. L'invariante dice x<sub>i</sub><sup>0</sup> · power = power = x<sup>y</sup> = " + big(x ** y) + " ✓."; },
+      formula: function (x, y) { return y === 0n ? "con y = 0, T = 3" : "≤ 5⌊log<sub>2</sub> y⌋ + 8 = " + fmt(5 * log2floor(y) + 8); }
+    }
+  };
+  function macchina(P) {
+    var M = { A: null, x: 0n, y: 0n, stati: [], k: 0 };
+    function ini() {
+      var A = ALG[$(P + "-alg").value] || ALG.somme;
+      M.A = A;
+      $(P + "-lx").textContent = A.lx;
+      $(P + "-ly").textContent = A.ly;
+      $(P + "-cod").innerHTML = A.codice;
+      var x = Number($(P + "-x").value), y = Number($(P + "-y").value);
+      var buoni = Math.floor(x) === x && Math.floor(y) === y && x >= 0 && y >= 0 && x <= A.maxx && y <= A.maxy;
+      if (!buoni) {
+        M.stati = []; M.k = 0;
+        $(P + "-tab").innerHTML = ""; $(P + "-cont").innerHTML = "";
+        $(P + "-txt").innerHTML = "Scegli " + A.lx + " intero tra 0 e " + fmt(A.maxx) + ", e " + A.ly + " intero tra 0 e " + fmt(A.maxy) + ".";
+        $(P + "-passo").disabled = true; $(P + "-fine").disabled = true;
+        return;
+      }
+      M.x = BigInt(x); M.y = BigInt(y);
+      var s = A.init(M.x, M.y), stati = [{ s: s, testo: "", righe: 0 }], guardia = 0;
+      while (A.continua(s) && guardia < 100) {
+        var g = A.giro(s);
+        s = g.s; stati.push({ s: s, testo: g.testo, righe: g.righe }); guardia++;
+      }
+      M.stati = stati; M.k = 0;
+      show();
+    }
+    function show() {
+      var A = M.A, k = M.k, i, h = "<table><tr>";
+      A.intest.forEach(function (t) { h += "<th>" + t + "</th>"; });
+      h += "<th>invariante</th></tr>";
+      for (i = 0; i <= k; i++) {
+        var st = M.stati[i].s, r = A.riga(st, i, M.x, M.y);
+        r[0] = i;
+        h += "<tr" + (i === k ? " class='riga-attuale'" : "") + ">";
+        r.forEach(function (c) { h += "<td>" + c + "</td>"; });
+        h += "<td>" + (A.ok(st, i, M.x, M.y) ? "<span class='ok'>✓</span>" : "<span class='rosso'>✗</span>") + "</td></tr>";
+      }
+      h += "</table>";
+      $(P + "-tab").innerHTML = h;
+      var finito = k === M.stati.length - 1, corpo = 0;
+      for (i = 1; i <= k; i++) corpo += M.stati[i].righe;
+      // riga iniziale, un test per ogni giro fatto, il corpo dei giri; alla fine il test falso e il RETURN
+      var T = 1 + k + corpo + (finito ? 2 : 0);
+      $(P + "-cont").innerHTML = "<span>giri fatti: <b>" + k + "</b></span><span>righe eseguite " + (finito ? "in tutto" : "finora") + ": <b>" + fmt(T) + "</b></span>" +
+        (finito ? "<span>formula: <b>" + A.formula(M.x, M.y) + "</b></span>" : "");
+      var txt = k === 0 ? A.prima(M.x, M.y) : "<b>Giro " + k + ".</b> " + M.stati[k].testo + " La riga " + k + " della tabella rispetta ancora l'invariante: è il <b>passo</b>.";
+      if (finito) txt += " " + A.fine(M.stati[k].s, k, M.x, M.y);
+      $(P + "-txt").innerHTML = txt;
+      $(P + "-passo").disabled = finito;
+      $(P + "-fine").disabled = finito;
+    }
+    $(P + "-passo").onclick = function () { if (M.k < M.stati.length - 1) { M.k++; show(); } };
+    $(P + "-fine").onclick = function () { if (M.stati.length) { M.k = M.stati.length - 1; show(); } };
+    $(P + "-reset").onclick = ini;
+    $(P + "-x").onchange = ini;
+    $(P + "-y").onchange = ini;
+    $(P + "-alg").onchange = function () {
+      var A = ALG[$(P + "-alg").value] || ALG.somme;
+      $(P + "-x").value = A.def[0]; $(P + "-y").value = A.def[1];
+      ini();
+    };
+    ini();
+  }
+  macchina("i1");
+  macchina("i2");
+  macchina("i3");
+
+  // ---------------------------------------------------------- retta contro logaritmo
+  var RE = { W: 640, H: 240, sx: 46, dx: 16, su: 14, giu: 34, k: 3, q: 3, X: 20, Y: 70, inc: 6 };
+  function logf(b) { return 5 * Math.log(b) / Math.LN2 + 8; }
+  function retta(b) { return RE.k * b + RE.q; }
+  function incrocio() {
+    if (retta(1) >= logf(1)) return 1;
+    var lo = 1, hi = 2;
+    while (retta(hi) < logf(hi)) { lo = hi; hi *= 2; if (hi > 1e12) return NaN; }
+    for (var t = 0; t < 80; t++) { var m = (lo + hi) / 2; if (retta(m) < logf(m)) lo = m; else hi = m; }
+    return hi;
+  }
+  function nomeRetta() {
+    if (RE.k === 3 && RE.q === 3) return "3b + 3";
+    var den = Math.round(1 / RE.k);
+    return "b/" + den + " + " + dec(RE.q);
+  }
+  function reGx(b) { return RE.sx + (RE.W - RE.sx - RE.dx) * (b - 1) / (RE.X - 1); }
+  function reGy(v) { return RE.su + (RE.H - RE.su - RE.giu) * (1 - v / RE.Y); }
+  function reCalcola() {
+    var parti = String($("re-k").value || "3,3").split(",");
+    RE.k = Number(parti[0]); RE.q = Number(parti[1]);
+    RE.inc = incrocio();
+    RE.X = Math.max(16, nice(RE.inc * 1.7));
+    RE.Y = nice(Math.max(retta(RE.X), logf(RE.X)) * 1.05);
+    $("re-txt").innerHTML = "La retta " + nomeRetta() + " parte sotto il logaritmo: per b piccoli fa meno passi. Ma lo raggiunge a <b>b ≈ " + dec(RE.inc, 2) +
+      "</b>, e da lì in poi resta sopra per sempre, sempre più distante." + (RE.k < 1 ? " Anche una retta così piatta, prima o poi, supera il logaritmo." :
+      " (Con la parte intera, ⌊log<sub>2</sub> b⌋, le somme iterate fanno meno passi fino a b = 4, a b = 5 pareggiano e da b = 6 vince alla russa.)");
+    $("re-leg").innerHTML = "<span><span class='k a'></span>alla russa: 5 log<sub>2</sub> b + 8</span><span><span class='k b'></span>retta: " + nomeRetta() + "</span>";
+    var tb = "<table><tr><th>b</th><th>alla russa: 5 log<sub>2</sub> b + 8</th><th>retta: " + nomeRetta() + "</th></tr>";
+    for (var b = 1; b <= RE.X; b *= 2) tb += "<tr><td>" + fmt(b) + "</td><td>" + dec(logf(b), 1) + "</td><td>" + dec(retta(b), 1) + "</td></tr>";
+    $("re-tab").innerHTML = tb + "</table>";
+    reDisegna();
+  }
+  function reDisegna() {
+    var larg = $("re-svg").clientWidth;
+    RE.W = larg ? Math.max(280, Math.round(larg)) : 640;
+    RE.H = RE.W < 480 ? 210 : 240;
+    var p = [], i, b, dA = "", dB = "", N = 160;
+    for (i = 0; i <= N; i++) {
+      b = 1 + (RE.X - 1) * i / N;
+      dA += (i ? " L" : "M") + reGx(b).toFixed(1) + "," + reGy(logf(b)).toFixed(1);
+      dB += (i ? " L" : "M") + reGx(b).toFixed(1) + "," + reGy(Math.min(retta(b), RE.Y)).toFixed(1);
+    }
+    p.push("<svg viewBox='0 0 " + RE.W + " " + RE.H + "' id='re-svg-el' tabindex='0' role='img' aria-label='La retta " + nomeRetta() + " e 5 log2 b + 8 si incrociano a b circa " + dec(RE.inc, 1) + "; i valori sono nella tabella sotto'>");
+    tacche(RE.Y, 4).forEach(function (v) {
+      p.push("<line class='asse' x1='" + RE.sx + "' x2='" + (RE.W - RE.dx) + "' y1='" + reGy(v) + "' y2='" + reGy(v) + "'></line>");
+      p.push("<text class='tick' x='" + (RE.sx - 6) + "' y='" + (reGy(v) + 4) + "' text-anchor='end'>" + fmt(v) + "</text>");
+    });
+    tacche(RE.X, 5).forEach(function (v) {
+      if (v < 1) v = 1;
+      p.push("<text class='tick' x='" + reGx(v) + "' y='" + (RE.H - RE.giu + 16) + "' text-anchor='middle'>" + fmt(v) + "</text>");
+    });
+    p.push("<text class='tit-asse' x='" + (RE.W - RE.dx) + "' y='" + (RE.H - 4) + "' text-anchor='end'>b →</text>");
+    p.push("<text class='tit-asse' x='" + RE.sx + "' y='10'>passi ↑</text>");
+    p.push("<path class='serie-b' d='" + dB + "'></path>");
+    p.push("<path class='serie-a' d='" + dA + "'></path>");
+    var cx = reGx(RE.inc), cy = reGy(logf(RE.inc));
+    p.push("<line class='soglia' x1='" + cx + "' x2='" + cx + "' y1='" + cy + "' y2='" + reGy(0) + "'></line>");
+    p.push("<circle class='punto-a' cx='" + cx + "' cy='" + cy + "' r='5'></circle>");
+    p.push("<text class='etich' x='" + (cx + 8) + "' y='" + (cy + 16) + "'>si incrociano a b ≈ " + dec(RE.inc, 1) + "</text>");
+    p.push("<line class='croce' id='re-croce' x1='0' x2='0' y1='" + RE.su + "' y2='" + reGy(0) + "' style='display:none'></line>");
+    p.push("</svg>");
+    $("re-svg").innerHTML = p.join("");
+    var svg = document.getElementById("re-svg-el");
+    if (svg && svg.addEventListener) {
+      svg.addEventListener("pointermove", function (e) { reTip(reBda(e)); });
+      svg.addEventListener("pointerdown", function (e) { reTip(reBda(e)); });
+      svg.addEventListener("pointerleave", reNascondi);
+      svg.addEventListener("focus", function () { RE.sel = RE.inc; reTip(RE.inc); });
+      svg.addEventListener("blur", reNascondi);
+      svg.addEventListener("keydown", function (e) {
+        var passo = (RE.X - 1) / 20;
+        if (e.key === "ArrowRight") { RE.sel = Math.min(RE.X, (RE.sel || 1) + passo); reTip(RE.sel); e.preventDefault(); }
+        if (e.key === "ArrowLeft") { RE.sel = Math.max(1, (RE.sel || 1) - passo); reTip(RE.sel); e.preventDefault(); }
+      });
+    }
+  }
+  function reBda(e) {
+    var svg = document.getElementById("re-svg-el"), r = svg.getBoundingClientRect();
+    var x = (e.clientX - r.left) * RE.W / r.width;
+    var b = 1 + (x - RE.sx) * (RE.X - 1) / (RE.W - RE.sx - RE.dx);
+    b = Math.max(1, Math.min(RE.X, b));
+    return RE.X > 60 ? Math.round(b) : Math.round(b * 10) / 10;
+  }
+  function reTip(b) {
+    var svg = document.getElementById("re-svg-el"), tip = $("re-tip"), cr = document.getElementById("re-croce");
+    if (!svg || !svg.getBoundingClientRect) return;
+    RE.sel = b;
+    var x = reGx(b);
+    cr.setAttribute("x1", x); cr.setAttribute("x2", x); cr.style.display = "";
+    tip.innerHTML = "";
+    tip.appendChild(el("div", "", "b = " + dec(b, 1)));
+    [["a", logf(b), "alla russa"], ["b", retta(b), "retta"]].forEach(function (s) {
+      var r = el("div"), k = el("span", "chiave " + s[0]), v = el("b", "", dec(s[1], 1));
+      r.appendChild(k); r.appendChild(v); r.appendChild(document.createTextNode(" " + s[2]));
+      tip.appendChild(r);
+    });
+    tip.style.display = "block";
+    var box = $("re-graf").getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    var px = (x / RE.W) * sr.width + (sr.left - box.left), w = tip.offsetWidth || 150;
+    tip.style.left = (px + 12 + w <= box.width ? px + 12 : Math.max(0, px - 12 - w)) + "px";
+    tip.style.top = "6px";
+  }
+  function reNascondi() {
+    $("re-tip").style.display = "none";
+    var cr = document.getElementById("re-croce");
+    if (cr && cr.style) cr.style.display = "none";
+  }
+  $("re-k").onchange = reCalcola;
+  reCalcola();
+
+  // ---------------------------------------------------------- potenza ricorsiva: la pila
+  var po = { x: 2n, y: 13n, ev: [], k: 0 };
+  function poEventi(x, y) {
+    var ev = [];
+    function rec(yy, padre) {
+      if (yy === 0n) { ev.push({ t: "base", y: yy, r: 1n }); return 1n; }
+      ev.push({ t: "entra", y: yy });
+      var r = rec(yy / 2n, yy);
+      var q = r * r, disp = yy % 2n === 1n, out = disp ? q * x : q;
+      ev.push({ t: "esce", y: yy, r0: r, q: q, r: out, disp: disp });
+      return out;
+    }
+    rec(y, null);
+    return ev;
+  }
+  function poInit() {
+    var x = Number($("po-x").value), y = Number($("po-y").value);
+    if (!(Math.floor(x) === x && Math.floor(y) === y && x >= 0 && x <= 10 && y >= 0 && y <= 1000)) {
+      po.ev = []; po.k = 0;
+      $("po-pila").innerHTML = ""; $("po-cont").innerHTML = "";
+      $("po-txt").innerHTML = "Scegli x intero tra 0 e 10, e y intero tra 0 e 1000.";
+      $("po-passo").disabled = true; $("po-fine").disabled = true;
+      return;
+    }
+    po.x = BigInt(x); po.y = BigInt(y);
+    po.ev = poEventi(po.x, po.y); po.k = 0;
+    poShow();
+  }
+  function poShow() {
+    // ricostruisce la pila dopo i primi k eventi
+    var pila = [], molt = 0, chiamate = 0, hmax = 0, appenaUscito = null, i;
+    for (i = 0; i < po.k; i++) {
+      var e = po.ev[i];
+      appenaUscito = null;
+      if (e.t === "entra") { pila.push({ y: e.y, power: null }); chiamate++; }
+      else if (e.t === "base") { chiamate++; pila.push({ y: 0n, power: 1n }); appenaUscito = pila.pop(); appenaUscito.uscito = true; }
+      else { var rec = pila.pop(); rec.power = e.r; rec.uscito = true; appenaUscito = rec; molt += e.disp ? 2 : 1; }
+      if (appenaUscito && pila.length) pila[pila.length - 1].power = appenaUscito.power;
+      var h = pila.length + (appenaUscito ? 1 : 0);
+      if (h > hmax) hmax = h;
+    }
+    var out = $("po-pila");
+    out.innerHTML = "";
+    var mostra = pila.slice();
+    if (appenaUscito) mostra.push(appenaUscito);
+    mostra.forEach(function (r) {
+      var d = el("div", "record" + (r.uscito ? " finito" : ""));
+      d.appendChild(el("div", "tit", "potenza(" + po.x + ", " + r.y + ")"));
+      d.appendChild(el("div", "", r.uscito ? "restituisce " + r.power.toString() : (r.power === null ? "aspetta potenza(" + po.x + ", " + (r.y / 2n) + ")" : "power = " + r.power.toString())));
+      out.appendChild(d);
+    });
+    $("po-cont").innerHTML = "<span>chiamate: <b>" + chiamate + "</b></span><span>moltiplicazioni: <b>" + molt + "</b></span><span>pila più alta: <b>" + hmax + "</b> record</span>";
+    var txt, fine = po.k === po.ev.length;
+    if (po.k === 0) txt = "Premi <b>Passo</b> per chiamare potenza(" + po.x + ", " + po.y + ").";
+    else {
+      var ev = po.ev[po.k - 1], X = po.x;
+      if (ev.t === "entra") txt = "Chiamo <b>potenza(" + X + ", " + ev.y + ")</b>. y &gt; 0, quindi la riga 3 chiama potenza(" + X + ", ⌊" + ev.y + "/2⌋) = potenza(" + X + ", " + (ev.y / 2n) + "), e questa chiamata resta in attesa sulla pila.";
+      else if (ev.t === "base") txt = "<b>potenza(" + X + ", 0)</b>: caso base, le righe 1 e 2 restituiscono 1. Ora i risultati risalgono.";
+      else txt = "Torna a <b>potenza(" + X + ", " + ev.y + ")</b> il valore " + big(ev.r0) + ". Riga 4: power ← " + big(ev.r0) + " · " + big(ev.r0) + " = " + big(ev.q) + ". " +
+        (ev.disp ? ev.y + " è dispari: riga 6, power ← " + big(ev.q) + " · " + X + " = " + big(ev.r) + "." : ev.y + " è pari: la riga 6 si salta.") + " Restituisce " + big(ev.r) + ".";
+      if (fine) {
+        var yy = Number(po.y);
+        txt += " <b>Fine:</b> " + X + "<sup>" + po.y + "</sup> = " + big(po.x ** po.y) + " ✓." + (yy > 0 ? " Moltiplicazioni: " + molt + ", contro le " + yy + " della potenza iterata. Pila più alta: " + hmax + " record = ⌊log<sub>2</sub> " + yy + "⌋ + 2." : "");
+      }
+    }
+    $("po-txt").innerHTML = txt;
+    $("po-passo").disabled = fine;
+    $("po-fine").disabled = fine;
+  }
+  $("po-passo").onclick = function () { if (po.k < po.ev.length) { po.k++; poShow(); } };
+  $("po-fine").onclick = function () { if (po.ev.length) { po.k = po.ev.length; poShow(); } };
+  $("po-reset").onclick = poInit;
+  $("po-x").onchange = poInit;
+  $("po-y").onchange = poInit;
+  poInit();
+
+  // ---------------------------------------------------------- una chiamata o due
+  function duShow() {
+    var y = Number($("du-y").value), out = $("du-out");
+    out.innerHTML = "";
+    if (!(Math.floor(y) === y && y >= 1 && y <= 64)) { $("du-txt").innerHTML = "Scegli y intero tra 1 e 64."; return; }
+    var arg = [], v = y;
+    while (v > 0) { arg.push(v); v = Math.floor(v / 2); }
+    arg.push(0);
+    var L = arg.length, fianco = el("div", "fianco");
+    [1, 2].forEach(function (m) {
+      var lato = el("div", "lato"), tot = 0;
+      lato.appendChild(el("div", "lato-tit", m === 1 ? "Una chiamata (l'originale)" : "Due chiamate identiche"));
+      lato.appendChild(el("div", "lato-sotto", m === 1 ? "power ← potenza(x, y/2)" : "potenza(x, y/2) * potenza(x, y/2)"));
+      arg.forEach(function (a, d) {
+        var quante = Math.pow(m, d), riga = el("div", "mem-riga");
+        tot += quante;
+        riga.appendChild(el("div", "chi", "livello " + d + ": " + fmt(quante) + (quante === 1 ? " chiamata" : " chiamate") + " con y = " + a));
+        var box = el("div");
+        for (var j = 0; j < Math.min(quante, 16); j++) box.appendChild(el("span", "chip" + (a === 0 ? " zero" : ""), String(a)));
+        if (quante > 16) box.appendChild(el("span", "piccolo", " … e altre " + fmt(quante - 16)));
+        riga.appendChild(box);
+        lato.appendChild(riga);
+      });
+      lato.appendChild(el("div", "contatori", "chiamate in tutto: " + fmt(tot)));
+      fianco.appendChild(lato);
+    });
+    out.appendChild(fianco);
+    var due = Math.pow(2, L) - 1;
+    $("du-txt").innerHTML = "Con una chiamata: <b>" + L + "</b> chiamate, cioè ⌊log<sub>2</sub> " + y + "⌋ + 2. Con due: a ogni livello raddoppiano, e in tutto sono <b>" + fmt(due) +
+      "</b> = 2<sup>" + L + "</sup> − 1, un numero tra 2y = " + (2 * y) + " e 4y = " + (4 * y) + ". Ogni chiamata fa un numero costante di operazioni, quindi il tempo è lineare in y: Θ(y) contro Θ(log y).";
+  }
+  $("du-y").oninput = duShow;
+  duShow();
+
+  // ---------------------------------------------------------- il panino di Θ
+  function lg(n) { return Math.log(n) / Math.LN2; }
+  var TH = [
+    { f: function (n) { return 7 * n * n + n * lg(n); }, g: function (n) { return n * n; }, nf: "7n² + n log n", ng: "n²", c: 6, d: 9,
+      nota: "Con c = 7 e d = 8 il panino regge da subito: è la verifica fatta più sotto." },
+    { f: function (n) { return 5 * n * n + lg(n) + lg(lg(n)) + 2; }, g: function (n) { return n * n; }, nf: "5n² + log n + log log n + 2", ng: "n²", c: 4, d: 6,
+      nota: "I termini log n e log log n spariscono presto rispetto a 5n²: prova c = 5 e d = 5,5." },
+    { f: function (n) { return 2 * n * lg(n) + n + 7; }, g: function (n) { return n * lg(n); }, nf: "2n log n + n + 7", ng: "n log n", c: 1.5, d: 6,
+      nota: "Per n piccoli il +7 pesa molto, ma f/g scende verso 2: con d vicino a 2 serve un n₀ più grande." },
+    { f: function (n) { return 2 * n * n; }, g: function (n) { return n * n; }, nf: "2n²", ng: "n²", c: 1.5, d: 2.5,
+      nota: "Qui basta c = d = 2: f è esattamente 2 · g, stesso ordine di grandezza." },
+    { f: function (n) { return 2 * n + 1; }, g: function (n) { return n * n; }, nf: "2n + 1", ng: "n²", c: 0.5, d: 3,
+      nota: "2n + 1 = O(n²): il tetto d · n² regge. Ma non è Ω(n²), quindi neanche Θ(n²)." }
+  ];
+  var TG = { W: 640, H: 250, sx: 54, dx: 16, su: 14, giu: 34, N: 40, Y: 100, n0: null, sel: 10 };
+  function thAttuale() { return TH[Number($("th-f").value) || 0]; }
+  function thCalcola() {
+    var T = thAttuale(), c = Number($("th-c").value), d = Number($("th-d").value), n;
+    $("th-cv").textContent = dec(c, 1); $("th-dv").textContent = dec(d, 1);
+    var basso = null, alto = null;
+    for (n = TG.N; n >= 2; n--) { if (c * T.g(n) > T.f(n) + 1e-9) { basso = n + 1; break; } }
+    for (n = TG.N; n >= 2; n--) { if (T.f(n) > d * T.g(n) + 1e-9) { alto = n + 1; break; } }
+    var okB = basso === null || basso <= TG.N, okA = alto === null || alto <= TG.N;
+    TG.n0 = okB && okA ? Math.max(basso || 2, alto || 2) : null;
+    var t = "f(n) = " + T.nf + ", g(n) = " + T.ng + ". ";
+    if (TG.n0 !== null) t += "Con c = " + dec(c, 1) + " e d = " + dec(d, 1) + ": " + (TG.n0 === 2 ? "f sta nel panino <b>già dall'inizio</b> del grafico." : "da <b>n = " + TG.n0 + "</b> in poi f sta nel panino, fin dove arriva il grafico.");
+    else if (!okB && !okA) t += "f esce dal panino sia sopra sia sotto, anche alla fine del grafico: cambia c e d.";
+    else if (!okB) t += "Alla fine del grafico c · g sta ancora <b>sopra</b> f: questa c è troppo grande." + (Number($("th-f").value) === 4 ? " E qui non c'è rimedio: qualunque c &gt; 0 scegli, c · n² prima o poi supera 2n + 1." : "");
+    else t += "Alla fine del grafico f sta ancora <b>sopra</b> d · g: questa d è troppo piccola.";
+    t += " " + T.nota;
+    $("th-txt").innerHTML = t;
+    $("th-leg").innerHTML = "<span><span class='k a'></span>f(n) = " + T.nf + "</span><span><span class='k b'></span>c · g(n) e d · g(n), con g(n) = " + T.ng + "</span>";
+    var tb = "<table><tr><th>n</th><th>c · g(n)</th><th>f(n)</th><th>d · g(n)</th></tr>";
+    [2, 5, 10, 20, 30, 40].forEach(function (m) {
+      tb += "<tr><td>" + m + "</td><td>" + dec(c * T.g(m), 1) + "</td><td>" + dec(T.f(m), 1) + "</td><td>" + dec(d * T.g(m), 1) + "</td></tr>";
+    });
+    $("th-tab").innerHTML = tb + "</table>";
+    thDisegna();
+  }
+  function thGx(n) { return TG.sx + (TG.W - TG.sx - TG.dx) * (n - 2) / (TG.N - 2); }
+  function thGy(v) { return TG.su + (TG.H - TG.su - TG.giu) * (1 - v / TG.Y); }
+  function thDisegna() {
+    var T = thAttuale(), c = Number($("th-c").value), d = Number($("th-d").value);
+    var larg = $("th-svg").clientWidth;
+    TG.W = larg ? Math.max(280, Math.round(larg)) : 640;
+    TG.H = TG.W < 480 ? 220 : 250;
+    TG.Y = nice(Math.max(T.f(TG.N), d * T.g(TG.N)) * 1.05);
+    var p = [], i, n, df = "", dc = "", dd = "", su = [], giu = [], S = 152;
+    for (i = 0; i <= S; i++) {
+      n = 2 + (TG.N - 2) * i / S;
+      var xf = thGx(n).toFixed(1);
+      df += (i ? " L" : "M") + xf + "," + thGy(T.f(n)).toFixed(1);
+      dc += (i ? " L" : "M") + xf + "," + thGy(c * T.g(n)).toFixed(1);
+      dd += (i ? " L" : "M") + xf + "," + thGy(d * T.g(n)).toFixed(1);
+      su.push(xf + "," + thGy(d * T.g(n)).toFixed(1));
+      giu.unshift(xf + "," + thGy(c * T.g(n)).toFixed(1));
+    }
+    p.push("<svg viewBox='0 0 " + TG.W + " " + TG.H + "' id='th-svg-el' tabindex='0' role='img' aria-label='f(n) tra c per g(n) e d per g(n), per n da 2 a 40; i valori sono nella tabella sotto'>");
+    tacche(TG.Y, 4).forEach(function (v) {
+      p.push("<line class='asse' x1='" + TG.sx + "' x2='" + (TG.W - TG.dx) + "' y1='" + thGy(v) + "' y2='" + thGy(v) + "'></line>");
+      p.push("<text class='tick' x='" + (TG.sx - 6) + "' y='" + (thGy(v) + 4) + "' text-anchor='end'>" + fmt(v) + "</text>");
+    });
+    [2, 10, 20, 30, 40].forEach(function (v) {
+      p.push("<text class='tick' x='" + thGx(v) + "' y='" + (TG.H - TG.giu + 16) + "' text-anchor='middle'>" + v + "</text>");
+    });
+    p.push("<text class='tit-asse' x='" + (TG.W - TG.dx) + "' y='" + (TG.H - 4) + "' text-anchor='end'>n →</text>");
+    p.push("<polygon class='banda' points='" + su.concat(giu).join(" ") + "'></polygon>");
+    p.push("<path class='serie-b' d='" + dd + "'></path>");
+    p.push("<path class='serie-b' d='" + dc + "'></path>");
+    p.push("<path class='serie-a' d='" + df + "'></path>");
+    if (TG.n0 !== null && TG.n0 > 2) {
+      var x0 = thGx(TG.n0);
+      p.push("<line class='soglia' x1='" + x0 + "' x2='" + x0 + "' y1='" + TG.su + "' y2='" + thGy(0) + "'></line>");
+      p.push("<text class='etich' x='" + (x0 + 5) + "' y='" + (TG.su + 12) + "'>n₀ = " + TG.n0 + "</text>");
+    }
+    p.push("<line class='croce' id='th-croce' x1='0' x2='0' y1='" + TG.su + "' y2='" + thGy(0) + "' style='display:none'></line>");
+    p.push("</svg>");
+    $("th-svg").innerHTML = p.join("");
+    var svg = document.getElementById("th-svg-el");
+    if (svg && svg.addEventListener) {
+      svg.addEventListener("pointermove", function (e) { thTip(thNda(e)); });
+      svg.addEventListener("pointerdown", function (e) { thTip(thNda(e)); });
+      svg.addEventListener("pointerleave", thNascondi);
+      svg.addEventListener("focus", function () { thTip(TG.sel); });
+      svg.addEventListener("blur", thNascondi);
+      svg.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight" && TG.sel < TG.N) { thTip(TG.sel + 1); e.preventDefault(); }
+        if (e.key === "ArrowLeft" && TG.sel > 2) { thTip(TG.sel - 1); e.preventDefault(); }
+      });
+    }
+  }
+  function thNda(e) {
+    var svg = document.getElementById("th-svg-el"), r = svg.getBoundingClientRect();
+    var x = (e.clientX - r.left) * TG.W / r.width;
+    return Math.max(2, Math.min(TG.N, Math.round(2 + (x - TG.sx) * (TG.N - 2) / (TG.W - TG.sx - TG.dx))));
+  }
+  function thTip(n) {
+    var svg = document.getElementById("th-svg-el"), tip = $("th-tip"), cr = document.getElementById("th-croce");
+    if (!svg || !svg.getBoundingClientRect) return;
+    TG.sel = n;
+    var T = thAttuale(), c = Number($("th-c").value), d = Number($("th-d").value), x = thGx(n);
+    cr.setAttribute("x1", x); cr.setAttribute("x2", x); cr.style.display = "";
+    tip.innerHTML = "";
+    tip.appendChild(el("div", "", "n = " + n));
+    [["b", d * T.g(n), "d · g(n)"], ["a", T.f(n), "f(n)"], ["b", c * T.g(n), "c · g(n)"]].forEach(function (s) {
+      var r = el("div"), k = el("span", "chiave " + s[0]), v = el("b", "", dec(s[1], 1));
+      r.appendChild(k); r.appendChild(v); r.appendChild(document.createTextNode(" " + s[2]));
+      tip.appendChild(r);
+    });
+    tip.style.display = "block";
+    var box = $("th-graf").getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    var px = (x / TG.W) * sr.width + (sr.left - box.left), w = tip.offsetWidth || 150;
+    tip.style.left = (px + 12 + w <= box.width ? px + 12 : Math.max(0, px - 12 - w)) + "px";
+    tip.style.top = "6px";
+  }
+  function thNascondi() {
+    $("th-tip").style.display = "none";
+    var cr = document.getElementById("th-croce");
+    if (cr && cr.style) cr.style.display = "none";
+  }
+  $("th-f").onchange = function () {
+    var T = thAttuale();
+    $("th-c").value = T.c; $("th-d").value = T.d;
+    thCalcola();
+  };
+  $("th-c").oninput = thCalcola;
+  $("th-d").oninput = thCalcola;
+  thCalcola();
+
+  // ---------------------------------------------------------- cifre in basi diverse
+  function ciShow() {
+    var s = String($("ci-n").value).replace(/[\s.']/g, "");
+    if (!/^[0-9]{1,60}$/.test(s) || /^0+$/.test(s)) { $("ci-tab").innerHTML = ""; $("ci-txt").innerHTML = "Scrivi un intero positivo, fino a 60 cifre."; return; }
+    var n = BigInt(s), b10 = n.toString(), b2 = n.toString(2), b16 = n.toString(16).toUpperCase();
+    var l10 = b10.length, lg10 = (l10 - 1) + Math.log(Number("0." + b10.slice(0, 15)) * 10) / Math.LN10;
+    var unario;
+    if (n <= 100n) {
+      var k = Number(n), t = "";
+      for (var i = 1; i <= k; i++) t += "|" + (i % 5 === 0 && i < k ? " " : "");
+      unario = "<span class='tacche'>" + t + "</span>";
+    } else unario = "<span class='piccolo'>" + big(n) + " tacche: troppe da disegnare</span>";
+    function riga(base, scritto, len, logv) {
+      return "<tr><td>" + base + "</td><td style='word-break:break-all'>" + scritto + "</td><td><b>" + len + "</b></td><td>" +
+        (logv === null ? "log<sub>1</sub> non esiste" : "log<sub>" + base + "</sub> n ≈ " + dec(logv, 3) + ", quindi " + len) + "</td></tr>";
+    }
+    var h = "<table><tr><th>base</th><th>come si scrive</th><th>cifre</th><th>⌊log<sub>b</sub> n⌋ + 1</th></tr>";
+    h += riga("10", b10, String(l10), lg10);
+    h += riga("2", "<code>" + b2 + "</code>", String(b2.length), lg10 / Math.log10(2));
+    h += riga("16", "<code>" + b16 + "</code>", String(b16.length), lg10 / Math.log10(16));
+    h += riga("1 (unario)", unario, big(n), null);
+    $("ci-tab").innerHTML = h + "</table>";
+    $("ci-txt").innerHTML = "In base 2 servono " + b2.length + " cifre, " + dec(b2.length / l10, 2) + " volte le " + l10 + " cifre decimali (per numeri grandi il rapporto si avvicina a log<sub>2</sub> 10 ≈ 3,32). In base 16 ne bastano " + b16.length +
+      ". In unario servono <b>" + big(n) + "</b> simboli: tanti quanto il numero stesso.";
+  }
+  $("ci-n").oninput = ciShow;
+  ciShow();
+
+  if (window.addEventListener) window.addEventListener("resize", function () { reDisegna(); thDisegna(); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quanto costa un algoritmo</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 1 · lezioni 4–5</span>
+</div>
+
+<h1>Quanto costa un algoritmo</h1>
+<p class="sottotitolo">Su quale macchina si contano le operazioni, quando un'operazione costa davvero 1, cosa vuol dire caso peggiore e perché gli algoritmi esponenziali sono un disastro.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#modelli">Modelli di calcolo: Turing e la RAM</a></li>
+    <li><a href="#minimo">Il minimo: contare davvero</a></li>
+    <li><a href="#elementare">L'operazione è davvero elementare?</a></li>
+    <li><a href="#criteri">Criteri di costo: uniforme e logaritmico</a></li>
+    <li><a href="#casi">Caso peggiore e caso medio</a></li>
+    <li><a href="#crescita">Polinomiale o esponenziale?</a></li>
+    <li><a href="#hardware">Comprare hardware o pensare algoritmi?</a></li>
+    <li><a href="#problema">Complessità di un problema</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="modelli"><span class="num">1</span>Modelli di calcolo: Turing e la RAM</h2>
+
+<p>Vogliamo dire «questo algoritmo fa circa 3n operazioni». Ma cosa conta come <em>una</em> operazione? <code>A ← B · C</code> costa 1? Se B e C sono numeri di due cifre forse sì; se hanno un milione di cifre, chiaramente no. E dipende anche dalla macchina.</p>
+
+<p>Serve quindi un <strong>modello di calcolo</strong>: una macchina immaginaria, definita con precisione, su cui contare le operazioni senza ambiguità.</p>
+
+<h3>La macchina di Turing</h3>
+<p>Immagina un nastro lunghissimo diviso in caselle, e una testina che legge <strong>una casella alla volta</strong> e può spostarsi solo di una casella a destra o a sinistra. Per leggere la casella 1000 deve <strong>passare su tutte quelle prima</strong>.</p>
+<p>È il modello dei teorici: serve a capire quali problemi si possono risolvere e quali sono «facili» o «difficili». Per contare il tempo dei nostri algoritmi però non è realistico: si perde quasi tutto il tempo a scorrere il nastro, cosa che un computer vero non fa.</p>
+<p class="piccolo">Curiosità della lezione: secondo il prof il film su Turing ed Enigma è storicamente sbagliato.</p>
+
+<h3>La macchina ad accesso diretto (RAM)</h3>
+<p>È il modello che usiamo, e assomiglia a un computer vero. Ha una memoria fatta di celle numerate 0, 1, 2, …, e il programma può leggere o scrivere <strong>qualunque cella dicendone il numero</strong>, senza scorrere le altre. Come una cassettiera invece di un nastro.</p>
+
+<div class="box def">
+  <span class="etichetta">Regola della RAM</span>
+  <p>Ogni <strong>istruzione elementare</strong> (assegnamento, operazione aritmetica, confronto, lettura di una cella…) costa tempo costante: <strong>Θ(1)</strong>.</p>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">È una macchina ideale</span>
+  <p>La RAM ha memoria infinita e ogni cella contiene un intero <strong>grande quanto si vuole</strong>. Un computer vero ha celle da 64 bit. Quindi «ogni operazione costa Θ(1)» è credibile quando i dati sono <strong>tipi primitivi</strong> (int, float…) che stanno in una cella. Con numeri enormi non lo è più: lo vediamo nella <a href="#criteri">sezione 4</a>.</p>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="minimo"><span class="num">2</span>Il minimo: contare davvero</h2>
+
+<p>Facciamo un esempio completo. Hai una sequenza di n numeri e vuoi il più piccolo. È come cercare la persona più bassa in una fila: tieni a mente il più basso visto finora e lo confronti con chi arriva.</p>
+
+<pre class="pseudo"><b>Algoritmo</b> minimo (sequenza s) → elemento
+1  min ← primo elemento di s
+2  <b>while</b> non hai ispezionato tutti gli elementi di s <b>do</b>
+3    x ← prossimo elemento di s
+4    <b>if</b> x &lt; min <b>then</b> min ← x       <span class="com">// confronto</span>
+5  <b>return</b> min</pre>
+
+<p>Con s = 5, 3, 8, 1 (n = 4):</p>
+<div class="tabella-wrap"><table>
+  <tr><th>riga</th><th>x</th><th>x &lt; min ?</th><th>min</th></tr>
+  <tr><td>1</td><td>–</td><td>–</td><td>5</td></tr>
+  <tr><td>3–4</td><td>3</td><td class="verde">3 &lt; 5 sì</td><td>3</td></tr>
+  <tr><td>3–4</td><td>8</td><td class="rosso">8 &lt; 3 no</td><td>3</td></tr>
+  <tr><td>3–4</td><td>1</td><td class="verde">1 &lt; 3 sì</td><td>1</td></tr>
+</table></div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti della lezione 5</span>
+  <p class="citazione">«Perché n − 1 confronti?»</p>
+  <p>Il <strong>primo</strong> elemento diventa <code>min</code> senza confronti (riga 1): non c'è nessuno con cui confrontarlo. Ognuno degli <strong>altri n − 1</strong> elementi viene confrontato <strong>una volta sola</strong> con min (riga 4). Quindi i confronti sono n − 1, sempre, qualunque sia la sequenza.</p>
+  <p>Come in un torneo a eliminazione: con n giocatori, ogni partita elimina esattamente uno, e per avere un vincitore bisogna eliminarne n − 1. Quindi servono n − 1 partite.</p>
+  <p class="piccolo">Si contano i confronti <em>tra elementi</em>. Il test del while controlla solo se la sequenza è finita.</p>
+</div>
+
+<h3>E gli assegnamenti?</h3>
+<p>Gli assegnamenti (<code>min ← …</code>, <code>x ← …</code>) invece <strong>dipendono dalla sequenza</strong>:</p>
+<ul>
+  <li><strong>caso migliore</strong>: il primo è già il minimo, per esempio con 1, 2, 3, 4. min non cambia mai: 1 + (n−1) = <strong>n</strong> assegnamenti;</li>
+  <li><strong>caso peggiore</strong>: sequenza decrescente 4, 3, 2, 1, e min cambia a ogni passo: 1 + (n−1) + (n−1) = <strong>2n − 1</strong>.</li>
+</ul>
+<div class="formula">n ≤ numero di assegnamenti ≤ 2n − 1</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti della lezione 5</span>
+  <p class="citazione">«Perché T(n) = Θ(n)?»</p>
+  <p>Contiamo <em>tutte</em> le operazioni: n test del while, n − 1 confronti, tra n e 2n − 1 assegnamenti, 1 return. In tutto sono tra circa <strong>3n</strong> e <strong>4n</strong>.</p>
+  <p>Sulla RAM ogni operazione costa Θ(1), cioè tra <em>a</em> e <em>b</em> nanosecondi, con a e b costanti. Allora il tempo totale sta tra a·3n e b·4n: è schiacciato tra due rette, e questa è proprio la definizione di Θ(n).</p>
+  <p class="formula">Θ(n) operazioni × Θ(1) ciascuna = tempo Θ(n)</p>
+  <p>Attenzione al «se»: vale <strong>solo se ogni operazione costa davvero Θ(1)</strong>. Nella prossima sezione c'è un caso in cui non è così.</p>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="elementare"><span class="num">3</span>L'operazione è davvero elementare?</h2>
+
+<p>Stesso algoritmo del minimo, ma gli elementi sono <strong>parole</strong>. Confrontare due parole non è un'operazione unica: si confrontano lettera per lettera, finché non si trova una differenza.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>confronto</th><th>lettere confrontate</th></tr>
+  <tr><td>ALBER<mark>O</mark> / ALBER<mark>G</mark>O</td><td>6</td></tr>
+  <tr><td>P<mark>R</mark>ECIPITEVOLISSIMEVOLMENTE / P<mark>A</mark>STO</td><td>2</td></tr>
+  <tr><td>PRECIPITEVOL<mark>I</mark>SSIMEVOLMENTE / PRECIPITEVOL<mark>E</mark></td><td>13</td></tr>
+</table></div>
+
+<p>Se le parole sono lunghe al massimo M lettere, un confronto costa <strong>O(M)</strong>. Allora:</p>
+<div class="formula">n − 1 confronti × O(M) ciascuno = O(n · M)</div>
+<p>E se le parole sono lunghe circa quanto la sequenza (M ≈ n), il minimo costa <strong>O(n²)</strong>, non O(n)!</p>
+
+<div class="box idea">
+  <span class="etichetta">La domanda da farsi sempre</span>
+  <p><strong>Quest'operazione è davvero elementare?</strong> Confronti tra numeri normali sì. Confronti tra stringhe, o operazioni su numeri enormi, no: costano in base alla loro lunghezza.</p>
+</div>
+
+<p>Per i numeri enormi (come n! o x<sup>x</sup>) vale lo stesso: non stanno in una cella da 64 bit. Si rappresentano con <strong>tanti interi piccoli</strong>, come le cifre di un numero scritto in colonna (in Go c'è il pacchetto <code>math/big</code>), e ogni operazione si simula con tante operazioni elementari.</p>
+
+<!-- ============================================================ 4 -->
+<h2 id="criteri"><span class="num">4</span>Criteri di costo: uniforme e logaritmico</h2>
+
+<p>Questo è l'argomento della lezione 5 che ti era rimasto meno chiaro. Ripartiamo da un esempio concreto.</p>
+
+<h3>Calcolare x<sup>x</sup></h3>
+<pre class="pseudo"><b>Algoritmo</b> xx (intero x) → intero
+1  p ← 1
+2  <b>for</b> i ← 1 <b>to</b> x <b>do</b>
+3    p ← p * x
+4  <b>return</b> p</pre>
+
+<p>Il ciclo fa x giri, ogni giro una moltiplicazione e un assegnamento. «Ogni operazione costa 1», quindi il tempo è Θ(x). Giusto?</p>
+
+<p>Il prof l'ha provato in Go, dove un <code>int</code> ha 64 bit:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>x</th><th>risultato stampato</th></tr>
+  <tr><td>7</td><td>823543</td></tr>
+  <tr><td>10</td><td>10000000000</td></tr>
+  <tr><td>15</td><td>437893890380859375</td></tr>
+  <tr><td>20</td><td class="rosso">−2101438300051996672 &nbsp;negativo?!</td></tr>
+</table></div>
+
+<p>20<sup>20</sup> ≈ 10<sup>26</sup>, ma un <code>int</code> arriva al massimo a 2<sup>63</sup> − 1 ≈ 9,2 · 10<sup>18</sup>. Il risultato <strong>trabocca</strong> (overflow) e il numero stampato è spazzatura. Il problema è che x<sup>x</sup> cresce troppo in fretta per stare in una cella. Con i numeri grandi (<code>math/big</code>) il risultato è giusto, ma allora una moltiplicazione non costa più 1: costa di più quanto più i numeri sono lunghi.</p>
+
+<h3>L'idea dei due criteri, con una storia</h3>
+<p>Immagina di fare i conti a mano. Moltiplicare 3 × 4 è immediato. Moltiplicare due numeri di 50 cifre ti porta via un pomeriggio. Ci sono due modi di «far pagare» un'operazione:</p>
+<ul>
+  <li>il <strong>criterio uniforme</strong> è come il <strong>biglietto dell'autobus</strong>: prezzo fisso, qualunque sia la distanza. Ogni operazione costa 1, che i numeri siano piccoli o enormi;</li>
+  <li>il <strong>criterio logaritmico</strong> è come il <strong>taxi</strong>: paghi in base alla strada fatta. Ogni operazione costa in base a <strong>quanto sono lunghi</strong> i numeri, cioè a quante cifre (bit) hanno.</li>
+</ul>
+
+<div class="box def">
+  <span class="etichetta">Criterio di costo uniforme</span>
+  <p><strong>Tempo:</strong> ogni istruzione elementare costa 1, <strong>indipendentemente</strong> dalla grandezza degli operandi.<br>
+  <strong>Spazio:</strong> ogni variabile elementare occupa 1, indipendentemente dal valore contenuto.</p>
+  <p>Va bene quando i dati sono di <strong>tipi primitivi</strong> (int, float, double). È quello usato quasi sempre.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Criterio di costo logaritmico</span>
+  <p><strong>Tempo:</strong> ogni operazione costa in proporzione alla <strong>lunghezza della rappresentazione</strong> degli operandi.<br>
+  <strong>Spazio:</strong> la lunghezza della rappresentazione del dato: per gli interi il numero di bit, per le stringhe il numero di caratteri.</p>
+  <p>Serve quando gli operandi possono crescere senza limite.</p>
+</div>
+
+<h3>Perché si chiama «logaritmico»?</h3>
+<p>Perché la lunghezza di un numero è il suo <strong>logaritmo</strong>. Un intero y &gt; 0 scritto in binario ha</p>
+<div class="formula grande">⌊log<sub>2</sub> y⌋ + 1 = Θ(log y) bit</div>
+<div class="tabella-wrap"><table>
+  <tr><th>y</th><th>1</th><th>7</th><th>8</th><th>1000</th><th>1 000 000</th><th>2<sup>63</sup> − 1</th></tr>
+  <tr><td>bit</td><td>1</td><td>3</td><td>4</td><td>10</td><td>20</td><td>63</td></tr>
+</table></div>
+<p>Ogni volta che il numero raddoppia, la sua lunghezza cresce di un solo bit. Quindi «costo proporzionale alla lunghezza» vuol dire «costo proporzionale al logaritmo del valore». Nel corso, moltiplicare x per y costa:</p>
+<div class="formula">x · y costa Θ(log x + log y)</div>
+<p class="piccolo">(convenzione del corso: si sommano le lunghezze degli operandi)</p>
+
+<h3>x<sup>x</sup> con il criterio logaritmico, passo per passo</h3>
+<p>Il segreto è che <strong>p si allunga a ogni giro</strong>. Al giro i, p passa da x<sup>i−1</sup> a x<sup>i</sup>. Quanto è lungo? log(x<sup>i</sup>) = i · log x: dopo i giri p ha circa <strong>i volte</strong> i bit di x.</p>
+<ul>
+  <li>la moltiplicazione p * x costa Θ(log x<sup>i−1</sup> + log x) = Θ((i−1) log x + log x) = <strong>Θ(i log x)</strong>;</li>
+  <li>l'assegnamento a p copia i bit di x<sup>i</sup>: Θ(log x<sup>i</sup>) = <strong>Θ(i log x)</strong>.</li>
+</ul>
+<p>Quindi il giro i costa Θ(i log x): il primo giro costa poco, l'ultimo costa x volte tanto. Sommando tutti i giri:</p>
+<div class="formula">T(x) = Σ<sub>i=1..x</sub> Θ(i log x) = Θ(log x · Σ<sub>i=1..x</sub> i) = Θ(log x · x(x+1)/2)</div>
+<div class="formula grande"><mark>T(x) = Θ(x² log x)</mark></div>
+<p>Alla fine p contiene x<sup>x</sup>, che ha Θ(log x<sup>x</sup>) = Θ(x log x) bit: lo <strong>spazio</strong> è Θ(x log x).</p>
+
+<div class="box attenzione">
+  <span class="etichetta">L'errore tipico</span>
+  <p>In Σ i log x il log x <strong>moltiplica</strong> la somma, non si somma: è log x · (1 + 2 + … + x), non (1 + 2 + … + x) + log x. Il log x è lo stesso in ogni giro, quindi si porta fuori dalla somma come una costante.</p>
+</div>
+
+<div class="widget" id="w-xx">
+  <h4>PROVA TU · quanto si allunga p</h4>
+  <div class="controlli">
+    <label>x = <input type="number" id="xx-x" value="20" min="1" max="400"></label>
+  </div>
+  <div id="xx-out"></div>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>tempo</th><th>spazio</th></tr>
+  <tr><td>criterio uniforme</td><td>Θ(x)</td><td>Θ(1)</td></tr>
+  <tr><td>criterio logaritmico</td><td class="rosso">Θ(x² log x)</td><td class="rosso">Θ(x log x)</td></tr>
+</table></div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <p>Uniforme: «ogni operazione costa 1». Logaritmico: «ogni operazione costa quanto sono lunghi i numeri». Se i numeri restano piccoli (tipi primitivi) usi l'uniforme; se crescono senza limite, come x<sup>x</sup> o n!, l'uniforme ti racconta una bugia e serve il logaritmico.</p>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="casi"><span class="num">5</span>Caso peggiore e caso medio</h2>
+
+<p>Non ci interessa il tempo su un input preciso, ma <strong>come cresce</strong> il tempo quando cresce la lunghezza dell'input. Però input della stessa lunghezza possono richiedere tempi diversi (il minimo su 1,2,3,4 fa meno assegnamenti che su 4,3,2,1). Quale tempo scegliamo?</p>
+
+<div class="box def">
+  <span class="etichetta">Caso peggiore</span>
+  <p class="formula">T(n) = max { tempo(I) : |I| = n }</p>
+  <p>Il tempo <strong>massimo</strong> tra tutti gli input di lunghezza n. È una <strong>garanzia</strong>: nessun input lungo n ci mette di più. È quello che si studia di solito, e lo stesso per lo spazio.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Caso medio</span>
+  <p class="formula">T<sub>avg</sub>(n) = Σ<sub>|I| = n</sub> Prob(I) · tempo(I)</p>
+  <p>La media dei tempi su tutti gli input lunghi n, ognuno <strong>pesato</strong> con la sua probabilità.</p>
+</div>
+
+<p>Esempio: ci sono 3 istanze di lunghezza n, con tempi 12, 24 e 9.</p>
+<ul>
+  <li>Se sono <strong>equiprobabili</strong>: (12 + 24 + 9) / 3 = <strong>15</strong>.</li>
+  <li>Se le probabilità sono 1/2, 1/6, 1/3: ½·12 + ⅙·24 + ⅓·9 = 6 + 4 + 3 = <strong>13</strong>.</li>
+</ul>
+<p>Il caso medio cambia se cambiano le probabilità, quindi per calcolarlo bisogna <strong>sapere come sono distribuiti gli input</strong>. Spesso non si sa, ed è uno dei motivi per cui si preferisce il caso peggiore.</p>
+
+<!-- ============================================================ 6 -->
+<h2 id="crescita"><span class="num">6</span>Polinomiale o esponenziale?</h2>
+
+<p>Un algoritmo che fa n, n², n³ operazioni è <strong>polinomiale</strong>: lo consideriamo «ragionevole», «praticabile». Uno che fa 2<sup>n</sup> operazioni è <strong>esponenziale</strong>, e vedrai subito perché è un disastro.</p>
+
+<p>Computer che fa un miliardo di operazioni al secondo (1 operazione = 1 ns). Muovi n:</p>
+
+<div class="widget" id="w-cresc">
+  <h4>PROVA TU · quanto tempo ci vuole</h4>
+  <div class="controlli">
+    <label>n = <input type="range" id="cr-n" min="1" max="100" value="20"> <strong id="cr-nv">20</strong></label>
+  </div>
+  <div class="tabella-wrap"><table id="cr-tab"></table></div>
+</div>
+
+<p>La tabella della lavagna (con l'approssimazione 2<sup>10</sup> ≈ 10<sup>3</sup>, come a lezione):</p>
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>n = 10</th><th>n = 20</th><th>n = 50</th><th>n = 60</th><th>n = 100</th></tr>
+  <tr><td>n</td><td>10 ns</td><td>20 ns</td><td>50 ns</td><td>60 ns</td><td>100 ns</td></tr>
+  <tr><td>n²</td><td>100 ns</td><td>400 ns</td><td>2,5 µs</td><td>3,6 µs</td><td>10 µs</td></tr>
+  <tr><td>n³</td><td>1 µs</td><td>8 µs</td><td>125 µs</td><td>216 µs</td><td>1 ms</td></tr>
+  <tr><td>2<sup>n</sup></td><td class="rosso">1 µs</td><td class="rosso">1 ms</td><td class="rosso">11,5 giorni</td><td class="rosso">32 anni</td><td class="rosso">3·10<sup>10</sup> millenni</td></tr>
+</table></div>
+
+<div class="box idea">
+  <span class="etichetta">Perché 2<sup>n</sup> esplode</span>
+  <p>Con 2<sup>n</sup>, aumentare n di <strong>1</strong> <strong>raddoppia</strong> il tempo. Con n², per raddoppiare il tempo devi moltiplicare n per circa 1,41, e raddoppiare n <strong>quadruplica</strong> il tempo. Il polinomio cresce, ma l'esponenziale raddoppia a ogni passettino.</p>
+  <p>È la storia del re e della scacchiera: un chicco di riso sulla prima casella, due sulla seconda, quattro sulla terza… Sulla 64ª casella ci sono 2<sup>63</sup> chicchi: centinaia di anni di tutta la produzione mondiale di riso.</p>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="hardware"><span class="num">7</span>Comprare hardware o pensare algoritmi?</h2>
+
+<p>«Tanto i computer diventano sempre più veloci.» Vediamo. Con un computer <strong>k volte più veloce</strong>, nello stesso tempo, quanto più grandi diventano gli input che riesco a risolvere?</p>
+
+<p>Se prima risolvevo input lunghi N, ora faccio k volte le operazioni, quindi risolvo N' con:</p>
+<ul>
+  <li>n²: N'² = k · N², quindi N' = √k · N</li>
+  <li>n³: N'³ = k · N³, quindi N' = ∛k · N</li>
+  <li>2<sup>n</sup>: 2<sup>N'</sup> = k · 2<sup>N</sup>, quindi N' = N + log<sub>2</sub> k</li>
+</ul>
+
+<div class="widget" id="w-hw">
+  <h4>PROVA TU · computer k volte più veloce</h4>
+  <div class="controlli">
+    <label>k = <input type="number" id="hw-k" value="100" min="1"></label>
+  </div>
+  <div class="tabella-wrap"><table id="hw-tab"></table></div>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th>tempo</th><th>computer attuale</th><th>100 volte più veloce</th><th>1000 volte</th></tr>
+  <tr><td>n</td><td>N<sub>1</sub></td><td>100 · N<sub>1</sub></td><td>1000 · N<sub>1</sub></td></tr>
+  <tr><td>n²</td><td>N<sub>2</sub></td><td>10 · N<sub>2</sub></td><td>31,6 · N<sub>2</sub></td></tr>
+  <tr><td>n³</td><td>N<sub>3</sub></td><td>4,64 · N<sub>3</sub></td><td>10 · N<sub>3</sub></td></tr>
+  <tr><td>2<sup>n</sup></td><td>N<sub>4</sub></td><td class="rosso">N<sub>4</sub> + 6,64</td><td class="rosso">N<sub>4</sub> + 9,97</td></tr>
+</table></div>
+
+<div class="box attenzione">
+  <span class="etichetta">La morale</span>
+  <p>Con un algoritmo esponenziale, un computer <strong>100 volte</strong> più veloce risolve input più lunghi di appena <strong>6 o 7 elementi</strong>. Gli algoritmi esponenziali non traggono nessun beneficio significativo dall'hardware: conviene investire in algoritmi migliori.</p>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="problema"><span class="num">8</span>Complessità di un problema</h2>
+
+<p>Finora abbiamo misurato <strong>un algoritmo</strong>. Ora la domanda cambia: quanto tempo serve per risolvere <strong>un problema</strong>, usando il miglior algoritmo possibile, anche uno che nessuno ha ancora inventato?</p>
+
+<p>Immagina di voler sapere quanto ci vuole al minimo per andare da Milano a Roma. Se <strong>tu</strong> ci sei andato in 3 ore, sai che 3 ore <strong>bastano</strong>. Se dimostri che, per la distanza, <strong>nessun mezzo</strong> può metterci meno di 1 ora, sai che 1 ora <strong>serve</strong>. La risposta vera sta in mezzo.</p>
+
+<div class="box def">
+  <span class="etichetta">Limitazione superiore (upper bound)</span>
+  <p>Trovo <strong>un</strong> algoritmo che risolve P in tempo T(n): T(n) è <strong>sufficiente</strong>.</p>
+  <p class="formula">P è risolubile in tempo O(T(n)) &nbsp;=&nbsp; <strong>esiste</strong> un algoritmo O(T(n))</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Limitazione inferiore (lower bound)</span>
+  <p>Dimostro che <strong>ogni</strong> algoritmo che risolve P usa almeno T'(n): T'(n) è <strong>necessario</strong>.</p>
+  <p class="formula">P richiede tempo Ω(T'(n)) &nbsp;=&nbsp; <strong>ogni</strong> algoritmo usa Ω(T'(n))</p>
+</div>
+
+<svg viewBox="0 0 640 110" width="100%" role="img" aria-label="Il costo vero del problema sta tra lower e upper bound">
+  <line x1="30" y1="50" x2="610" y2="50" stroke="var(--muted)" stroke-width="2"/>
+  <polygon points="610,44 622,50 610,56" fill="var(--muted)"/>
+  <text x="600" y="78" font-size="13" fill="var(--muted)">tempo</text>
+  <rect x="200" y="40" width="240" height="20" fill="var(--green-soft)" stroke="var(--green)"/>
+  <line x1="200" y1="30" x2="200" y2="70" stroke="var(--accent)" stroke-width="3"/>
+  <line x1="440" y1="30" x2="440" y2="70" stroke="var(--accent)" stroke-width="3"/>
+  <text x="200" y="22" text-anchor="middle" font-size="15" fill="var(--accent)">Ω(T'(n))</text>
+  <text x="440" y="22" text-anchor="middle" font-size="15" fill="var(--accent)">O(T(n))</text>
+  <text x="320" y="86" text-anchor="middle" font-size="14" fill="var(--green)">il costo vero di P sta qui</text>
+  <text x="110" y="86" text-anchor="middle" font-size="13" fill="var(--muted)">nessuno fa meglio</text>
+  <text x="530" y="86" text-anchor="middle" font-size="13" fill="var(--muted)">un algoritmo ci riesce</text>
+</svg>
+
+<p>Se lower bound e upper bound <strong>coincidono</strong>, la complessità del problema è <strong>Θ(T(n))</strong>, e l'algoritmo che la raggiunge si dice <strong>ottimo</strong>.</p>
+
+<div class="box idea">
+  <span class="etichetta">Esempio: il minimo è ottimo</span>
+  <p><strong>Upper bound:</strong> il nostro algoritmo è O(n).<br>
+  <strong>Lower bound:</strong> ogni algoritmo deve guardare <strong>tutti</strong> gli n elementi, perché quello che salta potrebbe essere proprio il minimo. Quindi Ω(n).<br>
+  Coincidono: il problema del minimo è <strong>Θ(n)</strong> e il nostro algoritmo è <strong>ottimo</strong>. Con lo stesso ragionamento, anche la ricerca sequenziale in un array non ordinato è ottima (<a href="03-ricerca.html#costo-seq">pacco 3</a>).</p>
+</div>
+
+<p class="piccolo">Il lower bound è la parte difficile: non basta mostrare un algoritmo, bisogna ragionare su <em>tutti</em> gli algoritmi possibili.</p>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto ed esame</h2>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li>Si contano le operazioni sulla <strong>RAM</strong>: accesso diretto alla memoria, ogni istruzione elementare Θ(1).</li>
+    <li>Il minimo fa sempre n − 1 confronti e tra n e 2n − 1 assegnamenti: tempo Θ(n), se le operazioni sono davvero elementari.</li>
+    <li>Confrontare stringhe o operare su numeri enormi <strong>non</strong> è elementare.</li>
+    <li>Criterio uniforme: ogni operazione costa 1. Criterio logaritmico: costa quanto la lunghezza degli operandi, Θ(log valore).</li>
+    <li>x<sup>x</sup>: uniforme Θ(x) tempo e Θ(1) spazio; logaritmico Θ(x² log x) tempo e Θ(x log x) spazio.</li>
+    <li>Caso peggiore = massimo sugli input lunghi n (è una garanzia). Caso medio = media pesata, richiede le probabilità.</li>
+    <li>Polinomiale = praticabile, esponenziale = impraticabile anche con hardware molto più veloce.</li>
+    <li>Upper bound O (esiste un algoritmo), lower bound Ω (ogni algoritmo). Se coincidono: Θ e algoritmo ottimo.</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>Sono domande tipiche da <strong>orale</strong>: cos'è il modello RAM e perché non Turing, differenza tra i due criteri di costo con l'esempio x<sup>x</sup> (il conto Θ(x² log x) va saputo rifare), definizioni di caso peggiore e medio, cosa vuol dire che un algoritmo è ottimo. Nello scritto servono per giustificare i costi: «ogni chiamata costa Θ(1) perché…».</p>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi</h2>
+
+<details class="esercizio">
+  <summary>1. Minimo su 7, 3, 9, 1, 4: quanti confronti e quanti assegnamenti?</summary>
+  <div class="soluzione">
+    <p>n = 5, quindi <strong>4 confronti</strong>, come sempre.</p>
+    <p>Assegnamenti: min ← 7 (1), poi x ← … per 4 volte (4), poi min cambia quando arriva 3 e quando arriva 1 (2). Totale <strong>7</strong>, compreso tra n = 5 e 2n − 1 = 9.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. Quanti bit ha il numero 1000? E 1024?</summary>
+  <div class="soluzione">
+    <p>⌊log<sub>2</sub> 1000⌋ + 1: 2<sup>9</sup> = 512 ≤ 1000 &lt; 1024 = 2<sup>10</sup>, quindi ⌊log<sub>2</sub> 1000⌋ = 9 e i bit sono <strong>10</strong>.</p>
+    <p>1024 = 2<sup>10</sup>: ⌊log<sub>2</sub> 1024⌋ = 10, quindi <strong>11</strong> bit (in binario è 1 seguito da 10 zeri).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. Con il criterio logaritmico, quanto costa l'ultimo giro di xx con x = 16?</summary>
+  <div class="soluzione">
+    <p>Al giro i = 16, p passa da 16<sup>15</sup> = 2<sup>60</sup> (61 bit) a 16<sup>16</sup> = 2<sup>64</sup> (65 bit), e x = 16 ha 5 bit.</p>
+    <p>Moltiplicazione: circa 61 + 5 = 66; assegnamento: circa 65. Il primo giro invece costa circa 1 + 5 + 5. L'ultimo giro costa una decina di volte il primo: è il «p si allunga».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. Un algoritmo 2<sup>n</sup> risolve n = 40 in un'ora. Con un computer 1000 volte più veloce?</summary>
+  <div class="soluzione">
+    <p>N' = 40 + log<sub>2</sub> 1000 ≈ 40 + 9,97, quindi circa <strong>50</strong>. Mille volte più potenza per 10 elementi in più.</p>
+    <p>Per confronto, un algoritmo n² che risolve n = 100 000 in un'ora passerebbe a √1000 · 100 000 ≈ <strong>3 160 000</strong>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. Quattro istanze con tempi 10, 20, 30, 40 e probabilità 0,1, 0,2, 0,3, 0,4. Caso medio? Caso peggiore?</summary>
+  <div class="soluzione">
+    <p>Medio: 0,1·10 + 0,2·20 + 0,3·30 + 0,4·40 = 1 + 4 + 9 + 16 = <strong>30</strong>. (Se fossero equiprobabili sarebbe 25.)</p>
+    <p>Peggiore: il massimo, <strong>40</strong>, che non dipende dalle probabilità.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. Per un problema P ho un algoritmo O(n²) e ho dimostrato che ogni algoritmo richiede Ω(n). Qual è la complessità di P?</summary>
+  <div class="soluzione">
+    <p>Non lo sappiamo con precisione: sta tra n e n². Il mio algoritmo <strong>non</strong> è dimostrato ottimo. Per chiudere la questione servirebbe un algoritmo più veloce (che abbassa l'upper bound) oppure un lower bound più alto.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="00-primi-passi.html">← Pacco 0 · Primi passi</a>
+  <a href="02-array.html">Pacco 2 · Array →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var fmt = function (v, d) { return v.toLocaleString("it-IT", { maximumFractionDigits: d === undefined ? 1 : d }); };
+
+  // ---------------------------------------------------------- x^x
+  function bitlen(b) { return b === 0n ? 1 : b.toString(2).length; }
+  function xx() {
+    var x = parseInt(document.getElementById("xx-x").value, 10), out = document.getElementById("xx-out");
+    if (!(x >= 1 && x <= 400)) { out.textContent = "Scegli x tra 1 e 400."; return; }
+    var X = BigInt(x), p = 1n, Lx = bitlen(X), tot = 0, righe = [];
+    for (var i = 1; i <= x; i++) {
+      var Lp = bitlen(p), q = p * X, Lq = bitlen(q), costo = (Lp + Lx) + Lq;
+      tot += costo;
+      if (i <= 3 || i > x - 2) righe.push([i, Lp, Lq, costo]);
+      else if (i === 4) righe.push(null);
+      p = q;
+    }
+    var L = bitlen(p), cifre = p.toString().length, ci64 = p <= 9223372036854775807n;
+    var rif = x > 1 ? x * x * Math.log2(x) : 1;
+    var h = "<p style='margin:6px 0'>x<sup>x</sup> = " + (cifre <= 40 ? p.toString() : "un numero di <b>" + fmt(cifre, 0) + " cifre</b>") +
+      "<br>In binario ha <b>" + fmt(L, 0) + " bit</b>. " +
+      (ci64 ? "<span class='verde'>Sta in un int Go a 64 bit.</span>" : "<span class='rosso'>Non sta in un int Go a 64 bit: overflow!</span> (sta solo fino a x = 15)") + "</p>";
+    h += "<div class='tabella-wrap'><table><tr><th>giro i</th><th>bit di p prima</th><th>bit di p dopo</th><th>costo del giro (moltiplicazione + assegnamento)</th></tr>";
+    righe.forEach(function (r) {
+      h += r ? "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td><td>" + r[2] + "</td><td>" + r[1] + " + " + Lx + " + " + r[2] + " = <b>" + r[3] + "</b></td></tr>"
+             : "<tr><td colspan='4' class='piccolo'>… i giri in mezzo costano sempre di più …</td></tr>";
+    });
+    h += "</table></div>";
+    h += "<p style='margin:6px 0'><b>Criterio uniforme:</b> " + x + " giri, costo ≈ " + fmt(2 * x, 0) + " operazioni (Θ(x)).<br>" +
+      "<b>Criterio logaritmico:</b> costo totale ≈ <b>" + fmt(tot, 0) + "</b>. Confronto con x² · log<sub>2</sub> x = " + fmt(rif, 0) +
+      ": il rapporto è " + fmt(tot / rif, 2) + " e, al crescere di x, resta vicino a una costante. È proprio Θ(x² log x).</p>";
+    out.innerHTML = h;
+  }
+  document.getElementById("xx-x").oninput = xx;
+  xx();
+
+  // ---------------------------------------------------------- crescita
+  function tempo(ns) {
+    if (!isFinite(ns)) return "∞";
+    var s = ns / 1e9, anni = s / (365.25 * 86400);
+    if (ns < 1e3) return fmt(ns) + " ns";
+    if (ns < 1e6) return fmt(ns / 1e3) + " µs";
+    if (ns < 1e9) return fmt(ns / 1e6) + " ms";
+    if (s < 60) return fmt(s) + " s";
+    if (s < 3600) return fmt(s / 60) + " minuti";
+    if (s < 86400) return fmt(s / 3600) + " ore";
+    if (anni < 1) return fmt(s / 86400) + " giorni";
+    if (anni < 1e6) return fmt(anni) + " anni";
+    var eta = anni / 1.38e10;
+    return anni.toExponential(1).replace("e+", "·10^").replace(".", ",") + " anni" +
+      (eta >= 1 ? " (" + (eta < 1e6 ? fmt(eta, 0) : eta.toExponential(0).replace("e+", "·10^")) + " volte l'età dell'universo)" : "");
+  }
+  function sup(t) { return t.replace(/\^(\d+)/g, "<sup>$1</sup>"); }
+  function cresc() {
+    var n = parseInt(document.getElementById("cr-n").value, 10);
+    document.getElementById("cr-nv").textContent = n;
+    var r = [["n", n], ["n²", n * n], ["n³", n * n * n], ["2<sup>n</sup>", Math.pow(2, n)]];
+    var h = "<tr><th>operazioni</th><th>quante sono</th><th>tempo a 1 ns l'una</th></tr>";
+    r.forEach(function (x, i) {
+      var cl = i === 3 ? " class='rosso'" : "";
+      var quante = x[1] < 1e15 ? fmt(x[1], 0) : x[1].toExponential(2).replace("e+", "·10^").replace(".", ",");
+      h += "<tr><td>" + x[0] + "</td><td>" + sup(quante) + "</td><td" + cl + ">" + sup(tempo(x[1])) + "</td></tr>";
+    });
+    document.getElementById("cr-tab").innerHTML = h;
+  }
+  document.getElementById("cr-n").oninput = cresc;
+  cresc();
+
+  // ---------------------------------------------------------- hardware
+  function hw() {
+    var k = parseFloat(document.getElementById("hw-k").value), t = document.getElementById("hw-tab");
+    if (!(k >= 1)) { t.innerHTML = "<tr><td>Scrivi k ≥ 1.</td></tr>"; return; }
+    var h = "<tr><th>tempo</th><th>prima</th><th>con il computer " + fmt(k, 0) + " volte più veloce</th></tr>";
+    h += "<tr><td>n</td><td>N</td><td>" + fmt(k, 2) + " · N</td></tr>";
+    h += "<tr><td>n²</td><td>N</td><td>" + fmt(Math.sqrt(k), 2) + " · N</td></tr>";
+    h += "<tr><td>n³</td><td>N</td><td>" + fmt(Math.cbrt(k), 2) + " · N</td></tr>";
+    h += "<tr><td>2<sup>n</sup></td><td>N</td><td class='rosso'>N + " + fmt(Math.log2(k), 2) + "</td></tr>";
+    t.innerHTML = h;
+  }
+  document.getElementById("hw-k").oninput = hw;
+  hw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dividi e fondi: mergeSort</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 5 · lezione 8 · slide 3</span>
+</div>
+
+<h1>Dividi e fondi: mergeSort</h1>
+<p class="sottotitolo">Il primo algoritmo «avanzato». È la storia di come fondere due pile già ordinate, e di come questa idea semplice, ripetuta, batte i Θ(n²) confronti degli algoritmi elementari.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#idea">L'idea: dividere il lavoro</a></li>
+    <li><a href="#merge">La fusione (merge) di due array ordinati (Codice 3.2)</a></li>
+    <li><a href="#confronti-merge">Quanti confronti fa il merge</a></li>
+    <li><a href="#divide">La tecnica divide et impera</a></li>
+    <li><a href="#mergesort">mergeSort (Codice 3.1)</a></li>
+    <li><a href="#ricorrenza">Contare i confronti: l'equazione C(n)</a></li>
+    <li><a href="#soluzione">Quanto vale C(n)? (→ pacco 6)</a></li>
+    <li><a href="#stabilita">Le domande del prof: chi è stabile?</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<div class="box idea">
+  <span class="etichetta">Da dove arriva questa pagina</span>
+  <p>La lezione 8 (9 ottobre 2026) comincia con bubbleSort, che trovi nel <a href="04-ordinamenti-elementari.html#bubble">pacco 4</a>, e poi passa a tutto quello che c'è qui. Alla lavagna si arriva fino all'equazione di C(n). La lezione 9 la risolve, misura lo spazio e scrive la versione vera di mergeSort: è tutto nel <a href="06-mergesort-conti.html">pacco 6</a>.</p>
+</div>
+
+<!-- ============================================================ 1 -->
+<h2 id="idea"><span class="num">1</span>L'idea: dividere il lavoro</h2>
+
+<p>Una professoressa deve mettere in ordine alfabetico 800 compiti. Da sola, con il metodo delle carte in mano (insertionSort), ci passerebbe la notte. Allora fa così: divide la pila a metà e dà 400 compiti a ciascuno di due assistenti. Ognuno dei due fa lo stesso: divide a metà e passa 200 compiti a due aiutanti. E così via, finché qualcuno riceve un compito solo: una pila di un compito è già in ordine!</p>
+
+<p>Poi si torna indietro. Ognuno riceve dai suoi due aiutanti <strong>due pile già ordinate</strong> e deve solo <strong>fonderle</strong> in una pila ordinata. E fondere due pile ordinate è facilissimo, come vedi tra poco.</p>
+
+<div class="array" id="es-lavagna"></div>
+<p class="piccolo">L'esempio della lavagna: 7 6 3 8 | 4 2 10 5. Le due metà ordinate sono 3 6 7 8 e 2 4 5 10, e la loro fusione è 2 3 4 5 6 7 8 10.</p>
+
+<!-- ============================================================ 2 -->
+<h2 id="merge"><span class="num">2</span>La fusione (merge) di due array ordinati</h2>
+
+<div class="box def">
+  <span class="etichetta">Problema del merge (fusione)</span>
+  <p>Dati due array <code>B</code> e <code>C</code> ordinati in maniera non decrescente, costruire un array <code>X</code> ordinato in modo non decrescente contenente tutti gli elementi di <code>B</code> e di <code>C</code>.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Idea · due mazzi a faccia in su</span>
+  <p>Hai due mazzi di carte già ordinati, a faccia in su: in cima a ciascuno c'è la carta più piccola del mazzo. Chi è la carta più piccola in assoluto? Per forza una delle due in cima! Le confronti, prendi la più piccola e la metti nella pila del risultato. Sotto c'è una nuova carta in cima. Ripeti.</p>
+  <p>Quando uno dei due mazzi finisce, le carte dell'altro sono tutte più grandi di quelle già messe: le aggiungi in fondo così come sono, <strong>senza confronti</strong>.</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 8</span>
+  <p class="citazione">«4 5 8 10 | 6 9 J K: 2 sequenze già ordinate. Come faccio senza sprecare questo vantaggio? Difficile farlo sullo stesso spazio»</p>
+  <p>Con le carte del prof (J = 11, K = 13). <strong>Il vantaggio</strong> è che il più piccolo di tutti non va cercato: è per forza una delle due carte in cima, 4 o 6. E dopo averlo preso, il prossimo è di nuovo una delle due carte in cima. Basta un confronto per ogni carta, invece di rifare tutto da capo con un ordinamento.</p>
+  <p><strong>Perché è difficile «sullo stesso spazio»</strong>, cioè fondendo dentro lo stesso array senza un secondo array? Prova con B = 5 8 10 e C = 6 7 9, uno dopo l'altro nello stesso array: 5 8 10 | 6 7 9.</p>
+  <ul>
+    <li>Il 5 è già al suo posto. In posizione 1 deve andare il 6, ma lì c'è l'8. Se li scambi ottieni 5 6 10 | 8 7 9: la seconda parte non è più ordinata (8 7 9), e il trucco delle «carte in cima» smette di funzionare.</li>
+    <li>Se invece, per fare posto al 6, sposti avanti di uno 8 e 10, ogni carta può costare fino a n spostamenti: in tutto Θ(n²), e il vantaggio è sprecato.</li>
+  </ul>
+  <p>Per questo il merge scrive il risultato in un array <strong>nuovo, X</strong>. Esistono metodi per fondere sul posto in tempo lineare, ma sono complicatissimi: le slide citano un articolo di ricerca del 2000. Il prezzo è la memoria in più, ed è il motivo per cui mergeSort non è in loco.</p>
+</div>
+
+<p>Nel codice le «cime dei mazzi» sono due indici: <code>i<sub>1</sub></code> è il prossimo elemento da prendere in B, <code>i<sub>2</sub></code> il prossimo in C, e <code>k</code> è la prossima casella libera di X.</p>
+
+<p class="titolo-codice">Codice 3.2 · Fusione (merge) di due array ordinati</p>
+<pre class="pseudo"><b>Algoritmo</b> merge (array B[0..ℓ<sub>B</sub>−1], array C[0..ℓ<sub>C</sub>−1]) → array
+  Sia X[0..ℓ<sub>B</sub>+ℓ<sub>C</sub>−1] un array
+  i<sub>1</sub> ← 0, i<sub>2</sub> ← 0, k ← 0
+  <b>while</b> i<sub>1</sub> &lt; ℓ<sub>B</sub> <b>and</b> i<sub>2</sub> &lt; ℓ<sub>C</sub> <b>do</b>   <span class="com">// né B né C sono finiti</span>
+    <b>if</b> B[i<sub>1</sub>] ≤ C[i<sub>2</sub>] <b>then</b>
+      X[k] ← B[i<sub>1</sub>]                <span class="com">// prendo da B</span>
+      i<sub>1</sub> ← i<sub>1</sub> + 1
+    <b>else</b>
+      X[k] ← C[i<sub>2</sub>]                <span class="com">// prendo da C</span>
+      i<sub>2</sub> ← i<sub>2</sub> + 1
+    k ← k + 1
+  <b>for</b> j ← i<sub>1</sub> <b>to</b> ℓ<sub>B</sub> − 1 <b>do</b>          <span class="com">// copia i rimanenti di B (se ce ne sono)</span>
+    X[k] ← B[j]
+    k ← k + 1
+  <b>for</b> j ← i<sub>2</sub> <b>to</b> ℓ<sub>C</sub> − 1 <b>do</b>          <span class="com">// copia i rimanenti di C (se ce ne sono)</span>
+    X[k] ← C[j]
+    k ← k + 1
+  <b>return</b> X</pre>
+<p class="piccolo">Nella lezione 8 il prof l'aveva scritto con <code>if i<sub>1</sub> &lt; ℓ<sub>B</sub> then … else …</code> intorno ai due for (è la versione che hai copiato nei tuoi appunti). Nella lezione 9 ha cancellato l'if e l'else, ed è anche la versione delle slide. Funziona lo stesso: quando il while finisce, uno dei due array è finito, e il suo for non fa nessun giro (il suo indice è già in fondo).</p>
+
+<div class="widget" id="w-merge">
+  <h4>MERGE PASSO PER PASSO</h4>
+  <div class="controlli">
+    <label>B = <input type="text" id="mrg-b" value="4, 9, 11, 15, 18, 20" style="width:170px"></label>
+    <label>C = <input type="text" id="mrg-c" value="1, 2, 10, 19" style="width:130px"></label>
+  </div>
+  <div class="controlli">
+    <button class="primario" id="mrg-passo">Passo →</button>
+    <button id="mrg-fine">Fino alla fine</button>
+    <button id="mrg-reset">Ricomincia</button>
+  </div>
+  <div class="etich-array">B</div>
+  <div class="array" id="mrg-arr-b"></div>
+  <div class="etich-array">C</div>
+  <div class="array" id="mrg-arr-c"></div>
+  <div class="etich-array">X</div>
+  <div class="array" id="mrg-arr-x"></div>
+  <div class="contatori" id="mrg-cont"></div>
+  <div class="narrazione" id="mrg-txt"></div>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Perché ≤ e non &lt;</span>
+  <p>Con <code>B[i<sub>1</sub>] ≤ C[i<sub>2</sub>]</code>, a parità di chiave si prende <strong>da B</strong>. In mergeSort B è la metà <em>sinistra</em>, cioè gli elementi che venivano prima. Così due elementi uguali non si scavalcano mai e <strong>mergeSort è stabile</strong>. Con <code>&lt;</code> ordinerebbe lo stesso, ma a parità prenderebbe da C e perderebbe la stabilità.</p>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="confronti-merge"><span class="num">3</span>Quanti confronti fa il merge</h2>
+
+<p>Alla lavagna il prof si ferma e chiede: con n = ℓ<sub>B</sub> + ℓ<sub>C</sub> elementi in tutto, quanti confronti fa il merge? Lo chiama <strong>C<sub>merge</sub>(n)</strong>. Il ragionamento è nella storia delle carte:</p>
+
+<ol>
+  <li><strong>Ogni confronto mette a posto una carta</strong> in X. Le carte sono n, quindi i confronti sono <strong>al più n</strong>.</li>
+  <li>Ma quando un mazzo finisce, nell'altro resta <strong>almeno una</strong> carta, e le carte rimaste si copiano senza confronti. Quindi i confronti sono <strong>al più n − 1</strong>.</li>
+</ol>
+
+<div class="box def">
+  <span class="etichetta">Confronti del merge</span>
+  <p class="formula">min(ℓ<sub>B</sub>, ℓ<sub>C</sub>) ≤ C<sub>merge</sub>(n) ≤ n − 1</p>
+  <ul>
+    <li><strong>Caso peggiore, n − 1:</strong> i due mazzi finiscono quasi insieme, e alla fine resta una carta sola. È l'esempio della lavagna: 10 elementi, 9 confronti (prova «Fino alla fine» qui sopra).</li>
+    <li><strong>Caso migliore, min(ℓ<sub>B</sub>, ℓ<sub>C</sub>):</strong> il mazzo più corto ha tutte carte più piccole dell'altro. Ogni confronto pesca dal mazzo corto, che finisce dopo ℓ confronti, e il resto si copia gratis. Esempio: B = 1 2 3, C = 7 8 9 9 → 3 confronti.</li>
+  </ul>
+</div>
+
+<p>Nel conto di mergeSort conta il caso peggiore: <strong>C<sub>merge</sub>(n) = n − 1</strong>. E comunque, che siano pochi o tanti, sono <strong>al massimo lineari</strong> in n: il merge è un'operazione «economica», molto più semplice di ordinare.</p>
+
+<!-- ============================================================ 4 -->
+<h2 id="divide"><span class="num">4</span>La tecnica divide et impera</h2>
+
+<p>«Divide et impera», dividi e comanda: lo dicevano i Romani dei popoli da conquistare, uno alla volta è più facile che tutti insieme. In informatica è il metodo della professoressa con gli 800 compiti, scritto in generale.</p>
+
+<div class="box def">
+  <span class="etichetta">Tecnica divide et impera</span>
+  <p>𝒫 è un problema, ℐ è un'istanza di 𝒫 (un caso concreto, per esempio un array da ordinare).</p>
+  <ul>
+    <li>Se ℐ è <strong>piccola</strong>, risolvi 𝒫 su ℐ <strong>direttamente</strong>;</li>
+    <li>altrimenti:
+      <ul>
+        <li><strong>dividi</strong> ℐ in istanze di lunghezza minore della lunghezza di ℐ;</li>
+        <li><strong>risolvi</strong> queste istanze separatamente;</li>
+        <li>ricava la soluzione di ℐ <strong>combinando</strong> opportunamente le soluzioni ottenute.</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<p class="titolo-codice">Lo schema generale della lavagna</p>
+<pre class="pseudo"><b>Algoritmo</b> risolviP (istanza I) → soluzione
+  <b>if</b> |I| ≤ c <b>then</b>                       <span class="com">// caso base</span>
+    risolvi P su I direttamente
+    <b>return</b> soluzione
+  <b>else</b>
+    dividi I in m istanze I<sub>1</sub>, I<sub>2</sub>, …, I<sub>m</sub>, con |I<sub>j</sub>| &lt; |I| per j = 1..m
+    sol<sub>1</sub> ← risolviP(I<sub>1</sub>)                <span class="com">// ricorsione</span>
+    sol<sub>2</sub> ← risolviP(I<sub>2</sub>)
+    …
+    sol<sub>m</sub> ← risolviP(I<sub>m</sub>)
+    <b>return</b> combina(sol<sub>1</sub>, sol<sub>2</sub>, …, sol<sub>m</sub>)</pre>
+
+<p>Il tempo si scrive seguendo la stessa forma. Se l'istanza è piccola costa una costante; altrimenti è la somma dei pezzi del lavoro:</p>
+
+<p class="formula">T(I) = costante se |I| ≤ c, altrimenti T<sub>divide</sub>(I) + T(I<sub>1</sub>) + … + T(I<sub>m</sub>) + T<sub>combina</sub>(sol<sub>1</sub>, …, sol<sub>m</sub>)</p>
+
+<p>Leggila come la busta paga della professoressa: il tempo per dividere la pila, più il tempo di tutti gli aiutanti, più il tempo per fondere le pile che le restituiscono. Un'equazione in cui T compare anche a destra si chiama <strong>equazione di ricorrenza</strong>.</p>
+
+<div class="box idea">
+  <span class="etichetta">L'hai già visto!</span>
+  <p>La ricerca binaria del <a href="03-ricerca.html#ricorsiva">pacco 3</a> è un divide et impera: divide la porzione a metà, ma poi risolve <strong>una sola</strong> delle due metà (m = 1), e «combinare» vuol dire solo passare indietro il risultato. mergeSort invece risolve <strong>entrambe</strong> le metà (m = 2) e il combina è il merge.</p>
+  <p class="piccolo">Attenzione ai nomi: nello schema generale m è il <em>numero</em> di sottoistanze, in mergeSort e nella ricerca binaria m è l'indice di metà. Sono due cose diverse.</p>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="mergesort"><span class="num">5</span>mergeSort</h2>
+
+<div class="box def">
+  <span class="etichetta">Ordinamento per fusione · array A[0..n−1]</span>
+  <ul>
+    <li><strong>n ≤ 1:</strong> A è già ordinato (caso base).</li>
+    <li><strong>n &gt; 1:</strong>
+      <ul>
+        <li>dividi A in due parti di circa la stessa lunghezza;</li>
+        <li>ordina le due parti separatamente (ricorsivamente);</li>
+        <li>fondi i risultati in un unico array (merge).</li>
+      </ul>
+    </li>
+  </ul>
+</div>
+
+<p class="titolo-codice">Codice 3.1 · Schema dell'ordinamento per fusione</p>
+<pre class="pseudo"><b>Algoritmo</b> mergeSort (array A[0..n−1])
+  <b>if</b> n &gt; 1 <b>then</b>
+    m ← n/2                    <span class="com">// divisione intera</span>
+    B ← A[0..m−1]              <span class="com">// 1ª parte di A</span>
+    C ← A[m..n−1]              <span class="com">// 2ª parte di A</span>
+    mergeSort(B)
+    mergeSort(C)
+    A ← merge(B, C)</pre>
+
+<p>Il caso base non si vede, ma c'è: se n ≤ 1 l'if è falso e non si fa niente, perché un array di 0 o 1 elementi è già ordinato. Le tre righe in fondo sono proprio dividi (B e C), risolvi (le due chiamate) e combina (merge).</p>
+
+<p>Il riquadro qui sotto mostra l'esecuzione, cioè tutto l'albero delle chiamate: prima si scende dividendo, poi si risale fondendo. È una fotografia utile per capire cosa succede dentro il computer, ma non è il modo di <em>raccontare</em> l'algoritmo. Il prof vuole il racconto ricorsivo, un livello alla volta: «divido, <strong>ordino</strong> ricorsivamente le due metà, fondo» (<a href="06-mergesort-conti.html#raccontare">pacco 6, sezione 1</a>).</p>
+
+<div class="widget" id="w-albero">
+  <h4>L'ALBERO DI MERGESORT</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="alb-in" value="7, 6, 3, 8, 4, 2, 10, 5" style="width:220px"></label>
+    <button class="primario" id="alb-passo">Passo →</button>
+    <button id="alb-fine">Fino alla fine</button>
+    <button id="alb-reset">Ricomincia</button>
+  </div>
+  <div class="albero" id="alb-out"></div>
+  <div class="narrazione" id="alb-txt"></div>
+</div>
+
+<p>Quando n è dispari le due parti non sono uguali. Con m ← n/2 (divisione intera), B = A[0..m−1] ha <strong>⌊n/2⌋</strong> elementi e C = A[m..n−1] ne ha n − ⌊n/2⌋ = <strong>⌈n/2⌉</strong>. Con n = 5: B ne ha 2, C ne ha 3.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Non è in loco</span>
+  <p>Questa versione crea gli array B e C a ogni chiamata, e il merge crea un array X nuovo. È la memoria in più che rende mergeSort l'eccezione nella <a href="04-ordinamenti-elementari.html#mappa">mappa del pacco 4</a>. Nella lezione 9 il prof scrive una versione più furba (Codice 3.3, <a href="06-mergesort-conti.html#implementazione">pacco 6</a>) che lavora con due indici su A e un solo array di appoggio: lo spazio resta comunque Θ(n).</p>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="ricorrenza"><span class="num">6</span>Contare i confronti: l'equazione C(n)</h2>
+
+<p>Chiamiamo <strong>C(n)</strong> il numero di confronti che mergeSort fa, nel caso peggiore, su un array di n elementi. Non sappiamo ancora quanto vale, ma possiamo dire <em>com'è fatto</em>, guardando il codice riga per riga:</p>
+
+<ul>
+  <li>se n ≤ 1, non fa niente: <strong>0</strong> confronti;</li>
+  <li>altrimenti, <code>mergeSort(B)</code> ordina ⌊n/2⌋ elementi: <strong>C(⌊n/2⌋)</strong> confronti;</li>
+  <li><code>mergeSort(C)</code> ordina ⌈n/2⌉ elementi: <strong>C(⌈n/2⌉)</strong> confronti;</li>
+  <li><code>merge(B, C)</code> fonde n elementi in tutto: <strong>n − 1</strong> confronti nel caso peggiore;</li>
+  <li>dividere (le righe di m, B e C) non fa confronti tra chiavi.</li>
+</ul>
+
+<div class="box def">
+  <span class="etichetta">Equazione di ricorrenza dei confronti</span>
+  <p class="formula grande">C(n) = 0 se n ≤ 1, &nbsp; altrimenti &nbsp; C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</p>
+  <p class="piccolo">C(⌊n/2⌋) viene da mergeSort(B), C(⌈n/2⌉) da mergeSort(C), n − 1 da merge(B, C). Se n è pari, ⌊n/2⌋ = ⌈n/2⌉ = n/2 e diventa C(n) = 2C(n/2) + n − 1.</p>
+</div>
+
+<p>È la formula T(I) del divide et impera, con T<sub>divide</sub> = 0 confronti e T<sub>combina</sub> = n − 1. Anche se non sappiamo ancora risolverla, la possiamo già <strong>calcolare</strong> partendo dal basso, come una scala:</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>n</th><th>conto</th><th>C(n)</th></tr>
+  <tr><td>1</td><td>caso base</td><td>0</td></tr>
+  <tr><td>2</td><td>C(1) + C(1) + 1</td><td>1</td></tr>
+  <tr><td>3</td><td>C(1) + C(2) + 2 = 0 + 1 + 2</td><td>3</td></tr>
+  <tr><td>4</td><td>C(2) + C(2) + 3 = 1 + 1 + 3</td><td>5</td></tr>
+  <tr><td>5</td><td>C(2) + C(3) + 4 = 1 + 3 + 4</td><td>8</td></tr>
+  <tr><td>8</td><td>C(4) + C(4) + 7 = 5 + 5 + 7</td><td>17</td></tr>
+  <tr><td>16</td><td>C(8) + C(8) + 15 = 17 + 17 + 15</td><td>49</td></tr>
+</table></div>
+
+<div class="widget">
+  <h4>CALCOLA C(n) E CONFRONTALO CON GLI ELEMENTARI</h4>
+  <div class="controlli">
+    <label>n = <input type="number" id="cn-n" value="1000000" min="1" max="1000000000" style="width:150px"></label>
+  </div>
+  <div id="cn-out" class="narrazione"></div>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="soluzione"><span class="num">7</span>Quanto vale C(n)?</h2>
+
+<p>Alla lavagna la lezione 8 si ferma qui, con l'equazione scritta ma non risolta. La lezione 9 la risolve «srotolandola», e il risultato è:</p>
+
+<p class="formula grande">C(n) = n log<sub>2</sub> n − n + 1 per n potenza di 2, &nbsp; e in ogni caso C(n) = Θ(n log n)</p>
+
+<p>Il conto passo per passo, il caso di n qualsiasi, lo spazio sulla pila e la versione vera di mergeSort sono nel <a href="06-mergesort-conti.html"><strong>pacco 6</strong></a>.</p>
+
+<div class="box idea">
+  <span class="etichetta">Quanto conta la differenza</span>
+  <p>Con un milione di elementi, un algoritmo elementare nel caso peggiore fa circa 500 miliardi di confronti; mergeSort meno di 20 milioni. A un miliardo di confronti al secondo: <strong>8 minuti</strong> contro <strong>due centesimi di secondo</strong>. Prova col calcolatore della <a href="#ricorrenza">sezione 6</a>.</p>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="stabilita"><span class="num">8</span>Le domande del prof: chi è stabile?</h2>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 8, «domande da rispondere»</span>
+  <p class="citazione">«Controllare se sono stabili gli algoritmi che abbiamo fatto, e perché? Se volessimo farli diventare instabili (non è il caso), cosa si può fare? E chiedersi se sono stabili»</p>
+  <p>Ecco le risposte, algoritmo per algoritmo. La regola che c'è dietro è sempre la stessa: <strong>un algoritmo è stabile se un elemento non scavalca mai un elemento con la stessa chiave che stava prima di lui</strong>. Basta guardare cosa succede quando il confronto trova due chiavi uguali.</p>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th>algoritmo</th><th>stabile?</th><th>perché</th><th>cosa lo cambia</th></tr>
+  <tr><td>selectionSort</td><td class="rosso">no</td><td>lo scambio A[m] ↔ A[k] spedisce A[k] lontano, e può fargli scavalcare un uguale. Es. 10<sub>1</sub> 10<sub>2</sub> 5 → 5 10<sub>2</sub> 10<sub>1</sub></td><td><em>diventa stabile</em> se, invece di scambiare, si toglie il minimo e si spostano avanti di uno A[k..m−1] (come in insertionSort). Costa più spostamenti</td></tr>
+  <tr><td>insertionSort</td><td class="verde">sì</td><td>sposta solo gli elementi <strong>strettamente</strong> più grandi di x (<code>A[j] &gt; x</code>): davanti a un uguale si ferma, e x va dopo di lui</td><td><em>diventa instabile</em> con <code>A[j] ≥ x</code>: x scavalca gli uguali</td></tr>
+  <tr><td>bubbleSort</td><td class="verde">sì</td><td>scambia due vicini solo se <code>A[j] &lt; A[j−1]</code> strettamente: due uguali non si scambiano mai</td><td><em>diventa instabile</em> con <code>A[j] ≤ A[j−1]</code>: gli uguali vicini si scambiano. Attenzione: nella versione base (2.3) così il ciclo non finisce più!</td></tr>
+  <tr><td>mergeSort</td><td class="verde">sì</td><td>nel merge, con <code>B[i<sub>1</sub>] ≤ C[i<sub>2</sub>]</code> a parità si prende da B, la parte che veniva prima</td><td><em>diventa instabile</em> con <code>&lt;</code>: a parità prende da C</td></tr>
+</table></div>
+
+<p>In tre casi su quattro la stabilità dipende da <strong>un solo simbolo</strong>: un &lt; al posto di un ≤ o viceversa. Non cambia se l'array viene ordinato, cambia solo l'ordine tra chiavi uguali. Provalo:</p>
+
+<div class="widget" id="w-stb">
+  <h4>ROMPI (O AGGIUSTA) LA STABILITÀ</h4>
+  <div class="controlli">
+    <select id="stb-in" style="width:auto">
+      <option value="lav">lavagna: cane, gatto, lepre, formica, cagnolino</option>
+      <option value="carte">carte: 5♥ 3♠ 5♣ 3♦ 1♠</option>
+      <option value="dieci">lavagna: 10, 10, 5</option>
+      <option value="tre">tre chiavi uguali: 3, 3, 3, 1</option>
+    </select>
+    <select id="stb-alg" style="width:auto">
+      <option value="sel">selectionSort (scambio, Codice 2.1)</option>
+      <option value="selS">selectionSort con spostamento</option>
+      <option value="ins">insertionSort con A[j] &gt; x</option>
+      <option value="insU">insertionSort con A[j] ≥ x</option>
+      <option value="bub">bubbleSort 2.4 con A[j] &lt; A[j−1]</option>
+      <option value="bubU">bubbleSort 2.4 con A[j] ≤ A[j−1]</option>
+      <option value="mrg">mergeSort con B[i₁] ≤ C[i₂]</option>
+      <option value="mrgU">mergeSort con B[i₁] &lt; C[i₂]</option>
+    </select>
+  </div>
+  <div class="etich-array">Prima (il numerino in basso dice chi arriva prima tra chiavi uguali)</div>
+  <div class="recs" id="stb-prima"></div>
+  <div class="etich-array">Dopo</div>
+  <div class="recs" id="stb-dopo"></div>
+  <div class="narrazione" id="stb-txt"></div>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">«Stabile su questo input» non basta</span>
+  <p>Un algoritmo è stabile se rispetta l'ordine <strong>con qualunque input</strong>. Per dimostrare che <em>non</em> lo è basta un controesempio, come 10<sub>1</sub> 10<sub>2</sub> 5 per selectionSort. Ma se su un input l'ordine viene rispettato, non hai dimostrato niente: prova selectionSort sull'esempio della lavagna e poi su «10, 10, 5».</p>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto ed esame</h2>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><strong>merge</strong>: fonde due array ordinati confrontando i due «primi in cima» e prendendo il più piccolo; quando uno finisce, copia il resto dell'altro.</li>
+    <li>Il merge di n elementi fa <strong>al più n − 1</strong> confronti (almeno min(ℓ<sub>B</sub>, ℓ<sub>C</sub>)).</li>
+    <li><code>B[i<sub>1</sub>] ≤ C[i<sub>2</sub>]</code> con il ≤: a parità prende da B, ed è questo che rende mergeSort stabile.</li>
+    <li><strong>Divide et impera</strong>: caso base risolto direttamente, altrimenti dividi, risolvi ricorsivamente, combina.</li>
+    <li><strong>mergeSort</strong>: se n &gt; 1, m ← n/2, ordina A[0..m−1] e A[m..n−1], poi merge.</li>
+    <li>C(n) = 0 se n ≤ 1, altrimenti C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1. Soluzione (lezione 9, pacco 6): n log<sub>2</sub> n − n + 1 per n potenza di 2, Θ(n log n) sempre.</li>
+    <li>Stabili: insertion, bubble, merge. Non stabile: selection. Quasi sempre decide un &lt; o un ≤ nel confronto.</li>
+    <li>mergeSort <strong>non è in loco</strong>: usa array ausiliari.</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>Allo scritto l'esercizio sugli ordinamenti di solito è su quickSort o heapSort, che arriveranno nei prossimi pacchi. Ma mergeSort e il divide et impera sono un classico dell'<strong>orale</strong>:</p>
+  <ul>
+    <li>scrivere merge e mergeSort, e simulare merge su due array (con il conteggio dei confronti);</li>
+    <li>spiegare perché il merge fa al più n − 1 confronti, e trovare esempi di caso peggiore e migliore;</li>
+    <li>descrivere lo schema divide et impera e riconoscerlo in un algoritmo;</li>
+    <li>scrivere l'equazione di ricorrenza C(n), spiegando da dove viene ogni termine;</li>
+    <li>dire quali algoritmi sono stabili, perché, e quale simbolo cambiare per renderli instabili (le «domande da rispondere» della lezione 8).</li>
+  </ul>
+  <p>Per provarlo in C: esercizio <code>04-mergesort</code> nella tua cartella <code>asd/c</code> (<code>make 04</code>).</p>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi</h2>
+<p>Prova a rispondere prima di aprire la soluzione. I primi due li puoi controllare nel riquadro del merge.</p>
+
+<details class="esercizio">
+  <summary>1. Fondi B = [1, 3, 5] e C = [2, 4, 6]. Quanti confronti?</summary>
+  <div class="soluzione">
+    <p>1 ≤ 2 → 1; 3 ≤ 2? no → 2; 3 ≤ 4 → 3; 5 ≤ 4? no → 4; 5 ≤ 6 → 5. B è finito, si copia il 6 senza confronti.</p>
+    <p>X = 1 2 3 4 5 6, <strong>5 confronti = n − 1</strong>: caso peggiore. I due mazzi si alternano fino all'ultima carta.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. Fondi B = [1, 2, 3] e C = [7, 8, 9, 9]. Quanti confronti?</summary>
+  <div class="soluzione">
+    <p>1 ≤ 7, 2 ≤ 7, 3 ≤ 7: tre confronti, e B è finito. Poi 7 8 9 9 si copiano senza confronti.</p>
+    <p><strong>3 confronti = min(ℓ<sub>B</sub>, ℓ<sub>C</sub>)</strong>: caso migliore. Il mazzo corto aveva tutte carte più piccole.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. (Dalle slide) In generale, quando il merge fa n − 1 confronti? E quando ne fa il minimo?</summary>
+  <div class="soluzione">
+    <p>I confronti sono n meno le carte copiate gratis alla fine. Le carte copiate gratis sono quelle dell'ultimo mazzo rimasto, cioè gli elementi più grandi di <em>tutto</em> l'altro mazzo.</p>
+    <ul>
+      <li><strong>n − 1</strong> confronti quando alla fine resta una carta sola: succede quando il più grande e il secondo più grande stanno in mazzi diversi. Esempio: B = 1 3 5, C = 2 4 6.</li>
+      <li><strong>min(ℓ<sub>B</sub>, ℓ<sub>C</sub>)</strong> confronti quando tutti gli elementi del mazzo più corto vengono prima di tutti quelli dell'altro: ogni confronto pesca dal mazzo corto finché finisce.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. Nel merge scrivo <code>B[i<sub>1</sub>] &lt; C[i<sub>2</sub>]</code> invece di ≤. mergeSort ordina ancora? È ancora stabile?</summary>
+  <div class="soluzione">
+    <p>Ordina ancora: con chiavi uguali non importa quale si prende prima per avere X in ordine.</p>
+    <p>Ma <strong>non è più stabile</strong>: con chiavi uguali prende da C, cioè dalla metà destra, e l'elemento che veniva dopo finisce prima. Esempio: A = [5<sub>1</sub>, 5<sub>2</sub>]: B = [5<sub>1</sub>], C = [5<sub>2</sub>], 5<sub>1</sub> &lt; 5<sub>2</sub> è falso, quindi X = [5<sub>2</sub>, 5<sub>1</sub>].</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. Calcola C(8) con l'equazione di ricorrenza e controlla con n log<sub>2</sub> n − n + 1.</summary>
+  <div class="soluzione">
+    <p>C(1) = 0, C(2) = 0 + 0 + 1 = 1, C(4) = 1 + 1 + 3 = 5, C(8) = 5 + 5 + 7 = <strong>17</strong>.</p>
+    <p>Formula: 8 · log<sub>2</sub> 8 − 8 + 1 = 8 · 3 − 7 = 17. Coincide.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. Simula mergeSort su A = [5, 1, 4, 2, 3]: come si divide, e quanti confronti fa in tutto?</summary>
+  <div class="soluzione">
+    <p>n = 5, m = 2: B = [5, 1], C = [4, 2, 3].<br>
+    B: m = 1, [5] e [1], merge → [1, 5] (1 confronto).<br>
+    C: m = 1, [4] e [2, 3]. [2, 3] si divide in [2] e [3], merge → [2, 3] (1 confronto). Poi merge di [4] e [2, 3]: 4 ≤ 2 no, 4 ≤ 3 no, copio 4 → [2, 3, 4] (2 confronti).<br>
+    Merge finale di [1, 5] e [2, 3, 4]: 1 ≤ 2 sì, 5 ≤ 2 no, 5 ≤ 3 no, 5 ≤ 4 no, copio 5 → [1, 2, 3, 4, 5] (4 confronti).</p>
+    <p>Totale <strong>1 + 1 + 2 + 4 = 8</strong> = C(5): qui ogni merge è nel caso peggiore. Controlla col riquadro dell'albero.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>7. Sull'array della lavagna [7, 6, 3, 8, 4, 2, 10, 5] mergeSort fa 16 confronti, ma C(8) = 17. Contraddizione?</summary>
+  <div class="soluzione">
+    <p>No. C(n) è il numero di confronti nel <strong>caso peggiore</strong>: l'abbiamo scritto mettendo n − 1 per ogni merge. Su un array preciso qualche merge può finire prima.</p>
+    <p>Qui succede nel merge di [2, 4] e [5, 10]: 2 ≤ 5 sì, 4 ≤ 5 sì, e B è finito. Il 5 e il 10 si copiano gratis. Sono <strong>2 confronti invece di 3</strong>, perché tutto B è più piccolo di tutto C (è il caso migliore del merge). Tutti gli altri merge sono nel caso peggiore: 1 + 1 + 3 (sinistra) + 1 + 1 + 2 (destra) + 7 (finale) = 16 = 17 − 1. Lo vedi nel riquadro dell'albero, nella riga «Fondi · livello 1».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>8. La ricerca binaria è un divide et impera? Quanto valgono m, dividi e combina?</summary>
+  <div class="soluzione">
+    <p>Sì. Il caso base è la porzione vuota (o x trovato in A[m]). Dividi: calcola il centro, costo costante. Le sottoistanze risolte sono <strong>m = 1</strong> (solo la metà dove può stare x). Combina: niente, si restituisce il risultato. Per questo l'equazione è T(n) = T(n/2) + costante, e la soluzione è Θ(log n): un livello solo per ogni dimezzamento, con lavoro costante in ognuno.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>9. Nel bubbleSort base (Codice 2.3) scrivo <code>A[j] ≤ A[j−1]</code> invece di &lt;. Cosa succede con A = [4, 4]?</summary>
+  <div class="soluzione">
+    <p>Prima scansione: j = 1, A[1] = 4 ≤ A[0] = 4 è vero, quindi scambia e mette scambiato ← true. Il do-while ricomincia, e alla scansione dopo succede di nuovo, e poi ancora: i due 4 si scambiano a ogni giro, scambiato è sempre true e il ciclo <strong>non finisce mai</strong>.</p>
+    <p>La versione migliorata (2.4) invece si ferma lo stesso, grazie alla condizione i &lt; n: dopo n − 1 scansioni esce comunque. Ordina, ma non è più stabile.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>10. Rendi stabile selectionSort, senza cambiare il modo in cui sceglie il minimo.</summary>
+  <div class="soluzione">
+    <p>Il problema è lo scambio a lunga distanza. Al suo posto: si prende il minimo x = A[m], si spostano avanti di una posizione gli elementi A[k..m−1], e si mette x in A[k].</p>
+    <pre class="pseudo">x ← A[m]
+<b>for</b> j ← m <b>downto</b> k + 1 <b>do</b>
+  A[j] ← A[j − 1]
+A[k] ← x</pre>
+    <p>Gli elementi spostati mantengono il loro ordine relativo, e il minimo scelto è il <em>primo</em> tra gli uguali (perché il confronto è <code>A[j] &lt; A[m]</code> stretto), quindi nessuno scavalca un uguale. Il prezzo: i confronti restano n(n−1)/2, ma gli spostamenti possono diventare Θ(n²) invece di al più n − 1 scambi. Prova «selectionSort con spostamento» nel riquadro della sezione 8.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="04-ordinamenti-elementari.html">← Pacco 4 · Ordinamenti elementari</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="06-mergesort-conti.html">Pacco 6 · I conti di mergeSort →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+
+  function disegna(el, valori, opz) {
+    el.innerHTML = "";
+    var n = opz.lung !== undefined ? opz.lung : valori.length;
+    for (var i = 0; i < n; i++) {
+      var c = document.createElement("div");
+      c.className = "cella" + (opz.cls && opz.cls[i] ? " " + opz.cls[i] : "");
+      var f = document.createElement("div"); f.className = "f"; f.textContent = (opz.fr && opz.fr[i]) || "";
+      var v = document.createElement("div"); v.className = "v"; v.textContent = valori[i] === undefined ? "" : valori[i];
+      var k = document.createElement("div"); k.className = "i"; k.textContent = i;
+      c.appendChild(f); c.appendChild(v); c.appendChild(k);
+      el.appendChild(c);
+    }
+  }
+  function leggiArray(txt, max) {
+    var parti = String(txt).split(/[\s,;]+/).filter(function (s) { return s !== ""; });
+    if (parti.length > max) return null;
+    var A = [];
+    for (var i = 0; i < parti.length; i++) {
+      var v = Number(parti[i]);
+      if (!isFinite(v)) return null;
+      A.push(v);
+    }
+    return A;
+  }
+  function ordinato(A) { for (var i = 1; i < A.length; i++) if (A[i] < A[i - 1]) return false; return true; }
+
+  // ---------------------------------------------------------- esempio della lavagna
+  disegna($("es-lavagna"), [7, 6, 3, 8, 4, 2, 10, 5], { cls: { 0: "", 4: "" } });
+
+  // ---------------------------------------------------------- merge passo per passo
+  function passiMerge(B, C) {
+    var lB = B.length, lC = C.length, X = [], i1 = 0, i2 = 0, k = 0, cfr = 0, P = [];
+    function snap(t, att) {
+      var cb = {}, cc = {}, cx = {}, j;
+      for (j = 0; j < i1; j++) cb[j] = "fuori";
+      for (j = 0; j < i2; j++) cc[j] = "fuori";
+      for (j = 0; j < k; j++) cx[j] = "ordinata";
+      if (att) {
+        if (att.b !== undefined) cb[att.b] = "attiva";
+        if (att.c !== undefined) cc[att.c] = "attiva";
+        if (att.x !== undefined) cx[att.x] = "mossa";
+      }
+      var fb = {}, fc = {}, fx = {};
+      fb[i1] = "i₁"; fc[i2] = "i₂"; fx[k] = "k";
+      P.push({ X: X.slice(), cb: cb, cc: cc, cx: cx, fb: fb, fc: fc, fx: fx, t: t, cfr: cfr });
+    }
+    snap("i₁ ← 0, i₂ ← 0, k ← 0. X è un array vuoto di ℓ<sub>B</sub> + ℓ<sub>C</sub> = " + (lB + lC) + " caselle.");
+    while (i1 < lB && i2 < lC) {
+      cfr++;
+      var b = B[i1], c = C[i2];
+      if (b <= c) {
+        X[k] = b;
+        var t1 = "B[" + i1 + "] = " + b + " ≤ C[" + i2 + "] = " + c + "? <span class='verde'>sì</span>: <b>X[" + k + "] ← " + b + "</b> (da B), i₁ ← " + (i1 + 1) + ", k ← " + (k + 1) + ".";
+        i1++; k++;
+        snap(t1, { x: k - 1 });
+      } else {
+        X[k] = c;
+        var t2 = "B[" + i1 + "] = " + b + " ≤ C[" + i2 + "] = " + c + "? <span class='rosso'>no</span>: <b>X[" + k + "] ← " + c + "</b> (da C), i₂ ← " + (i2 + 1) + ", k ← " + (k + 1) + ".";
+        i2++; k++;
+        snap(t2, { x: k - 1 });
+      }
+    }
+    var daB = i1 < lB, resto = daB ? lB - i1 : lC - i2;
+    snap((daB ? "C" : "B") + " è finito (i" + (daB ? "₂ = ℓ<sub>C</sub>" : "₁ = ℓ<sub>B</sub>") + "). " +
+      (resto ? "Restano " + resto + " elementi di " + (daB ? "B" : "C") + ": tutti più grandi di quelli già in X, li copio <b>senza confronti</b>." : "Non resta niente da copiare."));
+    var j;
+    if (daB) {
+      for (j = i1; j < lB; j++) { X[k] = B[j]; i1++; k++; snap("X[" + (k - 1) + "] ← B[" + j + "] = " + B[j] + " (copia, nessun confronto).", { x: k - 1 }); }
+    } else {
+      for (j = i2; j < lC; j++) { X[k] = C[j]; i2++; k++; snap("X[" + (k - 1) + "] ← C[" + j + "] = " + C[j] + " (copia, nessun confronto).", { x: k - 1 }); }
+    }
+    var n = lB + lC, mn = Math.min(lB, lC), giudizio;
+    if (n === 0) giudizio = "";
+    else if (cfr === n - 1 && cfr === mn) giudizio = " Qui caso peggiore e migliore coincidono.";
+    else if (cfr === n - 1) giudizio = " È il <b>caso peggiore</b>: n − 1.";
+    else if (cfr === mn) giudizio = " È il <b>caso migliore</b>: min(ℓ<sub>B</sub>, ℓ<sub>C</sub>) = " + mn + ".";
+    else giudizio = " È tra il minimo min(ℓ<sub>B</sub>, ℓ<sub>C</sub>) = " + mn + " e il massimo n − 1 = " + (n - 1) + ".";
+    snap("<b>return X</b>. n = ℓ<sub>B</sub> + ℓ<sub>C</sub> = " + n + ", confronti = <b>" + cfr + "</b>." + giudizio);
+    return P;
+  }
+  var mrg = { P: [], k: 0, B: [], C: [] };
+  function mrgInit() {
+    var B = leggiArray($("mrg-b").value, 10), C = leggiArray($("mrg-c").value, 10), err = "";
+    if (!B || !C) err = "Scrivi al massimo 10 numeri per array, separati da virgole o spazi.";
+    else if (!ordinato(B)) err = "B non è ordinato: il merge funziona solo con due array già ordinati.";
+    else if (!ordinato(C)) err = "C non è ordinato: il merge funziona solo con due array già ordinati.";
+    else if (B.length + C.length === 0) err = "B e C sono vuoti: non c'è niente da fondere.";
+    if (err) {
+      mrg.P = [];
+      ["mrg-arr-b", "mrg-arr-c", "mrg-arr-x", "mrg-cont"].forEach(function (id) { $(id).innerHTML = ""; });
+      $("mrg-txt").innerHTML = err; $("mrg-passo").disabled = true;
+      return;
+    }
+    mrg.B = B; mrg.C = C; mrg.P = passiMerge(B, C); mrg.k = 0; mrgShow();
+  }
+  function mrgShow() {
+    var p = mrg.P[mrg.k];
+    disegna($("mrg-arr-b"), mrg.B, { cls: p.cb, fr: p.fb });
+    disegna($("mrg-arr-c"), mrg.C, { cls: p.cc, fr: p.fc });
+    disegna($("mrg-arr-x"), p.X, { cls: p.cx, fr: p.fx, lung: mrg.B.length + mrg.C.length });
+    $("mrg-cont").innerHTML = "<span>confronti: <b>" + p.cfr + "</b></span><span>n − 1 = " + (mrg.B.length + mrg.C.length - 1) + "</span>";
+    $("mrg-txt").innerHTML = "<span class='piccolo'>passo " + (mrg.k + 1) + " di " + mrg.P.length + "</span><br>" + p.t;
+    $("mrg-passo").disabled = mrg.k >= mrg.P.length - 1;
+  }
+  $("mrg-passo").onclick = function () { if (mrg.k < mrg.P.length - 1) { mrg.k++; mrgShow(); } };
+  $("mrg-fine").onclick = function () { if (mrg.P.length) { mrg.k = mrg.P.length - 1; mrgShow(); } };
+  $("mrg-reset").onclick = mrgInit;
+  $("mrg-b").onchange = mrgInit;
+  $("mrg-c").onchange = mrgInit;
+  mrgInit();
+
+  // ---------------------------------------------------------- albero di mergeSort
+  function fondi(B, C) {
+    var X = [], i = 0, j = 0, c = 0;
+    while (i < B.length && j < C.length) { c++; if (B[i] <= C[j]) X.push(B[i++]); else X.push(C[j++]); }
+    while (i < B.length) X.push(B[i++]);
+    while (j < C.length) X.push(C[j++]);
+    return { X: X, cfr: c };
+  }
+  function costruisci(A, prof) {
+    var nodo = { orig: A.slice(), prof: prof, figli: null, ord: A.slice(), cfr: 0 };
+    if (A.length > 1) {
+      var m = Math.floor(A.length / 2);
+      nodo.figli = [costruisci(A.slice(0, m), prof + 1), costruisci(A.slice(m), prof + 1)];
+      var f = fondi(nodo.figli[0].ord, nodo.figli[1].ord);
+      nodo.ord = f.X; nodo.cfr = f.cfr;
+    }
+    return nodo;
+  }
+  function frontiera(nodo, d, out) {
+    // pezzi che esistono al livello d: nodi di profondità d, oppure foglie più in alto
+    if (nodo.prof === d || !nodo.figli) out.push(nodo);
+    else { frontiera(nodo.figli[0], d, out); frontiera(nodo.figli[1], d, out); }
+    return out;
+  }
+  function altezza(nodo) { return nodo.figli ? 1 + Math.max(altezza(nodo.figli[0]), altezza(nodo.figli[1])) : 0; }
+  function righeAlbero(A) {
+    var rad = costruisci(A, 0), H = altezza(rad), R = [], d, tot = 0;
+    for (d = 0; d <= H; d++) {
+      var pz = frontiera(rad, d, []);
+      R.push({
+        nome: d === 0 ? "Array iniziale" : "Dividi · livello " + d,
+        pezzi: pz.map(function (p) { return { v: p.orig, nota: p.prof < d ? "già\nordinato" : (p.orig.length <= 1 ? "caso\nbase" : "") }; }),
+        t: d === 0 ? "L'array di partenza, n = " + A.length + ". Se n &gt; 1 si divide con m = n/2." :
+          "Ogni pezzo con più di un elemento si divide in due: m = (lunghezza)/2 elementi a sinistra, il resto a destra." +
+          (d === H ? " Ora tutti i pezzi hanno un elemento (o nessuno): sono il caso base, già ordinati." : "")
+      });
+    }
+    for (d = H - 1; d >= 0; d--) {
+      var pz2 = frontiera(rad, d, []), cfrLiv = 0;
+      var pezzi = pz2.map(function (p) {
+        if (p.prof === d && p.figli) { cfrLiv += p.cfr; return { v: p.ord, nota: p.cfr + " cfr\n(max " + (p.ord.length - 1) + ")", fuso: true }; }
+        return { v: p.ord, nota: "" };
+      });
+      tot += cfrLiv;
+      R.push({
+        nome: "Fondi · livello " + d, pezzi: pezzi,
+        t: "Ogni coppia di pezzi ordinati del livello sotto viene fusa con merge. Confronti in questo livello: <b>" + cfrLiv + "</b>." +
+          (d === 0 ? " <b>Fine</b>: array ordinato. Confronti in tutto: <b>" + tot + "</b> (il caso peggiore C(" + A.length + ") sarebbe " + Cn(A.length) + ")." : "")
+      });
+    }
+    return R;
+  }
+  var alb = { R: [], k: 0 };
+  function albInit() {
+    var A = leggiArray($("alb-in").value, 16);
+    if (!A || A.length < 1) {
+      alb.R = []; $("alb-out").innerHTML = "";
+      $("alb-txt").innerHTML = "Scrivi da 1 a 16 numeri separati da virgole o spazi.";
+      $("alb-passo").disabled = true;
+      return;
+    }
+    alb.R = righeAlbero(A); alb.k = 0; albShow();
+  }
+  function albShow() {
+    var out = $("alb-out");
+    out.innerHTML = "";
+    for (var r = 0; r <= alb.k; r++) {
+      var riga = alb.R[r], liv = document.createElement("div");
+      liv.className = "livello";
+      var nome = document.createElement("div"); nome.className = "nome"; nome.textContent = riga.nome;
+      liv.appendChild(nome);
+      riga.pezzi.forEach(function (p) {
+        var pz = document.createElement("div"); pz.className = "pezzo";
+        var arr = document.createElement("div"); arr.className = "array";
+        var cls = {};
+        for (var i = 0; i < p.v.length; i++) cls[i] = p.fuso ? "ordinata" : "";
+        disegna(arr, p.v, { cls: cls });
+        pz.appendChild(arr);
+        var nota = document.createElement("div"); nota.className = "nota"; nota.textContent = p.nota;
+        pz.appendChild(nota);
+        liv.appendChild(pz);
+      });
+      out.appendChild(liv);
+    }
+    $("alb-txt").innerHTML = "<span class='piccolo'>passo " + (alb.k + 1) + " di " + alb.R.length + "</span><br>" + alb.R[alb.k].t;
+    $("alb-passo").disabled = alb.k >= alb.R.length - 1;
+  }
+  $("alb-passo").onclick = function () { if (alb.k < alb.R.length - 1) { alb.k++; albShow(); } };
+  $("alb-fine").onclick = function () { if (alb.R.length) { alb.k = alb.R.length - 1; albShow(); } };
+  $("alb-reset").onclick = albInit;
+  $("alb-in").onchange = albInit;
+
+  // ---------------------------------------------------------- C(n)
+  var memo = {};
+  function Cn(n) {
+    if (n <= 1) return 0;
+    if (memo[n] !== undefined) return memo[n];
+    var v = Cn(Math.floor(n / 2)) + Cn(Math.ceil(n / 2)) + n - 1;
+    memo[n] = v;
+    return v;
+  }
+  function durata(s) {
+    if (s < 1) return (s * 1000 < 1 ? "meno di un millisecondo" : Math.round(s * 1000) + " millisecondi");
+    if (s < 120) return Math.round(s) + " secondi";
+    if (s < 7200) return Math.round(s / 60) + " minuti";
+    if (s < 172800) return Math.round(s / 3600) + " ore";
+    if (s < 3 * 365 * 86400) return Math.round(s / 86400) + " giorni";
+    return Math.round(s / (365 * 86400)) + " anni";
+  }
+  function cn() {
+    var n = parseInt($("cn-n").value, 10), out = $("cn-out");
+    if (!(n >= 1 && n <= 1e9)) { out.innerHTML = "Scegli n tra 1 e 1 000 000 000."; return; }
+    var c = Cn(n), el = BigInt(n) * BigInt(n - 1) / 2n, fmt = function (v) { return v.toLocaleString("it-IT"); };
+    var nlog = n * Math.log2(n);
+    out.innerHTML = "mergeSort, caso peggiore: C(n) = <b>" + fmt(c) + "</b> confronti" +
+      " <span class='piccolo'>(n log<sub>2</sub> n ≈ " + fmt(Math.round(nlog)) + ")</span><br>" +
+      "algoritmi elementari, caso peggiore: n(n−1)/2 = <b>" + fmt(el) + "</b> confronti<br>" +
+      "A un miliardo di confronti al secondo: mergeSort " + durata(c / 1e9) + ", elementari " + durata(Number(el) / 1e9) + "." +
+      (c > 0 ? " <span class='piccolo'>Gli elementari ne fanno circa " + fmt(Math.round(Number(el) / c)) + " volte tanti.</span>" : "");
+  }
+  $("cn-n").oninput = cn;
+  cn();
+  albInit();
+
+  // ---------------------------------------------------------- stabilità di tutti gli algoritmi
+  var STB = {
+    lav: [[10, "cane"], [15, "gatto"], [16, "lepre"], [10, "formica"], [15, "cagnolino"]],
+    carte: [[5, "♥"], [3, "♠"], [5, "♣"], [3, "♦"], [1, "♠"]],
+    dieci: [[10, "orso"], [10, "volpe"], [5, "riccio"]],
+    tre: [[3, "ape"], [3, "bue"], [3, "cane"], [1, "dodo"]]
+  };
+  function lt(a, b) { return a.k < b.k; }
+  function le(a, b) { return a.k <= b.k; }
+  var VAR = {
+    sel: function (A) {
+      for (var k = 0; k < A.length - 1; k++) {
+        var m = k;
+        for (var j = k + 1; j < A.length; j++) if (lt(A[j], A[m])) m = j;
+        var t = A[m]; A[m] = A[k]; A[k] = t;
+      }
+    },
+    selS: function (A) {
+      for (var k = 0; k < A.length - 1; k++) {
+        var m = k;
+        for (var j = k + 1; j < A.length; j++) if (lt(A[j], A[m])) m = j;
+        var x = A[m];
+        for (j = m; j > k; j--) A[j] = A[j - 1];
+        A[k] = x;
+      }
+    },
+    ins: function (A) { insGen(A, false); },
+    insU: function (A) { insGen(A, true); },
+    bub: function (A) { bubGen(A, false); },
+    bubU: function (A) { bubGen(A, true); },
+    mrg: function (A) { var r = msGen(A, false); for (var q = 0; q < r.length; q++) A[q] = r[q]; },
+    mrgU: function (A) { var r = msGen(A, true); for (var q = 0; q < r.length; q++) A[q] = r[q]; }
+  };
+  function insGen(A, uguale) {
+    for (var k = 1; k < A.length; k++) {
+      var x = A[k], j = k - 1;
+      while (j >= 0 && (uguale ? le(x, A[j]) : lt(x, A[j]))) { A[j + 1] = A[j]; j--; }   // A[j] ≥ x  oppure  A[j] > x
+      A[j + 1] = x;
+    }
+  }
+  function bubGen(A, uguale) {
+    var n = A.length, i = 1, sc;
+    do {
+      sc = false;
+      for (var j = 1; j <= n - i; j++) {
+        if (uguale ? le(A[j], A[j - 1]) : lt(A[j], A[j - 1])) { var t = A[j]; A[j] = A[j - 1]; A[j - 1] = t; sc = true; }
+      }
+      i++;
+    } while (sc && i < n);
+  }
+  function msGen(A, stretto) {
+    if (A.length <= 1) return A.slice();
+    var m = Math.floor(A.length / 2), B = msGen(A.slice(0, m), stretto), C = msGen(A.slice(m), stretto), X = [], i = 0, j = 0;
+    while (i < B.length && j < C.length) {
+      if (stretto ? lt(B[i], C[j]) : le(B[i], C[j])) X.push(B[i++]); else X.push(C[j++]);
+    }
+    while (i < B.length) X.push(B[i++]);
+    while (j < C.length) X.push(C[j++]);
+    return X;
+  }
+  var STABILE = { sel: false, selS: true, ins: true, insU: false, bub: true, bubU: false, mrg: true, mrgU: false };
+  function recHTML(r, inv) {
+    return "<span class='rec" + (inv ? " invertito" : "") + "'><b>" + r.k + "</b>" + r.nome + (r.ord ? "<sub>" + r.ord + "</sub>" : "") + "</span>";
+  }
+  function stb() {
+    var base = STB[$("stb-in").value] || STB.lav, alg = $("stb-alg").value;
+    if (!VAR[alg]) alg = "sel";
+    var conta = {}, tot = {};
+    base.forEach(function (r) { tot[r[0]] = (tot[r[0]] || 0) + 1; });
+    var R = base.map(function (r) { conta[r[0]] = (conta[r[0]] || 0) + 1; return { k: r[0], nome: r[1], ord: tot[r[0]] > 1 ? conta[r[0]] : 0 }; });
+    var S = R.slice();
+    VAR[alg](S);
+    var ultimo = {}, rotti = {};
+    S.forEach(function (r) {
+      if (r.ord && ultimo[r.k] !== undefined && r.ord < ultimo[r.k]) rotti[r.k] = true;
+      if (r.ord) ultimo[r.k] = Math.max(ultimo[r.k] || 0, r.ord);
+    });
+    $("stb-prima").innerHTML = R.map(function (r) { return recHTML(r, false); }).join("");
+    $("stb-dopo").innerHTML = S.map(function (r) { return recHTML(r, rotti[r.k]); }).join("");
+    var chiavi = Object.keys(rotti), t;
+    if (chiavi.length) t = "<span class='rosso'><b>Ordine relativo NON rispettato</b></span> per la chiave " + chiavi.join(", ") + " (in rosso). ";
+    else t = "<span class='verde'><b>Ordine relativo rispettato</b></span> su questo input. ";
+    if (STABILE[alg]) t += "Questa versione è <b>stabile</b> con qualunque input.";
+    else t += "Questa versione <b>non è stabile</b>" + (chiavi.length ? ": eccone la prova." : ": qui è andata bene per caso, prova un altro esempio.");
+    $("stb-txt").innerHTML = t;
+  }
+  $("stb-in").onchange = stb;
+  $("stb-alg").onchange = stb;
+  stb();
+})();
+</script>
+</body>
+</html>

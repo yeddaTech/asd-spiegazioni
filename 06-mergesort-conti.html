@@ -1,0 +1,1586 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quanto costa mergeSort</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 6 · lezione 9 · slide 3</span>
+</div>
+
+<h1>Quanto costa mergeSort</h1>
+<p class="sottotitolo">La lezione 9 chiude il conto aperto nel pacco 5. Risolviamo l'equazione dei confronti, misuriamo quanto si alza la pila delle chiamate e scriviamo la versione di mergeSort che si usa davvero, con un solo array di appoggio.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#raccontare">Prima dei conti: come si racconta mergeSort</a></li>
+    <li><a href="#attrezzi">Due attrezzi sulle potenze di 2</a></li>
+    <li><a href="#srotolare">Risolvere C(n): srotolare l'equazione</a></li>
+    <li><a href="#generale">E se n non è una potenza di 2? La catena, mossa per mossa</a></li>
+    <li><a href="#tempo">Il tempo T(n): cosa sono a, b e c</a></li>
+    <li><a href="#pila">Quanto è alta la pila: H(n)</a></li>
+    <li><a href="#implementazione">La versione vera: un solo array di appoggio (Codice 3.3)</a></li>
+    <li><a href="#bilancio">Il bilancio: confronti, tempo, spazio</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<div class="box idea">
+  <span class="etichetta">Dove eravamo rimasti</span>
+  <p>Nel <a href="05-mergesort.html">pacco 5</a> (lezione 8) abbiamo scritto mergeSort e l'equazione dei suoi confronti nel caso peggiore:</p>
+  <p class="formula">C(n) = 0 se n ≤ 1, &nbsp; altrimenti &nbsp; C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</p>
+  <p>Sapevamo calcolarla a mano, numero per numero (C(8) = 17, C(16) = 49), ma non sapevamo quanto vale <em>in generale</em>. La lezione 9 (12 ottobre 2026) risponde.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Se a lezione ti sei perso: la mappa</span>
+  <p>La lezione 9 sembra una valanga di conti, ma risponde a <strong>sei domande</strong>, tutte sullo stesso algoritmo. Ecco le risposte in breve. Quando un conto ti confonde, torna qui e chiediti a quale domanda sta rispondendo.</p>
+  <ol>
+    <li><a href="#raccontare">Come si descrive mergeSort?</a> «Divido a metà, <strong>ordino</strong> ricorsivamente le due metà, fondo.»</li>
+    <li><a href="#srotolare">Quanti confronti fa?</a> Se n è una potenza di 2, esattamente n log<sub>2</sub> n − n + 1.</li>
+    <li><a href="#generale">E se n non è una potenza di 2?</a> Meno di 2n log<sub>2</sub> n + n + 1. Sempre Θ(n log n).</li>
+    <li><a href="#tempo">Quanto tempo ci mette?</a> an + bn log<sub>2</sub> n + c(n − 1), con a, b, c costanti: Θ(n log n).</li>
+    <li><a href="#pila">Quanto si alza la pila delle chiamate?</a> Al più 2 + log<sub>2</sub> n record: Θ(log n).</li>
+    <li><a href="#implementazione">Come si scrive bene, e quanto spazio usa?</a> Con due indici i, f e un solo array X: spazio Θ(n).</li>
+  </ol>
+  <p>La sezione 2 prepara due attrezzi sulle potenze di 2, che servono per le risposte 2 e 3.</p>
+</div>
+
+<!-- ============================================================ 1 -->
+<h2 id="raccontare"><span class="num">1</span>Prima dei conti: come si racconta mergeSort</h2>
+
+<p>La lezione riparte da mergeSort, scritto alla lavagna in due modi: a parole e in pseudocodice.</p>
+
+<div class="box def">
+  <span class="etichetta">mergeSort su A[0..n−1], a parole</span>
+  <ul>
+    <li><strong>n ≤ 1:</strong> A è già ordinato (caso base);</li>
+    <li><strong>n &gt; 1:</strong> dividi A in due parti di circa la stessa lunghezza; <strong>ordina le due parti separatamente (ricorsivamente)</strong>; fondi i risultati in un unico array (merge).</li>
+  </ul>
+</div>
+
+<p class="titolo-codice">Codice 3.1 · Schema dell'ordinamento per fusione</p>
+<pre class="pseudo"><b>Algoritmo</b> mergeSort (array A[0..n−1])
+  <b>if</b> n &gt; 1 <b>then</b>
+    m ← n/2
+    B ← A[0..m−1]              <span class="com">// 1ª metà di A</span>
+    C ← A[m..n−1]              <span class="com">// 2ª metà di A</span>
+    mergeSort(B)
+    mergeSort(C)
+    A ← merge(B, C)</pre>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«Algoritmi ricorsivi vanno presentati come ricorsione […] (non ho ben capito che intende)»</p>
+  <p class="citazione">«Mi raccomando: presentare ricorsivamente la ricorsione. Non divido ricorsivamente, ordino ricorsivamente»</p>
+  <p>Vuol dire questo: un algoritmo ricorsivo si racconta <strong>un livello alla volta</strong>. Dici cosa fa la funzione con il suo input, e delle chiamate ricorsive dici solo <em>cosa</em> restituiscono («la metà torna ordinata»), non <em>come</em> ci riescono. Tutta la cascata di chiamate non si racconta.</p>
+</div>
+
+<div class="tabella-wrap"><table class="giusto-sbagliato">
+  <tr><th><span class="rosso">✗ Così no</span></th><th><span class="verde">✓ Così sì</span></th></tr>
+  <tr>
+    <td>«Divido l'array a metà, poi divido ancora ogni metà, e così via finché arrivo a pezzi da un elemento; poi fondo i pezzi a due a due, risalendo, finché ho di nuovo tutto l'array.»</td>
+    <td>«Se l'array ha al più un elemento, è già ordinato. Altrimenti lo divido in due metà, <strong>ordino ciascuna metà ricorsivamente</strong> e fondo le due metà ordinate con merge.»</td>
+  </tr>
+</table></div>
+
+<p>La versione di sinistra non è falsa: è la <em>fotografia</em> di quello che succede dentro il computer, l'albero delle chiamate del <a href="05-mergesort.html#mergesort">pacco 5</a>. Ma non è l'algoritmo. Nel Codice 3.1 non c'è scritto da nessuna parte «dividi finché arrivi a un elemento». C'è scritto: dividi <em>una</em> volta, chiama mergeSort sulle due metà, fondi. Che poi ogni chiamata divida a sua volta è affar suo.</p>
+
+<p>Ecco il senso di «non divido ricorsivamente, <strong>ordino</strong> ricorsivamente». Dividere si fa una volta sola, con m ← n/2. La parte ricorsiva è la chiamata mergeSort(B), e mergeSort(B) vuol dire «ordinami B».</p>
+
+<div class="box idea">
+  <span class="etichetta">Idea · la prof che delega</span>
+  <p>Una professoressa deve ordinare 800 compiti. Divide la pila in due, dà una metà a un assistente e l'altra a un secondo assistente, e a tutti e due dice soltanto: «ordinameli». Quando le tornano due pile ordinate, le fonde. Se le chiedi come lavora, risponde con queste tre frasi. Non sa, e non le interessa, che gli assistenti abbiano fatto lo stesso con altri assistenti: <strong>si fida</strong> che la pila torni ordinata.</p>
+  <p>Quella fiducia è anche il modo di dimostrare che mergeSort funziona, per induzione: se ordina bene gli array più corti di n, allora ordina bene anche quelli lunghi n, perché le due metà tornano ordinate e il merge di due array ordinati è ordinato.</p>
+</div>
+
+<p>C'è un altro motivo per raccontarlo così: <strong>tutte le equazioni di questa lezione sono questo racconto, tradotto in numeri</strong>. Guardano un livello solo: quanto costa ordinare la prima metà, quanto costa ordinare la seconda, quanto costa il lavoro di questo livello.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>ordina la 1ª metà</th><th>ordina la 2ª metà</th><th>lavoro di questo livello</th></tr>
+  <tr><td><strong>confronti</strong></td><td>C(⌊n/2⌋)</td><td>+ C(⌈n/2⌉)</td><td>+ (n − 1): il merge</td></tr>
+  <tr><td><strong>tempo</strong></td><td>T(⌊n/2⌋)</td><td>+ T(⌈n/2⌉)</td><td>+ bn + c: copie, merge e operazioni fisse (<a href="#tempo">sezione 5</a>)</td></tr>
+  <tr><td><strong>pila</strong></td><td>max(H(⌊n/2⌋),</td><td>H(⌈n/2⌉))</td><td>+ 1: il record di questa chiamata (<a href="#pila">sezione 6</a>)</td></tr>
+</table></div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame · il «mi raccomando» del prof</span>
+  <p>Se ti chiedono di descrivere mergeSort, rispondi con la versione di destra: caso base, divisione in due metà, chiamate ricorsive che <strong>ordinano</strong>, merge. Il racconto «divido fino ad arrivare a un elemento e poi risalgo» è proprio quello che il prof ha chiesto di evitare. Vale per ogni algoritmo ricorsivo. La ricerca binaria ricorsiva del <a href="03-ricerca.html">pacco 3</a>, per esempio, si racconta così: «guardo l'elemento centrale; se non è lui, <em>cerco</em> ricorsivamente nella metà giusta». Lo stesso varrà per quickSort.</p>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="attrezzi"><span class="num">2</span>Due attrezzi sulle potenze di 2</h2>
+
+<p>Prima di risolvere l'equazione, il prof prepara due attrezzi. Tutti e due si vedono benissimo scrivendo i numeri in <strong>binario</strong>.</p>
+
+<h3>Attrezzo 1 · 1 + 2 + 4 + … + 2<sup>k−1</sup> = 2<sup>k</sup> − 1</h3>
+
+<p>In base dieci lo sai già fare a mente: 9 + 90 + 900 = 999, che è 1000 − 1. In binario la cifra più grande è 1 invece di 9, e succede la stessa cosa. Le potenze di 2 in binario sono un 1 seguito da zeri:</p>
+
+<pre class="binario">      <span class="uno">1</span>   = 2<sup>0</sup>
+     <span class="uno">1</span>0   = 2<sup>1</sup>
+    <span class="uno">1</span>00   = 2<sup>2</sup>
+   <span class="uno">1</span>000   = 2<sup>3</sup>
+   ────
+   <span class="uno">1111</span>   la somma: un 1 in ogni posizione, nessun riporto
+ +    1
+   ────
+  <span class="uno">1</span>0000   = 2<sup>4</sup>: aggiungendo 1, tutti gli 1 diventano 0 con riporto</pre>
+
+<p>Quindi 1111 è «2<sup>4</sup> meno uno». In generale, sommando k potenze di 2 (da 2<sup>0</sup> a 2<sup>k−1</sup>) si ottengono k cifre 1, cioè 2<sup>k</sup> − 1.</p>
+
+<div class="box def">
+  <span class="etichetta">Somma delle potenze di 2</span>
+  <p class="formula grande">Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i</sup> = 2<sup>k</sup> − 1</p>
+</div>
+
+<div class="widget" id="w-pot">
+  <h4>LA SOMMA IN BINARIO</h4>
+  <div class="controlli">
+    <label>k = <input type="number" id="pot-k" value="4" min="1" max="20"></label>
+  </div>
+  <pre class="binario" id="pot-out"></pre>
+</div>
+
+<h3>Attrezzo 2 · Tra n e 2n c'è sempre una potenza di 2</h3>
+
+<p>Prendi un numero qualsiasi, per esempio n = 26. La prima potenza di 2 che lo raggiunge o lo supera è N = 32, e 32 è meno del doppio di 26. Non è un caso:</p>
+
+<div class="box def">
+  <span class="etichetta">Proprietà</span>
+  <p>Per ogni intero n ≥ 1 esiste una potenza di 2, che indichiamo con N, tale che</p>
+  <p class="formula grande">n ≤ N &lt; 2n</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«∀ n ∈ ℕ ∃ una potenza di 2 N t.c. n ≤ N ≤ 2n. Non ci ho capito nulla»</p>
+  <p>Allora lasciamo stare il binario per un momento: si capisce meglio con una scala.</p>
+</div>
+
+<p>Scrivi le potenze di 2 in fila: 1, 2, 4, 8, 16, 32, 64, 128… Sono i gradini di una scala strana, dove <strong>ogni gradino è alto il doppio di quello prima</strong>.</p>
+
+<p>Ora prendi n = 26 e sali finché trovi il primo gradino che arriva almeno a 26: è <strong>N = 32</strong>, perché il gradino prima, 16, è troppo basso. Due cose sono sicure:</p>
+<ul>
+  <li><strong>n ≤ N</strong>: N è il primo gradino che arriva a n, l'hai scelto così;</li>
+  <li><strong>N &lt; 2n</strong>: il gradino prima, che è N/2, era ancora sotto n, altrimenti ti saresti fermato lì. Quindi N/2 &lt; n, e raddoppiando tutti e due i lati: N &lt; 2n. Con i numeri: 16 &lt; 26, quindi 32 &lt; 52.</li>
+</ul>
+
+<p>Tutto qui. La frase dice soltanto che <strong>la prima potenza di 2 da n in su non arriva mai al doppio di n</strong>. Il righello più sotto lo fa vedere: la striscia da n a 2n contiene sempre una potenza di 2, e una sola.</p>
+
+<p>Lo stesso, visto in binario come alla lavagna:</p>
+
+<pre class="binario">n  =  <span class="uno">1</span>1010   = 26
+N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
+2n = <span class="uno">1</span>10100   = 52   n spostato a sinistra di un posto</pre>
+<p class="piccolo">N è la prima potenza di 2 da n in su; moltiplicare per 2, in binario, vuol dire spostare tutte le cifre a sinistra di un posto e aggiungere uno 0 in fondo.</p>
+
+<ul>
+  <li>Se n è già una potenza di 2 (un 1 e poi zeri), N = n e basta.</li>
+  <li>Altrimenti N ha <strong>una cifra in più</strong> di n, come 2n. Ma N, dopo l'1 iniziale, ha solo zeri; 2n invece ha dentro almeno un altro 1 (quelli di n). Quindi N &lt; 2n.</li>
+</ul>
+
+<p class="piccolo">Due ritocchi ai tuoi appunti. Alla fine è <strong>&lt; 2n</strong>, minore stretto: N = 2n non succede mai. E dove hai scritto «shift a dx»: moltiplicare per 2 in binario aggiunge uno 0 <em>a destra</em>, quindi le cifre scivolano <em>a sinistra</em>. Si chiama <strong>shift a sinistra</strong> (n &lt;&lt; 1 in C e in Go); alla lavagna, infatti, la freccia verde punta a sinistra.</p>
+
+<div class="widget" id="w-n">
+  <h4>IL RIGHELLO DELLE POTENZE DI 2</h4>
+  <div class="controlli">
+    <label>n = <input type="range" id="nn-r" min="1" max="100" value="26" aria-label="n da 1 a 100"></label>
+    <label>oppure scrivilo: <input type="number" id="nn-n" value="26" min="1" max="1000000000" style="width:130px"></label>
+  </div>
+  <div class="righello" id="nn-svg"></div>
+  <div class="narrazione" id="nn-txt"></div>
+  <pre class="binario" id="nn-out"></pre>
+</div>
+<p class="piccolo">Trascina n: la striscia da n a 2n si allunga e si accorcia, ma dentro cade sempre un gradino solo. I gradini raddoppiano, e la striscia va da n al suo doppio: è lunga esattamente «un raddoppio».</p>
+
+<p>A cosa serve? Il conto di C(n) viene pulito solo quando n è una potenza di 2. Con questo attrezzo, ogni altro n si «arrotonda» a N, che è una potenza di 2 e non è troppo lontana: meno del doppio.</p>
+
+<!-- ============================================================ 3 -->
+<h2 id="srotolare"><span class="num">3</span>Risolvere C(n): srotolare l'equazione</h2>
+
+<p>Prima una cosa che ti eri segnato: da dove viene il «n − 1» dell'equazione?</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«n = ℓ<sub>B</sub> + ℓ<sub>C</sub> = n° totale di elementi → devo sistemare n elementi: max n, ≤ n − 1 confronti. Uno dei due vettori finisce prima (non ho ben capito)»</p>
+  <p>Pensa a ogni confronto come a un <strong>biglietto</strong>. Il merge paga un biglietto ogni volta che mette un elemento in X <em>scegliendo</em> tra le due parti. Quando una delle due parti finisce, non c'è più niente da scegliere: gli elementi rimasti nell'altra entrano in X <strong>gratis</strong>, uno dopo l'altro, senza confronti.</p>
+  <p>E quando una parte finisce, nell'altra resta sempre <strong>almeno un</strong> elemento. Le due parti non possono finire con lo stesso confronto, perché ogni confronto consuma un elemento solo. Quindi almeno l'ultimo elemento entra gratis, e i biglietti sono al più n − 1. Rivedi la storia delle carte nel <a href="05-mergesort.html#confronti-merge">pacco 5</a>, oppure prova qui.</p>
+</div>
+
+<div class="widget" id="w-big">
+  <h4>CHI PAGA UN CONFRONTO?</h4>
+  <div class="controlli">
+    <label>prima parte = <input type="text" id="big-b" value="4, 9, 11, 15, 18, 20" style="width:170px"></label>
+    <label>seconda parte = <input type="text" id="big-c" value="1, 2, 10, 19" style="width:130px"></label>
+  </div>
+  <div class="controlli">
+    <button id="big-lav">Quello della lavagna</button>
+    <button id="big-alt">Alternati</button>
+    <button id="big-prima">Uno tutto prima dell'altro</button>
+  </div>
+  <div class="etich-array">X dopo il merge · sopra: il confronto che ha pagato l'elemento · sotto: da quale parte viene</div>
+  <div class="array" id="big-x"></div>
+  <div class="contatori" id="big-cont"></div>
+  <div class="narrazione" id="big-txt"></div>
+</div>
+
+<p>Ora risolviamo l'equazione. Prendiamo n potenza di 2. Allora ⌊n/2⌋ = ⌈n/2⌉ = n/2, e l'equazione diventa più semplice:</p>
+
+<p class="formula grande">C(n) = 2C(n/2) + n − 1 se n &gt; 1, &nbsp; C(1) = 0</p>
+
+<div class="box idea">
+  <span class="etichetta">Idea · la matrioska</span>
+  <p>C(n) è scritto usando C(n/2). Ma anche C(n/2) si può scrivere con la stessa formula, usando C(n/4). E C(n/4) usando C(n/8)… È come aprire una matrioska: dentro ce n'è una più piccola, uguale ma ridotta. La apri, la riapri, finché arrivi alla bambolina piena, C(1) = 0, che non si apre più.</p>
+  <p>Questo metodo si chiama <strong>sostituzione</strong> (o «srotolare» l'equazione): si sostituisce la formula dentro se stessa più volte, finché si vede la regola.</p>
+</div>
+
+<p>Ecco i passi della lavagna. In rosso, a ogni passo, la matrioska che si apre.</p>
+
+<p class="formula">C(n) = 2 <span class="rosso">C(n/2)</span> + n − 1</p>
+<p>Al posto di C(n/2) metto la sua formula, 2C(n/2²) + n/2 − 1 (è la stessa formula con n/2 al posto di n):</p>
+<p class="formula">= 2 [2C(n/2²) + n/2 − 1] + n − 1 = 2² <span class="rosso">C(n/2²)</span> + n − 2 + n − 1</p>
+<p>Il 2 davanti moltiplica tutto: 2 · n/2 = n e 2 · 1 = 2. Di nuovo, con C(n/2²) = 2C(n/2³) + n/2² − 1:</p>
+<p class="formula">= 2² [2C(n/2³) + n/2² − 1] + n − 2 + n − 1 = 2³ <span class="rosso">C(n/2³)</span> + (n − 2²) + (n − 2¹) + (n − 2⁰)</p>
+
+<p>Vedi la regola? Dopo k passi davanti a C c'è 2<sup>k</sup>, dentro c'è n/2<sup>k</sup>, e si sono accumulati k termini del tipo «n meno una potenza di 2»: n − 2<sup>0</sup>, n − 2<sup>1</sup>, …, n − 2<sup>k−1</sup>. Le n sono k, quindi fanno n·k; le potenze di 2 si sommano con l'attrezzo 1:</p>
+
+<p class="formula grande">C(n) = 2<sup>k</sup> C(n/2<sup>k</sup>) + n·k − Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i</sup> = 2<sup>k</sup> C(n/2<sup>k</sup>) + n·k − 2<sup>k</sup> + 1</p>
+
+<p>Quando ci fermiamo? Quando la matrioska è quella piena: n/2<sup>k</sup> = 1, cioè n = 2<sup>k</sup>, cioè <strong>k = log<sub>2</sub> n</strong>. Mettendo k = log<sub>2</sub> n e 2<sup>k</sup> = n:</p>
+
+<p class="formula grande">C(n) = n · C(1) + n log<sub>2</sub> n − n + 1 = <strong>n log<sub>2</sub> n − n + 1</strong></p>
+
+<p>perché C(1) = 0. Controllo: C(8) = 8·3 − 8 + 1 = 17 e C(16) = 16·4 − 16 + 1 = 49, come nella tabella del pacco 5.</p>
+
+<div class="widget" id="w-srot">
+  <h4>SROTOLA CON I NUMERI</h4>
+  <div class="controlli">
+    <label>n = <select id="srot-n" style="width:auto">
+      <option value="4">4</option>
+      <option value="8">8</option>
+      <option value="16" selected>16</option>
+      <option value="32">32</option>
+      <option value="64">64</option>
+      <option value="1024">1024</option>
+    </select></label>
+    <button class="primario" id="srot-passo">Apri un'altra matrioska →</button>
+    <button id="srot-fine">Fino alla fine</button>
+    <button id="srot-reset">Ricomincia</button>
+  </div>
+  <div class="srotola" id="srot-out"></div>
+  <div class="narrazione" id="srot-txt"></div>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · il tuo srotolamento</span>
+  <p class="citazione">«= 2³C(n/2³) + n − 2² + n − 2¹ + n − 2⁰ = 2³C(n/2³) + 3n − Σ<sub>i=0</sub><sup>3−1</sup> 2<sup>i</sup> … = n log n − n + 1 … C(n) = n log n + 1 = Θ(n log n)»</p>
+  <p>Il tuo srotolamento è giusto riga per riga, compreso il passaggio più difficile: raccogliere le n e scrivere le potenze di 2 come una Σ. Solo nell'ultima riga ti è scappato il −n. Il valore esatto è <strong>C(n) = n log<sub>2</sub> n − n + 1</strong>. Per il Θ non cambia niente, ma se all'esame chiedono quanto vale C(n), il −n ci vuole.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Lo stesso conto, visto dall'albero</span>
+  <p>Ogni termine «n − 2<sup>j</sup>» ha un significato preciso: sono i confronti di tutti i merge del <strong>livello j</strong> dell'albero di mergeSort (il riquadro dell'albero nel <a href="05-mergesort.html#mergesort">pacco 5</a>).</p>
+  <div class="tabella-wrap"><table>
+    <tr><th>livello</th><th>pezzi</th><th>grandezza di ogni pezzo</th><th>confronti del livello</th><th>con n = 16</th></tr>
+    <tr><td>0</td><td>1</td><td>n</td><td>1 · (n − 1) = n − 2<sup>0</sup></td><td>15</td></tr>
+    <tr><td>1</td><td>2</td><td>n/2</td><td>2 · (n/2 − 1) = n − 2<sup>1</sup></td><td>14</td></tr>
+    <tr><td>2</td><td>4</td><td>n/4</td><td>4 · (n/4 − 1) = n − 2<sup>2</sup></td><td>12</td></tr>
+    <tr><td>3</td><td>8</td><td>n/8</td><td>8 · (n/8 − 1) = n − 2<sup>3</sup></td><td>8</td></tr>
+  </table></div>
+  <p>Ogni livello fa <strong>quasi n confronti</strong>: i pezzi si rimpiccioliscono, ma diventano di più, e in tutto contengono sempre gli n elementi. I livelli con dei merge sono log<sub>2</sub> n (16 → 8 → 4 → 2 → 1: quattro dimezzamenti). Quindi circa n confronti per log<sub>2</sub> n livelli: <strong>n log<sub>2</sub> n</strong>. È l'idea da ricordare, anche se all'esame si chiede il conto per sostituzione.</p>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="generale"><span class="num">4</span>E se n non è una potenza di 2? La catena, mossa per mossa</h2>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«Non ho capito, cioè ho capito che [vale in] generale, ma non ho capito come costruirla»</p>
+  <p>È la domanda giusta. Il risultato si ricorda in un attimo, ma la catena della lavagna sembra uscita dal nulla. In realtà è una ricetta in quattro mosse, e ogni mossa ha un motivo preciso.</p>
+</div>
+
+<p><strong>Il problema.</strong> La formula C(n) = n log<sub>2</sub> n − n + 1 vale solo per le potenze di 2, perché solo per loro le metà sono esatte fino in fondo. Con n = 26 i pezzi diventano 13, poi 6 e 7, e la formula non vale più. Però non serve il valore esatto: basta un <strong>tetto</strong>, cioè un numero che C(n) di sicuro non supera, purché abbia la forma n log n.</p>
+
+<div class="box idea">
+  <span class="etichetta">Idea · il listino prezzi</span>
+  <p>Immagina un listino che ha i prezzi solo per 1, 2, 4, 8, 16, 32, 64… elementi. Ti chiedono quanto costa, al massimo, ordinarne 26. Sul listino 26 non c'è. Ma ordinarne 26 non può costare più che ordinarne 32, e il prezzo di 32 è sul listino. Fatto: hai un tetto. Resta solo da riscriverlo usando 26 invece di 32.</p>
+</div>
+
+<h3>La ricetta</h3>
+<ol>
+  <li><strong>Sali alla potenza di 2 sopra n.</strong> Prendi N, la prima potenza di 2 con N ≥ n (l'attrezzo 2). Allora <strong>C(n) ≤ C(N)</strong>: ordinare più elementi non richiede meno confronti, perché C cresce con n (C(1) = 0, C(2) = 1, C(3) = 3, C(4) = 5, C(5) = 8…).</li>
+  <li><strong>Usa la formula esatta su N.</strong> N è una potenza di 2, quindi <strong>C(N) = N log<sub>2</sub> N − N + 1</strong> (sezione 3).</li>
+  <li><strong>Togli N, perché il risultato deve parlare di n.</strong> Di N sai solo che n ≤ N &lt; 2n. Perché resti un tetto, ogni sostituzione deve far <em>crescere</em> l'espressione, o al massimo lasciarla uguale:
+    <ul>
+      <li>in <strong>N log<sub>2</sub> N</strong>, più N è grande più il pezzo è grande. Al posto di N metti qualcosa di <strong>più grande</strong>, 2n: diventa 2n log<sub>2</sub>(2n);</li>
+      <li>in <strong>−N</strong>, N viene tolto: più N è grande, più il risultato è piccolo. Al posto di N metti qualcosa di <strong>più piccolo</strong>, n: diventa −n. Togliendo di meno, resta di più.</li>
+    </ul>
+    Risultato: <strong>N log<sub>2</sub> N − N + 1 &lt; 2n log<sub>2</sub>(2n) − n + 1</strong>.</li>
+  <li><strong>Semplifica.</strong> log<sub>2</sub>(2n) = log<sub>2</sub> 2 + log<sub>2</sub> n = 1 + log<sub>2</sub> n, quindi 2n(1 + log<sub>2</sub> n) − n + 1 = 2n + 2n log<sub>2</sub> n − n + 1 = <strong>2n log<sub>2</sub> n + n + 1</strong>.</li>
+</ol>
+
+<p>Messe in fila, le quattro mosse sono la catena della lavagna:</p>
+
+<p class="formula grande">C(n) ≤ C(N) = N log<sub>2</sub> N − N + 1 &lt; 2n log<sub>2</sub>(2n) − n + 1 = 2n log<sub>2</sub> n + n + 1</p>
+
+<div class="box attenzione">
+  <span class="etichetta">La trappola: perché −n e non −2n?</span>
+  <p>Viene spontaneo mettere 2n dappertutto. Ma mettere 2n in −N vorrebbe dire togliere <em>di più</em>: l'espressione scenderebbe, e un tetto abbassato non è più sicuro. Con n = 26 e N = 32: passare da −32 a −26 fa salire, va bene; passare da −32 a −52 farebbe scendere, no. La regola: <strong>dove la lettera fa salire il risultato, la sostituisci con il valore più grande; dove lo fa scendere, con il più piccolo.</strong></p>
+</div>
+
+<div class="widget" id="w-gen">
+  <h4>COSTRUISCI LA CATENA, UN ANELLO ALLA VOLTA</h4>
+  <div class="controlli">
+    <label>n = <input type="number" id="gen-n" value="26" min="2" max="1000000000" style="width:150px"></label>
+    <button class="primario" id="gen-passo">Mossa successiva →</button>
+    <button id="gen-fine">Tutta la catena</button>
+    <button id="gen-reset">Ricomincia</button>
+  </div>
+  <div class="srotola" id="gen-out"></div>
+  <div class="narrazione" id="gen-txt"></div>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Confronti di mergeSort</span>
+  <ul>
+    <li>per n potenza di 2: <strong>C(n) = n log<sub>2</sub> n − n + 1</strong>;</li>
+    <li>in generale: <strong>C(n) &lt; 2n log<sub>2</sub> n + n + 1</strong>;</li>
+  </ul>
+  <p>quindi in ogni caso <strong>C(n) = Θ(n log n)</strong>.</p>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Una precisazione sul Θ</span>
+  <p>La catena dimostra un <em>tetto</em>: C(n) &lt; 2n log<sub>2</sub> n + n + 1, cioè C(n) = O(n log n). Per dire Θ serve anche un <em>pavimento</em>, e si ottiene allo stesso modo con la potenza di 2 subito <strong>sotto</strong> n, che è N/2 (perché N/2 &lt; n): C(n) ≥ C(N/2) = (N/2) log<sub>2</sub>(N/2) − N/2 + 1 ≥ (n/2) log<sub>2</sub>(n/2) − n + 1, che cresce come n log n. Tetto e pavimento dello stesso ordine: Θ(n log n).</p>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="tempo"><span class="num">5</span>Il tempo T(n): cosa sono a, b e c</h2>
+
+<p>Finora abbiamo contato solo i confronti. Ma il tempo vero comprende anche il resto: creare B e C, copiarci gli elementi, spostarli nel merge, ricopiarli in A. Le slide lo contano con un'altra equazione, per <strong>T(n)</strong>, il tempo che il Codice 3.1 impiega per ordinare n elementi.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«Tempo: B ← A[0..m−1], C ← A[m..n−1]: memoria e copie di array nuovi, Θ(n). mergeSort: T(n/2) + T(n/2). merge: Θ(n). Θ(n) + T(n/2) + T(n/2) + Θ(n)»</p>
+  <p class="citazione">«T(n) = a; 2T(n/2) + bn + c altrimenti. Quindi a, b, c cos'è? Non ho capito nulla»</p>
+  <p>La prima parte è perfetta: è esattamente il conto delle slide, riga per riga. Ti manca solo l'ultimo passo, ed è più facile di quel che sembra.</p>
+</div>
+
+<p>Il tuo conto, in tabella:</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>riga del Codice 3.1</th><th>quanto tempo</th><th>di che tipo</th></tr>
+  <tr><td>if n &gt; 1, &nbsp;m ← n/2</td><td>sempre lo stesso, qualunque sia n</td><td>fisso</td></tr>
+  <tr><td>B ← A[0..m−1], &nbsp;C ← A[m..n−1]</td><td>creare e riempire n caselle: Θ(n)</td><td>un tot per elemento</td></tr>
+  <tr><td>mergeSort(B), &nbsp;mergeSort(C)</td><td>T(n/2) + T(n/2)</td><td>ricorsivo</td></tr>
+  <tr><td>A ← merge(B, C)</td><td>al più n − 1 confronti, n elementi messi in X e poi ricopiati in A: Θ(n)</td><td>un tot per elemento</td></tr>
+</table></div>
+
+<p>Tolte le due chiamate ricorsive, resta un lavoro fatto di due tipi di pezzi: pezzi <strong>fissi</strong> e pezzi che costano <strong>un tot per ogni elemento</strong>. Le lettere a, b e c sono i nomi di quei «tot».</p>
+
+<div class="box idea">
+  <span class="etichetta">Idea · il taxi</span>
+  <p>Il prezzo di una corsa in taxi ha sempre la stessa forma: <strong>uno scatto fisso alla partenza</strong>, più <strong>un tot al chilometro</strong>. Prezzo = c + b · km. Per capire che 20 km costano circa il doppio di 10 km non serve sapere quanto valgono b e c a Milano o a Roma.</p>
+  <p>Il lavoro non ricorsivo di una chiamata di mergeSort è uguale: un tot per ogni elemento (copiarlo, confrontarlo, spostarlo) più uno scatto fisso (il test, il calcolo di m, le chiamate). Ecco cosa vuol dire «scriviamo Θ(n) come bn + c».</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Le tre costanti</span>
+  <ul>
+    <li><strong>a</strong>: il tempo di una chiamata con n ≤ 1. Fa solo il test «n &gt; 1?», che è falso, e finisce. È la corsa minima.</li>
+    <li><strong>b</strong>: il tempo <em>per elemento</em> del lavoro non ricorsivo: copiare un elemento in B o in C, confrontarlo e metterlo in X, ricopiarlo in A. È il prezzo al chilometro.</li>
+    <li><strong>c</strong>: il tempo <em>fisso</em> di una chiamata con n &gt; 1, che non dipende da n: il test, il calcolo di m, preparare le due chiamate. È lo scatto alla partenza.</li>
+  </ul>
+  <p>Sono <strong>costanti</strong>, cioè numeri fissi che non cambiano con n. Dipendono dal computer, dal linguaggio, dal compilatore, e non ci interessa quanto valgono. È lo stesso trucco del <a href="01-quanto-costa.html#minimo">pacco 1</a>, dove ogni operazione costava «tra a e b nanosecondi».</p>
+</div>
+
+<p>Con questi nomi, e con n potenza di 2 come per C(n), l'equazione del tempo è:</p>
+
+<p class="formula grande">T(n) = a se n ≤ 1, &nbsp; altrimenti &nbsp; 2T(n/2) + bn + c</p>
+
+<p><strong>Perché non lasciare Θ(n) dentro l'equazione?</strong> Perché Θ(n) non è un numero: è un'intera famiglia di funzioni. Srotolando dovresti sommare tanti Θ quanti sono i livelli, e i livelli dipendono da n: lì è facilissimo sbagliare. Allora si sceglie un rappresentante concreto, bn + c, si fanno i conti con lui, e solo alla fine si torna al Θ.</p>
+
+<h3>Si srotola come C(n)</h3>
+
+<p class="formula">T(n) = 2T(n/2) + bn + c</p>
+<p class="formula">= 2[2T(n/4) + bn/2 + c] + bn + c = 4T(n/4) + 2bn + 3c</p>
+<p class="formula">= 4[2T(n/8) + bn/4 + c] + 2bn + 3c = 8T(n/8) + 3bn + 7c</p>
+
+<p>Dopo k passi: 2<sup>k</sup> T(n/2<sup>k</sup>) + k·bn + (2<sup>k</sup> − 1)c. I coefficienti di c (1, 3, 7) sono l'attrezzo 1 un'altra volta: 1 + 2 + 4 = 7 = 2³ − 1. Con 2<sup>k</sup> = n, cioè k = log<sub>2</sub> n, e T(1) = a:</p>
+
+<p class="formula grande">T(n) = an + bn log<sub>2</sub> n + c(n − 1)</p>
+
+<div class="box idea">
+  <span class="etichetta">Chi paga cosa</span>
+  <ul>
+    <li><strong>an</strong>: le chiamate sui pezzi da un elemento (le foglie dell'albero) sono n, e ognuna costa a;</li>
+    <li><strong>bn log<sub>2</sub> n</strong>: su ogni livello dell'albero i pezzi contengono, tutti insieme, gli n elementi, quindi il lavoro «per elemento» di un livello costa bn; i livelli sono log<sub>2</sub> n;</li>
+    <li><strong>c(n − 1)</strong>: le chiamate con più di un elemento sono 1 + 2 + 4 + … + n/2 = n − 1 (ancora l'attrezzo 1), e ognuna paga lo scatto c.</li>
+  </ul>
+  <p>Per n grande vince <strong>bn log<sub>2</sub> n</strong>: gli altri due pezzi crescono come n, lui come n log n. Quindi <strong>T(n) = Θ(n log n)</strong>, qualunque siano a, b e c. Ecco perché non serve sapere quanto valgono.</p>
+</div>
+
+<div class="widget" id="w-tt">
+  <h4>IL CONTO DEL TAXI: SCEGLI TU a, b, c</h4>
+  <div class="controlli">
+    <label>a = <input type="number" id="tt-a" value="1" min="0" max="100" style="width:70px"></label>
+    <label>b = <input type="number" id="tt-b" value="2" min="0" max="100" style="width:70px"></label>
+    <label>c = <input type="number" id="tt-c" value="3" min="0" max="100" style="width:70px"></label>
+    <label>n = <select id="tt-n" style="width:auto">
+      <option value="8" selected>8</option>
+      <option value="64">64</option>
+      <option value="1024">1024</option>
+      <option value="1048576">2²⁰, circa un milione</option>
+      <option value="1073741824">2³⁰, circa un miliardo</option>
+    </select></label>
+  </div>
+  <div class="tabella-wrap" id="tt-tab"></div>
+  <div class="narrazione" id="tt-txt"></div>
+</div>
+
+<p>Con il Codice 3.3 (<a href="#implementazione">sezione 7</a>) spariscono le copie in B e C, ma restano il merge e la ricopiatura in A. Cambia solo quanto vale b: l'equazione ha la stessa forma, quindi anche lì il tempo è Θ(n log n).</p>
+
+<!-- ============================================================ 6 -->
+<h2 id="pila"><span class="num">6</span>Quanto è alta la pila: H(n)</h2>
+
+<p>mergeSort è ricorsivo, quindi usa la pila dei record di attivazione (li hai visti nel <a href="03-ricerca.html#record">pacco 3</a>): ogni chiamata in corso ha il suo record. Quanto spazio serve? Dipende da quanti record ci sono <strong>contemporaneamente</strong> sulla pila, nel momento peggiore.</p>
+
+<div class="box def">
+  <span class="etichetta">H(n)</span>
+  <p><strong>H(n)</strong> = altezza dello stack della ricorsione, cioè il numero massimo di record di attivazione di mergeSort presenti sulla pila, ordinando n elementi.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Idea · le due montagne della lavagna</span>
+  <p>Pensa a una pila di vassoi. mergeSort(A) mette il suo vassoio. Poi chiama mergeSort(B), che ci costruisce sopra una torre di vassoi, e quando finisce <strong>li toglie tutti</strong>. Solo dopo parte mergeSort(C), che costruisce la sua torre <em>sullo stesso posto</em>, riusando lo spazio liberato da B.</p>
+  <p>Le due chiamate non stanno mai sulla pila insieme: per questo l'altezza non è la <em>somma</em> delle due torri, ma la torre <strong>più alta</strong>, più il vassoio di A. Nel disegno della lavagna sono due montagne una dopo l'altra, appoggiate su mergeSort(A).</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«Spazio si ricicla, tempo no»</p>
+  <p>Questa frase è perfetta: è tutta la sezione in cinque parole, e il disegno delle due montagne che hai fatto sotto è giusto. Il tempo speso da mergeSort(B) è speso per sempre, per questo in C(n) e T(n) le due metà si <em>sommano</em>. Lo spazio della pila usato da mergeSort(B), invece, quando B finisce torna libero e mergeSort(C) lo riusa: per questo in H(n) si prende il <em>massimo</em>.</p>
+  <p class="piccolo">Un ritocco: hai scritto «in generale H(n) = 2 + log<sub>2</sub>(n)». Per n qualsiasi è un tetto, <strong>H(n) ≤ 2 + log<sub>2</sub> n</strong>, non un uguale. Per esempio H(5) = 4, mentre 2 + log<sub>2</sub> 5 ≈ 4,3.</p>
+</div>
+
+<p>Da qui l'equazione:</p>
+<ul>
+  <li><strong>n = 1:</strong> c'è solo il record della chiamata stessa: H(1) = 1;</li>
+  <li><strong>n &gt; 1:</strong> il record corrente, più la torre più alta tra le due chiamate:</li>
+</ul>
+
+<p class="formula grande">H(n) = 1 + max(H(⌊n/2⌋), H(⌈n/2⌉)) se n &gt; 1, &nbsp; H(1) = 1</p>
+
+<p>Per n potenza di 2 le due metà sono uguali e diventa H(n) = H(n/2) + 1. Si srotola come prima, ed è ancora più facile, perché ogni passo aggiunge solo 1:</p>
+
+<p class="formula">H(n) = H(n/2) + 1 = H(n/2²) + 1 + 1 = H(n/2³) + 1 + 1 + 1 = … = H(n/2<sup>k</sup>) + k</p>
+
+<p>Ci si ferma a n/2<sup>k</sup> = 1, cioè k = log<sub>2</sub> n:</p>
+
+<p class="formula grande">H(n) = H(1) + log<sub>2</sub> n = 1 + log<sub>2</sub> n &nbsp; (n potenza di 2)</p>
+
+<p>In generale, con lo stesso trucco della potenza N: H(n) ≤ H(N) = 1 + log<sub>2</sub> N &lt; 1 + log<sub>2</sub>(2n) = 2 + log<sub>2</sub> n. Quindi:</p>
+
+<div class="box def">
+  <span class="etichetta">Altezza della pila</span>
+  <p class="formula grande">H(n) ≤ 2 + log<sub>2</sub> n, &nbsp; quindi &nbsp; H(n) = Θ(log n)</p>
+</div>
+
+<div class="widget" id="w-pila">
+  <h4>LA PILA DI MERGESORT, CHIAMATA PER CHIAMATA</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="pila-in" value="7, 6, 3, 8, 4, 2, 10, 5" style="width:220px"></label>
+    <button class="primario" id="pila-passo">Passo →</button>
+    <button id="pila-fine">Fino alla fine</button>
+    <button id="pila-reset">Ricomincia</button>
+  </div>
+  <div class="array" id="pila-arr"></div>
+  <div class="contatori" id="pila-cont"></div>
+  <div class="narrazione" id="pila-txt"></div>
+  <div class="pila" id="pila-rec"></div>
+  <div class="etich-array">Altezza della pila nel tempo (le «montagne» della lavagna). Passa sopra o tocca il grafico per leggerlo; con il grafico selezionato, le frecce ← → cambiano passo.</div>
+  <div class="grafico" id="pila-graf">
+    <div id="pila-svg"></div>
+    <div class="tooltip" id="pila-tip"></div>
+  </div>
+  <details class="esercizio" style="margin-top:10px">
+    <summary>Tabella: l'altezza a ogni passo</summary>
+    <div class="tabella-wrap" id="pila-tab"></div>
+  </details>
+</div>
+<p class="piccolo">Il widget segue il Codice 3.3 della <a href="#implementazione">sezione 7</a>: ogni record contiene solo i, f e m. Anche merge è una procedura e per un attimo ha il suo record, ma non chiama nessuno e non fa crescere l'altezza massima, quindi qui contiamo solo i record di mergeSort, come H(n).</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Altezza della pila ≠ numero di chiamate</span>
+  <p>Con n = 8 la pila arriva a 4 record, ma le chiamate in tutto sono 15. In generale mergeSort fa <strong>2n − 1 chiamate</strong> (una per ogni pezzo dell'albero), cioè Θ(n), ma ne tiene sulla pila <strong>al massimo 1 + ⌈log<sub>2</sub> n⌉ alla volta</strong>, cioè Θ(log n). È come una biblioteca: in un giorno entrano mille persone, ma dentro ce ne sono al massimo trenta alla volta. Per lo spazio conta quante ce ne sono <em>insieme</em>.</p>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="implementazione"><span class="num">7</span>La versione vera: un solo array di appoggio</h2>
+
+<p>Il Codice 3.1 (<a href="#raccontare">sezione 1</a>) è chiarissimo, ma se lo implementi <strong>direttamente</strong>, così come è scritto, a ogni chiamata su un array di lunghezza &gt; 1:</p>
+<ul>
+  <li>si <strong>creano due nuovi array</strong> B e C: spreco di <strong>spazio</strong>;</li>
+  <li>si <strong>copia</strong> in essi il contenuto di A: spreco di <strong>tempo</strong>.</li>
+</ul>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«Ma spazio? È un casino. A ogni livello [di] ricorsione è un disastro copiare degli array. Spazio uso disastroso…»</p>
+  <p>Nella versione diretta lo spazio è davvero un casino da contare. Ogni chiamata crea i suoi B e C, ogni merge crea un X nuovo, e quanti array esistono <em>insieme</em> dipende da quando vengono buttati. Se ogni array viene buttato appena la sua chiamata finisce, in ogni momento sono vivi quelli delle chiamate in corso, una catena di pezzi sempre più piccoli: fino a 2n celle. Se invece nessuno li butta (in C, senza free), si accumulano: 2n celle per ogni livello, per log<sub>2</sub> n livelli.</p>
+  <p>E il tempo: le copie in B e C sono n per livello, cioè n log<sub>2</sub> n spostamenti che non ordinano niente, servono solo a preparare i pezzi. La soluzione del prof toglie il problema alla radice: un solo array X, creato una volta, e nessuna copia per preparare i pezzi.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Idea · un solo tavolo da lavoro</span>
+  <p>Torna alla professoressa con gli 800 compiti. Nel Codice 3.1 ogni aiutante, appena riceve la sua pila, compra uno scaffale nuovo e ci ricopia i compiti. Uno spreco! Meglio così: i compiti restano tutti nello <strong>stesso scaffale A</strong>, e ogni aiutante riceve solo un'etichetta che dice «tu ti occupi dei compiti dalla posizione i alla posizione f». Per fondere serve un piano d'appoggio, ma ne basta <strong>uno solo, X</strong>, comprato una volta all'inizio e usato a turno da tutti.</p>
+</div>
+
+<p>Le etichette sono due indici, <code>i</code> e <code>f</code>, con la stessa convenzione di sx e dx della ricerca binaria (<a href="03-ricerca.html#porzioni">pacco 3</a>): <strong>i incluso, f escluso</strong>. La parte da ordinare è A[i..f−1] e ha f − i elementi.</p>
+
+<p class="titolo-codice">Codice 3.3 · Ordinamento per fusione (prima parte)</p>
+<pre class="pseudo"><b>Algoritmo</b> mergeSort (array A[0..n−1])
+  Sia X[0..n−1] un array               <span class="com">// l'unico array di appoggio</span>
+  mergeSort(A, 0, n, X)
+
+<b>Procedura</b> mergeSort (array A, indice i, indice f, array X)
+  <span class="com">// ordina A[i..f−1] usando X come array ausiliario</span>
+  <b>if</b> f − i &gt; 1 <b>then</b>
+    m ← (i + f)/2
+    mergeSort(A, i, m, X)
+    mergeSort(A, m, f, X)
+    merge(A, i, m, f, X)</pre>
+
+<p>Due cose da notare:</p>
+<ul>
+  <li>ci sono <strong>due mergeSort</strong> con lo stesso nome: l'<em>algoritmo</em> con un parametro, che crea X e fa la prima chiamata, e la <em>procedura</em> con quattro, che fa il lavoro ricorsivo. Si distinguono dai parametri, come l'overloading dei metodi in Java;</li>
+  <li>m ← (i + f)/2 taglia A[i..f−1] in A[i..m−1] e A[m..f−1]. È lo stesso taglio del Codice 3.1: la prima parte ha ⌊(f−i)/2⌋ elementi. Quindi l'equazione C(n) non cambia.</li>
+</ul>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«MergeSort originale vero. Ho capito che fece una gestione degli indici al posto di nuovi array, ma [il] concetto non ho capito nulla. OK, penso di aver capito: quindi gestisce gli indici, ma ho bisogno di capire molto meglio il confronto fra i due, con le differenze visive»</p>
+  <p>Hai capito giusto: la differenza è tutta lì. Eccola da vedere. Il riquadro esegue le due versioni sullo stesso array, una chiamata alla volta, una accanto all'altra. A sinistra ogni chiamata si porta dietro i suoi array nuovi. A destra c'è sempre e solo lo stesso A, più un X creato una volta, e ogni chiamata è soltanto un record con tre numeri.</p>
+</div>
+
+<div class="widget" id="w-cf">
+  <h4>CODICE 3.2 E CODICE 3.3 FIANCO A FIANCO</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="cf-in" value="5, 2, 7, 4, 6, 1, 8, 3" style="width:200px"></label>
+  </div>
+  <div class="controlli">
+    <button id="cf-indietro">← Indietro</button>
+    <button class="primario" id="cf-passo">Passo →</button>
+    <button id="cf-fine">Fino alla fine</button>
+    <button id="cf-reset">Ricomincia</button>
+  </div>
+  <div class="narrazione" id="cf-txt"></div>
+  <div class="fianco">
+    <div class="lato">
+      <div class="lato-tit">Codice 3.2 · diretto</div>
+      <div class="lato-sotto">ogni chiamata crea i suoi B e C, ogni merge un X nuovo</div>
+      <div id="cf-sx"></div>
+      <div class="contatori" id="cf-sx-cont"></div>
+    </div>
+    <div class="lato">
+      <div class="lato-tit">Codice 3.3 · indici e un solo X</div>
+      <div class="lato-sotto">sempre lo stesso A e lo stesso X; una chiamata è un record</div>
+      <div id="cf-dx"></div>
+      <div class="contatori" id="cf-dx-cont"></div>
+    </div>
+  </div>
+</div>
+<p class="piccolo">Colori: giallo = la parte su cui lavora la chiamata in corso; viola = celle appena create e riempite; verde = parte appena ordinata; sbiadito = fuori dalla chiamata in corso, oppure avanzi di un merge precedente che nessuno legge più.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>Codice 3.2 · diretto</th><th>Codice 3.3 · indici e un X</th></tr>
+  <tr><td>cosa riceve una chiamata</td><td>un array: il suo pezzo</td><td>sempre lo stesso A, due indici i e f, sempre lo stesso X</td></tr>
+  <tr><td>come divide</td><td>crea B e C e ci copia le due metà</td><td>calcola m = (i + f)/2: nessuna copia</td></tr>
+  <tr><td>dove fonde</td><td>in un X nuovo, creato da ogni merge</td><td>nell'unico X, creato all'inizio</td></tr>
+  <tr><td>dove va il risultato</td><td>ricopiato nell'array della chiamata (A ← merge(B, C))</td><td>ricopiato da X in A[i..f−1]</td></tr>
+  <tr><td>array creati, con n = 8</td><td class="rosso">21</td><td class="verde">1</td></tr>
+  <tr><td>copie solo per preparare B e C</td><td class="rosso">n log<sub>2</sub> n (24 con n = 8)</td><td class="verde">0</td></tr>
+  <tr><td>spazio extra nel momento peggiore</td><td>fino a 2n celle, più la pila</td><td>n celle (X), più la pila</td></tr>
+  <tr><td>confronti</td><td colspan="2">identici: stesso taglio a metà, stesso merge</td></tr>
+</table></div>
+
+<p>Il merge ora lavora su due pezzi <em>vicini</em> dello stesso array: il «B» è A[i..m−1] e il «C» è A[m..f−1]. Fonde in X e alla fine ricopia il risultato in A.</p>
+
+<p class="titolo-codice">Codice 3.3 · Ordinamento per fusione (seconda parte)</p>
+<pre class="pseudo"><b>Procedura</b> merge (array A, indice i, indice m, indice f, array X)
+  <span class="com">// fonde A[i..m−1] e A[m..f−1] usando X come array ausiliario</span>
+  i<sub>1</sub> ← i, i<sub>2</sub> ← m, k ← 0
+  <b>while</b> i<sub>1</sub> &lt; m <b>and</b> i<sub>2</sub> &lt; f <b>do</b>  <span class="com">// in tutte e due le parti resta qualcosa</span>
+    <b>if</b> A[i<sub>1</sub>] ≤ A[i<sub>2</sub>] <b>then</b>
+      X[k] ← A[i<sub>1</sub>]
+      i<sub>1</sub> ← i<sub>1</sub> + 1
+    <b>else</b>
+      X[k] ← A[i<sub>2</sub>]
+      i<sub>2</sub> ← i<sub>2</sub> + 1
+    k ← k + 1
+  <b>for</b> j ← i<sub>1</sub> <b>to</b> m − 1 <b>do</b>        <span class="com">// il resto della 1ª parte in X</span>
+    X[k] ← A[j]
+    k ← k + 1
+  <b>for</b> j ← i<sub>2</sub> <b>to</b> f − 1 <b>do</b>        <span class="com">// il resto della 2ª parte in X</span>
+    X[k] ← A[j]
+    k ← k + 1
+  <span class="riga-hl"><b>for</b> k ← 0 <b>to</b> f − i − 1 <b>do</b>     <span class="com">// ricopia il risultato in A[i..f−1]</span></span>
+  <span class="riga-hl">  A[i + k] ← X[k]</span></pre>
+
+<div class="tabella-wrap"><table>
+  <tr><th>merge del Codice 3.2 (pacco 5)</th><th>merge del Codice 3.3</th></tr>
+  <tr><td>B[0..ℓ<sub>B</sub>−1], array separato</td><td>A[i..m−1], la prima parte</td></tr>
+  <tr><td>C[0..ℓ<sub>C</sub>−1], array separato</td><td>A[m..f−1], la seconda parte</td></tr>
+  <tr><td>i<sub>1</sub> ← 0, i<sub>2</sub> ← 0</td><td>i<sub>1</sub> ← i, i<sub>2</sub> ← m</td></tr>
+  <tr><td>while i<sub>1</sub> &lt; ℓ<sub>B</sub> and i<sub>2</sub> &lt; ℓ<sub>C</sub></td><td>while i<sub>1</sub> &lt; m and i<sub>2</sub> &lt; f</td></tr>
+  <tr><td>X nuovo a ogni merge, restituito con return</td><td>X sempre lo stesso; alla fine si ricopia in A</td></tr>
+</table></div>
+
+<div class="widget" id="w-mrg3">
+  <h4>MERGE(A, i, m, f, X) PASSO PER PASSO</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="m3-a" value="6, 3, 4, 9, 11, 15, 18, 20, 1, 2, 10, 19, 7, 5" style="width:300px"></label>
+  </div>
+  <div class="controlli">
+    <label>i = <input type="number" id="m3-i" value="2" style="width:64px"></label>
+    <label>m = <input type="number" id="m3-m" value="8" style="width:64px"></label>
+    <label>f = <input type="number" id="m3-f" value="12" style="width:64px"></label>
+    <button class="primario" id="m3-passo">Passo →</button>
+    <button id="m3-fine">Fino alla fine</button>
+    <button id="m3-reset">Ricomincia</button>
+  </div>
+  <div class="etich-array">A</div>
+  <div class="array" id="m3-arr-a"></div>
+  <div class="etich-array">X</div>
+  <div class="array" id="m3-arr-x"></div>
+  <div class="contatori" id="m3-cont"></div>
+  <div class="narrazione" id="m3-txt"></div>
+</div>
+<p class="piccolo">È l'esempio della lavagna: le due parti 4 9 11 15 18 20 e 1 2 10 19 stanno dentro A, tra i = 2 e f = 12. Le caselle tratteggiate sono fuori da [i, f) e non vengono toccate; quelle sbiadite sono già state copiate in X.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Perché non fondere direttamente dentro A?</span>
+  <p>Perché scrivendo in A[i] il più piccolo dei due, cancelleresti un elemento della prima parte che non hai ancora letto. È lo stesso problema che avevi annotato nella lezione 8, «difficile farlo sullo stesso spazio» (<a href="05-mergesort.html#merge">pacco 5</a>). Per questo si fonde in X e poi si ricopia.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Perché X si crea una volta sola, fuori</span>
+  <p>X serve solo a merge, quindi si potrebbe crearlo dentro merge. Ma allora ogni chiamata di merge (sono n − 1!) creerebbe un array nuovo, con lo stesso spreco di prima. Creandolo una volta nell'algoritmo principale e passandolo come parametro, tutte le chiamate usano lo stesso. Va bene così perché le chiamate di merge non sono mai attive insieme: quando una usa X, nessun'altra lo sta usando.</p>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="bilancio"><span class="num">8</span>Il bilancio: confronti, tempo, spazio</h2>
+
+<p>L'ultima lavagna della lezione mette tutto insieme.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>quanto</th><th>perché</th></tr>
+  <tr><td><strong>confronti</strong></td><td><mark>Θ(n log n)</mark></td><td>la soluzione di C(n), sezioni 3 e 4</td></tr>
+  <tr><td><strong>tempo</strong></td><td>Θ(n log n), se un confronto costa Θ(1)</td><td>vedi sotto</td></tr>
+  <tr><td><strong>spazio: pila</strong></td><td>Θ(log n)</td><td>altezza H(n) = Θ(log n), e ogni record è O(1): contiene i, f, m (A e X sono riferimenti)</td></tr>
+  <tr><td><strong>spazio: array X</strong></td><td>Θ(n)</td><td>n caselle</td></tr>
+  <tr><td><strong>spazio complessivo</strong></td><td>Θ(log n) + Θ(n) = <strong>Θ(n)</strong></td><td>vince il termine più grande</td></tr>
+</table></div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · lezione 9</span>
+  <p class="citazione">«Spazio: array X Θ(n), stack della ricorsione… non ho capito»</p>
+  <p class="citazione">«stack Θ(log n), array X Θ(n) → Θ(n). Bho»</p>
+  <p>Lo spazio extra di mergeSort è fatto di <strong>due cose diverse</strong>, che si contano separatamente.</p>
+  <ol>
+    <li><strong>La pila delle chiamate.</strong> Ogni chiamata in corso ha un record, con dentro i, f, m e l'indirizzo di ritorno. A e X nel record non ci sono: c'è solo la loro freccia, perché gli array si passano per riferimento (<a href="02-array.html#parametri">pacco 2</a>). Quindi ogni record ha una grandezza fissa, O(1), qualunque sia n. I record presenti insieme sono al più H(n) ≤ 2 + log<sub>2</sub> n (<a href="#pila">sezione 6</a>). Spazio della pila = quanti record × quanto è grande uno = Θ(log n) × O(1) = <strong>Θ(log n)</strong>.</li>
+    <li><strong>L'array X</strong>: n caselle, create una volta sola. <strong>Θ(n)</strong>.</li>
+  </ol>
+  <p><strong>E perché la somma fa Θ(n)?</strong> Perché log n è minuscolo rispetto a n. Con un milione di elementi, X ha 1 000 000 di caselle; la pila ha al più 21 record di poche caselle ciascuno, un centinaio di caselle in tutto. Totale: circa 1 000 100, praticamente solo X. Quando si sommano due ordini di grandezza, <strong>vince il più grande</strong>: Θ(log n) + Θ(n) = Θ(n). È come comprare una casa da 200 000 € e pagare 16 € di marca da bollo: quanto hai speso? Circa 200 000 €.</p>
+</div>
+
+<p><strong>Perché il tempo è Θ(n log n).</strong> Oltre ai confronti, un merge su f − i elementi fa le copie in X e la ricopiatura in A: lavoro proporzionale a f − i. Su un livello dell'albero i pezzi coprono tutto l'array, quindi il lavoro del livello è proporzionale a n. I livelli sono circa log<sub>2</sub> n: in tutto Θ(n log n). È lo stesso conto della <a href="#tempo">sezione 5</a>, fatto con l'equazione T(n) = 2T(n/2) + bn + c.</p>
+
+<p>Come per gli algoritmi elementari (pacco 4), se ogni confronto costa di più, per esempio parole lunghe fino a m lettere, il tempo si moltiplica per il costo di un confronto: O(m · n log n).</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>selection, insertion, bubble</th><th>mergeSort</th></tr>
+  <tr><td>confronti (caso peggiore)</td><td>Θ(n²)</td><td class="verde">Θ(n log n)</td></tr>
+  <tr><td>spazio aggiuntivo</td><td class="verde">O(1)</td><td class="rosso">Θ(n)</td></tr>
+  <tr><td>in loco</td><td class="verde">sì</td><td class="rosso">no</td></tr>
+  <tr><td>stabile</td><td>insertion e bubble sì, selection no</td><td class="verde">sì (grazie al ≤ nel merge)</td></tr>
+</table></div>
+
+<p>È uno scambio: mergeSort è molto più veloce, ma paga con un array di appoggio grande come l'input. Nelle prossime lezioni quickSort e heapSort proveranno ad avere la velocità senza pagare la memoria.</p>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto ed esame</h2>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li>Un algoritmo ricorsivo si racconta un livello alla volta: «se n ≤ 1 è già ordinato; altrimenti divido a metà, <strong>ordino</strong> ricorsivamente le due metà, fondo». Non «divido finché arrivo a un elemento».</li>
+    <li>Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i</sup> = 2<sup>k</sup> − 1 (in binario: tanti 1 di fila).</li>
+    <li>Per ogni n esiste una potenza di 2, N, con n ≤ N &lt; 2n: è il primo gradino da n in su, e il gradino prima, N/2, è sotto n.</li>
+    <li>Il merge fa al più n − 1 confronti: un confronto per ogni elemento scelto, e quando una parte finisce il resto dell'altra entra gratis (almeno un elemento).</li>
+    <li>Srotolando C(n) = 2C(n/2) + n − 1: dopo k passi 2<sup>k</sup>C(n/2<sup>k</sup>) + nk − 2<sup>k</sup> + 1; con k = log<sub>2</sub> n viene <strong>C(n) = n log<sub>2</sub> n − n + 1</strong>.</li>
+    <li>Per n qualsiasi, quattro mosse: sali a N (C(n) ≤ C(N)), formula esatta su N, togli N (2n dove fa salire, n dove fa scendere), semplifica. C(n) &lt; 2n log<sub>2</sub> n + n + 1. Sempre <strong>Θ(n log n)</strong>.</li>
+    <li>Tempo: T(n) = 2T(n/2) + bn + c, T(1) = a, dove a, b, c sono costanti (la corsa minima, il tot per elemento, lo scatto fisso). T(n) = an + bn log<sub>2</sub> n + c(n − 1) = <strong>Θ(n log n)</strong>.</li>
+    <li>H(n) = 1 + max(H(⌊n/2⌋), H(⌈n/2⌉)), H(1) = 1: le due chiamate riusano lo stesso spazio, quindi max e non somma. H(n) ≤ 2 + log<sub>2</sub> n = Θ(log n).</li>
+    <li>Codice 3.3: indici i, f su A (f escluso) e un solo array X creato all'inizio; merge fonde in X e ricopia in A[i..f−1].</li>
+    <li>Codice 3.2 contro 3.3: stessi confronti, ma il 3.2 crea array nuovi a ogni chiamata e copia n log<sub>2</sub> n elementi solo per preparare B e C.</li>
+    <li>Tempo Θ(n log n); spazio pila Θ(log n) (record di grandezza fissa) + X Θ(n) = Θ(n), perché vince il pezzo più grande; non in loco.</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>All'<strong>orale</strong> questa lezione è materiale classico:</p>
+  <ul>
+    <li>«descrivi mergeSort»: in modo ricorsivo, come chiede il prof (<a href="#raccontare">sezione 1</a>), con caso base, divisione, chiamate che <em>ordinano</em> e merge;</li>
+    <li>«risolvi l'equazione di ricorrenza di mergeSort»: la sostituzione passo per passo fino a n log<sub>2</sub> n − n + 1, e poi il caso n qualsiasi con n ≤ N &lt; 2n, sapendo spiegare ogni mossa della catena;</li>
+    <li>«da dove viene T(n) = 2T(n/2) + bn + c? cosa sono a, b, c?»: la tabella riga per riga della <a href="#tempo">sezione 5</a>;</li>
+    <li>«quanto spazio usa mergeSort?»: H(n), perché max e non somma, più l'array X;</li>
+    <li>scrivere il Codice 3.3 e spiegare perché X si crea una volta sola;</li>
+    <li>distinguere numero di chiamate (Θ(n)) e altezza della pila (Θ(log n)).</li>
+  </ul>
+  <p>La tecnica di srotolare un'equazione torna con quickSort, heapSort e gli altri algoritmi divide et impera. Vale la pena saperla fare a occhi chiusi.</p>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi</h2>
+<p>Prova a rispondere prima di aprire la soluzione.</p>
+
+<details class="esercizio">
+  <summary>1. Quanto fa 1 + 2 + 4 + 8 + 16 + 32? Rispondi senza sommare uno per uno.</summary>
+  <div class="soluzione">
+    <p>Sono le potenze da 2<sup>0</sup> a 2<sup>5</sup>, cioè k = 6 termini: 2<sup>6</sup> − 1 = <strong>63</strong>. In binario: 111111.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. n = 100: chi è N? Verifica n ≤ N &lt; 2n.</summary>
+  <div class="soluzione">
+    <p>100 = 1100100 in binario (7 cifre). N = 10000000 = 2<sup>7</sup> = <strong>128</strong>. 2n = 200 = 11001000. Infatti 100 ≤ 128 &lt; 200.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. Srotola C(32) con i numeri, come nel riquadro della sezione 3.</summary>
+  <div class="soluzione">
+    <p>C(32) = 2C(16) + 31 = 4C(8) + 30 + 31 = 8C(4) + 28 + 30 + 31 = 16C(2) + 24 + 28 + 30 + 31 = 32C(1) + 16 + 24 + 28 + 30 + 31 = <strong>129</strong>.</p>
+    <p>Formula: 32 · 5 − 32 + 1 = 129. I termini 31, 30, 28, 24, 16 sono 32 − 2<sup>j</sup> per j = 0..4.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. Quanto vale H(64)? E quante chiamate di mergeSort ci sono in tutto con n = 64?</summary>
+  <div class="soluzione">
+    <p>H(64) = 1 + log<sub>2</sub> 64 = <strong>7</strong> record al massimo sulla pila.</p>
+    <p>Chiamate in tutto: una per ogni pezzo dell'albero. I pezzi sono 64 + 32 + 16 + 8 + 4 + 2 + 1 = 127 = 2 · 64 − 1 (attrezzo 1 di nuovo!). Quindi <strong>127 chiamate</strong>, ma mai più di 7 insieme.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. Perché nell'equazione di H(n) c'è il max e in quella di C(n) la somma?</summary>
+  <div class="soluzione">
+    <p>C(n) conta <strong>confronti</strong>: quelli fatti da mergeSort(B) e quelli fatti da mergeSort(C) avvengono tutti, uno dopo l'altro, quindi si sommano.</p>
+    <p>H(n) conta <strong>spazio occupato contemporaneamente</strong>: quando mergeSort(B) finisce, i suoi record spariscono e mergeSort(C) riusa lo stesso spazio. Le due torri non sono mai in piedi insieme, quindi conta la più alta.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. Simula merge(A, 0, 3, 6, X) con A = [2, 5, 9, 1, 5, 7]. Cosa contiene A alla fine? Quanti confronti?</summary>
+  <div class="soluzione">
+    <p>Prima parte A[0..2] = 2 5 9, seconda A[3..5] = 1 5 7.</p>
+    <p>2 ≤ 1? no → X[0] = 1; 2 ≤ 5 sì → X[1] = 2; 5 ≤ 5 sì → X[2] = 5 (quello della prima parte: stabilità!); 9 ≤ 5 no → X[3] = 5; 9 ≤ 7 no → X[4] = 7; la seconda parte è finita, copio il 9 → X[5] = 9.</p>
+    <p>5 confronti = n − 1 con n = 6. Poi si ricopia X in A: <strong>A = [1, 2, 5, 5, 7, 9]</strong>. Puoi verificarlo nel riquadro della sezione 7 (A = 2 5 9 1 5 7, i = 0, m = 3, f = 6).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>7. Con a = 1, b = 2, c = 3 calcola T(8) in due modi: con l'equazione T(n) = 2T(n/2) + bn + c, partendo da T(1), e con la formula an + bn log<sub>2</sub> n + c(n − 1).</summary>
+  <div class="soluzione">
+    <p>Con l'equazione, dal basso: T(1) = a = 1; T(2) = 2·1 + 2·2 + 3 = 9; T(4) = 2·9 + 2·4 + 3 = 29; T(8) = 2·29 + 2·8 + 3 = <strong>77</strong>.</p>
+    <p>Con la formula: 1·8 + 2·8·3 + 3·7 = 8 + 48 + 21 = <strong>77</strong>. Torna. Il pezzo più grosso è già bn log<sub>2</sub> n = 48, e con n più grandi pesa sempre di più: prova nel riquadro del taxi della sezione 5.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>8. E se mergeSort dividesse male, in un pezzo da 1 e uno da n − 1? Quanti confronti farebbe?</summary>
+  <div class="soluzione">
+    <p>L'equazione diventerebbe C(n) = C(1) + C(n − 1) + n − 1 = C(n − 1) + n − 1. Srotolando: C(n) = (n − 1) + (n − 2) + … + 1 = n(n−1)/2 = <strong>Θ(n²)</strong>, come gli algoritmi elementari!</p>
+    <p>La velocità di mergeSort viene proprio dal dividere <strong>a metà</strong>: così i livelli sono solo log<sub>2</sub> n. Tienilo a mente per quickSort, che non sempre riesce a dividere a metà: il suo caso peggiore è proprio questo.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>9. Descrivi mergeSort a parole, come chiede il prof.</summary>
+  <div class="soluzione">
+    <p>«Se l'array ha al più un elemento, è già ordinato e non si fa niente. Altrimenti lo divido in due parti di circa la stessa lunghezza, <strong>ordino ricorsivamente</strong> ciascuna delle due parti e poi fondo le due parti ordinate con merge.»</p>
+    <p>Da evitare: «divido a metà, poi ancora a metà, finché arrivo a pezzi da un elemento, poi fondo risalendo». Descrive l'esecuzione, non l'algoritmo: la ricorsione è sull'<em>ordinare</em>, non sul dividere.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>10. Nella catena per n qualsiasi, perché nel pezzo −N si mette −n e non −2n?</summary>
+  <div class="soluzione">
+    <p>Perché si sta costruendo un <strong>tetto</strong>, e ogni sostituzione deve far salire l'espressione, o lasciarla uguale. Da N ≥ n segue −N ≤ −n: mettere −n al posto di −N fa salire. Mettere −2n farebbe scendere, perché −2n &lt; −N: il risultato non sarebbe più sicuramente sopra C(n).</p>
+    <p>Nel pezzo N log<sub>2</sub> N succede il contrario: N fa salire il risultato, quindi lo si sostituisce con il valore più grande, 2n.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>11. Quanti confronti fa il merge di 1 2 3 con 7 8 9? E di 1 3 5 con 2 4 6? Chi entra gratis?</summary>
+  <div class="soluzione">
+    <p>1 2 3 con 7 8 9: tre confronti (1, 2 e 3 contro il 7). La prima parte finisce, e 7 8 9 entrano gratis. Confronti = n − 3 = <strong>3</strong>, il caso migliore.</p>
+    <p>1 3 5 con 2 4 6: gli elementi si alternano, e la prima parte finisce solo quando esce il 5. Resta il 6, che entra gratis. Confronti = n − 1 = <strong>5</strong>, il caso peggiore. Prova tutti e due nel riquadro «chi paga un confronto?» della sezione 3.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="05-mergesort.html">← Pacco 5 · mergeSort</a>
+  <a href="07-divide-et-impera.html">Pacco 7 · Divide et impera →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function fmt(v) { return v.toLocaleString("it-IT"); }
+
+  function disegna(el, valori, opz) {
+    el.innerHTML = "";
+    var n = opz.lung !== undefined ? opz.lung : valori.length;
+    for (var i = 0; i < n; i++) {
+      var c = document.createElement("div");
+      c.className = "cella" + (opz.cls && opz.cls[i] ? " " + opz.cls[i] : "");
+      var f = document.createElement("div"); f.className = "f"; f.textContent = (opz.fr && opz.fr[i]) || "";
+      var v = document.createElement("div"); v.className = "v"; v.textContent = valori[i] === undefined ? "" : valori[i];
+      var k = document.createElement("div"); k.className = "i"; k.textContent = opz.sotto ? (opz.sotto[i] || "") : i;
+      c.appendChild(f); c.appendChild(v); c.appendChild(k);
+      el.appendChild(c);
+    }
+  }
+  function leggiArray(txt, max) {
+    var parti = String(txt).split(/[\s,;]+/).filter(function (s) { return s !== ""; });
+    if (parti.length < 1 || parti.length > max) return null;
+    var A = [];
+    for (var i = 0; i < parti.length; i++) {
+      var v = Number(parti[i]);
+      if (!isFinite(v)) return null;
+      A.push(v);
+    }
+    return A;
+  }
+  function etich(coppie) {
+    var f = {};
+    for (var i = 0; i < coppie.length; i += 2) {
+      var p = coppie[i];
+      if (p === null || p === undefined) continue;
+      f[p] = f[p] ? f[p] + " " + coppie[i + 1] : coppie[i + 1];
+    }
+    return f;
+  }
+  function log2int(n) { var k = 0; while ((1 << k) < n && k < 40) k++; return k; } // ⌈log2 n⌉ per n ≤ 2^30
+  function binario(n) { return n.toString(2); }
+
+  // ---------------------------------------------------------- attrezzo 1
+  function pot() {
+    var k = parseInt($("pot-k").value, 10), out = $("pot-out");
+    if (!(k >= 1 && k <= 20)) { out.textContent = "Scegli k tra 1 e 20."; return; }
+    var w = k + 2, righe = [];
+    function pad(s) { while (s.length < w) s = " " + s; return s; }
+    for (var i = 0; i < k; i++) {
+      var b = "1" + "0".repeat(i);
+      righe.push(pad(b).replace("1", "<span class='uno'>1</span>") + "   <span class='com'>= 2^" + i + " = " + fmt(Math.pow(2, i)) + "</span>");
+    }
+    righe.push(pad("─".repeat(k)));
+    righe.push(pad("1".repeat(k)).replace(/1+/, function (s) { return "<span class='uno'>" + s + "</span>"; }) +
+      "   <span class='com'>la somma = " + fmt(Math.pow(2, k) - 1) + "</span>");
+    righe.push(pad("+ 1"));
+    righe.push(pad("─".repeat(k + 1)));
+    righe.push(pad("1" + "0".repeat(k)).replace("1", "<span class='uno'>1</span>") + "   <span class='com'>= 2^" + k + " = " + fmt(Math.pow(2, k)) + "</span>");
+    out.innerHTML = righe.join("\n") + "\n\n<span class='com'>Quindi 1 + 2 + … + 2^" + (k - 1) + " = 2^" + k + " − 1 = " + fmt(Math.pow(2, k) - 1) + "</span>";
+  }
+  $("pot-k").oninput = pot;
+  pot();
+
+  // ---------------------------------------------------------- attrezzo 2
+  function testoSvg(x, y, t, cls, anchor) {
+    return "<text x='" + x.toFixed(1) + "' y='" + y + "' class='" + cls + "' text-anchor='" + (anchor || "middle") + "'>" + t + "</text>";
+  }
+  function righello(n, N) {
+    var larg = $("nn-svg").clientWidth;
+    var W = larg ? Math.max(260, Math.round(larg)) : 640, H = 100, sx = 14, dx = 14, yA = 58;
+    var R = 2 * N;                          // da 0 a 2N: si vede anche la potenza dopo N
+    function x(v) { return sx + (W - sx - dx) * v / R; }
+    var occupati = [];
+    // etichetta centrata su cx, tenuta dentro il disegno; salta se si sovrappone a un'altra della stessa riga
+    function etichetta(cx, y, t, cls, obbligatoria) {
+      var w = t.length * 7.2, a = cx - w / 2, b = cx + w / 2;
+      if (a < 0) { b -= a; a = 0; }
+      if (b > W) { a -= b - W; b = W; }
+      for (var q = 0; q < occupati.length; q++) {
+        var o = occupati[q];
+        if (o.y === y && a < o.b + 6 && b > o.a - 6 && !obbligatoria) return "";
+      }
+      occupati.push({ a: a, b: b, y: y });
+      return testoSvg((a + b) / 2, y, t, cls);
+    }
+    var p, parti = ["<svg viewBox='0 0 " + W + " " + H + "' role='img' aria-label='Righello da 0 a " + R +
+      ": la striscia da " + n + " a " + (2 * n) + " contiene una sola potenza di 2, " + N + "'>"];
+    parti.push("<rect class='striscia' x='" + x(n).toFixed(1) + "' y='" + (yA - 16) + "' width='" + (x(2 * n) - x(n)).toFixed(1) + "' height='16' rx='3'></rect>");
+    parti.push("<line class='asse' x1='" + sx + "' x2='" + (W - dx) + "' y1='" + yA + "' y2='" + yA + "'></line>");
+    for (p = 1; p <= R; p *= 2) {
+      var xp = x(p).toFixed(1), big = p === N;
+      parti.push("<line class='" + (big ? "tacca-N" : "tacca") + "' x1='" + xp + "' x2='" + xp + "' y1='" + (yA - (big ? 24 : 18)) + "' y2='" + (yA + 5) + "'></line>");
+    }
+    parti.push("<line class='tacca-n' x1='" + x(n).toFixed(1) + "' x2='" + x(n).toFixed(1) + "' y1='" + yA + "' y2='" + (yA + 9) + "'></line>");
+    parti.push("<line class='tacca-n' x1='" + x(2 * n).toFixed(1) + "' x2='" + x(2 * n).toFixed(1) + "' y1='" + yA + "' y2='" + (yA + 9) + "'></line>");
+    var et = [etichetta(x(N), yA - 30, "N = " + fmt(N), "lab-N", true)];
+    for (p = R; p >= 1; p /= 2) if (p !== N) et.push(etichetta(x(p), yA - 30, fmt(p), "lab"));
+    et.push(etichetta(x(n), yA + 22, "n = " + fmt(n), "lab-n", true));
+    et.push(etichetta(x(2 * n), yA + 38, "2n = " + fmt(2 * n), "lab-n", true));
+    parti.push(et.join(""));
+    parti.push("</svg>");
+    $("nn-svg").innerHTML = parti.join("");
+  }
+  function trovaN() {
+    var n = parseInt($("nn-n").value, 10), out = $("nn-out");
+    if (!(n >= 1 && n <= 1e9)) {
+      out.textContent = ""; $("nn-svg").innerHTML = "";
+      $("nn-txt").innerHTML = "Scegli n tra 1 e 1 000 000 000.";
+      return;
+    }
+    var N = Math.pow(2, log2int(n)), d = 2 * n;
+    righello(n, N);
+    var t;
+    if (n === 1) t = "n = 1: la striscia va da 1 a 2, con il 2 escluso, e dentro c'è solo 1 = 2<sup>0</sup>. Quindi <b>N = 1</b>.";
+    else if (N === n) t = "n = " + fmt(n) + " è già una potenza di 2, quindi <b>N = n = " + fmt(N) + "</b>. La striscia va da " + fmt(n) + " a " + fmt(d) +
+      ", ma " + fmt(d) + " è escluso: dentro c'è solo " + fmt(N) + ".";
+    else t = "n = " + fmt(n) + ": la striscia va da " + fmt(n) + " a " + fmt(d) + " (" + fmt(d) + " escluso). Dentro c'è una sola potenza di 2, <b>N = " + fmt(N) +
+      "</b>. Quella prima, " + fmt(N / 2) + ", è sotto n; quella dopo, " + fmt(2 * N) + ", è già oltre 2n.";
+    $("nn-txt").innerHTML = t;
+    var w = binario(d).length;
+    function riga(nome, v, nota) {
+      var b = binario(v);
+      while (b.length < w) b = " " + b;
+      return nome + b.replace("1", "<span class='uno'>1</span>") + "   <span class='com'>= " + fmt(v) + (nota ? "   " + nota : "") + "</span>";
+    }
+    var potenza = N === n;
+    out.innerHTML = [
+      riga("n  = ", n, potenza ? "n è già una potenza di 2" : ""),
+      riga("N  = ", N, potenza ? "N = n" : "un 1 e poi zeri, una cifra in più di n"),
+      riga("2n = ", d, "n spostato a sinistra di un posto"),
+      "",
+      "<span class='com'>" + fmt(n) + " ≤ " + fmt(N) + " &lt; " + fmt(d) + "  ✓</span>"
+    ].join("\n");
+  }
+  $("nn-r").oninput = function () { $("nn-n").value = $("nn-r").value; trovaN(); };
+  $("nn-n").oninput = function () {
+    var v = parseInt($("nn-n").value, 10);
+    if (v >= 1) $("nn-r").value = Math.min(v, 100);
+    trovaN();
+  };
+  trovaN();
+
+  // ---------------------------------------------------------- chi paga un confronto
+  function ordinato(A) { for (var i = 1; i < A.length; i++) if (A[i] < A[i - 1]) return false; return true; }
+  function bigCalc() {
+    var B = leggiArray($("big-b").value, 8), C = leggiArray($("big-c").value, 8), out = $("big-x"), err = "";
+    if (!B || !C) err = "Scrivi in ciascuna parte da 1 a 8 numeri, separati da virgole o spazi.";
+    else if (!ordinato(B) || !ordinato(C)) err = "Le due parti devono essere già ordinate: il merge fonde due array ordinati.";
+    if (err) { out.innerHTML = ""; $("big-cont").innerHTML = ""; $("big-txt").innerHTML = err; return; }
+    var X = [], da = [], num = [], i1 = 0, i2 = 0, cfr = 0;
+    while (i1 < B.length && i2 < C.length) {
+      cfr++;
+      if (B[i1] <= C[i2]) { X.push(B[i1++]); da.push("1ª"); } else { X.push(C[i2++]); da.push("2ª"); }
+      num.push(String(cfr));
+    }
+    var finita = i1 >= B.length ? "la prima" : "la seconda", gratis = [];
+    while (i1 < B.length) { gratis.push(B[i1]); X.push(B[i1++]); da.push("1ª"); num.push(""); }
+    while (i2 < C.length) { gratis.push(C[i2]); X.push(C[i2++]); da.push("2ª"); num.push(""); }
+    var n = X.length, cls = {};
+    for (var j = 0; j < n; j++) cls[j] = num[j] ? "mossa" : "ordinata";
+    disegna(out, X, { cls: cls, fr: num, sotto: da });
+    $("big-cont").innerHTML = "<span>elementi: <b>" + n + "</b></span><span>confronti: <b>" + cfr + "</b></span><span>entrati gratis: <b>" +
+      gratis.length + "</b></span><span>n − 1 = <b>" + (n - 1) + "</b></span>";
+    var t;
+    if (gratis.length === 1) t = "Le due parti sono finite quasi insieme: è finita prima " + finita + " parte, e nell'altra è rimasto un solo elemento, " + gratis[0] +
+      ", entrato gratis. Confronti = n − 1 = " + cfr + ": il caso peggiore, quello che si mette nell'equazione C(n).";
+    else t = "È finita presto " + finita + " parte, e gli elementi rimasti nell'altra (" + gratis.join(" ") + ") sono entrati gratis, senza confronti. Confronti = n − " +
+      gratis.length + " = " + cfr + ", meno di n − 1.";
+    $("big-txt").innerHTML = t + "<br><span class='piccolo'>Le caselle viola sono state pagate con un confronto, quelle verdi sono entrate gratis. Almeno una casella è sempre verde: per questo i confronti sono al più n − 1.</span>";
+  }
+  function bigPreset(b, c) { $("big-b").value = b; $("big-c").value = c; bigCalc(); }
+  $("big-lav").onclick = function () { bigPreset("4, 9, 11, 15, 18, 20", "1, 2, 10, 19"); };
+  $("big-alt").onclick = function () { bigPreset("1, 3, 5, 7", "2, 4, 6, 8"); };
+  $("big-prima").onclick = function () { bigPreset("1, 2, 3", "7, 8, 9, 10"); };
+  $("big-b").oninput = bigCalc;
+  $("big-c").oninput = bigCalc;
+  bigCalc();
+
+  // ---------------------------------------------------------- srotola C(n)
+  var srot = { righe: [], k: 0 };
+  function srotInit() {
+    var n = parseInt($("srot-n").value, 10);
+    if (!(n >= 2 && (n & (n - 1)) === 0)) n = 16;
+    var L = log2int(n), R = [];
+    // passo j: C(n) = 2^(j+1) C(n/2^(j+1)) + termini n − 2^0 .. n − 2^j
+    for (var j = 0; j < L; j++) {
+      var coeff = Math.pow(2, j + 1), dentro = n / coeff, termini = [];
+      for (var t = j; t >= 0; t--) termini.push(n - Math.pow(2, t));
+      var somma = termini.reduce(function (a, b) { return a + b; }, 0);
+      var testo = (j === 0 ? "C(" + n + ") = " : "      = ") + coeff + "·C(" + dentro + ") + " + termini.join(" + ");
+      var spieg = "Passo k = " + (j + 1) + ": ho aperto C(" + (dentro * 2) + ") = 2·C(" + dentro + ") + " + (dentro * 2 - 1) + ". Il nuovo termine è " + (n - Math.pow(2, j)) +
+        " = n − 2<sup>" + j + "</sup>. Con la formula: 2<sup>k</sup>·C(n/2<sup>k</sup>) + n·k − 2<sup>k</sup> + 1 = " + coeff + "·C(" + dentro + ") + " + n + "·" + (j + 1) + " − " + coeff + " + 1 = " +
+        coeff + "·C(" + dentro + ") + " + somma + ".";
+      R.push({ testo: testo, spieg: spieg });
+    }
+    var tot = n * L - n + 1;
+    R.push({ testo: "      = " + n + "·0 + " + tot + " = " + tot,
+      spieg: "La matrioska piena: n/2<sup>k</sup> = 1 con k = log<sub>2</sub> " + n + " = " + L + ", e C(1) = 0. Risultato: <b>C(" + n + ") = " + fmt(tot) + "</b> = n log<sub>2</sub> n − n + 1 = " + n + "·" + L + " − " + n + " + 1." });
+    srot.righe = R; srot.k = 0; srotShow();
+  }
+  function srotShow() {
+    var out = $("srot-out"), html = [];
+    for (var r = 0; r <= srot.k; r++) {
+      var t = srot.righe[r].testo;
+      html.push(r === srot.k ? "<span class='nuova'>" + t + "</span>" : t);
+    }
+    out.innerHTML = html.join("\n");
+    $("srot-txt").innerHTML = "<span class='piccolo'>passo " + (srot.k + 1) + " di " + srot.righe.length + "</span><br>" + srot.righe[srot.k].spieg;
+    $("srot-passo").disabled = srot.k >= srot.righe.length - 1;
+  }
+  $("srot-passo").onclick = function () { if (srot.k < srot.righe.length - 1) { srot.k++; srotShow(); } };
+  $("srot-fine").onclick = function () { srot.k = srot.righe.length - 1; srotShow(); };
+  $("srot-reset").onclick = srotInit;
+  $("srot-n").onchange = srotInit;
+  srotInit();
+
+  // ---------------------------------------------------------- caso generale
+  var memoC = {};
+  function Cn(n) {
+    if (n <= 1) return 0;
+    if (memoC[n] !== undefined) return memoC[n];
+    var v = Cn(Math.floor(n / 2)) + Cn(Math.ceil(n / 2)) + n - 1;
+    memoC[n] = v;
+    return v;
+  }
+  function fmt1(v) { return (Math.round(v * 10) / 10).toLocaleString("it-IT"); }
+  var gn = { righe: [], k: 0 };
+  function genInit() {
+    var n = parseInt($("gen-n").value, 10);
+    if (!(n >= 2 && n <= 1e9)) {
+      gn.righe = []; $("gen-out").innerHTML = "";
+      $("gen-txt").innerHTML = "Scegli n tra 2 e 1 000 000 000.";
+      $("gen-passo").disabled = true;
+      return;
+    }
+    var L = log2int(n), N = Math.pow(2, L), cN = N * L - N + 1, cn = Cn(n), pot = N === n;
+    var lg2n = Math.log2(2 * n), pezzoNuovo = 2 * n * lg2n, tetto = pezzoNuovo - n + 1;
+    var R = [];
+    R.push({ r: "C(" + fmt(n) + ")",
+      t: "Partenza: cerchiamo un tetto per C(" + fmt(n) + "). " +
+        (pot ? fmt(n) + " è già una potenza di 2, quindi la formula esatta varrebbe già; seguiamo comunque la ricetta, per vedere che funziona sempre."
+             : fmt(n) + " non è una potenza di 2, quindi la formula n log<sub>2</sub> n − n + 1 non si può usare.") +
+        " Il valore vero, calcolato con l'equazione, è C(" + fmt(n) + ") = " + fmt(cn) + ": lo teniamo da parte solo per controllare alla fine." });
+    R.push({ r: "   ≤ C(" + fmt(N) + ")",
+      t: "<b>Mossa 1 · sali alla potenza di 2.</b> La prima potenza di 2 da " + fmt(n) + " in su è N = " + fmt(N) +
+        (pot ? ", cioè n stesso: qui il ≤ è un uguale." : " (quella prima, " + fmt(N / 2) + ", è sotto " + fmt(n) + "). Ordinare " + fmt(N) +
+          " elementi non costa meno confronti che ordinarne " + fmt(n) + ", quindi C(" + fmt(n) + ") ≤ C(" + fmt(N) + ").") });
+    R.push({ r: "   = " + fmt(N) + "·log₂" + fmt(N) + " − " + fmt(N) + " + 1 = " + fmt(N) + "·" + L + " − " + fmt(N) + " + 1 = " + fmt(cN),
+      t: "<b>Mossa 2 · formula esatta su N.</b> " + fmt(N) + " è una potenza di 2 e log<sub>2</sub> " + fmt(N) + " = " + L + ", quindi C(" + fmt(N) + ") = " +
+        fmt(N) + "·" + L + " − " + fmt(N) + " + 1 = " + fmt(cN) + "." });
+    R.push({ r: "   &lt; 2·" + fmt(n) + "·log₂(2·" + fmt(n) + ") − " + fmt(n) + " + 1 ≈ " + fmt1(tetto),
+      t: "<b>Mossa 3 · togli N.</b> Nel pezzo N log<sub>2</sub> N metto 2n = " + fmt(2 * n) + ", che è più grande di N: " + fmt(N) + "·" + L + " = " + fmt(N * L) +
+        " diventa " + fmt(2 * n) + "·log<sub>2</sub> " + fmt(2 * n) + " ≈ " + fmt1(pezzoNuovo) + ", cresce. Nel pezzo −N metto n, che è più piccolo: −" + fmt(N) + " diventa −" + fmt(n) +
+        (pot ? ", cioè resta uguale." : ", cioè si toglie di meno, e anche questo fa crescere.") + " Il totale è cresciuto: " + fmt(cN) + " &lt; " + fmt1(tetto) + "." });
+    R.push({ r: "   = 2·" + fmt(n) + "·log₂" + fmt(n) + " + " + fmt(n) + " + 1 ≈ " + fmt1(tetto),
+      t: "<b>Mossa 4 · semplifica.</b> log<sub>2</sub>(2·" + fmt(n) + ") = 1 + log<sub>2</sub> " + fmt(n) + ", quindi 2n log<sub>2</sub>(2n) − n + 1 = 2n + 2n log<sub>2</sub> n − n + 1 = 2n log<sub>2</sub> n + n + 1. " +
+        "È lo stesso numero, " + fmt1(tetto) + ", scritto in modo che si veda la forma n log n." });
+    R.push({ r: "quindi  C(" + fmt(n) + ") = " + fmt(cn) + " &lt; " + fmt1(tetto),
+      t: "<b>Catena completa:</b> C(" + fmt(n) + ") = " + fmt(cn) + " ≤ " + fmt(cN) + " &lt; " + fmt1(tetto) + ". Il tetto è largo, circa il doppio di n log<sub>2</sub> n ≈ " +
+        fmt1(n * Math.log2(n)) + ", ma ha la forma giusta, e la ricetta funziona per ogni n: prova a cambiarlo." });
+    gn.righe = R; gn.k = 0; genShow();
+  }
+  function genShow() {
+    var html = [];
+    for (var r = 0; r <= gn.k; r++) html.push(r === gn.k ? "<span class='nuova'>" + gn.righe[r].r + "</span>" : gn.righe[r].r);
+    $("gen-out").innerHTML = html.join("\n");
+    $("gen-txt").innerHTML = "<span class='piccolo'>passo " + (gn.k + 1) + " di " + gn.righe.length + "</span><br>" + gn.righe[gn.k].t;
+    $("gen-passo").disabled = gn.k >= gn.righe.length - 1;
+  }
+  $("gen-passo").onclick = function () { if (gn.k < gn.righe.length - 1) { gn.k++; genShow(); } };
+  $("gen-fine").onclick = function () { if (gn.righe.length) { gn.k = gn.righe.length - 1; genShow(); } };
+  $("gen-reset").onclick = genInit;
+  $("gen-n").onchange = genInit;
+  genInit();
+
+  // ---------------------------------------------------------- il tempo T(n) con a, b, c
+  function ttCalc() {
+    var va = $("tt-a").value, vb = $("tt-b").value, vc = $("tt-c").value;
+    var a = Number(va), b = Number(vb), c = Number(vc), n = parseInt($("tt-n").value, 10);
+    var ok = [va, vb, vc].every(function (v) { return String(v).trim() !== "" && isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100; });
+    if (!ok || !(n >= 2)) { $("tt-tab").innerHTML = ""; $("tt-txt").innerHTML = "Scegli a, b e c tra 0 e 100."; return; }
+    var L = log2int(n), righe = [], somma = 0, j;
+    function num(v) { return Number.isInteger(v) ? fmt(v) : fmt1(v); }
+    function riga(j) {
+      var pezzi = Math.pow(2, j), costo = b * n + pezzi * c;
+      return "<tr><td>" + j + "</td><td>" + fmt(pezzi) + " da " + fmt(n / pezzi) + "</td><td>b·n + " + fmt(pezzi) + "·c = " + num(b) + "·" + fmt(n) + " + " + fmt(pezzi) + "·" + num(c) + "</td><td>" + num(costo) + "</td></tr>";
+    }
+    for (j = 0; j < L; j++) somma += b * n + Math.pow(2, j) * c;
+    var mostra = [];
+    if (L <= 6) for (j = 0; j < L; j++) mostra.push(j);
+    else mostra = [0, 1, 2, -1, L - 2, L - 1];
+    mostra.forEach(function (j) { righe.push(j === -1 ? "<tr><td>…</td><td>…</td><td>ogni livello: b·n più tanti c quanti sono i pezzi</td><td>…</td></tr>" : riga(j)); });
+    var foglie = a * n, tot = somma + foglie, pA = a * n, pB = b * n * L, pC = c * (n - 1), formula = pA + pB + pC;
+    righe.push("<tr><td>foglie</td><td>" + fmt(n) + " da 1</td><td>n·a = " + fmt(n) + "·" + num(a) + "</td><td>" + num(foglie) + "</td></tr>");
+    righe.push("<tr><td><strong>totale</strong></td><td></td><td>somma di tutte le righe</td><td><strong>" + num(tot) + "</strong></td></tr>");
+    righe.push("<tr><td>formula</td><td></td><td>an + bn log<sub>2</sub> n + c(n − 1) = " + num(pA) + " + " + num(pB) + " + " + num(pC) + "</td><td>" + num(formula) + (Math.abs(formula - tot) <= 1e-6 * Math.max(1, tot) ? " ✓" : "") + "</td></tr>");
+    $("tt-tab").innerHTML = "<table><tr><th>livello</th><th>pezzi</th><th>costo del livello</th><th>valore</th></tr>" + righe.join("") + "</table>";
+    if (tot === 0) { $("tt-txt").innerHTML = "Con a = b = c = 0 tutto costa zero: nessun computer funziona così. Prova valori più grandi di 0."; return; }
+    function perc(v) { return Math.round(100 * v / tot) + "%"; }
+    var t = "Il totale si divide così: an → <b>" + perc(pA) + "</b>, bn log<sub>2</sub> n → <b>" + perc(pB) + "</b>, c(n − 1) → <b>" + perc(pC) + "</b>. ";
+    if (b === 0) t += "Con b = 0 il lavoro per elemento sarebbe gratis, ma copiare e fondere n elementi non può costare zero: nella realtà b è sempre più di 0.";
+    else if (pB >= pA && pB >= pC) t += "Il pezzo più grande è già bn log<sub>2</sub> n, e con n più grandi la sua fetta cresce ancora" +
+      (n < 1024 ? ": prova 1024 e poi un miliardo." : n < 1073741824 ? ": prova un miliardo." : ".");
+    else {
+      var soglia = Math.max(a, c) / b;
+      t += "Qui pesa ancora di più " + (pA > pC ? "an" : "c(n − 1)") + ": con queste costanti, bn log<sub>2</sub> n diventa il pezzo più grande quando log<sub>2</sub> n supera circa " +
+        fmt1(soglia) + ", cioè per n oltre 2<sup>" + fmt1(soglia) + "</sup> circa. Prima o poi succede sempre: è proprio quello che dice Θ(n log n).";
+    }
+    $("tt-txt").innerHTML = t;
+  }
+  ["tt-a", "tt-b", "tt-c"].forEach(function (id) { $(id).oninput = ttCalc; });
+  $("tt-n").onchange = ttCalc;
+  ttCalc();
+
+  // ---------------------------------------------------------- pila di mergeSort (Codice 3.3)
+  function passiPila(A0) {
+    var A = A0.slice(), n = A.length, P = [], pila = [], chiamate = 0, maxH = 0;
+    function snap(t, top, extra) {
+      var o = { A: A.slice(), pila: pila.map(function (r) { return { i: r.i, f: r.f, m: r.m }; }), h: pila.length, t: t, top: top, chiamate: chiamate, maxH: maxH };
+      if (extra) for (var q in extra) o[q] = extra[q];
+      P.push(o);
+    }
+    function ms(i, f) {
+      chiamate++;
+      var rec = { i: i, f: f, m: "–" };
+      pila.push(rec);
+      maxH = Math.max(maxH, pila.length);
+      var nome = "mergeSort(A, " + i + ", " + f + ", X)";
+      if (f - i > 1) {
+        var m = Math.floor((i + f) / 2);
+        rec.m = m;
+        snap("Chiamata n° " + chiamate + ": <b>" + nome + "</b>, porzione [" + i + ", " + f + ") con " + (f - i) + " elementi. m = (" + i + " + " + f + ")/2 = " + m +
+          ". Ora chiamo la prima metà, [" + i + ", " + m + ").", rec, { evento: "chiamata " + nome });
+        ms(i, m);
+        snap("Torno in " + nome + ": la prima metà è ordinata e i suoi record sono spariti. Chiamo la seconda metà, [" + m + ", " + f + "), che riusa lo stesso spazio.", rec, { evento: "ritorno in " + nome });
+        ms(m, f);
+        // merge(A, i, m, f, X)
+        var X = [], i1 = i, i2 = m;
+        while (i1 < m && i2 < f) { if (A[i1] <= A[i2]) X.push(A[i1++]); else X.push(A[i2++]); }
+        while (i1 < m) X.push(A[i1++]);
+        while (i2 < f) X.push(A[i2++]);
+        for (var k = 0; k < X.length; k++) A[i + k] = X[k];
+        snap("Le due metà sono ordinate: <b>merge(A, " + i + ", " + m + ", " + f + ", X)</b> le fonde, e A[" + i + ".." + (f - 1) + "] = " + X.join(" ") + ". Poi " + nome + " finisce e il suo record viene tolto.", rec, { evento: "merge in " + nome, fuso: true });
+      } else {
+        snap("Chiamata n° " + chiamate + ": <b>" + nome + "</b>, " + (f - i) + " elemento: caso base (f − i ≤ 1), non fa niente e finisce subito.", rec, { evento: "caso base " + nome });
+      }
+      pila.pop();
+    }
+    ms(0, n);
+    P.push({ A: A.slice(), pila: [], h: 0, t: "Fine: A è ordinato. Chiamate in tutto: <b>" + chiamate + "</b> = 2n − 1. Altezza massima della pila: <b>" + maxH + "</b> = 1 + ⌈log<sub>2</sub> " + n + "⌉.", top: null, chiamate: chiamate, maxH: maxH, evento: "fine" });
+    return P;
+  }
+
+  var pl = { P: [], k: 0, H: 0 };
+  function pilaInit() {
+    var A = leggiArray($("pila-in").value, 16);
+    if (!A) {
+      pl.P = [];
+      ["pila-arr", "pila-cont", "pila-rec", "pila-svg", "pila-tab"].forEach(function (id) { $(id).innerHTML = ""; });
+      $("pila-txt").innerHTML = "Scrivi da 1 a 16 numeri separati da virgole o spazi.";
+      $("pila-passo").disabled = true;
+      return;
+    }
+    pl.P = passiPila(A); pl.k = 0;
+    pl.H = pl.P[pl.P.length - 1].maxH;
+    disegnaGrafico();
+    tabella();
+    pilaShow();
+  }
+  function pilaShow() {
+    var p = pl.P[pl.k], cls = {}, fr = {}, j;
+    if (p.top) {
+      for (j = 0; j < p.A.length; j++) cls[j] = (j < p.top.i || j >= p.top.f) ? "fuori" : (p.fuso ? "ordinata" : "");
+      fr = etich([p.top.i, "i", p.top.m === "–" ? null : p.top.m, "m", p.top.f < p.A.length ? p.top.f : null, "f"]);
+    } else {
+      for (j = 0; j < p.A.length; j++) cls[j] = "ordinata";
+    }
+    disegna($("pila-arr"), p.A, { cls: cls, fr: fr });
+    $("pila-cont").innerHTML = "<span>record sulla pila: <b>" + p.h + "</b></span><span>massimo finora: <b>" + p.maxH + "</b></span><span>chiamate finora: <b>" + p.chiamate + "</b></span>";
+    $("pila-txt").innerHTML = "<span class='piccolo'>passo " + (pl.k + 1) + " di " + pl.P.length + "</span><br>" + p.t;
+    var box = $("pila-rec");
+    box.innerHTML = "";
+    p.pila.forEach(function (r, idx) {
+      var d = document.createElement("div");
+      d.className = "record";
+      d.innerHTML = "<span class='tit'>" + (idx === p.pila.length - 1 ? "▲ in cima · " : "") + "mergeSort(A, " + r.i + ", " + r.f + ", X)</span><br>i = " + r.i + "   f = " + r.f + "   m = " + r.m + "   A = →array   X = →array";
+      box.appendChild(d);
+    });
+    $("pila-passo").disabled = pl.k >= pl.P.length - 1;
+    aggiornaCursore();
+  }
+  $("pila-passo").onclick = function () { if (pl.k < pl.P.length - 1) { pl.k++; pilaShow(); } };
+  $("pila-fine").onclick = function () { if (pl.P.length) { pl.k = pl.P.length - 1; pilaShow(); } };
+  $("pila-reset").onclick = pilaInit;
+  $("pila-in").onchange = pilaInit;
+
+  // grafico dell'altezza: una serie, linea a gradini, cursore sul passo corrente
+  var G = { W: 640, Hh: 190, sx: 40, dx: 12, su: 14, giu: 30 };
+  function gx(s) { var n = Math.max(1, pl.P.length - 1); return G.sx + (G.W - G.sx - G.dx) * s / n; }
+  function gy(h) { var top = Math.max(1, pl.H); return G.su + (G.Hh - G.su - G.giu) * (1 - h / top); }
+  function disegnaGrafico() {
+    // disegna alla larghezza reale del contenitore: così il testo non si rimpicciolisce sul telefono
+    var larg = $("pila-svg").clientWidth;
+    G.W = larg ? Math.max(280, Math.round(larg)) : 640;
+    G.Hh = G.W < 480 ? 170 : 190;
+    var P = pl.P, s, parti = [], d = "", velo = "";
+    for (s = 0; s < P.length; s++) {
+      var x = gx(s), y = gy(P[s].h);
+      if (s === 0) { d = "M" + x + "," + y; velo = "M" + x + "," + gy(0) + " L" + x + "," + y; }
+      else { d += " H" + x + " V" + y; velo += " H" + x + " V" + y; }
+    }
+    velo += " V" + gy(0) + " Z";
+    parti.push("<svg viewBox='0 0 " + G.W + " " + G.Hh + "' id='pila-graf-svg' tabindex='0' role='img' aria-label='Altezza della pila a ogni passo: massimo " + pl.H + " record'>");
+    for (var h = 0; h <= pl.H; h++) {
+      parti.push("<line class='asse' x1='" + G.sx + "' x2='" + (G.W - G.dx) + "' y1='" + gy(h) + "' y2='" + gy(h) + "'></line>");
+      parti.push("<text class='tick' x='" + (G.sx - 8) + "' y='" + (gy(h) + 4) + "' text-anchor='end'>" + h + "</text>");
+    }
+    parti.push("<line class='massimo' x1='" + G.sx + "' x2='" + (G.W - G.dx) + "' y1='" + gy(pl.H) + "' y2='" + gy(pl.H) + "'></line>");
+    parti.push("<text class='etich-max' x='" + (G.W - G.dx) + "' y='" + (gy(pl.H) - 4) + "' text-anchor='end'>massimo: H(" + P[0].A.length + ") = " + pl.H + "</text>");
+    parti.push("<path class='velo' d='" + velo + "'></path>");
+    parti.push("<path class='serie' d='" + d + "'></path>");
+    parti.push("<text class='tit-asse' x='" + G.sx + "' y='" + (G.Hh - 8) + "'>tempo (passi) →</text>");
+    parti.push("<text class='tit-asse' x='" + (G.W - G.dx) + "' y='" + (G.Hh - 8) + "' text-anchor='end'>record sulla pila ↑</text>");
+    parti.push("<line class='croce' id='pila-croce' x1='0' x2='0' y1='" + G.su + "' y2='" + gy(0) + "' style='display:none'></line>");
+    parti.push("<line class='ora' id='pila-ora' x1='0' x2='0' y1='" + G.su + "' y2='" + gy(0) + "'></line>");
+    parti.push("<circle class='punto' id='pila-punto' r='4' cx='0' cy='0'></circle>");
+    parti.push("</svg>");
+    $("pila-svg").innerHTML = parti.join("");
+    var svg = document.getElementById("pila-graf-svg");
+    if (svg && svg.addEventListener) {
+      svg.addEventListener("pointermove", function (e) { hover(e, false); });
+      svg.addEventListener("pointerdown", function (e) { hover(e, true); });
+      svg.addEventListener("pointerleave", function () { nascondiTip(); });
+      svg.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight" && pl.k < pl.P.length - 1) { pl.k++; pilaShow(); mostraTip(pl.k); e.preventDefault(); }
+        if (e.key === "ArrowLeft" && pl.k > 0) { pl.k--; pilaShow(); mostraTip(pl.k); e.preventDefault(); }
+      });
+      svg.addEventListener("focus", function () { mostraTip(pl.k); });
+      svg.addEventListener("blur", function () { nascondiTip(); });
+    }
+  }
+  function aggiornaCursore() {
+    var o = document.getElementById("pila-ora"), c = document.getElementById("pila-punto");
+    if (!o || !o.setAttribute) return;
+    var x = gx(pl.k), y = gy(pl.P[pl.k].h);
+    o.setAttribute("x1", x); o.setAttribute("x2", x);
+    c.setAttribute("cx", x); c.setAttribute("cy", y);
+  }
+  function passoDa(e) {
+    var svg = document.getElementById("pila-graf-svg"), r = svg.getBoundingClientRect();
+    var x = (e.clientX - r.left) * G.W / r.width;
+    var n = Math.max(1, pl.P.length - 1);
+    var s = Math.round((x - G.sx) / ((G.W - G.sx - G.dx) / n));
+    return Math.max(0, Math.min(pl.P.length - 1, s));
+  }
+  function hover(e, salta) {
+    var s = passoDa(e);
+    if (salta) { pl.k = s; pilaShow(); }
+    mostraTip(s);
+  }
+  function mostraTip(s) {
+    var tip = $("pila-tip"), cr = document.getElementById("pila-croce"), svg = document.getElementById("pila-graf-svg");
+    if (!svg || !svg.getBoundingClientRect) return;
+    var x = gx(s);
+    cr.setAttribute("x1", x); cr.setAttribute("x2", x); cr.style.display = "";
+    var p = pl.P[s], r = svg.getBoundingClientRect(), box = $("pila-graf").getBoundingClientRect();
+    tip.innerHTML = "";
+    var v = document.createElement("div");
+    var b = document.createElement("b"); b.textContent = p.h + (p.h === 1 ? " record" : " record");
+    var key = document.createElement("span"); key.className = "chiave";
+    v.appendChild(key); v.appendChild(b);
+    var l = document.createElement("div"); l.textContent = "passo " + (s + 1) + ": " + p.evento;
+    tip.appendChild(v); tip.appendChild(l);
+    tip.style.display = "block";
+    var px = (x / G.W) * r.width + (r.left - box.left), py = (gy(p.h) / G.Hh) * r.height + (r.top - box.top);
+    var w = tip.offsetWidth || 200, h = tip.offsetHeight || 50;
+    // a destra del cursore se c'è posto, altrimenti a sinistra; sopra il punto se c'è posto, altrimenti sotto
+    var left = px + 12 + w <= box.width ? px + 12 : Math.max(0, px - 12 - w);
+    var top = py - h - 10 >= 0 ? py - h - 10 : py + 12;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+  function nascondiTip() {
+    var tip = $("pila-tip"), cr = document.getElementById("pila-croce");
+    tip.style.display = "none";
+    if (cr && cr.style) cr.style.display = "none";
+  }
+  function tabella() {
+    var righe = pl.P.map(function (p, s) {
+      return "<tr><td>" + (s + 1) + "</td><td>" + p.h + "</td><td>" + p.evento + "</td></tr>";
+    });
+    $("pila-tab").innerHTML = "<table><tr><th>passo</th><th>record sulla pila</th><th>cosa succede</th></tr>" + righe.join("") + "</table>";
+  }
+
+  // ---------------------------------------------------------- merge(A, i, m, f, X)
+  function passiM3(A0, i, m, f) {
+    var A = A0.slice(), n = A.length, X = [], i1 = i, i2 = m, k = 0, cfr = 0, P = [], fase = "merge";
+    function snap(t, att) {
+      var ca = {}, cx = {}, j;
+      for (j = 0; j < n; j++) ca[j] = (j < i || j >= f) ? "oltre" : "";
+      if (fase === "merge") {
+        for (j = i; j < i1; j++) ca[j] = "fuori";
+        for (j = m; j < i2; j++) ca[j] = "fuori";
+      }
+      for (j = 0; j < X.length; j++) cx[j] = "ordinata";
+      for (j = f - i; j < n; j++) cx[j] = "fuori";
+      if (att) {
+        if (att.a !== undefined) ca[att.a] = att.aCls || "attiva";
+        if (att.b !== undefined) ca[att.b] = "attiva";
+        if (att.x !== undefined) cx[att.x] = att.xCls || "mossa";
+        if (att.copia) for (j = i; j < att.copia; j++) ca[j] = "ordinata";
+      }
+      var fa = fase === "merge" ? etich([i, "i", i1 < m ? i1 : null, "i₁", m, "m", i2 < f ? i2 : null, "i₂", f < n ? f : null, "f"]) : etich([i, "i", m, "m", f < n ? f : null, "f"]);
+      var fx = {};
+      if (fase === "merge" && k < f - i) fx[k] = "k";
+      if (att && att.kx !== undefined) fx[att.kx] = "k";
+      P.push({ A: A.slice(), X: X.slice(), ca: ca, cx: cx, fa: fa, fx: fx, t: t, cfr: cfr });
+    }
+    snap("i₁ ← " + i + " (inizio della prima parte), i₂ ← " + m + " (inizio della seconda), k ← 0. Le due parti sono A[" + i + ".." + (m - 1) + "] e A[" + m + ".." + (f - 1) + "].");
+    while (i1 < m && i2 < f) {
+      cfr++;
+      var a = A[i1], b = A[i2];
+      if (a <= b) {
+        X[k] = a;
+        var t1 = "A[" + i1 + "] = " + a + " ≤ A[" + i2 + "] = " + b + "? <span class='verde'>sì</span>: <b>X[" + k + "] ← " + a + "</b> (dalla prima parte), i₁ ← " + (i1 + 1) + ".";
+        i1++; k++;
+        snap(t1, { x: k - 1 });
+      } else {
+        X[k] = b;
+        var t2 = "A[" + i1 + "] = " + a + " ≤ A[" + i2 + "] = " + b + "? <span class='rosso'>no</span>: <b>X[" + k + "] ← " + b + "</b> (dalla seconda parte), i₂ ← " + (i2 + 1) + ".";
+        i2++; k++;
+        snap(t2, { x: k - 1 });
+      }
+    }
+    var j;
+    snap((i1 >= m ? "La prima parte è finita (i₁ = m)." : "La seconda parte è finita (i₂ = f).") + " Il while si ferma; i due for copiano in X quello che resta, senza confronti (uno dei due non fa nessun giro).");
+    for (j = i1; j < m; j++) { X[k] = A[j]; k++; i1++; snap("Primo for: X[" + (k - 1) + "] ← A[" + j + "] = " + A[j] + ".", { x: k - 1 }); }
+    for (j = i2; j < f; j++) { X[k] = A[j]; k++; i2++; snap("Secondo for: X[" + (k - 1) + "] ← A[" + j + "] = " + A[j] + ".", { x: k - 1 }); }
+    fase = "copia";
+    snap("X[0.." + (f - i - 1) + "] contiene il risultato. Ultimo for: lo ricopio in A[" + i + ".." + (f - 1) + "], con A[i + k] ← X[k].");
+    for (var q = 0; q < f - i; q++) {
+      A[i + q] = X[q];
+      snap("A[" + (i + q) + "] ← X[" + q + "] = " + X[q] + ".", { a: i + q, aCls: "mossa", x: q, xCls: "attiva", copia: i + q, kx: q });
+    }
+    var tot = f - i;
+    snap("<b>Fine.</b> A[" + i + ".." + (f - 1) + "] è ordinato; le caselle fuori da [" + i + ", " + f + ") non sono state toccate. Confronti: <b>" + cfr + "</b> (al più n − 1 = " + (tot - 1) + ", con n = f − i = " + tot + ").", { copia: f });
+    return P;
+  }
+  var m3 = { P: [], k: 0 };
+  function m3Init() {
+    var A = leggiArray($("m3-a").value, 16), i = parseInt($("m3-i").value, 10), m = parseInt($("m3-m").value, 10), f = parseInt($("m3-f").value, 10), err = "";
+    if (!A) err = "Scrivi da 1 a 16 numeri separati da virgole o spazi.";
+    else if (!(i >= 0 && i < m && m < f && f <= A.length)) err = "Serve 0 ≤ i &lt; m &lt; f ≤ n = " + A.length + ".";
+    else {
+      for (var j = i + 1; j < m; j++) if (A[j] < A[j - 1]) err = "A[" + i + ".." + (m - 1) + "] non è ordinato: il merge vuole due parti già ordinate.";
+      for (j = m + 1; j < f; j++) if (A[j] < A[j - 1]) err = "A[" + m + ".." + (f - 1) + "] non è ordinato: il merge vuole due parti già ordinate.";
+    }
+    if (err) {
+      m3.P = [];
+      ["m3-arr-a", "m3-arr-x", "m3-cont"].forEach(function (id) { $(id).innerHTML = ""; });
+      $("m3-txt").innerHTML = err; $("m3-passo").disabled = true;
+      return;
+    }
+    m3.n = A.length; m3.P = passiM3(A, i, m, f); m3.k = 0; m3Show();
+  }
+  function m3Show() {
+    var p = m3.P[m3.k];
+    disegna($("m3-arr-a"), p.A, { cls: p.ca, fr: p.fa });
+    disegna($("m3-arr-x"), p.X, { cls: p.cx, fr: p.fx, lung: m3.n });
+    $("m3-cont").innerHTML = "<span>confronti: <b>" + p.cfr + "</b></span>";
+    $("m3-txt").innerHTML = "<span class='piccolo'>passo " + (m3.k + 1) + " di " + m3.P.length + "</span><br>" + p.t;
+    $("m3-passo").disabled = m3.k >= m3.P.length - 1;
+  }
+  $("m3-passo").onclick = function () { if (m3.k < m3.P.length - 1) { m3.k++; m3Show(); } };
+  $("m3-fine").onclick = function () { if (m3.P.length) { m3.k = m3.P.length - 1; m3Show(); } };
+  $("m3-reset").onclick = m3Init;
+  ["m3-a", "m3-i", "m3-m", "m3-f"].forEach(function (id) { $(id).onchange = m3Init; });
+
+  // ---------------------------------------------------------- Codice 3.2 e Codice 3.3 fianco a fianco
+  function fondi(B, C) {
+    var X = [], i1 = 0, i2 = 0;
+    while (i1 < B.length && i2 < C.length) X.push(B[i1] <= C[i2] ? B[i1++] : C[i2++]);
+    while (i1 < B.length) X.push(B[i1++]);
+    while (i2 < C.length) X.push(C[i2++]);
+    return X;
+  }
+  function passiCf(A0) {
+    var n = A0.length, P = [], dopo = "";
+    var A2 = A0.slice(), fr = [], c2 = { creati: 0, celle: 0, copie: 0 };   // versione diretta
+    var A3 = A0.slice(), X3 = [], recs = [];                                // versione con indici
+    function q(v) { return "[" + v.join(" ") + "]"; }
+    function extra2() {
+      var t = 0;
+      fr.forEach(function (f) { if (f.B) t += f.B.length + f.C.length; if (f.X) t += f.X.length; });
+      return t;
+    }
+    function snap(tipo, testo, usati) {
+      P.push({
+        tipo: tipo, t: (dopo ? dopo + " " : "") + testo, usati: usati || 0,
+        A2: A2.slice(),
+        fr: fr.map(function (f) { return { i: f.i, f: f.f, m: f.m, foglia: f.foglia, B: f.B && f.B.slice(), C: f.C && f.C.slice(), X: f.X && f.X.slice() }; }),
+        A3: A3.slice(), X3: X3.slice(),
+        recs: recs.map(function (r) { return { i: r.i, f: r.f, m: r.m }; }),
+        c2: { creati: c2.creati, celle: c2.celle, copie: c2.copie, ora: extra2() }
+      });
+      dopo = "";
+    }
+    function ms(input, i, f) {
+      var s = f - i;
+      if (s <= 1) {
+        fr.push({ i: i, f: f, foglia: true });
+        recs.push({ i: i, f: f, m: "–" });
+        snap("foglia", "mergeSort su " + q(input) + ": un solo elemento, caso base. Nessuna delle due versioni fa niente: né array nuovi, né copie.");
+        fr.pop(); recs.pop();
+        return;
+      }
+      var h = Math.floor(s / 2), m = i + h;
+      var f2 = { i: i, f: f, m: m, B: input.slice(0, h), C: input.slice(h), X: null };
+      fr.push(f2);
+      c2.creati += 2; c2.celle += s; c2.copie += s;
+      recs.push({ i: i, f: f, m: m });
+      snap("chiama", "mergeSort su " + q(input) + ", " + s + " elementi. <b>A sinistra</b> la chiamata crea due array nuovi, B = " + q(f2.B) + " e C = " + q(f2.C) +
+        ", e ci copia dentro " + s + " elementi. <b>A destra</b> nessuna copia: il record contiene solo i = " + i + ", f = " + f + " e m = " + m +
+        ", e le due metà sono A[" + i + ".." + (m - 1) + "] e A[" + m + ".." + (f - 1) + "].");
+      ms(f2.B, i, m);
+      ms(f2.C, m, f);
+      var X = fondi(f2.B, f2.C), k;
+      f2.X = X; c2.creati += 1; c2.celle += s;
+      for (k = 0; k < s; k++) input[k] = X[k];                 // A ← merge(B, C)
+      var Y = fondi(A3.slice(i, m), A3.slice(m, f));
+      for (k = 0; k < s; k++) X3[k] = Y[k];
+      for (k = 0; k < s; k++) A3[i + k] = X3[k];
+      snap("fondi", "Le due metà sono ordinate: si fonde. <b>A sinistra</b> merge crea un altro array nuovo, X = " + q(X) + ", e il risultato viene ricopiato nell'array della chiamata. " +
+        "<b>A destra</b> merge usa le prime " + s + " caselle dell'unico X e poi ricopia il risultato in A[" + i + ".." + (f - 1) + "].", s);
+      fr.pop(); recs.pop();
+      dopo = "La chiamata su " + q(X) + " è finita: a sinistra i suoi B, C e X vengono buttati, a destra sparisce solo il record.";
+    }
+    snap("inizio", "Prima di cominciare. <b>A sinistra</b> c'è solo l'array A da ordinare. <b>A destra</b> l'algoritmo ha già creato l'array di appoggio X, una volta per tutte, prima della prima chiamata: è tutta la memoria extra che userà.");
+    ms(A2, 0, n);
+    if (n === 1) snap("fine", "Fine: con un solo elemento nessuna delle due versioni divide o fonde. Prova con più numeri per vedere la differenza.");
+    else snap("fine", "Fine: A è ordinato in tutte e due le versioni, con gli stessi confronti. Ma <b>a sinistra</b> sono stati creati " + c2.creati + " array (" + c2.celle +
+      " celle in tutto) e copiati " + c2.copie + " elementi solo per preparare B e C. <b>A destra</b> un solo array, X (" + n + " celle), e nessuna copia per preparare i pezzi.");
+    return P;
+  }
+  function celleHtml(valori, cls, sopra, sotto) {
+    var h = "";
+    for (var i = 0; i < valori.length; i++) {
+      h += "<div class='cella" + (cls && cls[i] ? " " + cls[i] : "") + "'>" + (sopra ? "<div class='f'>" + (sopra[i] || "") + "</div>" : "") +
+        "<div class='v'>" + (valori[i] === undefined ? "" : valori[i]) + "</div>" + (sotto ? "<div class='i'>" + sotto[i] + "</div>" : "") + "</div>";
+    }
+    return h;
+  }
+  function tutti(n, c) { var o = {}; for (var i = 0; i < n; i++) o[i] = c; return o; }
+  var cf = { P: [], k: 0 };
+  function cfInit() {
+    var A = leggiArray($("cf-in").value, 8);
+    if (!A) {
+      cf.P = [];
+      ["cf-sx", "cf-dx", "cf-sx-cont", "cf-dx-cont"].forEach(function (id) { $(id).innerHTML = ""; });
+      $("cf-txt").innerHTML = "Scrivi da 1 a 8 numeri separati da virgole o spazi.";
+      $("cf-passo").disabled = true; $("cf-indietro").disabled = true;
+      return;
+    }
+    cf.P = passiCf(A); cf.k = 0; cfShow();
+  }
+  function cfShow() {
+    var p = cf.P[cf.k], n = p.A2.length, top = p.fr.length ? p.fr[p.fr.length - 1] : null, d, j;
+    // ---- sinistra: A e, per ogni chiamata in corso, i suoi array
+    var clsA = {};
+    if (top && p.fr.length === 1) clsA = tutti(n, p.tipo === "fondi" ? "ordinata" : "attiva");
+    if (p.tipo === "fine") clsA = tutti(n, "ordinata");
+    var sx = "<div class='mem-riga'><div class='chi'>A, l'array da ordinare</div><div class='array mini'>" + celleHtml(p.A2, clsA) + "</div></div>";
+    for (d = 0; d < p.fr.length; d++) {
+      var f = p.fr[d];
+      if (f.foglia) { sx += "<div class='mem-riga'><div class='chi'>chiamata su 1 elemento: caso base, nessun array</div></div>"; continue; }
+      var clsB = {}, clsC = {}, figlio = p.fr[d + 1];
+      if (d === p.fr.length - 1 && p.tipo === "chiama") { clsB = tutti(f.B.length, "mossa"); clsC = tutti(f.C.length, "mossa"); }
+      if (figlio && d + 1 === p.fr.length - 1) {
+        var stile = p.tipo === "fondi" ? "ordinata" : "attiva";
+        if (figlio.i === f.i) clsB = tutti(f.B.length, stile); else clsC = tutti(f.C.length, stile);
+      }
+      sx += "<div class='mem-riga'><div class='chi'>chiamata su " + (f.f - f.i) + " elementi: i suoi B e C</div><div class='array mini'>" +
+        celleHtml(f.B, clsB) + "<div class='stacco'></div>" + celleHtml(f.C, clsC) + "</div></div>";
+      if (f.X) sx += "<div class='mem-riga'><div class='chi'>X nuovo, creato da questo merge</div><div class='array mini'>" + celleHtml(f.X, tutti(f.X.length, "mossa")) + "</div></div>";
+    }
+    $("cf-sx").innerHTML = sx;
+    $("cf-sx-cont").innerHTML = "<span>array creati: <b>" + p.c2.creati + "</b></span><span>celle create: <b>" + p.c2.celle + "</b></span>" +
+      "<span>copie in B e C: <b>" + p.c2.copie + "</b></span><span>celle extra in uso ora: <b>" + p.c2.ora + "</b></span>";
+    // ---- destra: lo stesso A con gli indici, lo stesso X, la pila dei record
+    var r = p.recs.length ? p.recs[p.recs.length - 1] : null, ca = {}, sopra = {}, idx = [];
+    for (j = 0; j < n; j++) idx.push(j);
+    if (r) {
+      for (j = 0; j < n; j++) ca[j] = (j < r.i || j >= r.f) ? "fuori" : (p.tipo === "fondi" ? "ordinata" : "attiva");
+      sopra = etich([r.i, "i", r.m === "–" ? null : r.m, "m", r.f < n ? r.f : null, "f"]);
+    }
+    if (p.tipo === "fine") ca = tutti(n, "ordinata");
+    var cx = {}, xv = [];
+    for (j = 0; j < n; j++) { xv.push(p.X3[j]); cx[j] = j < p.usati ? "mossa" : "fuori"; }
+    var dx = "<div class='mem-riga'><div class='chi'>A, sempre lo stesso</div><div class='array mini'>" + celleHtml(p.A3, ca, sopra, idx) + "</div></div>" +
+      "<div class='mem-riga'><div class='chi'>X, creato una volta sola, all'inizio</div><div class='array mini'>" + celleHtml(xv, cx) + "</div></div>";
+    if (p.recs.length) {
+      dx += "<div class='pila mini'>" + p.recs.map(function (rr, q) {
+        return "<div class='record mini'>" + (q === p.recs.length - 1 ? "▲ " : "") + "i = " + rr.i + ", f = " + rr.f + (rr.m === "–" ? ", caso base" : ", m = " + rr.m) + "</div>";
+      }).join("") + "</div>";
+    }
+    $("cf-dx").innerHTML = dx;
+    $("cf-dx-cont").innerHTML = "<span>array creati: <b>1</b></span><span>celle create: <b>" + n + "</b></span>" +
+      "<span>copie in B e C: <b>0</b></span><span>celle extra in uso ora: <b>" + n + "</b></span>";
+    $("cf-txt").innerHTML = "<span class='piccolo'>passo " + (cf.k + 1) + " di " + cf.P.length + " · record sulla pila: " + p.recs.length + "</span><br>" + p.t;
+    $("cf-passo").disabled = cf.k >= cf.P.length - 1;
+    $("cf-indietro").disabled = cf.k === 0;
+  }
+  $("cf-passo").onclick = function () { if (cf.k < cf.P.length - 1) { cf.k++; cfShow(); } };
+  $("cf-indietro").onclick = function () { if (cf.k > 0) { cf.k--; cfShow(); } };
+  $("cf-fine").onclick = function () { if (cf.P.length) { cf.k = cf.P.length - 1; cfShow(); } };
+  $("cf-reset").onclick = cfInit;
+  $("cf-in").onchange = cfInit;
+
+  pilaInit();
+  m3Init();
+  cfInit();
+  if (window.addEventListener) {
+    var attesa = null;
+    window.addEventListener("resize", function () {
+      clearTimeout(attesa);
+      attesa = setTimeout(function () {
+        if (pl.P.length) { disegnaGrafico(); aggiornaCursore(); nascondiTip(); }
+        trovaN();
+      }, 150);
+    });
+  }
+})();
+</script>
+</body>
+</html>
