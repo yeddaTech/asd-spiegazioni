@@ -179,7 +179,7 @@
 
 <p>Il tempo si scrive seguendo la stessa forma. Se l'istanza è piccola costa una costante; altrimenti è la somma dei pezzi del lavoro:</p>
 
-<p class="formula">T(I) = costante se |I| ≤ c, altrimenti T<sub>divide</sub>(I) + T(I<sub>1</sub>) + … + T(I<sub>m</sub>) + T<sub>combina</sub>(sol<sub>1</sub>, …, sol<sub>m</sub>)</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(I) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">costante</span><span class="cond">se |I| ≤ c</span><span class="val">T<sub>divide</sub>(I) + T(I<sub>1</sub>) + … + T(I<sub>m</sub>) + T<sub>combina</sub>(sol<sub>1</sub>, …, sol<sub>m</sub>)</span><span class="cond">altrimenti</span></span></span></div>
 
 <p>Leggila come la busta paga della professoressa: il tempo per dividere la pila, più il tempo di tutti gli aiutanti, più il tempo per fondere le pile che le restituiscono. Un'equazione in cui T compare anche a destra si chiama <strong>equazione di ricorrenza</strong>.</p>
 
@@ -254,7 +254,7 @@
 
 <div class="box def">
   <span class="etichetta">Equazione di ricorrenza dei confronti</span>
-  <p class="formula grande">C(n) = 0 se n ≤ 1, &nbsp; altrimenti &nbsp; C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</p>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</span><span class="cond">altrimenti</span></span></span></div>
   <p class="piccolo">C(⌊n/2⌋) viene da mergeSort(B), C(⌈n/2⌉) da mergeSort(C), n − 1 da merge(B, C). Se n è pari, ⌊n/2⌋ = ⌈n/2⌉ = n/2 e diventa C(n) = 2C(n/2) + n − 1.</p>
 </div>
 
@@ -355,7 +355,7 @@
     <li><code>B[i<sub>1</sub>] ≤ C[i<sub>2</sub>]</code> con il ≤: a parità prende da B, ed è questo che rende mergeSort stabile.</li>
     <li><strong>Divide et impera</strong>: caso base risolto direttamente, altrimenti dividi, risolvi ricorsivamente, combina.</li>
     <li><strong>mergeSort</strong>: se n &gt; 1, m ← n/2, ordina A[0..m−1] e A[m..n−1], poi merge.</li>
-    <li>C(n) = 0 se n ≤ 1, altrimenti C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1. Soluzione (lezione 9, pacco 6): n log<sub>2</sub> n − n + 1 per n potenza di 2, Θ(n log n) sempre.</li>
+    <li>Confronti di mergeSort nel caso peggiore:<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</span><span class="cond">altrimenti</span></span></span></div>Soluzione (lezione 9, pacco 6): n log<sub>2</sub> n − n + 1 per n potenza di 2, Θ(n log n) sempre.</li>
     <li>Stabili: insertion, bubble, merge. Non stabile: selection. Quasi sempre decide un &lt; o un ≤ nel confronto.</li>
     <li>mergeSort <strong>non è in loco</strong>: usa array ausiliari.</li>
   </ul>
