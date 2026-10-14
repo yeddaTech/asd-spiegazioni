@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Divide et impera e teorema fondamentale</title>
-<link rel="stylesheet" href="stile.css">
+<link rel="stylesheet" href="stile.css?v=2">
 </head>
 <body>
 <div class="pagina">
@@ -80,7 +80,7 @@
 
 <p>Qui |I| è la lunghezza dell'istanza, cioè la sua dimensione n, e c è la soglia sotto la quale l'istanza è «piccola». Il tempo si scrive guardando lo schema riga per riga:</p>
 
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(I) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">costante</span><span class="cond">se |I| ≤ c</span><span class="val">T<sub>divide</sub>(I) + T(I<sub>1</sub>) + … + T(I<sub>m</sub>) + T<sub>combina</sub>(sol<sub>1</sub>, …, sol<sub>m</sub>)</span><span class="cond">altrimenti</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(I) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">costante</span><span class="cond">se |I| ≤ c</span><span class="val">T<sub>divide</sub>(I) + T(I<sub>1</sub>) + … + T(I<sub>m</sub>) + T<sub>combina</sub>(sol<sub>1</sub>, …, sol<sub>m</sub>)</span><span class="cond">altrimenti</span></span></span></div>
 
 <p>In parole: quanto costa <strong>spezzare</strong>, più il lavoro dei <strong>collaboratori</strong> (le chiamate ricorsive), più quanto costa <strong>rimettere insieme</strong>. È un'equazione di ricorrenza, come quelle dei pacchi 5 e 6.</p>
 
@@ -177,7 +177,7 @@
 
 <p>Sia C(n) il numero di confronti tra elementi dell'array fatti da minMax su n elementi. Dal codice:</p>
 
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">1</span><span class="cond">se n = 2</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + 2</span><span class="cond">altrimenti</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">1</span><span class="cond">se n = 2</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + 2</span><span class="cond">altrimenti</span></span></span></div>
 
 <p>Con m = (i + f)/2 (divisione intera), a sinistra finiscono ⌊n/2⌋ elementi e a destra ⌈n/2⌉, come in mergeSort. Poi ci sono i 2 confronti per combinare. Se n è pari le due metà sono uguali, e l'equazione diventa C(n) = 2C(n/2) + 2.</p>
 
@@ -253,9 +253,9 @@
 <div class="box def">
   <span class="etichetta">Teorema fondamentale delle ricorrenze (Master theorem)</span>
   <p>Siano m, a, b′, b″, c ∈ ℝ<sup>+</sup> con a &gt; 1. L'equazione</p>
-  <div class="mat-blocco"><span class="casi"><span class="casi-sx">F(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">b′</span><span class="cond">se n = 1</span><span class="val">m F(n/a) + b″ n<sup>c</sup></span><span class="cond">se n &gt; 1</span></span></span></div>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">F(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">b′</span><span class="cond">se n = 1</span><span class="val">m F(n/a) + b″ n<sup>c</sup></span><span class="cond">se n &gt; 1</span></span></span></div>
   <p>soddisfa le seguenti relazioni:</p>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">F(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">Θ(n<sup>c</sup>)</span><span class="cond">se m &lt; a<sup>c</sup></span><span class="val">Θ(n<sup>c</sup> log n)</span><span class="cond">se m = a<sup>c</sup></span><span class="val">Θ(n<sup>log<sub>a</sub> m</sup>)</span><span class="cond">se m &gt; a<sup>c</sup></span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">F(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">Θ(n<sup>c</sup>)</span><span class="cond">se m &lt; a<sup>c</sup></span><span class="val">Θ(n<sup>c</sup> log n)</span><span class="cond">se m = a<sup>c</sup></span><span class="val">Θ(n<sup>log<sub>a</sub> m</sup>)</span><span class="cond">se m &gt; a<sup>c</sup></span></span></span></div>
   <p>Il risultato può essere esteso anche al caso in cui per n &gt; 1 l'equazione sia della forma F(n) = m<sub>1</sub> F(⌊n/a⌋) + m<sub>2</sub> F(⌈n/a⌉) + b″n<sup>c</sup>, con m = m<sub>1</sub> + m<sub>2</sub>.</p>
 </div>
 
@@ -396,7 +396,7 @@
 <p>Il prodotto righe per colonne funziona anche con i blocchi al posto dei numeri:</p>
 <div class="formula">C = A · B = <table class="mat"><tr><td>A<sub>11</sub>·B<sub>11</sub> + A<sub>12</sub>·B<sub>21</sub></td><td>A<sub>11</sub>·B<sub>12</sub> + A<sub>12</sub>·B<sub>22</sub></td></tr><tr><td>A<sub>21</sub>·B<sub>11</sub> + A<sub>22</sub>·B<sub>21</sub></td><td>A<sub>21</sub>·B<sub>12</sub> + A<sub>22</sub>·B<sub>22</sub></td></tr></table></div>
 <p>Con n = 1 (caso base) C = [a<sub>11</sub> · b<sub>11</sub>]: 1 operazione. Con n &gt; 1 si calcolano ricorsivamente <strong>8 prodotti</strong> di matrici n/2 × n/2, poi <strong>4 somme</strong> di matrici n/2 × n/2, che costano 4 · (n/2)² = n² operazioni. Sia T(n) il numero di operazioni per moltiplicare due matrici n × n:</p>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1</span><span class="val">8 T(n/2) + n²</span><span class="cond">altrimenti</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1</span><span class="val">8 T(n/2) + n²</span><span class="cond">altrimenti</span></span></span></div>
 <p>Teorema: m = 8, a = 2, c = 2, a<sup>c</sup> = 4 &lt; 8, quindi T(n) = Θ(n<sup>log<sub>2</sub> 8</sup>) = <strong>Θ(n³)</strong>. Nessun guadagno.</p>
 
 <div class="box idea">
@@ -418,7 +418,7 @@ M<sub>7</sub> = A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12<
 <div class="formula">C = A · B = <table class="mat"><tr><td>M<sub>2</sub> + M<sub>3</sub></td><td>M<sub>1</sub> + M<sub>2</sub> + M<sub>5</sub> + M<sub>6</sub></td></tr><tr><td>M<sub>1</sub> + M<sub>2</sub> + M<sub>4</sub> − M<sub>7</sub></td><td>M<sub>1</sub> + M<sub>2</sub> + M<sub>4</sub> + M<sub>5</sub></td></tr></table></div>
 
 <p>Conti: dentro le M ci sono 14 somme e sottrazioni di blocchi, e per comporre C ne servono altre 10. Sono <strong>24</strong> in tutto, come scritto alla lavagna, e ognuna costa (n/2)² operazioni: 24 (n/2)² = 6n². I prodotti sono 7 chiamate ricorsive:</p>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1</span><span class="val">7 T(n/2) + 6n²</span><span class="cond">altrimenti</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1</span><span class="val">7 T(n/2) + 6n²</span><span class="cond">altrimenti</span></span></span></div>
 <p>Teorema: m = 7, a = 2, c = 2, a<sup>c</sup> = 4 &lt; 7, quindi T(n) = Θ(n<sup>log<sub>2</sub> 7</sup>) ≈ <strong>Θ(n<sup>2,807</sup>)</strong>. Un prodotto in meno a ogni livello, e l'esponente scende sotto 3.</p>
 
 <div class="widget" id="w-str">
@@ -488,7 +488,7 @@ M<sub>7</sub> = A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12<
   <summary>2. (Esercizio 2.7, prima parte) Se n non è una potenza di 2, minMax divide in n′ = la più grande potenza di 2 minore di n, e n″ = n − n′. Dimostra che C(n) = ⌈3n/2⌉ − 2 per ogni n.</summary>
   <div class="soluzione">
     <p>La versione dell'esercizio, scritta a casi:</p>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">1</span><span class="cond">se n = 2</span><span class="val">C(n′) + C(n″) + 2</span><span class="cond">se n ≥ 3, &nbsp;con n′ = la più grande potenza di 2 minore di n &nbsp;e&nbsp; n″ = n − n′</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">1</span><span class="cond">se n = 2</span><span class="val">C(n′) + C(n″) + 2</span><span class="cond">se n ≥ 3, &nbsp;con n′ = la più grande potenza di 2 minore di n &nbsp;e&nbsp; n″ = n − n′</span></span></span></div>
 <div class="dim">
   <div class="dim-tit">Dimostrazione (induzione completa su n)</div>
   <p class="enunciato">Per ogni n ≥ 1: &nbsp; C(n) = ⌈3n/2⌉ − 2</p>
@@ -512,7 +512,7 @@ M<sub>7</sub> = A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12<
   <summary>3. (Esercizio 2.7, seconda parte) Come cambia il numero di confronti se l'unico caso base è n = 1?</summary>
   <div class="soluzione">
     <p>Senza il caso base n = 2 l'equazione diventa:</p>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + 2</span><span class="cond">se n ≥ 2 &nbsp;(anche per n = 2)</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + 2</span><span class="cond">se n ≥ 2 &nbsp;(anche per n = 2)</span></span></span></div>
 <div class="dim">
   <div class="dim-tit">Dimostrazione (induzione completa su n)</div>
   <p class="enunciato">Per ogni n ≥ 1: &nbsp; C(n) = 2n − 2</p>
@@ -541,7 +541,7 @@ M<sub>7</sub> = A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12<
     merge di A[0..p−1] e A[p..q−1]          <span class="com">// al più 2n/3 − 1 confronti</span>
     merge di A[0..q−1] e A[q..n−1]          <span class="com">// al più n − 1 confronti</span></pre>
     <p>Nel caso peggiore, con n potenza di 3:</p>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">3 C(n/3) + 5n/3 − 2</span><span class="cond">se n &gt; 1</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">3 C(n/3) + 5n/3 − 2</span><span class="cond">se n &gt; 1</span></span></span></div>
     <p>Teorema: m = 3, a = 3, c = 1, a<sup>c</sup> = 3 = m, quindi <strong>Θ(n log n)</strong>, come mergeSort.</p>
     <p>Il conto esatto, livello per livello come nel pacco 6. Il livello i ha 3<sup>i</sup> pezzi lunghi n/3<sup>i</sup>, e ognuno costa 5(n/3<sup>i</sup>)/3 − 2, quindi il livello costa 5n/3 − 2 · 3<sup>i</sup>. I livelli con dei merge sono k = log<sub>3</sub> n:</p>
 <div class="mat-blocco"><span class="catena"><span class="sx">C(n)</span><span class="rel">=</span><span class="dx">Σ<sub>i=0</sub><sup>k−1</sup> (5n/3 − 2 · 3<sup>i</sup>)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">(5n/3) · k − 2 · (3<sup>k</sup> − 1)/2</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(5/3) n log<sub>3</sub> n − n + 1</span><span class="perche">perché 3<sup>k</sup> = n</span></span></div>
@@ -558,11 +558,11 @@ M<sub>7</sub> = A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12<
   <div class="soluzione">
     <p><strong>In fila:</strong> merge su n/2, 3n/4 e n elementi.</p>
 <div class="mat-blocco"><span class="catena"><span class="sx">confronti dei merge</span><span class="rel">≤</span><span class="dx">(n/2 − 1) + (3n/4 − 1) + (n − 1)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">9n/4 − 3</span><span class="perche"></span></span></div>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">4 C(n/4) + 9n/4 − 3</span><span class="cond">se n &gt; 1</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">4 C(n/4) + 9n/4 − 3</span><span class="cond">se n &gt; 1</span></span></span></div>
 <p>m = 4 = a<sup>c</sup>, quindi Θ(n log n). Esattamente: (9/8) n log<sub>2</sub> n − n + 1.</p>
 <p><strong>A coppie:</strong> 1ª con 2ª, 3ª con 4ª, poi i due risultati.</p>
 <div class="mat-blocco"><span class="catena"><span class="sx">confronti dei merge</span><span class="rel">≤</span><span class="dx">(n/2 − 1) + (n/2 − 1) + (n − 1)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2n − 3</span><span class="perche"></span></span></div>
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">4 C(n/4) + 2n − 3</span><span class="cond">se n &gt; 1</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">4 C(n/4) + 2n − 3</span><span class="cond">se n &gt; 1</span></span></span></div>
 <p>Ancora Θ(n log n). Esattamente: n log<sub>2</sub> n − n + 1, proprio come mergeSort. In effetti è mergeSort, con due livelli fatti in un colpo solo.</p>
     <p>Stesso ordine di grandezza, ma la strategia in fila fa circa il <strong>12,5% di confronti in più</strong>, e anche più spostamenti: a ogni livello sposta 9n/4 elementi invece di 2n. Di nuovo, il teorema non vede la differenza: la vedono solo i conti esatti.</p>
   </div>
@@ -571,7 +571,7 @@ M<sub>7</sub> = A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12<
 <details class="esercizio">
   <summary>6. (Esercizio 2.2) Quante chiamate fa mergeSort in tutto, su n elementi?</summary>
   <div class="soluzione">
-    <div class="mat-blocco"><span class="casi"><span class="casi-sx">K(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1 &nbsp;(la chiamata stessa)</span><span class="val">1 + K(⌊n/2⌋) + K(⌈n/2⌉)</span><span class="cond">se n ≥ 2</span></span></span></div>
+    <div class="mat-blocco"><span class="casi"><span class="casi-sx">K(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1 &nbsp;(la chiamata stessa)</span><span class="val">1 + K(⌊n/2⌋) + K(⌈n/2⌉)</span><span class="cond">se n ≥ 2</span></span></span></div>
 <div class="dim">
   <div class="dim-tit">Dimostrazione (induzione completa su n)</div>
   <p class="enunciato">Per ogni n ≥ 1: &nbsp; K(n) = 2n − 1</p>
