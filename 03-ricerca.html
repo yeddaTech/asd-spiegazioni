@@ -335,7 +335,7 @@
 </table></div>
 
 <p>Quando si arriva a <strong>un solo elemento</strong>?</p>
-<div class="formula">n / 2<sup>i−1</sup> = 1 &nbsp;⟺&nbsp; n = 2<sup>i−1</sup> &nbsp;⟺&nbsp; i − 1 = log<sub>2</sub> n &nbsp;⟺&nbsp; i = 1 + log<sub>2</sub> n</div>
+<div class="mat-blocco"><span class="catena"><span class="sx"></span><span class="rel"></span><span class="dx">n / 2<sup>i−1</sup> = 1</span><span class="perche"></span><span class="sx"></span><span class="rel">⟺</span><span class="dx">n = 2<sup>i−1</sup></span><span class="perche">moltiplico per 2<sup>i−1</sup></span><span class="sx"></span><span class="rel">⟺</span><span class="dx">i − 1 = log<sub>2</sub> n</span><span class="perche">applico log<sub>2</sub></span><span class="sx"></span><span class="rel">⟺</span><span class="dx">i = 1 + log<sub>2</sub> n</span><span class="perche"></span></span></div>
 <p>Dopo quella c'è ancora <strong>una chiamata con 0 elementi</strong>, il caso base. Totale:</p>
 <div class="formula grande"><mark>2 + log<sub>2</sub> n chiamate</mark></div>
 <p class="piccolo">Per n = 8: 2 + 3 = 5 chiamate (prova x = 0 nel widget qui sopra). È il «2 + log<sub>2</sub> n = 5 chiamate» dei tuoi appunti.</p>

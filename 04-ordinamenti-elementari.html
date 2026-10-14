@@ -283,20 +283,20 @@
 
 <p>L'unico confronto tra chiavi è <code>A[j] &lt; A[m]</code>, nel ciclo interno. Al passo k, j va da k + 1 a n − 1: sono <strong>n − k − 1</strong> confronti. Sommando su tutti i passi:</p>
 
-<p class="formula grande">C(n) = Σ<sub>k=0</sub><sup>n−2</sup> (n − k − 1) = (n−1) + (n−2) + … + 2 + 1 = Σ<sub>i=1</sub><sup>n−1</sup> i = n(n−1)/2 = Θ(n²)</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C(n)</span><span class="rel">=</span><span class="dx">Σ<sub>k=0</sub><sup>n−2</sup> (n − k − 1)</span><span class="perche"><span class="rif">1</span> Passo 1 qui sotto</span><span class="sx"></span><span class="rel">=</span><span class="dx">(n−1) + (n−2) + … + 2 + 1</span><span class="perche"><span class="rif">2</span> Passo 2</span><span class="sx"></span><span class="rel">=</span><span class="dx">Σ<sub>i=1</sub><sup>n−1</sup> i</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">n(n−1)/2</span><span class="perche"><span class="rif">3</span> il trucco di Gauss</span><span class="sx"></span><span class="rel">=</span><span class="dx">Θ(n²)</span><span class="perche"></span></span></div>
 
 <div class="box domanda">
   <span class="etichetta">La tua domanda</span>
   <p class="citazione">«Dici n − k − 1 ma non capisco perché, come ci arrivo. E da dove esce fuori (n−1) + (n−2) + …?»</p>
 
-  <p><strong>Passo 1 · Perché n − k − 1.</strong> Un ciclo <code>for j ← a to b</code> fa un giro per ogni numero da a a b, cioè <strong>b − a + 1</strong> giri. Da 3 a 5: 3, 4, 5, tre giri = 5 − 3 + 1. Il «+1» c'è perché si contano entrambi gli estremi.</p>
+  <p><span class="rif">1</span> <strong>Passo 1 · Perché n − k − 1.</strong> Un ciclo <code>for j ← a to b</code> fa un giro per ogni numero da a a b, cioè <strong>b − a + 1</strong> giri. Da 3 a 5: 3, 4, 5, tre giri = 5 − 3 + 1. Il «+1» c'è perché si contano entrambi gli estremi.</p>
   <p>Qui il ciclo interno è <code>for j ← k + 1 to n − 1</code>: a = k + 1 e b = n − 1. I giri sono</p>
   <p class="formula">(n − 1) − (k + 1) + 1 = n − k − 1</p>
   <p>e in ogni giro c'è esattamente un confronto, <code>A[j] &lt; A[m]</code>. Quindi al passo k i confronti sono n − k − 1.</p>
 
   <p><strong>Lo stesso, a parole.</strong> Al passo k la parte da ordinare è A[k..n−1], che ha <strong>n − k</strong> elementi. Il primo, A[k], fa da «candidato minimo» (m ← k), e va confrontato con <em>ognuno degli altri</em>, che sono n − k − 1. È il problema del minimo del <a href="01-quanto-costa.html#minimo">pacco 1</a>: per trovare il più piccolo tra N elementi servono N − 1 confronti. Qui N = n − k.</p>
 
-  <p><strong>Passo 2 · Da dove esce (n−1) + (n−2) + ….</strong> Il ciclo esterno fa k = 0, 1, 2, …, n − 2. Basta mettere ogni valore di k dentro n − k − 1:</p>
+  <p><span class="rif">2</span> <strong>Passo 2 · Da dove esce (n−1) + (n−2) + ….</strong> Il ciclo esterno fa k = 0, 1, 2, …, n − 2. Basta mettere ogni valore di k dentro n − k − 1:</p>
   <div class="tabella-wrap"><table>
     <tr><th>passo</th><th>j va da … a …</th><th>confronti n − k − 1</th><th>con n = 6 (7 2 4 5 3 1)</th></tr>
     <tr><td>k = 0</td><td>1 … n−1</td><td>n − 0 − 1 = <strong>n − 1</strong></td><td>j = 1..5 → 5</td></tr>
@@ -310,7 +310,7 @@
 </div>
 
 <div class="box idea">
-  <span class="etichetta">Il trucco del piccolo Gauss</span>
+  <span class="etichetta">Il trucco del piccolo Gauss <span class="rif">3</span></span>
   <p>Per sommare 1 + 2 + … + (n−1), scrivi la somma due volte, una al contrario, e sommale in colonna:</p>
   <p class="formula">1 + 2 + … + (n−1)<br>(n−1) + (n−2) + … + 1<br>ogni colonna fa n, e le colonne sono n − 1</p>
   <p>Il doppio della somma è n(n−1), quindi la somma è <strong>n(n−1)/2</strong>. Con n = 6: 15. Con n = 100: 4950.</p>

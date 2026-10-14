@@ -310,11 +310,22 @@
 </div>
 
 <h3>Primo esempio: la formula di Gauss</h3>
-<p>P(n): 1 + 2 + … + n = n(n + 1)/2.</p>
-<p><strong>Base</strong>, n = 1: a sinistra c'è solo 1, a destra 1 · 2/2 = 1. Vera ✓.</p>
-<p><strong>Passo.</strong> Supponiamo P(n − 1), cioè 1 + 2 + … + (n − 1) = (n − 1)n/2: è l'ipotesi induttiva. Allora</p>
-<div class="formula">1 + 2 + … + (n − 1) + n = <span class="blu">(n − 1)n/2</span> + n = (n² − n + 2n)/2 = n(n + 1)/2 &nbsp;✓</div>
-<p>Il pezzo in blu è dove si usa l'ipotesi induttiva. Fatto: per il principio di induzione la formula vale per ogni n.</p>
+<div class="dim">
+  <div class="dim-tit">Teorema (formula di Gauss)</div>
+  <p class="enunciato">Per ogni n ≥ 1: &nbsp; P(n): &nbsp; 1 + 2 + … + n = n(n + 1)/2</p>
+  <div class="parte prima">Base: n = 1</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">1</span><span class="rel">=</span><span class="dx">1 · (1 + 1)/2</span><span class="perche">✓</span></span></div>
+  <div class="parte">Passo: n ≥ 2, da n − 1 a n</div>
+  <p class="riga-ip"><b>Ipotesi induttiva (HI):</b> 1 + 2 + … + (n − 1) = (n − 1)n/2</p><p class="riga-ip"><b>Tesi:</b> 1 + 2 + … + n = n(n + 1)/2</p><div class="mat-blocco"><span class="catena"><span class="sx">1 + 2 + … + n</span><span class="rel">=</span><span class="dx">[1 + 2 + … + (n − 1)] + n</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">(n − 1)n/2</span> + n</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(n² − n + 2n)/2</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n(n + 1)/2</span><span class="perche">✓</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Separo l'ultimo addendo: la somma fino a n è la somma fino a n − 1, più n.</p>
+    <p><span class="rif">2</span>Qui uso l'ipotesi induttiva (lo sfondo colorato segna dove): la parte tra parentesi quadre vale (n − 1)n/2.</p>
+    <p><span class="rif">3</span>Porto tutto allo stesso denominatore: n = 2n/2 e (n − 1)n = n² − n. Poi n² − n + 2n = n² + n = n(n + 1).</p>
+  </div>
+</div>
+<p>Base e passo sono dimostrati: per il principio di induzione la formula vale per ogni n ≥ 1.</p>
 
 <div class="box attenzione">
   <span class="etichetta">Il dubbio di tutti: «ma così uso quello che devo dimostrare!»</span>
@@ -335,14 +346,23 @@
   </ol>
 </div>
 
-<p>Applichiamola alle somme iterate, una mossa alla volta.</p>
-<ol>
-  <li>Nomi: b<sub>i</sub> e prod<sub>i</sub> (a non cambia mai).</li>
-  <li>Formula, dalla tabella: b<sub>i</sub> = b − i e prod<sub>i</sub> = i · a.</li>
-  <li>Base: prima del ciclo b<sub>0</sub> = b = b − 0 ✓ e prod<sub>0</sub> = 0 = 0 · a ✓ (riga 1).</li>
-  <li>Passo: il giro i esegue la riga 3, quindi prod<sub>i</sub> = prod<sub>i−1</sub> + a = <span class="blu">(i − 1) · a</span> + a = i · a ✓, e la riga 4, quindi b<sub>i</sub> = b<sub>i−1</sub> − 1 = <span class="blu">b − (i − 1)</span> − 1 = b − i ✓. In blu, l'ipotesi induttiva.</li>
-  <li>Uscita: b cala di 1 a ogni giro, quindi prima o poi vale 0 e il ciclo si ferma. Succede quando b − i = 0, cioè dopo i = b giri, e allora prod<sub>b</sub> = b · a ✓.</li>
-</ol>
+<p>Applichiamola alle somme iterate. I nomi sono b<sub>i</sub> e prod<sub>i</sub> (a non cambia mai), e la formula, letta dalla tabella del riquadro, è b<sub>i</sub> = b − i e prod<sub>i</sub> = i · a.</p>
+<div class="dim">
+  <div class="dim-tit">Invariante delle somme iterate</div>
+  <p class="enunciato">Per ogni i ≥ 0, dopo i giri del ciclo: &nbsp; b<sub>i</sub> = b − i &nbsp; e &nbsp; prod<sub>i</sub> = i · a</p>
+  <div class="parte prima">Base: i = 0 (prima del ciclo)</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">b<sub>0</sub></span><span class="rel">=</span><span class="dx">b = b − 0</span><span class="perche">✓</span><span class="sx">prod<sub>0</sub></span><span class="rel">=</span><span class="dx">0 = 0 · a</span><span class="perche">✓ &nbsp;(riga 1)</span></span></div>
+  <div class="parte">Passo: dal giro i − 1 al giro i</div>
+  <p class="riga-ip"><b>HI:</b> b<sub>i−1</sub> = b − (i − 1) &nbsp; e &nbsp; prod<sub>i−1</sub> = (i − 1) · a</p><p class="riga-ip"><b>Tesi:</b> b<sub>i</sub> = b − i &nbsp; e &nbsp; prod<sub>i</sub> = i · a</p><div class="mat-blocco"><span class="catena"><span class="sx">prod<sub>i</sub></span><span class="rel">=</span><span class="dx">prod<sub>i−1</sub> + a</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">(i − 1) · a</span> + a</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">i · a</span><span class="perche">✓</span></span></div><div class="mat-blocco"><span class="catena"><span class="sx">b<sub>i</sub></span><span class="rel">=</span><span class="dx">b<sub>i−1</sub> − 1</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">b − (i − 1)</span> − 1</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">b − i</span><span class="perche">✓</span></span></div>
+  <div class="parte">Uscita</div>
+  <p>b cala di 1 a ogni giro, quindi prima o poi vale 0 e il ciclo si ferma. Per l'invariante b<sub>i</sub> = b − i = 0 quando i = b, e in quel momento:</p><div class="mat-blocco"><span class="catena"><span class="sx">prod<sub>b</sub></span><span class="rel">=</span><span class="dx">b · a</span><span class="perche">✓ &nbsp;il risultato giusto</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>È il corpo del ciclo: al giro i la riga 3 calcola il nuovo prod dal vecchio, la riga 4 il nuovo b dal vecchio. «Vecchio» vuol dire «dopo i − 1 giri».</p>
+    <p><span class="rif">2</span>Ipotesi induttiva: al posto dei valori vecchi metto la formula, che per ipotesi vale dopo i − 1 giri.</p>
+  </div>
+</div>
 
 <h3>Quando il passo salta: l'induzione completa</h3>
 <p>A volte da n non si va a n − 1 ma più in basso. Nella potenza ricorsiva (<a href="#potenza">sezione 9</a>) la chiamata su y usa ⌊y/2⌋: per y = 13 usa 6, non 12. Lì serve l'<strong>induzione completa</strong> (o forte): nel passo si suppone che P(z) sia vera <strong>per tutti</strong> gli z &lt; n, non solo per n − 1. Nel domino è come se ogni tessera potesse essere spinta da una qualunque delle precedenti, non per forza da quella subito prima. Funziona per lo stesso motivo: quando arrivi alla tessera n, tutte quelle prima sono già cadute.</p>
@@ -351,7 +371,7 @@
 <h2 id="russa"><span class="num">7</span>La moltiplicazione alla russa</h2>
 
 <p>Le somme iterate tolgono 1 a b a ogni giro. E se lo <strong>dimezzassimo</strong>? Se raddoppio a e dimezzo b, il prodotto non cambia: (2a) · (b/2) = a · b. Il guaio arriva quando b è dispari, perché b/2 non è intero. Allora tolgo 1 a b, così diventa pari, e la a che ho tolto la metto da parte:</p>
-<div class="formula grande">a · b = (2a) · (b/2) se b è pari, &nbsp;&nbsp; a · b = (2a) · (b − 1)/2 + <span class="rosso">a</span> se b è dispari</div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">a · b =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">(2a) · (b/2)</span><span class="cond">se b è pari</span><span class="val">(2a) · (b − 1)/2 + <span class='rosso'>a</span></span><span class="cond">se b è dispari</span></span></span></div>
 <p>La tabella della lavagna, con 19 · 114: a sinistra a raddoppia, al centro b si dimezza (divisione intera), a destra si mettono da parte le a delle righe con b dispari. Alla fine si sommano: 38 + 304 + 608 + 1216 = 2166 ✓. Il riquadro qui sotto fa la stessa tabella e aggiunge una colonna, quella dell'invariante:</p>
 
 <div class="widget" id="i2">
@@ -385,13 +405,23 @@
   <p>dove a<sub>i</sub>, b<sub>i</sub>, prod<sub>i</sub> sono i valori dopo l'i-esimo giro, e a, b quelli iniziali.</p>
 </div>
 <p>In parole: la «parte ancora da moltiplicare» a<sub>i</sub> · b<sub>i</sub>, più quello che ho già messo da parte, fa sempre il risultato finale. Il lavoro si sposta dalla prima parte alla seconda, ma il totale non cambia mai.</p>
-<p><strong>Base</strong>, i = 0: a<sub>0</sub> = a, b<sub>0</sub> = b, prod<sub>0</sub> = 0, quindi a · b + 0 = a · b ✓.</p>
-<p><strong>Passo.</strong> Supponiamo a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub> = a · b (ipotesi induttiva). Il giro i raddoppia a e dimezza b. Due casi:</p>
-<ul>
-  <li><strong>b<sub>i−1</sub> pari</strong>: a<sub>i</sub> = 2a<sub>i−1</sub>, b<sub>i</sub> = b<sub>i−1</sub>/2, prod<sub>i</sub> = prod<sub>i−1</sub>. Allora a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub> = 2a<sub>i−1</sub> · b<sub>i−1</sub>/2 + prod<sub>i−1</sub> = <span class="blu">a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub></span> = a · b ✓.</li>
-  <li><strong>b<sub>i−1</sub> dispari</strong>: la riga 4 aggiunge a, quindi prod<sub>i</sub> = prod<sub>i−1</sub> + a<sub>i−1</sub>, e la divisione intera dà b<sub>i</sub> = (b<sub>i−1</sub> − 1)/2. Allora a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub> = 2a<sub>i−1</sub> · (b<sub>i−1</sub> − 1)/2 + prod<sub>i−1</sub> + a<sub>i−1</sub> = a<sub>i−1</sub>b<sub>i−1</sub> − a<sub>i−1</sub> + prod<sub>i−1</sub> + a<sub>i−1</sub> = <span class="blu">a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub></span> = a · b ✓.</li>
-</ul>
-<p><strong>Uscita.</strong> Finché b ≥ 1, la divisione intera dà ⌊b/2⌋ &lt; b: b scende sempre e prima o poi arriva a 0, e il ciclo si ferma. In quel momento l'invariante dice a<sub>i</sub> · 0 + prod<sub>i</sub> = a · b, cioè <strong>prod = a · b</strong> ✓.</p>
+<div class="dim">
+  <div class="dim-tit">Dimostrazione dell'invariante</div>
+  <p class="enunciato">Per ogni i ≥ 0: &nbsp; a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub> = a · b</p>
+  <div class="parte prima">Base: i = 0</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">a<sub>0</sub> · b<sub>0</sub> + prod<sub>0</sub></span><span class="rel">=</span><span class="dx">a · b + 0</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">a · b</span><span class="perche">✓</span></span></div>
+  <div class="parte">Passo: dal giro i − 1 al giro i</div>
+  <p class="riga-ip"><b>HI:</b> a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub> = a · b</p><p class="riga-ip"><b>Tesi:</b> a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub> = a · b</p><p>Il giro i esegue le righe 3–6. Sempre a<sub>i</sub> = 2a<sub>i−1</sub> (riga 6); b<sub>i</sub> e prod<sub>i</sub> dipendono da b<sub>i−1</sub>:</p><div class="mat-blocco"><span class="casi"><span class="casi-sx">b<sub>i</sub> =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">b<sub>i−1</sub>/2</span><span class="cond">se b<sub>i−1</sub> è pari</span><span class="val">(b<sub>i−1</sub> − 1)/2</span><span class="cond">se b<sub>i−1</sub> è dispari</span></span></span></div><div class="mat-blocco"><span class="casi"><span class="casi-sx">prod<sub>i</sub> =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">prod<sub>i−1</sub></span><span class="cond">se b<sub>i−1</sub> è pari</span><span class="val">prod<sub>i−1</sub> + a<sub>i−1</sub></span><span class="cond">se b<sub>i−1</sub> è dispari</span></span></span></div><p><em>Caso b<sub>i−1</sub> pari:</em></p><div class="mat-blocco"><span class="catena"><span class="sx">a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub></span><span class="rel">=</span><span class="dx">2a<sub>i−1</sub> · b<sub>i−1</sub>/2 + prod<sub>i−1</sub></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub></span></span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">a · b</span><span class="perche"><span class="rif">2</span> HI ✓</span></span></div><p><em>Caso b<sub>i−1</sub> dispari:</em></p><div class="mat-blocco"><span class="catena"><span class="sx">a<sub>i</sub> · b<sub>i</sub> + prod<sub>i</sub></span><span class="rel">=</span><span class="dx">2a<sub>i−1</sub> · (b<sub>i−1</sub> − 1)/2 + prod<sub>i−1</sub> + a<sub>i−1</sub></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">a<sub>i−1</sub>b<sub>i−1</sub> − a<sub>i−1</sub> + prod<sub>i−1</sub> + a<sub>i−1</sub></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">a<sub>i−1</sub> · b<sub>i−1</sub> + prod<sub>i−1</sub></span></span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">a · b</span><span class="perche"><span class="rif">2</span> HI ✓</span></span></div>
+  <div class="parte">Uscita</div>
+  <p>Finché b ≥ 1 vale ⌊b/2⌋ &lt; b: b scende sempre, arriva a 0 e il ciclo si ferma. In quel giro b<sub>i</sub> = 0, quindi:</p><div class="mat-blocco"><span class="catena"><span class="sx">a<sub>i</sub> · 0 + prod<sub>i</sub></span><span class="rel">=</span><span class="dx">a · b</span><span class="perche"></span><span class="sx">prod<sub>i</sub></span><span class="rel">=</span><span class="dx">a · b</span><span class="perche">✓</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Sostituisco a<sub>i</sub>, b<sub>i</sub> e prod<sub>i</sub> con quello che calcola il giro, cioè con le due definizioni a casi qui sopra.</p>
+    <p><span class="rif">2</span>L'ultimo passaggio è esattamente l'ipotesi induttiva.</p>
+    <p><span class="rif">3</span>2 · (b − 1)/2 = b − 1, quindi a(b − 1) = ab − a. Poi −a e +a si cancellano: la a messa da parte alla riga 4 compensa proprio l'1 tolto a b.</p>
+  </div>
+</div>
 
 <h3>Quanto tempo: un giro per ogni cifra binaria di b</h3>
 <p>Chiamiamo m il numero di giri. Il prof l'ha calcolato con una tabellina: b = 0 → 0 giri, b = 1 → 1, b = 2 e 3 → 2, da 4 a 7 → 3, da 8 a 15 → 4. Ogni dimezzamento toglie a b la sua ultima cifra in binario, quindi i giri sono tanti quante le cifre binarie di b:</p>
@@ -408,7 +438,7 @@
 7  <b>RETURN</b> prod</pre>
 
 <p>Le righe 1 e 7 si eseguono una volta (2), le righe 3, 5 e 6 una volta per giro (3m), la riga 4 al più una volta per giro (≤ m), la riga 2 m + 1 volte. Totale:</p>
-<div class="formula grande">T(a, b) ≤ 5m + 3 = 5(⌊log<sub>2</sub> b⌋ + 1) + 3 = 5⌊log<sub>2</sub> b⌋ + 8</div>
+<div class="mat-blocco"><span class="catena"><span class="sx">T(a, b)</span><span class="rel">≤</span><span class="dx">5m + 3</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">5(⌊log<sub>2</sub> b⌋ + 1) + 3</span><span class="perche">perché m = ⌊log<sub>2</sub> b⌋ + 1</span><span class="sx"></span><span class="rel">=</span><span class="dx">5⌊log<sub>2</sub> b⌋ + 8</span><span class="perche"></span></span></div>
 <p>È il caso peggiore, quando la riga 4 si esegue a ogni giro. La crescita è <strong>logaritmica</strong> rispetto a b, e lo spazio resta costante.</p>
 
 <!-- ============================================================ 8 -->
@@ -463,8 +493,10 @@
 
 <h3>Potenza ricorsiva: l'idea</h3>
 <p>Per y reale vale x<sup>y</sup> = x<sup>(y/2) · 2</sup> = (x<sup>y/2</sup>)². Quindi, invece di moltiplicare x per sé y volte, posso calcolare x<sup>y/2</sup> una volta sola ed elevarlo al quadrato. Ma per y dispari y/2 non è intero, e noi vogliamo restare negli interi. Si divide in casi:</p>
-<div class="formula grande">x<sup>y</sup> = 1 se y = 0 &nbsp;(caso base), &nbsp;&nbsp; (x<sup>y/2</sup>)² se y &gt; 0 è pari, &nbsp;&nbsp; (x<sup>(y−1)/2</sup>)² · x se y è dispari</div>
-<p>Il caso dispari torna: (x<sup>(y−1)/2</sup>)² · x = x<sup>y−1</sup> · x = x<sup>y</sup> ✓. E c'è un trucco: con la divisione intera, ⌊y/2⌋ = (y − 1)/2 quando y è dispari (per esempio ⌊7/2⌋ = 3 = 6/2). Quindi in tutti e due i casi basta chiamare potenza(x, y/2), con la divisione intera.</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">x<sup>y</sup> =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se y = 0 &nbsp;(caso base)</span><span class="val">(x<sup>y/2</sup>)²</span><span class="cond">se y &gt; 0 è pari</span><span class="val">(x<sup>(y−1)/2</sup>)² · x</span><span class="cond">se y è dispari</span></span></span></div>
+<p>Il caso dispari torna:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">(x<sup>(y−1)/2</sup>)² · x</span><span class="rel">=</span><span class="dx">x<sup>y−1</sup> · x</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">x<sup>y</sup></span><span class="perche">✓</span></span></div>
+<p>E c'è un trucco: con la divisione intera, ⌊y/2⌋ = (y − 1)/2 quando y è dispari (per esempio ⌊7/2⌋ = 3 = 6/2). Quindi in tutti e due i casi basta chiamare potenza(x, y/2), con la divisione intera.</p>
 
 <div class="box domanda">
   <span class="etichetta">Dai tuoi appunti (lezione 3)</span>
@@ -502,35 +534,41 @@
 <h3>Perché è corretta: induzione completa</h3>
 <p>Non serve seguire tutte le chiamate fino in fondo, come nel riquadro. Basta controllare tre cose: il caso base è giusto; ogni chiamata ricorsiva riceve un y più piccolo, quindi prima o poi si arriva al caso base; e, <em>se</em> la chiamata più piccola restituisce il risultato giusto, <em>allora</em> anche quella corrente lo fa. La terza è il passo induttivo: ci si fida della chiamata ricorsiva e si controlla solo il lavoro fatto dopo. Siccome la chiamata salta da y a ⌊y/2⌋, serve l'induzione <em>completa</em> della <a href="#induzione">sezione 6</a>.</p>
 
-<div class="box def">
-  <span class="etichetta">Teorema</span>
-  <p>Per ogni x e ogni intero y ≥ 0, potenza(x, y) restituisce x<sup>y</sup>.</p>
-  <p><strong>Dimostrazione</strong>, per induzione completa su y.</p>
-  <p><strong>Caso base</strong>, y = 0: la riga 1 è vera, la riga 2 restituisce 1 = x<sup>0</sup> ✓.</p>
-  <p><strong>Passo</strong>, y ≥ 1. Ipotesi induttiva: potenza(x, z) = x<sup>z</sup> <em>per ogni</em> z &lt; y.</p>
-  <ul>
-    <li>Riga 3: ⌊y/2⌋ &lt; y perché y ≥ 1, quindi per l'ipotesi induttiva power = x<sup>⌊y/2⌋</sup>.</li>
-    <li>Riga 4: power = (x<sup>⌊y/2⌋</sup>)² = x<sup>2⌊y/2⌋</sup>.</li>
-    <li>Se y è pari, 2⌊y/2⌋ = y: power = x<sup>y</sup>, la riga 6 si salta e la riga 7 restituisce x<sup>y</sup> ✓.</li>
-    <li>Se y è dispari, 2⌊y/2⌋ = y − 1: power = x<sup>y−1</sup>, la riga 6 dà x<sup>y−1</sup> · x = x<sup>y</sup> e la riga 7 lo restituisce ✓. ∎</li>
-  </ul>
+<div class="dim">
+  <div class="dim-tit">Teorema</div>
+  <p class="enunciato">Per ogni x e ogni intero y ≥ 0, &nbsp;potenza(x, y) restituisce x<sup>y</sup>.</p>
+  <div class="parte prima">Dimostrazione per induzione completa su y. &nbsp;Caso base: y = 0</div>
+  <p>La riga 1 è vera e la riga 2 restituisce 1:</p><div class="mat-blocco"><span class="catena"><span class="sx">potenza(x, 0)</span><span class="rel">=</span><span class="dx">1 = x<sup>0</sup></span><span class="perche">✓</span></span></div>
+  <div class="parte">Passo: y ≥ 1</div>
+  <p class="riga-ip"><b>HI:</b> potenza(x, z) = x<sup>z</sup> &nbsp;<em>per ogni</em> z &lt; y</p><p class="riga-ip"><b>Tesi:</b> potenza(x, y) = x<sup>y</sup></p><div class="mat-blocco"><span class="catena"><span class="sx">power</span><span class="rel">=</span><span class="dx">potenza(x, ⌊y/2⌋) = <span class="hl-ip">x<sup>⌊y/2⌋</sup></span></span><span class="perche"><span class="rif">1</span> riga 3</span><span class="sx">power</span><span class="rel">=</span><span class="dx">(x<sup>⌊y/2⌋</sup>)² = x<sup>2⌊y/2⌋</sup></span><span class="perche"><span class="rif">2</span> riga 4</span></span></div><p>Ora dipende da y: <span class="rif">3</span></p><div class="mat-blocco"><span class="casi"><span class="casi-sx">2⌊y/2⌋ =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">y</span><span class="cond">se y è pari</span><span class="val">y − 1</span><span class="cond">se y è dispari</span></span></span></div><p><em>Caso y pari:</em> la riga 6 si salta.</p><div class="mat-blocco"><span class="catena"><span class="sx">power</span><span class="rel">=</span><span class="dx">x<sup>2⌊y/2⌋</sup> = x<sup>y</sup></span><span class="perche">la riga 7 restituisce x<sup>y</sup> ✓</span></span></div><p><em>Caso y dispari:</em> la riga 6 moltiplica ancora per x.</p><div class="mat-blocco"><span class="catena"><span class="sx">power</span><span class="rel">=</span><span class="dx">x<sup>2⌊y/2⌋</sup> = x<sup>y−1</sup></span><span class="perche"></span><span class="sx">power · x</span><span class="rel">=</span><span class="dx">x<sup>y−1</sup> · x = x<sup>y</sup></span><span class="perche">riga 6, poi la riga 7 lo restituisce ✓</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Si può usare l'ipotesi induttiva perché ⌊y/2⌋ &lt; y, che è vero per y ≥ 1. Ed è qui che serve l'induzione <em>completa</em>: l'ipotesi vale per tutti gli z &lt; y, non solo per y − 1.</p>
+    <p><span class="rif">2</span>Potenza di una potenza: (x<sup>k</sup>)² = x<sup>2k</sup>, con k = ⌊y/2⌋.</p>
+    <p><span class="rif">3</span>Se y è pari, ⌊y/2⌋ = y/2 e il doppio è y. Se y è dispari, ⌊y/2⌋ = (y − 1)/2 e il doppio è y − 1. Per esempio y = 7: ⌊7/2⌋ = 3 e 2 · 3 = 6 = y − 1.</p>
+  </div>
 </div>
 <p>È lo stesso ragionamento della definizione a casi qui sopra: l'algoritmo è corretto perché «copia» una formula vera.</p>
 
 <h3>Quanto tempo</h3>
 <p>Ogni riga costa 1, e la riga 3 costa 1 più il tempo della chiamata ricorsiva. Con y = 0 si eseguono le righe 1 e 2: tempo 2. Con y &gt; 0 si eseguono le righe 1, 3, 4, 5 e 7 (5), la riga 6 al più una volta (≤ 1) e la riga 2 mai, più la chiamata ricorsiva. Ne viene un'<strong>equazione di ricorrenza</strong>:</p>
-<div class="formula grande">T(x, y) = 2 se y = 0, &nbsp;&nbsp; T(x, y) ≤ 6 + T(x, ⌊y/2⌋) altrimenti</div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(x, y)</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">= 2</span><span class="cond">se y = 0</span><span class="val">≤ 6 + T(x, ⌊y/2⌋)</span><span class="cond">altrimenti</span></span></span></div>
 <p>Si risolve <strong>srotolando</strong>. Per semplicità prendiamo y = 2<sup>k</sup>:</p>
-<div class="srotola">T(x, y) ≤ 6 + T(x, y/2)
-        ≤ 6 + 6 + T(x, y/4)
-        ≤ 6 + 6 + 6 + T(x, y/8)
-        ≤ …
-        ≤ 6k + T(x, y/2<sup>k</sup>) = 6k + T(x, 1) = 6k + 6 + T(x, 0) = 6k + 8</div>
-<p>y/2<sup>k</sup> = 1 quando k = log<sub>2</sub> y, quindi <strong>T(x, y) ≤ 6 log<sub>2</sub> y + 8</strong>: crescita logaritmica. Per ogni y ≥ 1, y si dimezza ⌊log<sub>2</sub> y⌋ + 1 volte prima di arrivare a 0, quindi in generale T(x, y) ≤ 6⌊log<sub>2</sub> y⌋ + 8.</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">T(x, y)</span><span class="rel">≤</span><span class="dx">6 + T(x, y/2)</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">≤</span><span class="dx">6 + 6 + T(x, y/4)</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">6 + 6 + 6 + T(x, y/8)</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">…</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">6k + T(x, y/2<sup>k</sup>)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">6k + T(x, 1)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">6k + 6 + T(x, 0)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">6k + 8</span><span class="perche"></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>È l'equazione di ricorrenza: ogni chiamata costa al più 6, più la chiamata su y/2. Al passo dopo la si applica di nuovo, a T(x, y/2).</p>
+  <p><span class="rif">2</span>Dopo k passi ho sommato k volte 6, e y è stato diviso k volte per 2.</p>
+  <p><span class="rif">3</span>Mi fermo quando y/2<sup>k</sup> = 1, cioè per k = log<sub>2</sub> y (y = 2<sup>k</sup>). Poi T(x, 1) = 6 + T(x, 0), e T(x, 0) = 2 è il caso base.</p>
+</div>
+<p>Sostituendo k = log<sub>2</sub> y: <strong>T(x, y) ≤ 6 log<sub>2</sub> y + 8</strong>: crescita logaritmica. Per ogni y ≥ 1, y si dimezza ⌊log<sub>2</sub> y⌋ + 1 volte prima di arrivare a 0, quindi in generale T(x, y) ≤ 6⌊log<sub>2</sub> y⌋ + 8.</p>
 
 <h3>Quanto spazio: la pila</h3>
 <p>Ogni chiamata ancora aperta occupa un <strong>record di attivazione</strong> sulla pila (i suoi parametri e le sue variabili), come nel <a href="03-ricerca.html">pacco 3</a>. Lo spazio è l'altezza massima della pila, H:</p>
-<div class="formula grande">H(x, y) = 1 se y = 0, &nbsp;&nbsp; H(x, y) = 1 + H(x, ⌊y/2⌋) altrimenti &nbsp;&nbsp;⟹&nbsp;&nbsp; H(x, y) = ⌊log<sub>2</sub> y⌋ + 2 &nbsp;(y ≥ 1)</div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">H(x, y) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se y = 0</span><span class="val">1 + H(x, ⌊y/2⌋)</span><span class="cond">altrimenti</span></span></span></div>
+<p>Srotolando come per T si trova, per y ≥ 1:</p>
+<div class="formula grande">H(x, y) = ⌊log<sub>2</sub> y⌋ + 2</div>
 <p>Per esempio potenza(2, 6): nel momento più alto la pila contiene potenza(2, 6), (2, 3), (2, 1) e (2, 0), cioè 4 record = ⌊log<sub>2</sub> 6⌋ + 2 ✓.</p>
 
 <div class="box domanda">
@@ -548,7 +586,9 @@
 <p>La ricorsiva è molto più veloce, ma usa spazio logaritmico invece che costante: <strong>la ricorsione costa memoria</strong>. Nella <a href="#potenza-russa">sezione 11</a> vedremo come avere tutti e due i vantaggi.</p>
 
 <h3>Attenzione: le due versioni viste a lezione</h3>
-<p><strong>1. Due chiamate invece di una.</strong> Alla lavagna il prof ha scritto anche la riga 3 così: <code>power ← potenza(x, y/2) * potenza(x, y/2)</code>. Calcola la stessa cosa due volte! Ora l'equazione è T(x, y) ≤ 5 + 2T(x, ⌊y/2⌋): le chiamate raddoppiano a ogni livello, e il tempo diventa <strong>lineare</strong>. Il prof l'ha sottolineato: è un <strong>algoritmo diverso</strong>, e peggiore. Guarda quante chiamate fa:</p>
+<p><strong>1. Due chiamate invece di una.</strong> Alla lavagna il prof ha scritto anche la riga 3 così: <code>power ← potenza(x, y/2) * potenza(x, y/2)</code>. Calcola la stessa cosa due volte! Ora l'equazione è:</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(x, y)</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">= 2</span><span class="cond">se y = 0</span><span class="val">≤ 5 + 2T(x, ⌊y/2⌋)</span><span class="cond">altrimenti</span></span></span></div>
+<p>Le chiamate raddoppiano a ogni livello, e il tempo diventa <strong>lineare</strong>. Il prof l'ha sottolineato: è un <strong>algoritmo diverso</strong>, e peggiore. Guarda quante chiamate fa:</p>
 
 <div class="widget" id="w-due">
   <h4>UNA CHIAMATA O DUE?</h4>
@@ -567,7 +607,9 @@
 5    <b>IF</b> y è dispari <b>THEN</b>
 6      power ← power * x
 7  <b>RETURN</b> power</pre>
-<p>Questo è <strong>lo stesso algoritmo</strong>: T(x, y) = 3 se y = 0, ≤ 7 + T(x, ⌊y/2⌋) altrimenti, cioè T(x, y) ≤ 7 log<sub>2</sub> y + 10. Cambiano le costanti (7 e 10 invece di 6 e 8), non la crescita: resta logaritmica. Per non perdersi in queste costanti si usano le notazioni asintotiche, e la lavagna chiude la lezione 3 così: T(x, y) = O(log y).</p>
+<p>Questo è <strong>lo stesso algoritmo</strong>, con un'equazione quasi identica:</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(x, y)</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">= 3</span><span class="cond">se y = 0</span><span class="val">≤ 7 + T(x, ⌊y/2⌋)</span><span class="cond">altrimenti</span></span></span></div>
+<p>Srotolando come prima si trova T(x, y) ≤ 7 log<sub>2</sub> y + 10. Cambiano le costanti (7 e 10 invece di 6 e 8), non la crescita: resta logaritmica. Per non perdersi in queste costanti si usano le notazioni asintotiche, e la lavagna chiude la lezione 3 così: T(x, y) = O(log y).</p>
 
 <!-- ============================================================ 10 -->
 <h2 id="asintotiche"><span class="num">10</span>Le notazioni asintotiche</h2>
@@ -629,7 +671,7 @@
 <p>Si tiene il termine che cresce di più e si toglie la sua costante. Gli esempi della lavagna:</p>
 <div class="formula">5n² + log n + log log n + 2 = Θ(n²) &nbsp;&nbsp; 7n² + n log n = Θ(n²) &nbsp;&nbsp; 2n log n + n + 7 = Θ(n log n)</div>
 <p>Verifichiamo il secondo con la definizione. Per n ≥ 1 vale 0 ≤ log n ≤ n, quindi</p>
-<div class="formula">7n² &nbsp;≤&nbsp; 7n² + n log n &nbsp;≤&nbsp; 7n² + n · n = 8n²</div>
+<div class="mat-blocco"><span class="catena"><span class="sx">7n²</span><span class="rel">≤</span><span class="dx">7n² + n log n</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">7n² + n · n</span><span class="perche">perché log n ≤ n</span><span class="sx"></span><span class="rel">=</span><span class="dx">8n²</span><span class="perche"></span></span></div>
 <p>e la definizione di Θ è soddisfatta con c = 7, d = 8 e n<sub>0</sub> = 0 ✓.</p>
 
 <h3>Sui nostri algoritmi</h3>
@@ -643,7 +685,7 @@
 <h2 id="potenza-russa"><span class="num">11</span>La potenza alla russa</h2>
 
 <p>Ultima idea della lezione 4: fare con la potenza quello che la moltiplicazione alla russa fa con il prodotto. Invece di raddoppiare a e dimezzare b, si <strong>eleva x al quadrato</strong> e si <strong>dimezza y</strong>:</p>
-<div class="formula grande">x<sup>y</sup> = 1 se y = 0, &nbsp;&nbsp; (x²)<sup>y/2</sup> se y &gt; 0 è pari, &nbsp;&nbsp; (x²)<sup>(y−1)/2</sup> · <span class="rosso">x</span> se y è dispari</div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">x<sup>y</sup> =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se y = 0</span><span class="val">(x²)<sup>y/2</sup></span><span class="cond">se y &gt; 0 è pari</span><span class="val">(x²)<sup>(y−1)/2</sup> · <span class='rosso'>x</span></span><span class="cond">se y è dispari</span></span></span></div>
 <p>Come prima, nel caso dispari si toglie 1 a y e quel fattore x va messo da parte, altrimenti il risultato è sbagliato. Le due tabelle della lavagna: 2<sup>10</sup>, con x: 2 → 4 → 16 → 256 e y: 10 → 5 → 2 → 1, si mettono da parte 4 e 256, e 4 · 256 = 1024 ✓. Poi 3<sup>5</sup>, con x: 3 → 9 → 81 e y: 5 → 2 → 1, si mettono da parte 3 e 81, e 3 · 81 = 243 ✓. Nell'ultima colonna, stavolta, si <strong>moltiplica</strong>.</p>
 
 <p class="titolo-codice">Lavagna, lezione 4</p>
@@ -683,14 +725,25 @@
 <div class="box domanda">
   <span class="etichetta">Dai tuoi appunti (lezione 4)</span>
   <p class="citazione">«x<sub>i</sub>, y<sub>i</sub>, power<sub>i</sub> valori di x, y, power dopo i — allora x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = x<sup>y</sup> — per induzione??? in qualunque modo»</p>
-  <p>Hai scritto l'invariante giusto. Ora la dimostrazione, con la ricetta della <a href="#induzione">sezione 6</a>: è la stessa della moltiplicazione alla russa (<a href="#russa">sezione 7</a>), con le potenze al posto dei prodotti.</p>
-  <p><strong>Base</strong>, i = 0: x<sub>0</sub> = x, y<sub>0</sub> = y e power<sub>0</sub> = 1, quindi x<sup>y</sup> · 1 = x<sup>y</sup> ✓.</p>
-  <p><strong>Passo.</strong> Supponiamo x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub> = x<sup>y</sup> (ipotesi induttiva). Il giro i fa x<sub>i</sub> = x<sub>i−1</sub>² e dimezza y. Due casi:</p>
-  <ul>
-    <li><strong>y<sub>i−1</sub> pari</strong>: y<sub>i</sub> = y<sub>i−1</sub>/2 e power<sub>i</sub> = power<sub>i−1</sub>. Allora x<sub>i</sub><sup>y<sub>i</sub></sup> = (x<sub>i−1</sub>²)<sup>y<sub>i−1</sub>/2</sup> = x<sub>i−1</sub><sup>y<sub>i−1</sub></sup>, quindi x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = <span class="blu">x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub></span> = x<sup>y</sup> ✓.</li>
-    <li><strong>y<sub>i−1</sub> dispari</strong>: la riga 4 dà power<sub>i</sub> = power<sub>i−1</sub> · x<sub>i−1</sub>, e y<sub>i</sub> = (y<sub>i−1</sub> − 1)/2. Allora x<sub>i</sub><sup>y<sub>i</sub></sup> = (x<sub>i−1</sub>²)<sup>(y<sub>i−1</sub>−1)/2</sup> = x<sub>i−1</sub><sup>y<sub>i−1</sub>−1</sup>, quindi x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = x<sub>i−1</sub><sup>y<sub>i−1</sub>−1</sup> · power<sub>i−1</sub> · x<sub>i−1</sub> = <span class="blu">x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub></span> = x<sup>y</sup> ✓.</li>
-  </ul>
-  <p><strong>Uscita.</strong> y si dimezza a ogni giro, quindi arriva a 0 e il ciclo si ferma. Lì l'invariante dice x<sub>i</sub><sup>0</sup> · power<sub>i</sub> = power<sub>i</sub> = x<sup>y</sup> ✓. Nel riquadro la colonna dell'invariante resta sempre uguale a x<sup>y</sup>: è la stessa cosa, vista sui numeri.</p>
+  <p>Hai scritto l'invariante giusto. Qui sotto c'è la dimostrazione, con la ricetta della <a href="#induzione">sezione 6</a>: è la stessa della moltiplicazione alla russa (<a href="#russa">sezione 7</a>), con le potenze al posto dei prodotti. Nel riquadro qui sopra la colonna dell'invariante resta sempre uguale a x<sup>y</sup>: è la stessa cosa, vista sui numeri.</p>
+</div>
+<div class="dim">
+  <div class="dim-tit">Dimostrazione dell'invariante</div>
+  <p class="enunciato">Per ogni i ≥ 0: &nbsp; x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = x<sup>y</sup></p>
+  <div class="parte prima">Base: i = 0</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">x<sub>0</sub><sup>y<sub>0</sub></sup> · power<sub>0</sub></span><span class="rel">=</span><span class="dx">x<sup>y</sup> · 1</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">x<sup>y</sup></span><span class="perche">✓</span></span></div>
+  <div class="parte">Passo: dal giro i − 1 al giro i</div>
+  <p class="riga-ip"><b>HI:</b> x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub> = x<sup>y</sup></p><p class="riga-ip"><b>Tesi:</b> x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub> = x<sup>y</sup></p><p>Sempre x<sub>i</sub> = x<sub>i−1</sub>² (riga 6); y<sub>i</sub> e power<sub>i</sub> dipendono da y<sub>i−1</sub>:</p><div class="mat-blocco"><span class="casi"><span class="casi-sx">y<sub>i</sub> =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">y<sub>i−1</sub>/2</span><span class="cond">se y<sub>i−1</sub> è pari</span><span class="val">(y<sub>i−1</sub> − 1)/2</span><span class="cond">se y<sub>i−1</sub> è dispari</span></span></span></div><div class="mat-blocco"><span class="casi"><span class="casi-sx">power<sub>i</sub> =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">power<sub>i−1</sub></span><span class="cond">se y<sub>i−1</sub> è pari</span><span class="val">power<sub>i−1</sub> · x<sub>i−1</sub></span><span class="cond">se y<sub>i−1</sub> è dispari</span></span></span></div><p><em>Caso y<sub>i−1</sub> pari:</em></p><div class="mat-blocco"><span class="catena"><span class="sx">x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub></span><span class="rel">=</span><span class="dx">(x<sub>i−1</sub>²)<sup>y<sub>i−1</sub>/2</sup> · power<sub>i−1</sub></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub></span></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">x<sup>y</sup></span><span class="perche"><span class="rif">2</span> HI ✓</span></span></div><p><em>Caso y<sub>i−1</sub> dispari:</em></p><div class="mat-blocco"><span class="catena"><span class="sx">x<sub>i</sub><sup>y<sub>i</sub></sup> · power<sub>i</sub></span><span class="rel">=</span><span class="dx">(x<sub>i−1</sub>²)<sup>(y<sub>i−1</sub>−1)/2</sup> · power<sub>i−1</sub> · x<sub>i−1</sub></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">x<sub>i−1</sub><sup>y<sub>i−1</sub>−1</sup> · x<sub>i−1</sub> · power<sub>i−1</sub></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">x<sub>i−1</sub><sup>y<sub>i−1</sub></sup> · power<sub>i−1</sub></span></span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">x<sup>y</sup></span><span class="perche"><span class="rif">2</span> HI ✓</span></span></div>
+  <div class="parte">Uscita</div>
+  <p>y si dimezza a ogni giro, quindi arriva a 0 e il ciclo si ferma. In quel giro y<sub>i</sub> = 0, quindi:</p><div class="mat-blocco"><span class="catena"><span class="sx">x<sub>i</sub><sup>0</sup> · power<sub>i</sub></span><span class="rel">=</span><span class="dx">x<sup>y</sup></span><span class="perche"></span><span class="sx">power<sub>i</sub></span><span class="rel">=</span><span class="dx">x<sup>y</sup></span><span class="perche">✓</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Sostituisco x<sub>i</sub>, y<sub>i</sub> e power<sub>i</sub> con quello che calcola il giro, cioè con le due definizioni a casi qui sopra.</p>
+    <p><span class="rif">2</span>L'ultimo passaggio è esattamente l'ipotesi induttiva.</p>
+    <p><span class="rif">3</span>Potenza di una potenza: (x²)<sup>k</sup> = x<sup>2k</sup>. Nel caso pari 2 · y<sub>i−1</sub>/2 = y<sub>i−1</sub>; nel caso dispari 2 · (y<sub>i−1</sub> − 1)/2 = y<sub>i−1</sub> − 1.</p>
+    <p><span class="rif">4</span>x<sup>k−1</sup> · x = x<sup>k</sup>: la x messa da parte alla riga 4 restituisce proprio il fattore perso togliendo 1 a y.</p>
+  </div>
 </div>
 
 <h3>Quanto tempo e quanto spazio</h3>
@@ -725,14 +778,16 @@
 <h2 id="cifre"><span class="num">12</span>Quante cifre ha un numero?</h2>
 
 <p>Chiudiamo l'esercizio della lezione 2. Con k cifre binarie, il numero più piccolo è 100…0 = 2<sup>k−1</sup> e il più grande è 11…1 = 2<sup>k</sup> − 1. Con k = 5: 10000 = 16 = 2<sup>4</sup> e 11111 = 31 = 2<sup>5</sup> − 1. In mezzo, per esempio, c'è 21 = 10101. Quindi, se n ha k cifre in base 2:</p>
-<div class="srotola">2<sup>k−1</sup> ≤ n &lt; 2<sup>k</sup>
-k − 1 ≤ log<sub>2</sub> n &lt; k            <span class="com">applico log<sub>2</sub>, che non cambia l'ordine</span>
-k − 1 = ⌊log<sub>2</sub> n⌋              <span class="com">log<sub>2</sub> n sta tra due interi consecutivi</span>
-<span class="nuova">k = ⌊log<sub>2</sub> n⌋ + 1</span></div>
+<div class="mat-blocco"><span class="catena"><span class="sx">2<sup>k−1</sup></span><span class="rel">≤</span><span class="dx">n &lt; 2<sup>k</sup></span><span class="perche"></span><span class="sx">k − 1</span><span class="rel">≤</span><span class="dx">log<sub>2</sub> n &lt; k</span><span class="perche"><span class="rif">1</span></span><span class="sx">k − 1</span><span class="rel">=</span><span class="dx">⌊log<sub>2</sub> n⌋</span><span class="perche"><span class="rif">2</span></span><span class="sx">k</span><span class="rel">=</span><span class="dx"><span class='nuova'>⌊log<sub>2</sub> n⌋ + 1</span></span><span class="perche"></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>Applico log<sub>2</sub> a tutti e tre i membri. log<sub>2</sub> è crescente, quindi ≤ e &lt; restano gli stessi; e log<sub>2</sub> 2<sup>k</sup> = k.</p>
+  <p><span class="rif">2</span>log<sub>2</sub> n sta tra due interi consecutivi, k − 1 (compreso) e k (escluso), quindi la sua parte intera è k − 1. Per esempio n = 21: log<sub>2</sub> 21 ≈ 4,39 e ⌊4,39⌋ = 4 = k − 1, con k = 5 cifre.</p>
+</div>
 <p>Stesso ragionamento in base 10: 10<sup>k−1</sup> ≤ n &lt; 10<sup>k</sup>, quindi <strong>k = ⌊log<sub>10</sub> n⌋ + 1</strong>. Con k = 5: 10000 = 10<sup>4</sup> e 99999 = 10<sup>5</sup> − 1.</p>
 
 <h3>Cambio di base</h3>
-<div class="formula grande">log<sub>2</sub> n = log<sub>10</sub> n / log<sub>10</sub> 2 = (log<sub>2</sub> 10) · log<sub>10</sub> n ≈ 3,32 · log<sub>10</sub> n</div>
+<div class="mat-blocco"><span class="catena"><span class="sx">log<sub>2</sub> n</span><span class="rel">=</span><span class="dx">log<sub>10</sub> n / log<sub>10</sub> 2</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">(log<sub>2</sub> 10) · log<sub>10</sub> n</span><span class="perche">perché 1/log<sub>10</sub> 2 = log<sub>2</sub> 10</span><span class="sx"></span><span class="rel">≈</span><span class="dx">3,32 · log<sub>10</sub> n</span><span class="perche"></span></span></div>
 <p>In binario servono circa 3,3 volte le cifre decimali: cambia solo una costante. Per esempio un milione ha 7 cifre decimali e 20 binarie.</p>
 
 <div class="box domanda">
@@ -819,8 +874,18 @@ k − 1 = ⌊log<sub>2</sub> n⌋              <span class="com">log<sub>2</sub>
 <details class="esercizio">
   <summary>4. Dimostra per induzione che 1 + 2 + 4 + … + 2<sup>n−1</sup> = 2<sup>n</sup> − 1 per ogni n ≥ 1.</summary>
   <div class="soluzione">
-    <p><strong>Base</strong>, n = 1: a sinistra 1, a destra 2 − 1 = 1 ✓.</p>
-    <p><strong>Passo.</strong> Ipotesi induttiva: 1 + 2 + … + 2<sup>n−2</sup> = 2<sup>n−1</sup> − 1. Allora 1 + 2 + … + 2<sup>n−2</sup> + 2<sup>n−1</sup> = (2<sup>n−1</sup> − 1) + 2<sup>n−1</sup> = 2 · 2<sup>n−1</sup> − 1 = 2<sup>n</sup> − 1 ✓.</p>
+    <div class="dim">
+  <div class="dim-tit">Dimostrazione</div>
+  <div class="parte prima">Base: n = 1</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">1</span><span class="rel">=</span><span class="dx">2<sup>1</sup> − 1</span><span class="perche">✓</span></span></div>
+  <div class="parte">Passo: n ≥ 2</div>
+  <p class="riga-ip"><b>HI:</b> 1 + 2 + … + 2<sup>n−2</sup> = 2<sup>n−1</sup> − 1</p><p class="riga-ip"><b>Tesi:</b> 1 + 2 + … + 2<sup>n−1</sup> = 2<sup>n</sup> − 1</p><div class="mat-blocco"><span class="catena"><span class="sx">1 + 2 + … + 2<sup>n−1</sup></span><span class="rel">=</span><span class="dx">[1 + 2 + … + 2<sup>n−2</sup>] + 2<sup>n−1</sup></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">2<sup>n−1</sup> − 1</span> + 2<sup>n−1</sup></span><span class="perche">HI</span><span class="sx"></span><span class="rel">=</span><span class="dx">2 · 2<sup>n−1</sup> − 1</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>n</sup> − 1</span><span class="perche">✓</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Separo l'ultimo addendo, come nella formula di Gauss.</p>
+  </div>
+</div>
     <p>In binario è ovvio: n cifre 1 più 1 fa 1 seguito da n zeri, cioè 2<sup>n</sup>.</p>
   </div>
 </details>
@@ -835,7 +900,21 @@ k − 1 = ⌊log<sub>2</sub> n⌋              <span class="com">log<sub>2</sub>
 5    s ← s + i
 6  <b>RETURN</b> s</pre>
     <p>Tabella a mano: dopo 0, 1, 2, 3 giri, i vale 0, 1, 2, 3 e s vale 0, 1, 3, 6. Invariante: <strong>i<sub>k</sub> = k e s<sub>k</sub> = k(k + 1)/2</strong>.</p>
-    <p>Base: i<sub>0</sub> = 0 e s<sub>0</sub> = 0 = 0 · 1/2 ✓. Passo: i<sub>k</sub> = i<sub>k−1</sub> + 1 = k, e s<sub>k</sub> = s<sub>k−1</sub> + i<sub>k</sub> = (k − 1)k/2 + k = k(k + 1)/2 ✓. Uscita: i cresce di 1 a ogni giro, quindi il ciclo si ferma quando i = n, e allora s = n(n + 1)/2.</p>
+    <div class="dim">
+  <div class="dim-tit">Dimostrazione</div>
+  <p class="enunciato">Per ogni k ≥ 0, dopo k giri: &nbsp; i<sub>k</sub> = k &nbsp; e &nbsp; s<sub>k</sub> = k(k + 1)/2</p>
+  <div class="parte prima">Base: k = 0</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">i<sub>0</sub></span><span class="rel">=</span><span class="dx">0</span><span class="perche">✓ &nbsp;(riga 2)</span><span class="sx">s<sub>0</sub></span><span class="rel">=</span><span class="dx">0 = 0 · 1/2</span><span class="perche">✓ &nbsp;(riga 1)</span></span></div>
+  <div class="parte">Passo: dal giro k − 1 al giro k</div>
+  <p class="riga-ip"><b>HI:</b> i<sub>k−1</sub> = k − 1 &nbsp; e &nbsp; s<sub>k−1</sub> = (k − 1)k/2</p><div class="mat-blocco"><span class="catena"><span class="sx">i<sub>k</sub></span><span class="rel">=</span><span class="dx">i<sub>k−1</sub> + 1 = <span class="hl-ip">k − 1</span> + 1 = k</span><span class="perche">riga 4 ✓</span></span></div><div class="mat-blocco"><span class="catena"><span class="sx">s<sub>k</sub></span><span class="rel">=</span><span class="dx">s<sub>k−1</sub> + i<sub>k</sub></span><span class="perche"><span class="rif">1</span> riga 5</span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="hl-ip">(k − 1)k/2</span> + k</span><span class="perche">HI</span><span class="sx"></span><span class="rel">=</span><span class="dx">(k² − k + 2k)/2 = k(k + 1)/2</span><span class="perche">✓</span></span></div>
+  <div class="parte">Uscita</div>
+  <p>i cresce di 1 a ogni giro, quindi il test i &lt; n diventa falso quando i = n, cioè dopo n giri. Allora:</p><div class="mat-blocco"><span class="catena"><span class="sx">s<sub>n</sub></span><span class="rel">=</span><span class="dx">n(n + 1)/2</span><span class="perche">✓</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Attenzione all'ordine delle righe: la riga 5 usa il valore di i <em>già aggiornato</em> dalla riga 4, cioè i<sub>k</sub> = k, non i<sub>k−1</sub>.</p>
+  </div>
+</div>
     <p>Calcola la somma di Gauss, con tempo 3n + 4 = Θ(n). Ma la formula n(n + 1)/2 la calcola in tempo costante: si può fare di meglio!</p>
   </div>
 </details>
@@ -851,7 +930,7 @@ k − 1 = ⌊log<sub>2</sub> n⌋              <span class="com">log<sub>2</sub>
 <details class="esercizio">
   <summary>7. Dimostra con la definizione che 3n² + 10n = Θ(n²). E n² = O(n log n)?</summary>
   <div class="soluzione">
-    <p>Sotto: 3n² ≤ 3n² + 10n per ogni n, quindi c = 3. Sopra: 10n ≤ n² per n ≥ 10, quindi 3n² + 10n ≤ 4n² per n ≥ 10: d = 4, n<sub>0</sub> = 10. (Va bene anche d = 13 con n<sub>0</sub> = 0, perché 10n ≤ 10n² per n ≥ 1.)</p>
+    <p><strong>Sotto</strong>, con c = 3, per ogni n:</p><div class="mat-blocco"><span class="catena"><span class="sx">3n²</span><span class="rel">≤</span><span class="dx">3n² + 10n</span><span class="perche">perché 10n ≥ 0</span></span></div><p><strong>Sopra</strong>, con d = 4, per ogni n ≥ 10:</p><div class="mat-blocco"><span class="catena"><span class="sx">3n² + 10n</span><span class="rel">≤</span><span class="dx">3n² + n · n</span><span class="perche">perché 10 ≤ n</span><span class="sx"></span><span class="rel">=</span><span class="dx">4n²</span><span class="perche"></span></span></div><p>Quindi 3n² ≤ 3n² + 10n ≤ 4n² per ogni n ≥ 10: è Θ(n²) con c = 3, d = 4 e n<sub>0</sub> = 10. (Va bene anche d = 13 con n<sub>0</sub> = 0, perché 10n ≤ 10n² per n ≥ 1.)</p>
     <p>n² = O(n log n)? <strong>No.</strong> Servirebbe n² ≤ c · n log n, cioè n ≤ c · log n, da un certo punto in poi. Ma n/log n cresce senza limiti: qualunque costante c venga scelta, prima o poi n la supera.</p>
   </div>
 </details>

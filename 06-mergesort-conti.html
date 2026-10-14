@@ -36,7 +36,7 @@
 <div class="box idea">
   <span class="etichetta">Dove eravamo rimasti</span>
   <p>Nel <a href="05-mergesort.html">pacco 5</a> (lezione 8) abbiamo scritto mergeSort e l'equazione dei suoi confronti nel caso peggiore:</p>
-  <p class="formula">C(n) = 0 se n ≤ 1, &nbsp; altrimenti &nbsp; C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</p>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</span><span class="cond">altrimenti</span></span></span></div>
   <p>Sapevamo calcolarla a mano, numero per numero (C(8) = 17, C(16) = 49), ma non sapevamo quanto vale <em>in generale</em>. La lezione 9 (12 ottobre 2026) risponde.</p>
 </div>
 
@@ -235,7 +235,7 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
 
 <p>Ora risolviamo l'equazione. Prendiamo n potenza di 2. Allora ⌊n/2⌋ = ⌈n/2⌉ = n/2, e l'equazione diventa più semplice:</p>
 
-<p class="formula grande">C(n) = 2C(n/2) + n − 1 se n &gt; 1, &nbsp; C(1) = 0</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">2 C(n/2) + n − 1</span><span class="cond">se n &gt; 1</span></span></span></div>
 
 <div class="box idea">
   <span class="etichetta">Idea · la matrioska</span>
@@ -243,23 +243,18 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
   <p>Questo metodo si chiama <strong>sostituzione</strong> (o «srotolare» l'equazione): si sostituisce la formula dentro se stessa più volte, finché si vede la regola.</p>
 </div>
 
-<p>Ecco i passi della lavagna. In rosso, a ogni passo, la matrioska che si apre.</p>
-
-<p class="formula">C(n) = 2 <span class="rosso">C(n/2)</span> + n − 1</p>
-<p>Al posto di C(n/2) metto la sua formula, 2C(n/2²) + n/2 − 1 (è la stessa formula con n/2 al posto di n):</p>
-<p class="formula">= 2 [2C(n/2²) + n/2 − 1] + n − 1 = 2² <span class="rosso">C(n/2²)</span> + n − 2 + n − 1</p>
-<p>Il 2 davanti moltiplica tutto: 2 · n/2 = n e 2 · 1 = 2. Di nuovo, con C(n/2²) = 2C(n/2³) + n/2² − 1:</p>
-<p class="formula">= 2² [2C(n/2³) + n/2² − 1] + n − 2 + n − 1 = 2³ <span class="rosso">C(n/2³)</span> + (n − 2²) + (n − 2¹) + (n − 2⁰)</p>
-
-<p>Vedi la regola? Dopo k passi davanti a C c'è 2<sup>k</sup>, dentro c'è n/2<sup>k</sup>, e si sono accumulati k termini del tipo «n meno una potenza di 2»: n − 2<sup>0</sup>, n − 2<sup>1</sup>, …, n − 2<sup>k−1</sup>. Le n sono k, quindi fanno n·k; le potenze di 2 si sommano con l'attrezzo 1:</p>
-
-<p class="formula grande">C(n) = 2<sup>k</sup> C(n/2<sup>k</sup>) + n·k − Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i</sup> = 2<sup>k</sup> C(n/2<sup>k</sup>) + n·k − 2<sup>k</sup> + 1</p>
-
-<p>Quando ci fermiamo? Quando la matrioska è quella piena: n/2<sup>k</sup> = 1, cioè n = 2<sup>k</sup>, cioè <strong>k = log<sub>2</sub> n</strong>. Mettendo k = log<sub>2</sub> n e 2<sup>k</sup> = n:</p>
-
-<p class="formula grande">C(n) = n · C(1) + n log<sub>2</sub> n − n + 1 = <strong>n log<sub>2</sub> n − n + 1</strong></p>
-
-<p>perché C(1) = 0. Controllo: C(8) = 8·3 − 8 + 1 = 17 e C(16) = 16·4 − 16 + 1 = 49, come nella tabella del pacco 5.</p>
+<p>Ecco i passi della lavagna, uno per riga. In rosso, a ogni passo, la matrioska che si apre. Sotto, i passaggi numerati spiegati uno per uno.</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C(n)</span><span class="rel">=</span><span class="dx">2 <span class='rosso'>C(n/2)</span> + n − 1</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2 [2C(n/2²) + n/2 − 1] + n − 1</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2² <span class='rosso'>C(n/2²)</span> + (n − 2) + (n − 1)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2² [2C(n/2³) + n/2² − 1] + (n − 2) + (n − 1)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2³ <span class='rosso'>C(n/2³)</span> + (n − 2²) + (n − 2¹) + (n − 2⁰)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">…</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>k</sup> C(n/2<sup>k</sup>) + n·k − Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i</sup></span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>k</sup> C(n/2<sup>k</sup>) + n·k − 2<sup>k</sup> + 1</span><span class="perche"><span class="rif">5</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n · C(1) + n log<sub>2</sub> n − n + 1</span><span class="perche"><span class="rif">6</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><strong>n log<sub>2</sub> n − n + 1</strong></span><span class="perche">perché C(1) = 0</span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>È l'equazione per n potenza di 2.</p>
+  <p><span class="rif">2</span>Al posto di C(n/2) metto la sua formula: è la stessa equazione con n/2 al posto di n, cioè 2C(n/2²) + n/2 − 1. Alla riga dopo si fa lo stesso con C(n/2²).</p>
+  <p><span class="rif">3</span>Il 2 davanti moltiplica tutto quello che c'è nella parentesi: 2 · n/2 = n e 2 · 1 = 2.</p>
+  <p><span class="rif">4</span>La regola: dopo k passi davanti a C c'è 2<sup>k</sup>, dentro c'è n/2<sup>k</sup>, e si sono accumulati k termini del tipo «n meno una potenza di 2»: n − 2<sup>0</sup>, n − 2<sup>1</sup>, …, n − 2<sup>k−1</sup>. Le n sono k, quindi fanno n·k.</p>
+  <p><span class="rif">5</span>Attrezzo 1 (sezione 2): Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i</sup> = 2<sup>k</sup> − 1, quindi togliere la somma vuol dire −2<sup>k</sup> + 1.</p>
+  <p><span class="rif">6</span>Ci si ferma alla matrioska piena: n/2<sup>k</sup> = 1, cioè 2<sup>k</sup> = n e <strong>k = log<sub>2</sub> n</strong>.</p>
+</div>
+<p>Controllo: C(8) = 8·3 − 8 + 1 = 17 e C(16) = 16·4 − 16 + 1 = 49, come nella tabella del pacco 5.</p>
 
 <div class="widget" id="w-srot">
   <h4>SROTOLA CON I NUMERI</h4>
@@ -330,7 +325,7 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
 
 <p>Messe in fila, le quattro mosse sono la catena della lavagna:</p>
 
-<p class="formula grande">C(n) ≤ C(N) = N log<sub>2</sub> N − N + 1 &lt; 2n log<sub>2</sub>(2n) − n + 1 = 2n log<sub>2</sub> n + n + 1</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C(n)</span><span class="rel">≤</span><span class="dx">C(N)</span><span class="perche">mossa 1</span><span class="sx"></span><span class="rel">=</span><span class="dx">N log<sub>2</sub> N − N + 1</span><span class="perche">mossa 2</span><span class="sx"></span><span class="rel">&lt;</span><span class="dx">2n log<sub>2</sub>(2n) − n + 1</span><span class="perche">mossa 3</span><span class="sx"></span><span class="rel">=</span><span class="dx">2n log<sub>2</sub> n + n + 1</span><span class="perche">mossa 4</span></span></div>
 
 <div class="box attenzione">
   <span class="etichetta">La trappola: perché −n e non −2n?</span>
@@ -405,19 +400,19 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
 
 <p>Con questi nomi, e con n potenza di 2 come per C(n), l'equazione del tempo è:</p>
 
-<p class="formula grande">T(n) = a se n ≤ 1, &nbsp; altrimenti &nbsp; 2T(n/2) + bn + c</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">a</span><span class="cond">se n ≤ 1</span><span class="val">2 T(n/2) + bn + c</span><span class="cond">altrimenti</span></span></span></div>
 
 <p><strong>Perché non lasciare Θ(n) dentro l'equazione?</strong> Perché Θ(n) non è un numero: è un'intera famiglia di funzioni. Srotolando dovresti sommare tanti Θ quanti sono i livelli, e i livelli dipendono da n: lì è facilissimo sbagliare. Allora si sceglie un rappresentante concreto, bn + c, si fanno i conti con lui, e solo alla fine si torna al Θ.</p>
 
 <h3>Si srotola come C(n)</h3>
 
-<p class="formula">T(n) = 2T(n/2) + bn + c</p>
-<p class="formula">= 2[2T(n/4) + bn/2 + c] + bn + c = 4T(n/4) + 2bn + 3c</p>
-<p class="formula">= 4[2T(n/8) + bn/4 + c] + 2bn + 3c = 8T(n/8) + 3bn + 7c</p>
-
-<p>Dopo k passi: 2<sup>k</sup> T(n/2<sup>k</sup>) + k·bn + (2<sup>k</sup> − 1)c. I coefficienti di c (1, 3, 7) sono l'attrezzo 1 un'altra volta: 1 + 2 + 4 = 7 = 2³ − 1. Con 2<sup>k</sup> = n, cioè k = log<sub>2</sub> n, e T(1) = a:</p>
-
-<p class="formula grande">T(n) = an + bn log<sub>2</sub> n + c(n − 1)</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">T(n)</span><span class="rel">=</span><span class="dx">2T(n/2) + bn + c</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2[2T(n/4) + bn/2 + c] + bn + c</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">4T(n/4) + 2bn + 3c</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">4[2T(n/8) + bn/4 + c] + 2bn + 3c</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">8T(n/8) + 3bn + 7c</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">…</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>k</sup> T(n/2<sup>k</sup>) + k·bn + (2<sup>k</sup> − 1)c</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n · T(1) + bn log<sub>2</sub> n + (n − 1)c</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx"><strong>an + bn log<sub>2</sub> n + c(n − 1)</strong></span><span class="perche">perché T(1) = a</span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>Come per C(n): al posto di T(n/2) metto la sua formula (la stessa con n/2 al posto di n) e moltiplico tutto per il numero davanti.</p>
+  <p><span class="rif">2</span>I coefficienti di c (1, 3, 7) sono l'attrezzo 1 un'altra volta: 1 + 2 + 4 = 7 = 2³ − 1. Dopo k passi sono 2<sup>k</sup> − 1.</p>
+  <p><span class="rif">3</span>Ci si ferma a n/2<sup>k</sup> = 1: 2<sup>k</sup> = n e k = log<sub>2</sub> n.</p>
+</div>
 
 <div class="box idea">
   <span class="etichetta">Chi paga cosa</span>
@@ -478,17 +473,15 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
   <li><strong>n &gt; 1:</strong> il record corrente, più la torre più alta tra le due chiamate:</li>
 </ul>
 
-<p class="formula grande">H(n) = 1 + max(H(⌊n/2⌋), H(⌈n/2⌉)) se n &gt; 1, &nbsp; H(1) = 1</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">H(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1</span><span class="val">1 + max(H(⌊n/2⌋), H(⌈n/2⌉))</span><span class="cond">se n &gt; 1</span></span></span></div>
 
 <p>Per n potenza di 2 le due metà sono uguali e diventa H(n) = H(n/2) + 1. Si srotola come prima, ed è ancora più facile, perché ogni passo aggiunge solo 1:</p>
 
-<p class="formula">H(n) = H(n/2) + 1 = H(n/2²) + 1 + 1 = H(n/2³) + 1 + 1 + 1 = … = H(n/2<sup>k</sup>) + k</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">H(n)</span><span class="rel">=</span><span class="dx">H(n/2) + 1</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">H(n/2²) + 1 + 1</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">H(n/2³) + 1 + 1 + 1</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">…</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">H(n/2<sup>k</sup>) + k</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">H(1) + log<sub>2</sub> n</span><span class="perche">ci si ferma a n/2<sup>k</sup> = 1, cioè k = log<sub>2</sub> n</span><span class="sx"></span><span class="rel">=</span><span class="dx">1 + log<sub>2</sub> n</span><span class="perche">n potenza di 2</span></span></div>
 
-<p>Ci si ferma a n/2<sup>k</sup> = 1, cioè k = log<sub>2</sub> n:</p>
-
-<p class="formula grande">H(n) = H(1) + log<sub>2</sub> n = 1 + log<sub>2</sub> n &nbsp; (n potenza di 2)</p>
-
-<p>In generale, con lo stesso trucco della potenza N: H(n) ≤ H(N) = 1 + log<sub>2</sub> N &lt; 1 + log<sub>2</sub>(2n) = 2 + log<sub>2</sub> n. Quindi:</p>
+<p>In generale, con lo stesso trucco della potenza N:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">H(n)</span><span class="rel">≤</span><span class="dx">H(N)</span><span class="perche">perché N ≥ n</span><span class="sx"></span><span class="rel">=</span><span class="dx">1 + log<sub>2</sub> N</span><span class="perche">N è una potenza di 2</span><span class="sx"></span><span class="rel">&lt;</span><span class="dx">1 + log<sub>2</sub>(2n)</span><span class="perche">perché N &lt; 2n</span><span class="sx"></span><span class="rel">=</span><span class="dx">2 + log<sub>2</sub> n</span><span class="perche"></span></span></div>
+<p>Quindi:</p>
 
 <div class="box def">
   <span class="etichetta">Altezza della pila</span>

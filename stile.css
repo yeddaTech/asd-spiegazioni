@@ -353,3 +353,59 @@ table.mat td { border: none; padding: 2px 9px; text-align: center; vertical-alig
   font: 600 13px system-ui, sans-serif; text-align: center; background: var(--card); }
 .chip.zero { border-color: var(--border); color: var(--muted); }
 tr.riga-attuale td { background: var(--hl); }
+
+/* ---------- matematica impaginata (casi con graffa, passaggi allineati, dimostrazioni) ---------- */
+.mat-blocco { overflow-x: auto; margin: 14px 0; padding: 4px 2px; text-align: center; }
+.mat-blocco > * { text-align: left; }
+/* definizione a casi:  T(n) = { valore  se condizione } */
+.casi { display: inline-flex; align-items: stretch; gap: 6px; font-size: 1.08rem; line-height: 1.5; vertical-align: middle; }
+.casi .casi-sx { align-self: center; white-space: nowrap; }
+.casi .graffa { position: relative; width: 12px; flex: none; }
+.casi .graffa svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.casi .graffa path { fill: none; stroke: currentColor; stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; }
+.casi .casi-righe { display: grid; grid-template-columns: max-content max-content; column-gap: 1.8em; row-gap: .25em; padding: 2px 0; align-content: center; }
+.casi .casi-righe .cond { color: var(--muted); white-space: nowrap; }
+.casi .casi-righe .val { white-space: nowrap; }
+/* passaggi allineati:  sinistra | = | destra | nota */
+.catena { display: inline-grid; grid-template-columns: max-content max-content max-content max-content; column-gap: .55em; row-gap: .35em;
+  font-size: 1.05rem; line-height: 1.45; align-items: baseline; }
+.catena .sx { text-align: right; white-space: nowrap; }
+.catena .rel { text-align: center; }
+.catena .dx { white-space: nowrap; }
+.catena .perche { color: var(--muted); font-size: .86em; white-space: nowrap; padding-left: .8em; }
+.rif { display: inline-block; min-width: 1.35em; height: 1.35em; line-height: 1.35em; border-radius: 50%; background: var(--accent);
+  color: #fff; font: 700 .72rem/1.35em system-ui, sans-serif; text-align: center; vertical-align: .15em; margin-left: .25em; }
+:root[data-theme="dark"] .rif { color: #111; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rif { color: #111; } }
+.hl-ip { background: var(--accent-soft); border-radius: 4px; padding: 0 3px; }
+/* dimostrazione */
+.dim { border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 12px; background: var(--card);
+  padding: 14px 18px; margin: 18px 0; box-shadow: var(--shadow); }
+.dim > :last-child { margin-bottom: 0; }
+.dim .dim-tit { font: 700 12.5px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.dim .enunciato { margin: 0 0 10px; }
+.dim .parte { font: 700 15px/1.3 system-ui, sans-serif; margin: 16px 0 4px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.dim .parte.prima { border-top: none; padding-top: 0; margin-top: 6px; }
+.catena .nuova { background: var(--hl); border-radius: 3px; padding: 0 2px; }
+.dim .mat-blocco { padding-left: 1em; }
+.dim .riga-ip { margin: 6px 0; }
+.dim .riga-ip b { font-family: system-ui, sans-serif; font-size: .9em; color: var(--muted); letter-spacing: .02em; margin-right: .4em; }
+.dim .qed { text-align: right; font-size: 1.1rem; margin: 4px 0 0; }
+.dim .mat-blocco { text-align: left; margin: 8px 0; }
+.spiega { background: var(--bg); border: 1px dashed var(--border); border-radius: 10px; padding: 10px 14px; margin: 12px 0 0; }
+.spiega .spiega-tit { font: 700 12.5px/1 system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.spiega p { margin: 6px 0; }
+.spiega p > .rif:first-child { margin: 0 .45em 0 0; }
+@media (max-width: 520px) {
+  .catena { font-size: .98rem; column-gap: .35em; }
+  .catena .perche { white-space: normal; min-width: 5.5em; max-width: 9.5em; padding-left: .3em; font-size: .8em; line-height: 1.3; }
+  .casi { font-size: 1rem; }
+  .casi .casi-righe { column-gap: 1em; }
+  .casi .casi-righe .cond { white-space: normal; max-width: 10em; }
+  .dim { padding: 12px 12px; }
+  .dim .mat-blocco { padding-left: .2em; }
+}
+@media (max-width: 520px) {
+  .catena { font-size: .9rem; }
+  .casi { font-size: .93rem; }
+}
