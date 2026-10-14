@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Divide et impera e teorema fondamentale</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 7 · lezione 10</span>
+</div>
+
+<h1>Divide et impera e teorema fondamentale</h1>
+<p class="sottotitolo">La lezione 10 dà un nome alla tecnica che usiamo da settimane e la mette alla prova su un problema nuovo: trovare il minimo e il massimo insieme. Poi regala uno strumento che risolve in una riga le equazioni che nel pacco 6 ci sono costate pagine di conti. In fondo ci sono le matrici e il trucco di Strassen.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#tecnica">La tecnica divide et impera</a></li>
+    <li><a href="#minmax">Minimo e massimo insieme: la versione semplice</a></li>
+    <li><a href="#minmax-di">minMax con divide et impera</a></li>
+    <li><a href="#conti">I conti: 3n/2 − 2, e da dove arriva il 25%</a></li>
+    <li><a href="#generale">E se n non è una potenza di 2?</a></li>
+    <li><a href="#master">Il teorema fondamentale (Master theorem)</a></li>
+    <li><a href="#perche">Perché funziona: chi paga di più?</a></li>
+    <li><a href="#esempi">Gli esempi della lavagna, e quelli che conosci già</a></li>
+    <li><a href="#matrici">Matrici: somma e prodotto</a></li>
+    <li><a href="#strassen">Divide et impera sulle matrici, e Strassen</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<div class="box idea">
+  <span class="etichetta">La lezione in cinque domande</span>
+  <p>La lezione 10 corre veloce, ma risponde a cinque domande. Se un conto ti confonde, torna qui e chiediti a quale domanda sta rispondendo.</p>
+  <ol>
+    <li><a href="#tecnica">Cos'è divide et impera?</a> Se l'istanza è piccola, la risolvo direttamente. Altrimenti la divido in istanze più piccole, le risolvo ricorsivamente e combino le soluzioni.</li>
+    <li><a href="#minmax">Quanti confronti servono per trovare minimo e massimo?</a> Con un ciclo, 2n − 2. Con divide et impera, 3n/2 − 2: un quarto in meno.</li>
+    <li><a href="#conti">Da dove arriva il risparmio?</a> Dalle coppie: un solo confronto tra due elementi dice chi dei due è il candidato minimo e chi il candidato massimo.</li>
+    <li><a href="#master">Come si risolve F(n) = mF(n/a) + b″n<sup>c</sup> senza srotolarla?</a> Con il teorema fondamentale: basta confrontare m con a<sup>c</sup>.</li>
+    <li><a href="#matrici">Quanto costa moltiplicare due matrici n × n?</a> Con la definizione, Θ(n³), e il divide et impera «immediato» non migliora. Strassen fa 7 prodotti invece di 8 e scende a Θ(n<sup>log<sub>2</sub> 7</sup>) ≈ Θ(n<sup>2,81</sup>).</li>
+  </ol>
+</div>
+
+<!-- ============================================================ 1 -->
+<h2 id="tecnica"><span class="num">1</span>La tecnica divide et impera</h2>
+
+<p>Immagina un capo che riceve un lavoro. Se è un lavoretto, lo fa da solo e basta. Se è grosso, lo spezza in pezzi più piccoli, dà ogni pezzo a un collaboratore e, quando i collaboratori gli riportano i risultati, li mette insieme.</p>
+<p>Il trucco è che i collaboratori sono <strong>copie del capo</strong>. Ricevono un pezzo e, se è ancora grosso, fanno la stessa identica cosa: lo spezzano, delegano, rimettono insieme. Nessuno deve sapere come lavorano gli altri. A ognuno basta fidarsi che i suoi collaboratori gli riportino il risultato giusto: è il «presentare ricorsivamente la ricorsione» del <a href="06-mergesort-conti.html#raccontare">pacco 6</a>.</p>
+
+<div class="box def">
+  <span class="etichetta">Tecnica divide et impera (slide della lezione 10)</span>
+  <p>𝒫 problema, ℐ istanza di 𝒫.</p>
+  <p><strong>Se ℐ è piccola</strong>, risolvi 𝒫 su ℐ direttamente.<br><strong>Altrimenti:</strong></p>
+  <ul>
+    <li><strong>dividi</strong> ℐ in istanze di lunghezza minore della lunghezza di ℐ;</li>
+    <li><strong>risolvi</strong> queste istanze separatamente;</li>
+    <li>ricava la soluzione di ℐ <strong>combinando</strong> opportunamente le soluzioni ottenute.</li>
+  </ul>
+</div>
+
+<p>Alla lavagna il prof l'ha scritta come uno schema di algoritmo, valido per qualunque problema:</p>
+
+<pre class="pseudo"><b>ALGORITMO</b> risolviP(istanza I) → soluzione
+  <b>IF</b> |I| ≤ c <b>THEN</b>                          <span class="com">// caso base</span>
+    risolvi P su I direttamente
+    <b>RETURN</b> soluzione
+  <b>ELSE</b>
+    dividi I in m istanze I<sub>1</sub>, I<sub>2</sub>, …, I<sub>m</sub>, con |I<sub>j</sub>| &lt; |I| per j = 1, …, m
+    sol<sub>1</sub> ← risolviP(I<sub>1</sub>)                  <span class="com">// ricorsione</span>
+    sol<sub>2</sub> ← risolviP(I<sub>2</sub>)
+    …
+    sol<sub>m</sub> ← risolviP(I<sub>m</sub>)
+    <b>RETURN</b> combina(sol<sub>1</sub>, sol<sub>2</sub>, …, sol<sub>m</sub>)</pre>
+
+<p>Qui |I| è la lunghezza dell'istanza, cioè la sua dimensione n, e c è la soglia sotto la quale l'istanza è «piccola». Il tempo si scrive guardando lo schema riga per riga:</p>
+
+<div class="formula">T(I) = costante &nbsp;se |I| ≤ c, &nbsp;&nbsp; altrimenti &nbsp;T(I) = T<sub>divide</sub>(I) + T(I<sub>1</sub>) + T(I<sub>2</sub>) + … + T(I<sub>m</sub>) + T<sub>combina</sub>(sol<sub>1</sub>, …, sol<sub>m</sub>)</div>
+
+<p>In parole: quanto costa <strong>spezzare</strong>, più il lavoro dei <strong>collaboratori</strong> (le chiamate ricorsive), più quanto costa <strong>rimettere insieme</strong>. È un'equazione di ricorrenza, come quelle dei pacchi 5 e 6.</p>
+
+<h3>L'avevi già vista, senza il nome</h3>
+<p>Quasi tutti gli algoritmi ricorsivi visti finora seguono questo schema:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>algoritmo</th><th>dividi</th><th>quante istanze (m)</th><th>combina</th><th>equazione</th></tr>
+  <tr><td>potenza ricorsiva (lezione 3)</td><td>y → ⌊y/2⌋</td><td>1</td><td>power · power, e · x se y è dispari</td><td>T(y) ≤ T(⌊y/2⌋) + 6</td></tr>
+  <tr><td>ricerca binaria (<a href="03-ricerca.html">pacco 3</a>)</td><td>la metà dove può stare x</td><td>1</td><td>niente: la risposta della metà è già quella giusta</td><td>T(n) ≤ T(n/2) + costante</td></tr>
+  <tr><td>mergeSort (<a href="05-mergesort.html">pacchi 5</a>–<a href="06-mergesort-conti.html">6</a>)</td><td>due metà</td><td>2</td><td>merge</td><td>C(n) = 2C(n/2) + n − 1</td></tr>
+  <tr><td>minMax (oggi)</td><td>due metà</td><td>2</td><td>2 confronti</td><td>C(n) = 2C(n/2) + 2</td></tr>
+</table></div>
+
+<div class="box attenzione">
+  <span class="etichetta">Due regole da non dimenticare</span>
+  <p><strong>Le istanze devono essere più piccole</strong> (|I<sub>j</sub>| &lt; |I|): se un collaboratore riceve un pezzo grande come quello del capo, la ricorsione non finisce mai.</p>
+  <p><strong>Non bisogna rifare lo stesso lavoro.</strong> Nella lezione 3 il prof aveva mostrato la potenza scritta con <code>potenza(x, y/2) * potenza(x, y/2)</code>: due chiamate identiche invece di una. Divide ancora a metà, ma il tempo diventa lineare invece che logaritmico. Nella <a href="#esempi">sezione 8</a> il teorema fondamentale lo spiega in una riga.</p>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="minmax"><span class="num">2</span>Minimo e massimo insieme: la versione semplice</h2>
+
+<p><strong>Il problema</strong> (esempio della lavagna): dato un array A[0..n−1], con n &gt; 0, trovare l'elemento minimo <em>e</em> l'elemento massimo.</p>
+
+<p>Sei l'insegnante di ginnastica e vuoi sapere chi è il più basso e chi il più alto della classe. Il metodo più semplice è far entrare i ragazzi uno alla volta. Il primo, per ora, è sia il più basso sia il più alto. Ogni nuovo arrivato lo confronti con il più basso finora e con il più alto finora: due confronti a testa.</p>
+
+<pre class="pseudo"><b>ALGORITMO</b> minMax(array A[0..n−1]) → (elemento, elemento)
+  min ← A[0]
+  max ← A[0]
+  <b>FOR</b> i ← 1 <b>TO</b> n − 1 <b>DO</b>
+    <b>IF</b> A[i] &lt; min <b>THEN</b> min ← A[i]
+    <b>IF</b> A[i] &gt; max <b>THEN</b> max ← A[i]
+  <b>RETURN</b> (min, max)</pre>
+
+<p>Il FOR gira per i = 1, …, n − 1, cioè <strong>n − 1 volte</strong>, e ogni giro fa <strong>2 confronti</strong>:</p>
+<div class="formula grande">numero di confronti = 2(n − 1) = 2n − 2</div>
+<p>Sempre, qualunque sia l'array. Nel <a href="01-quanto-costa.html#minimo">pacco 1</a> il minimo da solo costava n − 1 confronti: qui sono due ricerche del minimo incollate, una per il minimo e una per il massimo.</p>
+
+<div class="box idea">
+  <span class="etichetta">Un confronto, due informazioni</span>
+  <p>Si può fare meglio? Il prof dice di sì. Prima di vedere come, nota una cosa. Quando confronti <em>due ragazzi tra loro</em>, impari due cose insieme. Il più basso dei due non può essere il più alto della classe, perché c'è già qualcuno più alto di lui. Il più alto dei due non può essere il più basso.</p>
+  <p>Dopo un solo confronto, quindi, il più basso dei due gareggia solo per il titolo di «più basso» e il più alto solo per quello di «più alto». Nel FOR, invece, ogni nuovo arrivato gareggia per tutti e due i titoli. Il risparmio si nasconde qui.</p>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="minmax-di"><span class="num">3</span>minMax con divide et impera</h2>
+
+<p>Ora dividi la classe in due metà e mandi ciascuna in una palestra diversa, con un assistente. Ogni assistente ti riporta due nomi: il più basso e il più alto della sua metà. A te bastano <strong>2 confronti</strong>: il più basso della prima metà contro il più basso della seconda, il più alto contro il più alto.</p>
+<p>E gli assistenti? Fanno la stessa cosa con la loro metà, finché arrivano gruppi minuscoli. Un ragazzo da solo è sia il più basso sia il più alto: <strong>0 confronti</strong>. Due ragazzi si confrontano una volta e si sa subito chi è chi: <strong>1 confronto</strong>.</p>
+
+<p class="titolo-codice">Lavagna, lezione 10</p>
+<pre class="pseudo"><b>FUNZIONE</b> minMax(array A, indice i, indice f) → (elemento, elemento)
+  <b>IF</b> f − i = 1 <b>THEN RETURN</b> (A[i], A[i])               <span class="com">// caso base: 1 elemento</span>
+  <b>ELSE IF</b> f − i = 2 <b>THEN</b>                               <span class="com">// caso base: 2 elementi</span>
+    <b>IF</b> A[i] &lt; A[i+1] <b>THEN RETURN</b> (A[i], A[i+1])
+                    <b>ELSE RETURN</b> (A[i+1], A[i])
+  <b>ELSE</b>
+    m ← (i + f)/2                                     <span class="com">// divisione intera</span>
+    (min1, max1) ← minMax(A, i, m)
+    (min2, max2) ← minMax(A, m, f)
+    <b>IF</b> min1 &lt; min2 <b>THEN</b> min ← min1 <b>ELSE</b> min ← min2
+    <b>IF</b> max1 &gt; max2 <b>THEN</b> max ← max1 <b>ELSE</b> max ← max2
+    <b>RETURN</b> (min, max)
+
+<b>ALGORITMO</b> minMax(array A[0..n−1]) → (elemento, elemento)
+  <b>RETURN</b> minMax(A, 0, n)</pre>
+
+<p>Come nel Codice 3.3 del <a href="06-mergesort-conti.html#implementazione">pacco 6</a>, la funzione lavora sul pezzo A[i..f−1] senza copiarlo: l'intervallo è [i, f), quindi <strong>f − i è il numero di elementi</strong>. L'algoritmo vero e proprio chiama la funzione su tutto l'array, da 0 a n.</p>
+<p>Ci sono <strong>due casi base</strong>, uno per 1 elemento e uno per 2. Il secondo non è obbligatorio, l'algoritmo funzionerebbe anche senza. Però è proprio lui a far risparmiare, come si vede nella <a href="#conti">sezione 4</a>.</p>
+
+<div class="widget" id="w-mm">
+  <h4>MINMAX, CHIAMATA PER CHIAMATA</h4>
+  <div class="controlli">
+    <label>A = <input type="text" id="mm-in" value="7, 2, 9, 4, 1, 8, 5, 6" style="width:220px"></label>
+    <label>Divido <select id="mm-modo" style="width:auto">
+      <option value="meta">a metà (codice della lavagna)</option>
+      <option value="pot2">alla potenza di 2 (esercizio 2.7)</option>
+      <option value="uno">a metà, con il solo caso base n = 1</option>
+    </select></label>
+  </div>
+  <div class="controlli">
+    <button class="primario" id="mm-passo">Passo →</button>
+    <button id="mm-fine">Fino alla fine</button>
+    <button id="mm-reset">Ricomincia</button>
+  </div>
+  <div class="albero" id="mm-out"></div>
+  <div class="contatori" id="mm-cont"></div>
+  <div class="narrazione" id="mm-txt"></div>
+</div>
+<p class="piccolo">Ogni riga è un livello di chiamate. I pezzi chiari non sono ancora stati chiamati. Il pezzo evidenziato è la chiamata in corso, i pezzi viola sono gli elementi rimasti da soli. Sotto ogni pezzo finito c'è la coppia (min, max) che restituisce e quanti confronti ha fatto <em>lei</em>, senza contare quelli delle chiamate più in basso. Prova anche 10 elementi, per esempio 3, 8, 1, 9, 4, 7, 2, 6, 5, 10.</p>
+
+<!-- ============================================================ 4 -->
+<h2 id="conti"><span class="num">4</span>I conti: 3n/2 − 2, e da dove arriva il 25%</h2>
+
+<p>Sia C(n) il numero di confronti tra elementi dell'array fatti da minMax su n elementi. Dal codice:</p>
+
+<div class="formula grande">C(n) = 0 se n = 1, &nbsp;&nbsp; C(n) = 1 se n = 2, &nbsp;&nbsp; C(n) = C(⌊n/2⌋) + C(⌈n/2⌉) + 2 altrimenti</div>
+
+<p>Con m = (i + f)/2 (divisione intera), a sinistra finiscono ⌊n/2⌋ elementi e a destra ⌈n/2⌉, come in mergeSort. Poi ci sono i 2 confronti per combinare. Se n è pari le due metà sono uguali, e l'equazione diventa C(n) = 2C(n/2) + 2.</p>
+
+<h3>Srotolare, come nel pacco 6</h3>
+<p>Prendiamo n potenza di 2, così ogni metà è ancora pari, e srotoliamo come nella <a href="06-mergesort-conti.html#srotolare">sezione 3 del pacco 6</a>. In giallo, quello che compare a ogni passo:</p>
+<div class="srotola">C(n) = 2 C(n/2) + 2
+     = 2 [2 C(n/2²) + 2] + 2   = <span class="nuova">2² C(n/2²) + 2² + 2</span>
+     = 2² [2 C(n/2³) + 2] + 2² + 2   = <span class="nuova">2³ C(n/2³) + 2³ + 2² + 2</span>
+     = …
+     = 2<sup>k</sup> C(n/2<sup>k</sup>) + (2<sup>k</sup> + … + 2² + 2)
+     = 2<sup>k</sup> C(n/2<sup>k</sup>) + <span class="nuova">2<sup>k+1</sup> − 2</span></div>
+
+<p>L'ultima riga usa la somma delle potenze di 2 del <a href="06-mergesort-conti.html#attrezzi">pacco 6</a>: 1 + 2 + … + 2<sup>k</sup> = 2<sup>k+1</sup> − 1, e qui manca l'1, quindi 2 + … + 2<sup>k</sup> = 2<sup>k+1</sup> − 2.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">La matrioska si ferma a 2, non a 1</span>
+  <p>In mergeSort si srotolava fino a C(1). Qui conviene fermarsi a <strong>C(2) = 1</strong>, perché è il caso base che conosciamo. Se n = 2<sup>k+1</sup>, dopo k passi resta n/2<sup>k</sup> = 2. Quindi 2<sup>k</sup> = n/2 e 2<sup>k+1</sup> = n.</p>
+</div>
+
+<div class="formula grande">C(n) = (n/2) · C(2) + n − 2 = n/2 + n − 2 = <strong>3n/2 − 2</strong></div>
+
+<p>Con n = 1024: il FOR fa 2046 confronti, minMax ne fa 1534. Il rapporto è (n/2)/(2n − 2), quasi esattamente <strong>un quarto in meno</strong>: è il «25% in meno» scritto dal prof.</p>
+
+<h3>Lo stesso conto, guardando l'albero</h3>
+<p>C'è un modo di arrivare a 3n/2 − 2 senza algebra. Con n potenza di 2, l'albero delle chiamate ha in fondo <strong>n/2 coppie</strong>, ognuna con 1 confronto: n/2 confronti. Ogni chiamata sopra le coppie combina con 2 confronti. Quante sono? Pensa a un torneo a eliminazione diretta con n/2 squadre: ogni partita elimina una squadra e alla fine ne resta una, quindi le partite sono <strong>n/2 − 1</strong>. Totale:</p>
+<div class="formula">n/2 · 1 + (n/2 − 1) · 2 = n/2 + n − 2 = 3n/2 − 2</div>
+
+<div class="box idea">
+  <span class="etichetta">La formula dell'albero, per qualunque n</span>
+  <p>Generalizziamo. In fondo all'albero possono esserci pezzi di 2 elementi (<em>coppie</em>, 1 confronto) e pezzi di 1 elemento (<em>soli</em>, 0 confronti). Ogni altra chiamata costa 2 confronti. Se ci sono p coppie e s elementi soli, allora n = 2p + s, i pezzi in fondo sono p + s e, come nel torneo, le chiamate sopra sono p + s − 1. Quindi C = p + 2(p + s − 1), e sostituendo p = (n − s)/2:</p>
+  <div class="formula grande">C = 3n/2 − 2 + s/2, &nbsp;&nbsp; dove s = numero di elementi rimasti da soli</div>
+  <p><strong>Ogni elemento che resta da solo costa mezzo confronto in più.</strong> Il caso migliore è s = 0, tutte coppie: 3n/2 − 2. Il caso peggiore è s = n, tutti da soli: 3n/2 − 2 + n/2 = 2n − 2, cioè proprio il FOR. Nel FOR, infatti, ogni elemento arriva da solo e gareggia per tutti e due i titoli.</p>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Il 25% sta tutto nel caso base n = 2</span>
+  <p>Se togliamo il caso base f − i = 2, i pezzi si dividono fino a un elemento: tutti restano soli, s = n e C(n) = 2n − 2. <strong>Il risparmio sparisce del tutto</strong>: divide et impera da solo non basta, serve il confronto dentro la coppia. Puoi vederlo nel riquadro della sezione 3 scegliendo «solo caso base n = 1». È la seconda domanda dell'esercizio 2.7 del foglio di esercizi 2 (soluzione in fondo alla pagina).</p>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="generale"><span class="num">5</span>E se n non è una potenza di 2?</h2>
+
+<p>In fondo alla lavagna il prof scrive: se n non è una potenza di 2, n = 2<sup>j</sup> + n′ con n′ &lt; 2<sup>j</sup>, e allora C(n) = ⌈3n/2⌉ − 2. Cioè 3n/2 − 2 se n è pari, mezzo confronto in più se è dispari.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Vale solo se si divide alla potenza di 2</span>
+  <p>Con il codice della lavagna, che divide <em>a metà</em> (m ← (i+f)/2), la formula non sempre torna. Prova n = 6: si divide in 3 + 3 e ogni 3 in 1 + 2. Restano <strong>2 elementi soli</strong>, quindi C(6) = 9 − 2 + 1 = <strong>8</strong>, mentre ⌈18/2⌉ − 2 = 7.</p>
+  <p>Per avere ⌈3n/2⌉ − 2 per ogni n bisogna dividere in un altro modo: a sinistra <strong>la più grande potenza di 2 minore di n</strong>, a destra il resto. È esattamente l'esercizio 2.7 del foglio 2 (per esempio, con n = 27 si divide in 16 + 11). Con n = 6 si divide in 4 + 2: nessuno resta solo e i confronti sono 7.</p>
+</div>
+
+<p>Perché dividere alla potenza di 2 funziona? La parte sinistra è una potenza di 2: si spezza sempre in coppie, senza lasciare nessuno da solo. La parte destra si divide di nuovo allo stesso modo, e così via. Alla fine resta da solo <strong>al più un elemento</strong>, e solo se n è dispari. Quindi s = 0 se n è pari e s = 1 se è dispari, e la formula dell'albero dà proprio C(n) = 3n/2 − 2 + s/2 = ⌈3n/2⌉ − 2.</p>
+<p>Quanto si perde dividendo a metà? Poco. Il caso peggiore è n = 3 · 2<sup>k</sup>, che si spezza in pezzi da 3, ognuno con un elemento solo: lì C(n) = 5n/3 − 2. Si resta sempre sotto 2n − 2, e sempre in Θ(n).</p>
+
+<div class="widget" id="w-conta">
+  <h4>QUANTI CONFRONTI, PER QUALUNQUE n</h4>
+  <div class="controlli">
+    <label>n = <input type="number" id="ct-n" value="27" min="1" max="1000000" style="width:120px"></label>
+  </div>
+  <div class="tabella-wrap"><table id="ct-tab"></table></div>
+  <p class="piccolo" id="ct-nota" style="margin:6px 0 0"></p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Curiosità: meglio di così non si può</span>
+  <p>Si dimostra che ⌈3n/2⌉ − 2 è il minimo assoluto: nessun algoritmo che lavora solo con confronti può trovare minimo e massimo con meno confronti nel caso peggiore. Il prof non l'ha detto a lezione: è un risultato del 1972 (Ira Pohl). Quindi minMax, diviso alla potenza di 2, è <strong>ottimo</strong>, nel senso del <a href="01-quanto-costa.html#problema">pacco 1</a>.</p>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="master"><span class="num">6</span>Il teorema fondamentale (Master theorem)</h2>
+
+<p>Nel pacco 6, per scoprire che mergeSort fa Θ(n log n) confronti, abbiamo srotolato l'equazione, sommato potenze di 2 e costruito catene di disuguaglianze. Funziona, ma è lungo. Il prof osserva che le equazioni degli algoritmi divide et impera hanno quasi sempre la stessa forma: <strong>m chiamate ricorsive</strong> su istanze grandi <strong>n/a</strong>, più un lavoro «extra» per dividere e combinare che cresce come <strong>n<sup>c</sup></strong>. Per questa forma c'è un teorema che dà subito la risposta.</p>
+
+<div class="box def">
+  <span class="etichetta">Teorema fondamentale delle ricorrenze (Master theorem)</span>
+  <p>Siano m, a, b′, b″, c ∈ ℝ<sup>+</sup> con a &gt; 1. L'equazione</p>
+  <div class="formula">F(n) = b′ &nbsp;se n = 1, &nbsp;&nbsp;&nbsp; F(n) = m F(n/a) + b″ n<sup>c</sup> &nbsp;se n &gt; 1</div>
+  <p>soddisfa le seguenti relazioni:</p>
+  <div class="tabella-wrap"><table>
+    <tr><td>F(n) = Θ(n<sup>c</sup>)</td><td>se m &lt; a<sup>c</sup></td></tr>
+    <tr><td>F(n) = Θ(n<sup>c</sup> log n)</td><td>se m = a<sup>c</sup></td></tr>
+    <tr><td>F(n) = Θ(n<sup>log<sub>a</sub> m</sup>)</td><td>se m &gt; a<sup>c</sup></td></tr>
+  </table></div>
+  <p>Il risultato può essere esteso anche al caso in cui per n &gt; 1 l'equazione sia della forma F(n) = m<sub>1</sub> F(⌊n/a⌋) + m<sub>2</sub> F(⌈n/a⌉) + b″n<sup>c</sup>, con m = m<sub>1</sub> + m<sub>2</sub>.</p>
+</div>
+
+<p>A lezione il teorema è stato presentato senza dimostrazione, in questa forma semplificata. L'estensione con ⌊n/a⌋ e ⌈n/a⌉ serve per gli n che non sono potenze di a: per esempio mergeSort e minMax, che dividono in ⌊n/2⌋ e ⌈n/2⌉, hanno m<sub>1</sub> = m<sub>2</sub> = 1 e quindi m = 2.</p>
+
+<p>Ecco cosa vogliono dire le lettere, un po' come i prezzi del taxi del <a href="06-mergesort-conti.html#tempo">pacco 6</a>:</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>lettera</th><th>cosa vuol dire</th><th>in mergeSort</th></tr>
+  <tr><td><strong>m</strong></td><td>quante chiamate ricorsive fa ogni chiamata: quanti collaboratori</td><td>2</td></tr>
+  <tr><td><strong>a</strong></td><td>di quanto si rimpicciolisce l'istanza: ogni collaboratore riceve n/a</td><td>2</td></tr>
+  <tr><td><strong>b″n<sup>c</sup></strong></td><td>il lavoro fatto <em>fuori</em> dalle chiamate ricorsive: dividere più combinare</td><td>circa n (il merge)</td></tr>
+  <tr><td><strong>c</strong></td><td>l'esponente di quel lavoro: 0 se è costante, 1 se è lineare, 2 se è quadratico…</td><td>1</td></tr>
+  <tr><td><strong>b′</strong></td><td>il costo del caso base</td><td>C(1) = 0</td></tr>
+</table></div>
+
+<p>b′ e b″ <strong>non compaiono nel risultato</strong>: cambiano le costanti, non la crescita. Per lo stesso motivo il lavoro extra non deve essere esattamente b″n<sup>c</sup>. Basta che stia tra due multipli di n<sup>c</sup>, come il merge con i suoi n − 1 confronti, che per n ≥ 2 stanno tra n/2 e n.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">La ricetta in tre mosse</span>
+  <ol>
+    <li>Leggi dall'equazione <strong>m</strong> (quante chiamate), <strong>a</strong> (n diviso quanto) e <strong>c</strong> (l'esponente del lavoro extra).</li>
+    <li>Calcola <strong>a<sup>c</sup></strong>.</li>
+    <li>Confronta m con a<sup>c</sup>. Se m è minore: Θ(n<sup>c</sup>). Se sono uguali: Θ(n<sup>c</sup> log n). Se m è maggiore: Θ(n<sup>log<sub>a</sub> m</sup>).</li>
+  </ol>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="perche"><span class="num">7</span>Perché funziona: chi paga di più?</h2>
+
+<p>Il teorema sembra una magia, ma si capisce disegnando l'albero delle chiamate, come abbiamo fatto per mergeSort. Mettiamo b′ = b″ = 1 e prendiamo n potenza di a.</p>
+<ul>
+  <li>Al livello 0 c'è una chiamata su n elementi, che fa lavoro extra n<sup>c</sup>.</li>
+  <li>Al livello 1 ci sono m chiamate su n/a elementi. Lavoro: m · (n/a)<sup>c</sup> = n<sup>c</sup> · m/a<sup>c</sup>.</li>
+  <li>Al livello i ci sono m<sup>i</sup> chiamate su n/a<sup>i</sup> elementi. Lavoro: m<sup>i</sup> · (n/a<sup>i</sup>)<sup>c</sup> = <strong>n<sup>c</sup> · q<sup>i</sup></strong>, dove <strong>q = m/a<sup>c</sup></strong>.</li>
+</ul>
+<p>Scendendo di un livello, il costo si moltiplica sempre per lo stesso numero q. Tutto dipende da q, cioè dal confronto tra m e a<sup>c</sup>. Ci sono tre storie possibili.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>confronto</th><th>chi paga di più</th><th>perché</th><th>risultato</th></tr>
+  <tr><td>m &lt; a<sup>c</sup> (q &lt; 1)</td><td><strong>la radice</strong></td><td>ogni livello costa meno di quello sopra; i costi scendono come 1, q, q², … e la loro somma resta sotto 1/(1 − q): un numero fisso di volte il costo della radice</td><td>Θ(n<sup>c</sup>)</td></tr>
+  <tr><td>m = a<sup>c</sup> (q = 1)</td><td><strong>tutti uguale</strong></td><td>ogni livello costa n<sup>c</sup>, e i livelli sono log<sub>a</sub> n + 1</td><td>Θ(n<sup>c</sup> log n)</td></tr>
+  <tr><td>m &gt; a<sup>c</sup> (q &gt; 1)</td><td><strong>le foglie</strong></td><td>ogni livello costa più di quello sopra e l'ultimo, quello dei casi base, domina; le foglie sono m<sup>log<sub>a</sub> n</sup> = n<sup>log<sub>a</sub> m</sup></td><td>Θ(n<sup>log<sub>a</sub> m</sup>)</td></tr>
+</table></div>
+
+<p>In parole. Nel primo caso il capo lavora più di tutti i collaboratori messi insieme. Nel secondo, ogni livello della gerarchia fa la stessa fatica: è mergeSort, dove ogni livello di merge costa circa n e i livelli sono log<sub>2</sub> n. Nel terzo, i collaboratori si moltiplicano così in fretta che il lavoro vero lo fanno loro, in fondo all'albero.</p>
+
+<div class="box idea">
+  <span class="etichetta">Perché m<sup>log<sub>a</sub> n</sup> = n<sup>log<sub>a</sub> m</sup></span>
+  <p>Applica log<sub>a</sub> a tutti e due i lati. A sinistra viene log<sub>a</sub> n · log<sub>a</sub> m, a destra log<sub>a</sub> m · log<sub>a</sub> n: sono uguali. Per esempio, con a = 2, m = 8 e n = 1024: 8<sup>10</sup> = 2<sup>30</sup> e 1024<sup>3</sup> = 2<sup>30</sup>. La seconda forma è più comoda, perché si vede subito che è una potenza di n.</p>
+</div>
+
+<div class="widget" id="w-master">
+  <h4>L'ALBERO DELLE CHIAMATE, LIVELLO PER LIVELLO</h4>
+  <div class="controlli">
+    <button id="ms-p1">ricerca binaria</button>
+    <button id="ms-p2">mergeSort</button>
+    <button id="ms-p3">minMax</button>
+    <button id="ms-p4">matrici a blocchi</button>
+    <button id="ms-p5">Strassen</button>
+    <button id="ms-p6">potenza con due chiamate</button>
+  </div>
+  <div class="controlli">
+    <label>m = <input type="number" id="ms-m" value="2" min="1" max="16" step="1" style="width:70px"></label>
+    <label>a = <input type="number" id="ms-a" value="2" min="2" max="8" step="1" style="width:70px"></label>
+    <label>c = <input type="number" id="ms-c" value="1" min="0" max="3" step="0.5" style="width:70px"></label>
+  </div>
+  <div class="formula" id="ms-eq"></div>
+  <div class="narrazione" id="ms-verdetto"></div>
+  <div class="etich-array" id="ms-tit"></div>
+  <div class="grafico" id="ms-graf">
+    <div id="ms-svg"></div>
+    <div class="tooltip" id="ms-tip"></div>
+  </div>
+  <details class="esercizio" style="margin-top:10px">
+    <summary>Tabella: il costo di ogni livello</summary>
+    <div class="tabella-wrap" id="ms-tab"></div>
+  </details>
+</div>
+<p class="piccolo">Prova a cambiare solo m, tenendo a = 2 e c = 1. Con m = 1 le barre si accorciano scendendo, con m = 2 sono tutte uguali, con m = 3 si allungano. È il confronto tra m e a<sup>c</sup> = 2 che si vede a occhio.</p>
+
+<!-- ============================================================ 8 -->
+<h2 id="esempi"><span class="num">8</span>Gli esempi della lavagna, e quelli che conosci già</h2>
+
+<p>Alla lavagna il prof ha applicato il teorema a quattro equazioni, le prime quattro righe qui sotto. Le altre vengono dagli algoritmi delle lezioni precedenti. Per ognuna si fa sempre la stessa cosa: si leggono m, a e c, si calcola a<sup>c</sup>, si confronta.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>equazione (per n &gt; 1)</th><th>da dove viene</th><th>m</th><th>a</th><th>c</th><th>a<sup>c</sup></th><th>risultato</th></tr>
+  <tr><td>H(n) = H(n/2) + 1</td><td>altezza della pila di mergeSort (<a href="06-mergesort-conti.html#pila">pacco 6</a>)</td><td>1</td><td>2</td><td>0</td><td>1 = m</td><td>Θ(n<sup>0</sup> log n) = <strong>Θ(log n)</strong></td></tr>
+  <tr><td>T(n) = 2T(n/2) + bn</td><td>tempo di mergeSort (<a href="06-mergesort-conti.html#tempo">pacco 6</a>)</td><td>2</td><td>2</td><td>1</td><td>2 = m</td><td><strong>Θ(n log n)</strong></td></tr>
+  <tr><td>F(n) = 8F(n/2) + n²</td><td>prodotto di matrici a blocchi (<a href="#strassen">sezione 10</a>)</td><td>8</td><td>2</td><td>2</td><td>4 &lt; m</td><td>Θ(n<sup>log<sub>2</sub> 8</sup>) = <strong>Θ(n³)</strong></td></tr>
+  <tr><td>G(n) = 7G(n/2) + 6n²</td><td>Strassen (<a href="#strassen">sezione 10</a>)</td><td>7</td><td>2</td><td>2</td><td>4 &lt; m</td><td>Θ(n<sup>log<sub>2</sub> 7</sup>) ≈ <strong>Θ(n<sup>2,81</sup>)</strong></td></tr>
+  <tr><td>C(n) = 2C(n/2) + 2</td><td>minMax (oggi)</td><td>2</td><td>2</td><td>0</td><td>1 &lt; m</td><td>Θ(n<sup>log<sub>2</sub> 2</sup>) = <strong>Θ(n)</strong></td></tr>
+  <tr><td>T(y) = T(y/2) + 6</td><td>potenza ricorsiva (lezione 3)</td><td>1</td><td>2</td><td>0</td><td>1 = m</td><td><strong>Θ(log y)</strong></td></tr>
+  <tr><td>T(y) = 2T(y/2) + 5</td><td>potenza con due chiamate (lezione 3)</td><td>2</td><td>2</td><td>0</td><td>1 &lt; m</td><td><strong>Θ(y)</strong></td></tr>
+</table></div>
+<p class="piccolo">Per le due potenze la lavagna della lezione 3 scriveva ≤, perché la riga «· x» si esegue solo se y è dispari. Ogni chiamata fa comunque un numero costante di operazioni oltre alla ricorsione (5 o 6), e il risultato non cambia.</p>
+
+<p>L'ultima riga spiega in un colpo il mistero della lezione 3. Con una chiamata sola (m = 1 = a<sup>c</sup>) tutti i livelli costano uguale e i livelli sono log y: tempo logaritmico. Con due chiamate identiche (m = 2 &gt; 1) le foglie raddoppiano a ogni livello e diventano circa y: tempo lineare. Stesso divide, stesso combina, ma un collaboratore in più che rifà lo stesso lavoro.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Il teorema non vede il 25%</span>
+  <p>Per il teorema, minMax con il FOR (2n − 2) e minMax con divide et impera (3n/2 − 2) sono uguali: tutti e due Θ(n). Il teorema dà solo l'<strong>ordine di grandezza</strong>, e le costanti le butta via. Per confrontare due algoritmi dello stesso ordine servono i conti esatti, come nelle sezioni 4 e 5. Il teorema dice <em>come</em> cresce, i conti dicono <em>quanto</em>.</p>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Quando il teorema non si applica</span>
+  <ul>
+    <li><strong>L'istanza cala per sottrazione, non per divisione.</strong> T(n) = T(n − 1) + n non ha la forma giusta: n − 1 non è n/a. Per esempio, selectionSort fa (n − 1) + (n − 2) + … + 1 = n(n − 1)/2 confronti: si somma con Gauss e viene Θ(n²).</li>
+    <li><strong>Il lavoro extra non è una potenza di n.</strong> Con T(n) = 2T(n/2) + n log n il teorema in questa forma non dice niente.</li>
+    <li><strong>m deve essere una costante e a &gt; 1.</strong> Il numero di chiamate non può dipendere da n, e l'istanza deve davvero rimpicciolirsi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="matrici"><span class="num">9</span>Matrici: somma e prodotto</h2>
+
+<p>L'ultima parte della lezione usa le matrici come banco di prova. La domanda del prof è: <em>quante operazioni «elementari» sono necessarie e sufficienti</em> per fare un certo calcolo? «Sufficienti» vuol dire che c'è un algoritmo che ce la fa con quelle operazioni: è un upper bound. «Necessarie» vuol dire che nessun algoritmo può farne meno: è un lower bound. È la complessità di un problema del <a href="01-quanto-costa.html#problema">pacco 1</a>.</p>
+
+<h3>La somma: n² operazioni, e meglio non si può</h3>
+<p>Input: A = [a<sub>ij</sub>] e B = [b<sub>ij</sub>], matrici n × n di interi. Output: C = A + B, definita da c<sub>ij</sub> = a<sub>ij</sub> + b<sub>ij</sub>.</p>
+<p>Serve una somma per ogni posizione, e le posizioni sono n²: in tutto <strong>n² somme</strong>, cioè Θ(n²). Sono sufficienti, perché l'algoritmo ovvio le fa. Sono anche necessarie, perché ognuno degli n² risultati dipende dai suoi due numeri e va calcolato. Per la somma la questione è chiusa: Θ(n²).</p>
+
+<h3>Il prodotto secondo la definizione: Θ(n³)</h3>
+<p>Output: C = A · B, con</p>
+<div class="formula grande">c<sub>ij</sub> = Σ<sub>k=1</sub><sup>n</sup> a<sub>ik</sub> · b<sub>kj</sub></div>
+<p>Per calcolare c<sub>ij</sub> si prende la riga i di A e la colonna j di B, si moltiplicano gli elementi a due a due e si sommano i risultati: <strong>n prodotti e n − 1 somme</strong>, cioè 2n − 1 operazioni per ogni elemento di C. Gli elementi sono n²:</p>
+<div class="formula grande">n² (2n − 1) = 2n³ − n² = Θ(n³)</div>
+<p>Questo è un <strong>upper bound</strong>: 2n³ − n² operazioni bastano. E il lower bound? Bisogna almeno scrivere gli n² elementi di C, quindi servono almeno n² operazioni: <strong>Ω(n²)</strong>. Tra n² e n³ c'è un buco, e la lavagna lo lascia aperto con un punto di domanda: si può fare meglio di n³?</p>
+
+<!-- ============================================================ 10 -->
+<h2 id="strassen"><span class="num">10</span>Divide et impera sulle matrici, e Strassen</h2>
+
+<h3>Il divide et impera «immediato» non migliora niente</h3>
+<p>Prendiamo n potenza di 2 e tagliamo ogni matrice in quattro blocchi di dimensione n/2 × n/2:</p>
+<div class="formula">A = <table class="mat"><tr><td>A<sub>11</sub></td><td>A<sub>12</sub></td></tr><tr><td>A<sub>21</sub></td><td>A<sub>22</sub></td></tr></table>
+&nbsp; B = <table class="mat"><tr><td>B<sub>11</sub></td><td>B<sub>12</sub></td></tr><tr><td>B<sub>21</sub></td><td>B<sub>22</sub></td></tr></table></div>
+<p>Il prodotto righe per colonne funziona anche con i blocchi al posto dei numeri:</p>
+<div class="formula">C = A · B = <table class="mat"><tr><td>A<sub>11</sub>·B<sub>11</sub> + A<sub>12</sub>·B<sub>21</sub></td><td>A<sub>11</sub>·B<sub>12</sub> + A<sub>12</sub>·B<sub>22</sub></td></tr><tr><td>A<sub>21</sub>·B<sub>11</sub> + A<sub>22</sub>·B<sub>21</sub></td><td>A<sub>21</sub>·B<sub>12</sub> + A<sub>22</sub>·B<sub>22</sub></td></tr></table></div>
+<p>Con n = 1 (caso base) C = [a<sub>11</sub> · b<sub>11</sub>]: 1 operazione. Con n &gt; 1 si calcolano ricorsivamente <strong>8 prodotti</strong> di matrici n/2 × n/2, poi <strong>4 somme</strong> di matrici n/2 × n/2, che costano 4 · (n/2)² = n² operazioni. Sia T(n) il numero di operazioni per moltiplicare due matrici n × n:</p>
+<div class="formula grande">T(n) = 1 se n = 1, &nbsp;&nbsp; T(n) = 8T(n/2) + n² altrimenti</div>
+<p>Teorema: m = 8, a = 2, c = 2, a<sup>c</sup> = 4 &lt; 8, quindi T(n) = Θ(n<sup>log<sub>2</sub> 8</sup>) = <strong>Θ(n³)</strong>. Nessun guadagno.</p>
+
+<div class="box idea">
+  <span class="etichetta">Le stesse operazioni, in un altro ordine</span>
+  <p>Facendo i conti esatti si trova T(n) = 2n³ − n²: proprio le operazioni della definizione. Il divide et impera immediato fa le stesse moltiplicazioni e le stesse somme, solo in un ordine diverso.</p>
+  <p>Il teorema dice anche <em>dove</em> sta il costo. m = 8 &gt; a<sup>c</sup> = 4, quindi pagano le foglie, e le foglie sono 8<sup>log<sub>2</sub> n</sup> = n³: i prodotti tra numeri. Per guadagnare bisogna avere <strong>meno foglie</strong>, cioè meno prodotti, cioè un m più piccolo. Le somme stanno nei livelli alti e pesano poco: se ne possono fare di più.</p>
+</div>
+
+<h3>Strassen: 7 prodotti invece di 8</h3>
+<p>Nel 1969 Volker Strassen trovò il modo di combinare i blocchi con <strong>7 prodotti</strong> invece di 8, al prezzo di molte più somme. Queste sono le matrici della slide (è una delle varianti dell'algoritmo: le formule originali di Strassen sono diverse, ma i prodotti sono sempre 7):</p>
+<pre class="pseudo">M<sub>1</sub> = (A<sub>21</sub> + A<sub>22</sub> − A<sub>11</sub>) · (B<sub>22</sub> − B<sub>12</sub> + B<sub>11</sub>)
+M<sub>2</sub> = A<sub>11</sub> · B<sub>11</sub>
+M<sub>3</sub> = A<sub>12</sub> · B<sub>21</sub>
+M<sub>4</sub> = (A<sub>11</sub> − A<sub>21</sub>) · (B<sub>22</sub> − B<sub>12</sub>)
+M<sub>5</sub> = (A<sub>21</sub> + A<sub>22</sub>) · (B<sub>12</sub> − B<sub>11</sub>)
+M<sub>6</sub> = (A<sub>12</sub> − A<sub>21</sub> + A<sub>11</sub> − A<sub>22</sub>) · B<sub>22</sub>
+M<sub>7</sub> = A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12</sub> − B<sub>21</sub>)</pre>
+<p>Si può verificare che:</p>
+<div class="formula">C = A · B = <table class="mat"><tr><td>M<sub>2</sub> + M<sub>3</sub></td><td>M<sub>1</sub> + M<sub>2</sub> + M<sub>5</sub> + M<sub>6</sub></td></tr><tr><td>M<sub>1</sub> + M<sub>2</sub> + M<sub>4</sub> − M<sub>7</sub></td><td>M<sub>1</sub> + M<sub>2</sub> + M<sub>4</sub> + M<sub>5</sub></td></tr></table></div>
+
+<p>Conti: dentro le M ci sono 14 somme e sottrazioni di blocchi, e per comporre C ne servono altre 10. Sono <strong>24</strong> in tutto, come scritto alla lavagna, e ognuna costa (n/2)² operazioni: 24 (n/2)² = 6n². I prodotti sono 7 chiamate ricorsive:</p>
+<div class="formula grande">T(n) = 1 se n = 1, &nbsp;&nbsp; T(n) = 7T(n/2) + 6n² altrimenti</div>
+<p>Teorema: m = 7, a = 2, c = 2, a<sup>c</sup> = 4 &lt; 7, quindi T(n) = Θ(n<sup>log<sub>2</sub> 7</sup>) ≈ <strong>Θ(n<sup>2,807</sup>)</strong>. Un prodotto in meno a ogni livello, e l'esponente scende sotto 3.</p>
+
+<div class="widget" id="w-str">
+  <h4>STRASSEN ALLA PROVA, CON MATRICI 2 × 2</h4>
+  <p class="piccolo" style="margin:0 0 6px">Con n = 2 i blocchi sono semplici numeri. Il riquadro calcola le sette M, compone C e la confronta con il prodotto righe per colonne.</p>
+  <div class="controlli"><button class="primario" id="st-nuove">Nuove matrici a caso</button></div>
+  <div id="st-out"></div>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Θ più piccolo non vuol dire più veloce subito</span>
+  <p>Con n = 2 Strassen fa 7 prodotti e 24 somme, cioè 31 operazioni, contro le 12 della definizione. Le somme in più si ripagano solo quando le matrici sono grandi. Ecco le operazioni esatte:</p>
+  <div class="tabella-wrap"><table>
+    <tr><th>n</th><th>definizione 2n³ − n²</th><th>Strassen fino a n = 1</th><th>Strassen, ma definizione sotto n = 16</th></tr>
+    <tr><td>2</td><td>12</td><td>31</td><td>12</td></tr>
+    <tr><td>16</td><td>7 936</td><td>19 561</td><td>7 936</td></tr>
+    <tr><td>32</td><td>64 512</td><td>143 071</td><td><strong>61 696</strong></td></tr>
+    <tr><td>256</td><td>33 488 896</td><td>51 358 921</td><td><strong>23 447 296</strong></td></tr>
+    <tr><td>1024</td><td>2 146 435 072</td><td>2 533 888 633</td><td><strong>1 166 219 008</strong></td></tr>
+    <tr><td>4096</td><td>137 422 176 256</td><td><strong>124 437 367 081</strong></td><td><strong>57 421 555 456</strong></td></tr>
+  </table></div>
+  <p>Strassen «puro», che divide fino a n = 1, conviene solo da n = 4096. In pratica si usa un ibrido: Strassen finché i blocchi sono grandi, la definizione quando diventano piccoli. Con la soglia a 16 conviene già da n = 32, e a n = 1024 fa poco più della metà delle operazioni.</p>
+</div>
+
+<p>Il record di oggi è intorno a n<sup>2,37</sup>, come ha scritto il prof in fondo alla lavagna. Il miglior lower bound noto, invece, è ancora Ω(n²). Nessuno sa se si possa arrivare a n²: il buco della sezione 9 è ancora un problema aperto.</p>
+
+<!-- ============================================================ 11 -->
+<h2 id="riassunto"><span class="num">11</span>Riassunto ed esame</h2>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><strong>Divide et impera:</strong> se l'istanza è piccola la risolvo direttamente, altrimenti la divido in istanze più piccole, le risolvo ricorsivamente e combino. Tempo: T<sub>divide</sub> + T(I<sub>1</sub>) + … + T(I<sub>m</sub>) + T<sub>combina</sub>.</li>
+    <li><strong>minMax:</strong> col FOR 2n − 2 confronti. Con divide et impera 3n/2 − 2 se n è una potenza di 2: il 25% in meno.</li>
+    <li>Il risparmio viene dal <strong>caso base n = 2</strong>: un confronto basta per due elementi. In generale C = 3n/2 − 2 + s/2, con s elementi rimasti soli. Dividendo alla potenza di 2 si ottiene ⌈3n/2⌉ − 2 per ogni n, ed è il minimo possibile.</li>
+    <li><strong>Teorema fondamentale:</strong> F(n) = mF(n/a) + b″n<sup>c</sup>, con a &gt; 1. Se m &lt; a<sup>c</sup>, Θ(n<sup>c</sup>). Se m = a<sup>c</sup>, Θ(n<sup>c</sup> log n). Se m &gt; a<sup>c</sup>, Θ(n<sup>log<sub>a</sub> m</sup>).</li>
+    <li><strong>Perché:</strong> il livello i dell'albero costa n<sup>c</sup> q<sup>i</sup>, con q = m/a<sup>c</sup>. Paga di più la radice, oppure tutti uguale, oppure le foglie.</li>
+    <li>Il teorema dà l'ordine di grandezza, <strong>non le costanti</strong>: 2n − 2 e 3n/2 − 2 sono tutti e due Θ(n).</li>
+    <li><strong>Matrici:</strong> la somma è Θ(n²) ed è ottima. Il prodotto per definizione fa 2n³ − n² = Θ(n³) operazioni, e anche quello a blocchi «immediato», 8T(n/2) + n², è Θ(n³). Strassen fa 7T(n/2) + 6n² = Θ(n<sup>log<sub>2</sub> 7</sup>) ≈ Θ(n<sup>2,81</sup>). Il lower bound è Ω(n²).</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>Il teorema fondamentale va saputo <strong>enunciare e applicare</strong>. All'orale è una domanda classica, e serve ogni volta che bisogna giustificare il costo di un algoritmo ricorsivo: «m = 2, a = 2, c = 1, quindi Θ(n log n)». Anche minMax è da orale: perché 3n/2 − 2, e da dove viene il risparmio.</p>
+  <p>Strassen non è mai uscito nei 19 scritti degli ultimi anni: all'orale basta l'idea (7 prodotti invece di 8, quindi n<sup>log<sub>2</sub> 7</sup>). Il foglio di esercizi 2 è proprio su questa lezione e sui pacchi 5–6: qui sotto trovi i suoi esercizi principali, risolti.</p>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="esercizi"><span class="num">12</span>Esercizi</h2>
+
+<details class="esercizio">
+  <summary>1. Applica il teorema: T(n) = 3T(n/2) + n, &nbsp;4T(n/2) + n², &nbsp;2T(n/2) + n², &nbsp;T(n/3) + 1, &nbsp;9T(n/3) + n, &nbsp;T(n − 1) + n</summary>
+  <div class="soluzione">
+    <ul>
+      <li><strong>3T(n/2) + n:</strong> m = 3, a = 2, c = 1, a<sup>c</sup> = 2 &lt; 3, quindi Θ(n<sup>log<sub>2</sub> 3</sup>) ≈ Θ(n<sup>1,585</sup>). Curiosità: è l'algoritmo di Karatsuba, che moltiplica due numeri di n cifre con 3 prodotti tra numeri di n/2 cifre. Batte la moltiplicazione in colonna della lezione 2, che fa n² prodotti di cifre. È lo stesso trucco di Strassen, sui numeri.</li>
+      <li><strong>4T(n/2) + n²:</strong> a<sup>c</sup> = 4 = m, quindi Θ(n² log n).</li>
+      <li><strong>2T(n/2) + n²:</strong> a<sup>c</sup> = 4 &gt; 2, quindi Θ(n²): paga la radice.</li>
+      <li><strong>T(n/3) + 1:</strong> m = 1, a = 3, c = 0, a<sup>c</sup> = 1 = m, quindi Θ(log n). È una ricerca «ternaria».</li>
+      <li><strong>9T(n/3) + n:</strong> a<sup>c</sup> = 3 &lt; 9, quindi Θ(n<sup>log<sub>3</sub> 9</sup>) = Θ(n²).</li>
+      <li><strong>T(n − 1) + n:</strong> il teorema non si applica, perché n − 1 non è n/a. Srotolando: n + (n − 1) + … + 2 + T(1) = Θ(n²), con Gauss.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. (Esercizio 2.7, prima parte) Se n non è una potenza di 2, minMax divide in n′ = la più grande potenza di 2 minore di n, e n″ = n − n′. Dimostra che C(n) = ⌈3n/2⌉ − 2 per ogni n.</summary>
+  <div class="soluzione">
+    <p>Induzione completa su n, come per la potenza ricorsiva della lezione 3.</p>
+    <p><strong>Casi base.</strong> C(1) = 0 = ⌈3/2⌉ − 2, e C(2) = 1 = 3 − 2.</p>
+    <p><strong>Passo</strong>, n ≥ 3. L'algoritmo divide in n′ e n″ = n − n′. Siccome n′ è la più grande potenza di 2 minore di n, vale n ≤ 2n′, quindi 1 ≤ n″ ≤ n′ &lt; n: tutte e due le parti sono più piccole di n e vale l'ipotesi induttiva. Inoltre n′ ≥ 2 è pari, quindi 3n′/2 è un intero e C(n′) = 3n′/2 − 2, come suggerisce il foglio. Allora:</p>
+    <div class="formula">C(n) = C(n′) + C(n″) + 2 = (3n′/2 − 2) + (⌈3n″/2⌉ − 2) + 2 = ⌈3n′/2 + 3n″/2⌉ − 2 = ⌈3n/2⌉ − 2</div>
+    <p>Il passaggio chiave: 3n′/2 è intero, quindi si può portare dentro la parte intera superiore. ∎</p>
+    <p>Con la formula dell'albero è ancora più rapido: dividendo così resta solo al più un elemento, e solo se n è dispari.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. (Esercizio 2.7, seconda parte) Come cambia il numero di confronti se l'unico caso base è n = 1?</summary>
+  <div class="soluzione">
+    <p>Ora C(1) = 0 e C(n) = C(⌊n/2⌋) + C(⌈n/2⌉) + 2 per ogni n ≥ 2, anche per n = 2. Dimostriamo per induzione completa che <strong>C(n) = 2n − 2</strong>.</p>
+    <p>Base: C(1) = 0 = 2 − 2. Passo: C(n) = (2⌊n/2⌋ − 2) + (2⌈n/2⌉ − 2) + 2 = 2(⌊n/2⌋ + ⌈n/2⌉) − 2 = 2n − 2, perché ⌊n/2⌋ + ⌈n/2⌉ = n. ∎</p>
+    <p>Sono gli stessi confronti del FOR: il risparmio veniva tutto dal caso base n = 2. Con due elementi soli la versione ricorsiva fa 2 confronti (min1 &lt; min2 e max1 &gt; max2) dove ne basterebbe 1. Con la formula dell'albero: tutti gli elementi restano soli, s = n, e 3n/2 − 2 + n/2 = 2n − 2.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. (Esercizio 2.4) mergeSort in tre parti: divido in tre pezzi di circa n/3, li ordino ricorsivamente, fondo il primo con il secondo e poi il risultato con il terzo. Equazione per i confronti e soluzione.</summary>
+  <div class="soluzione">
+<pre class="pseudo"><b>ALGORITMO</b> mergeSort3(array A[0..n−1])
+  <b>IF</b> n &gt; 1 <b>THEN</b>
+    p ← n/3;  q ← 2n/3                       <span class="com">// divisioni intere</span>
+    ordina ricorsivamente A[0..p−1], A[p..q−1] e A[q..n−1]
+    merge di A[0..p−1] e A[p..q−1]          <span class="com">// al più 2n/3 − 1 confronti</span>
+    merge di A[0..q−1] e A[q..n−1]          <span class="com">// al più n − 1 confronti</span></pre>
+    <p>Nel caso peggiore, con n potenza di 3: C(1) = 0 e C(n) = 3C(n/3) + 5n/3 − 2.</p>
+    <p>Teorema: m = 3, a = 3, c = 1, a<sup>c</sup> = 3 = m, quindi <strong>Θ(n log n)</strong>, come mergeSort.</p>
+    <p>Il conto esatto, srotolando come nel pacco 6: il livello i ha 3<sup>i</sup> pezzi e costa 5n/3 − 2 · 3<sup>i</sup>. Sommando sui log<sub>3</sub> n livelli si ottiene C(n) = (5/3) n log<sub>3</sub> n − n + 1. E (5/3) log<sub>3</sub> n ≈ 1,05 log<sub>2</sub> n: dividere in tre fa circa il 5% di confronti <em>in più</em> di mergeSort, non meno. Il secondo merge ripassa gli elementi già fusi dal primo.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. (Esercizio 2.5) In quattro parti, con due strategie di merge: in fila (1ª+2ª, poi +3ª, poi +4ª) oppure a coppie (1ª+2ª, 3ª+4ª, poi i due risultati). Che differenze ci sono?</summary>
+  <div class="soluzione">
+    <p><strong>In fila:</strong> merge su n/2, 3n/4 e n elementi, cioè al più (n/2 − 1) + (3n/4 − 1) + (n − 1) = 9n/4 − 3 confronti. C(n) = 4C(n/4) + 9n/4 − 3: m = 4 = a<sup>c</sup>, quindi Θ(n log n). Esattamente: (9/8) n log<sub>2</sub> n − n + 1.</p>
+    <p><strong>A coppie:</strong> (n/2 − 1) + (n/2 − 1) + (n − 1) = 2n − 3. C(n) = 4C(n/4) + 2n − 3, ancora Θ(n log n). Esattamente: n log<sub>2</sub> n − n + 1, proprio come mergeSort. In effetti è mergeSort, con due livelli fatti in un colpo solo.</p>
+    <p>Stesso ordine di grandezza, ma la strategia in fila fa circa il <strong>12,5% di confronti in più</strong>, e anche più spostamenti: a ogni livello sposta 9n/4 elementi invece di 2n. Di nuovo, il teorema non vede la differenza: la vedono solo i conti esatti.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. (Esercizio 2.2) Quante chiamate fa mergeSort in tutto, su n elementi?</summary>
+  <div class="soluzione">
+    <p>K(1) = 1 (la chiamata stessa) e K(n) = 1 + K(⌊n/2⌋) + K(⌈n/2⌉). Per induzione completa K(n) = <strong>2n − 1</strong>: 1 + (2⌊n/2⌋ − 1) + (2⌈n/2⌉ − 1) = 2n − 1.</p>
+    <p>È il numero di pezzi dell'albero: n foglie più n − 1 nodi interni, come nel torneo della sezione 4. Con il teorema: m = 2, a = 2, c = 0, a<sup>c</sup> = 1 &lt; 2, quindi Θ(n<sup>log<sub>2</sub> 2</sup>) = Θ(n).</p>
+    <p>Come dice la nota del foglio, non confondere questo numero con l'altezza della pila, che è Θ(log n) (<a href="06-mergesort-conti.html#pila">pacco 6</a>). Sono 2n − 1 chiamate in tutto, ma mai più di 1 + ⌈log<sub>2</sub> n⌉ aperte insieme.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>7. (Esercizio 2.8) Calcolare A<sup>m</sup>, con A matrice n × n, iterando e con divide et impera. Quanti prodotti di matrici? Quanti prodotti di interi?</summary>
+  <div class="soluzione">
+    <p><strong>Prodotti iterati:</strong> P ← I (l'identità), poi m volte P ← P · A. Sono <strong>m</strong> prodotti di matrici (m − 1 se si parte da P ← A).</p>
+    <p><strong>Divide et impera:</strong> è la potenza ricorsiva della lezione 3, con A al posto di x, come dice la nota del foglio. Se m = 0 restituisci I. Altrimenti P ← potenza(A, ⌊m/2⌋), poi P ← P · P e, se m è dispari, P ← P · A. Ogni chiamata con m &gt; 0 fa un quadrato, e le chiamate con m dispari un prodotto in più. Contando anche il primo quadrato I · I, i prodotti sono (⌊log<sub>2</sub> m⌋ + 1) + (numero di cifre 1 di m in binario), al più 2(⌊log<sub>2</sub> m⌋ + 1): <strong>Θ(log m)</strong>. Con m = 1000 (in binario 1111101000, sei cifre 1): 10 + 6 = 16 prodotti, invece di 1000.</p>
+    <p><strong>Prodotti di interi.</strong> Con la definizione, ogni prodotto di matrici fa n³ prodotti di interi: Θ(m n³) iterando, Θ(n³ log m) con divide et impera. Con Strassen, ogni prodotto di matrici fa n<sup>log<sub>2</sub> 7</sup> prodotti di interi (P(n) = 7P(n/2), P(1) = 1): Θ(m n<sup>log<sub>2</sub> 7</sup>) iterando, Θ(n<sup>log<sub>2</sub> 7</sup> log m) con divide et impera.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>8. Nel minMax col FOR scrivo ELSE IF al posto del secondo IF. Quanti confronti fa nel caso migliore e nel caso peggiore?</summary>
+  <div class="soluzione">
+<pre class="pseudo">    <b>IF</b> A[i] &lt; min <b>THEN</b> min ← A[i]
+    <b>ELSE IF</b> A[i] &gt; max <b>THEN</b> max ← A[i]</pre>
+    <p>Se A[i] è il nuovo minimo non può essere anche il nuovo massimo, quindi il secondo confronto si salta.</p>
+    <p><strong>Caso migliore:</strong> array decrescente. Ogni elemento è un nuovo minimo e fa 1 confronto: n − 1 in tutto.</p>
+    <p><strong>Caso peggiore:</strong> array crescente, o tutti uguali. Ogni elemento fa 2 confronti: ancora 2n − 2.</p>
+    <p>Nel caso peggiore non cambia niente. Il trucco che funziona davvero è quello delle coppie.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="06-mergesort-conti.html">← Pacco 6 · Quanto costa mergeSort</a>
+  <a href="index.html">Tutti i pacchi →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function fmt(v) { return v.toLocaleString("it-IT"); }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  function num(v) { return v < 0 ? "−" + String(-v) : String(v); }
+  function leggiArray(txt, max) {
+    var parti = String(txt).split(/[\s,;]+/).filter(function (s) { return s !== ""; });
+    if (parti.length < 1 || parti.length > max) return null;
+    var A = parti.map(Number);
+    for (var k = 0; k < A.length; k++) if (!isFinite(A[k])) return null;
+    return A;
+  }
+
+  // ---------------------------------------------------------- minMax: albero delle chiamate
+  // quanti elementi vanno a sinistra
+  function dividi(n, modo) {
+    if (modo === "pot2") { var p = 1; while (p * 2 < n) p *= 2; return p; }
+    return Math.floor(n / 2);
+  }
+  function costruisciMM(A, i, f, prof, modo, nodi) {
+    var n = f - i, nodo = { i: i, f: f, prof: prof, figli: null, min: null, max: null, cfr: 0, solo: false, id: nodi.length };
+    nodi.push(nodo);
+    if (n === 1) { nodo.min = A[i]; nodo.max = A[i]; nodo.solo = true; }
+    else if (n === 2 && modo !== "uno") {
+      nodo.cfr = 1;
+      if (A[i] < A[i + 1]) { nodo.min = A[i]; nodo.max = A[i + 1]; } else { nodo.min = A[i + 1]; nodo.max = A[i]; }
+    } else {
+      var m = i + dividi(n, modo);
+      var s = costruisciMM(A, i, m, prof + 1, modo, nodi), d = costruisciMM(A, m, f, prof + 1, modo, nodi);
+      nodo.figli = [s, d]; nodo.m = m; nodo.cfr = 2;
+      nodo.min = s.min < d.min ? s.min : d.min;
+      nodo.max = s.max > d.max ? s.max : d.max;
+    }
+    return nodo;
+  }
+  function eventiMM(nodo, ev) {
+    if (!nodo.figli) { ev.push({ tipo: "foglia", nodo: nodo }); return ev; }
+    ev.push({ tipo: "entra", nodo: nodo });
+    eventiMM(nodo.figli[0], ev);
+    eventiMM(nodo.figli[1], ev);
+    ev.push({ tipo: "esce", nodo: nodo });
+    return ev;
+  }
+  var mm = { A: [], ev: [], k: 0, nodi: [], rad: null, modo: "meta" };
+  function chiamata(x) { return "minMax(A, " + x.i + ", " + x.f + ")"; }
+  function testoEvento(e) {
+    var x = e.nodo, A = mm.A, n = x.f - x.i;
+    if (e.tipo === "foglia" && x.solo) {
+      return "<b>" + chiamata(x) + "</b>: un solo elemento, A[" + x.i + "] = " + A[x.i] + ". È sia il minimo sia il massimo: restituisce (" +
+        x.min + ", " + x.max + ") con <b>0 confronti</b>. È un elemento rimasto solo.";
+    }
+    if (e.tipo === "foglia") {
+      var p = A[x.i], q = A[x.i + 1];
+      return "<b>" + chiamata(x) + "</b>: due elementi, " + p + " e " + q + ". Un confronto, " + p + " &lt; " + q + "? " +
+        (p < q ? "Sì" : "No") + ". Restituisce (" + x.min + ", " + x.max + "): <b>1 confronto</b> per due elementi.";
+    }
+    var sx = x.figli[0], dx = x.figli[1];
+    if (e.tipo === "entra") {
+      var come;
+      if (mm.modo === "pot2") {
+        come = n === 2 * (x.m - x.i) ? "n è una potenza di 2, quindi divido a metà: m = " + x.m :
+          "la più grande potenza di 2 minore di " + n + " è " + (x.m - x.i) + ", quindi m = " + x.i + " + " + (x.m - x.i) + " = " + x.m;
+      } else {
+        come = "m = (" + x.i + " + " + x.f + ")/2 = " + x.m;
+      }
+      var perche = n === 2 ? "Sono due elementi, ma senza il caso base n = 2 si divide anche qui." : n + " elementi: troppi per un caso base.";
+      return "<b>" + chiamata(x) + "</b>: " + perche + " Divido con " + come + ". A sinistra [" + x.i + ", " + x.m + ") con " +
+        (x.m - x.i) + (x.m - x.i === 1 ? " elemento" : " elementi") + ", a destra [" + x.m + ", " + x.f + ") con " + (x.f - x.m) +
+        (x.f - x.m === 1 ? " elemento" : " elementi") + ". Chiamo prima la sinistra.";
+    }
+    var t = "Torno a <b>" + chiamata(x) + "</b>. Dalla sinistra ho (min1, max1) = (" + sx.min + ", " + sx.max + "), dalla destra (min2, max2) = (" +
+      dx.min + ", " + dx.max + "). Due confronti: " + sx.min + " &lt; " + dx.min + "? " + (sx.min < dx.min ? "Sì" : "No") + ", quindi min = " + x.min + ". " +
+      sx.max + " &gt; " + dx.max + "? " + (sx.max > dx.max ? "Sì" : "No") + ", quindi max = " + x.max + ". Restituisce (" + x.min + ", " + x.max + ").";
+    return t;
+  }
+  function mmInit() {
+    var A = leggiArray($("mm-in").value, 16);
+    mm.modo = $("mm-modo").value || "meta";
+    if (!A) {
+      mm.ev = []; mm.k = 0;
+      $("mm-out").innerHTML = ""; $("mm-cont").innerHTML = "";
+      $("mm-txt").innerHTML = "Scrivi da 1 a 16 numeri separati da virgole o spazi.";
+      $("mm-passo").disabled = true; $("mm-fine").disabled = true;
+      return;
+    }
+    mm.A = A; mm.nodi = [];
+    mm.rad = costruisciMM(A, 0, A.length, 0, mm.modo, mm.nodi);
+    mm.ev = eventiMM(mm.rad, []);
+    mm.k = 0;
+    mmShow();
+  }
+  function mmShow() {
+    var stato = {}, j, cur = null, cfr = 0, soli = 0, n = mm.A.length;
+    for (j = 0; j < mm.k; j++) {
+      var e = mm.ev[j];
+      stato[e.nodo.id] = e.tipo === "entra" ? "aperta" : "finita";
+      if (e.tipo !== "entra") { cfr += e.nodo.cfr; if (e.nodo.solo) soli++; }
+      cur = e;
+    }
+    var out = $("mm-out"), H = 0;
+    out.innerHTML = "";
+    mm.nodi.forEach(function (x) { if (x.prof > H) H = x.prof; });
+    for (var d = 0; d <= H; d++) {
+      var liv = el("div", "livello");
+      liv.appendChild(el("div", "nome", d === 0 ? "livello 0 · " + chiamata(mm.rad) : "livello " + d));
+      mm.nodi.filter(function (x) { return x.prof === d; }).forEach(function (x) {
+        var st = stato[x.id] || "attesa", pz = el("div", "pezzo"), arr = el("div", "array");
+        for (var t = x.i; t < x.f; t++) {
+          var cls = "cella";
+          if (st === "attesa") cls += " fuori";
+          else if (cur && cur.nodo === x) cls += " attiva";
+          else if (st === "finita" && x.solo) cls += " mossa";
+          var c = el("div", cls);
+          c.appendChild(el("div", "v", String(mm.A[t])));
+          arr.appendChild(c);
+        }
+        pz.appendChild(arr);
+        var nota = "";
+        if (st === "finita") nota = "(" + x.min + ", " + x.max + ")\n" + (x.solo ? "solo · 0 cfr" : (x.figli ? "2 cfr" : "coppia · 1 cfr"));
+        else if (st === "aperta") nota = "aspetta i\ncollaboratori";
+        pz.appendChild(el("div", "nota", nota));
+        liv.appendChild(pz);
+      });
+      out.appendChild(liv);
+    }
+    $("mm-cont").innerHTML = "<span>confronti finora: <b>" + cfr + "</b></span><span>elementi rimasti soli: <b>" + soli +
+      "</b></span><span>col FOR: <b>" + (2 * n - 2) + "</b></span>";
+    var txt;
+    if (mm.k === 0) {
+      txt = "Premi <b>Passo</b> per chiamare " + chiamata(mm.rad) + " su tutto l'array: n = " + n + ".";
+    } else {
+      txt = testoEvento(cur);
+      if (mm.k === mm.ev.length) {
+        var C = cfr, tot = 2 * n - 2;
+        txt += " <b>Fine.</b> Confronti in tutto: <b>" + C + "</b>, contro i " + tot + " del FOR" +
+          (tot > C ? " (" + Math.round(100 * (tot - C) / tot) + "% in meno)" : "") + ". Elementi rimasti soli: s = " + soli +
+          ", e infatti 3n/2 − 2 + s/2 = " + (3 * n / 2 - 2 + soli / 2).toLocaleString("it-IT") + ".";
+      }
+    }
+    $("mm-txt").innerHTML = txt;
+    $("mm-passo").disabled = mm.k >= mm.ev.length;
+    $("mm-fine").disabled = mm.k >= mm.ev.length;
+  }
+  $("mm-passo").onclick = function () { if (mm.k < mm.ev.length) { mm.k++; mmShow(); } };
+  $("mm-fine").onclick = function () { if (mm.ev.length) { mm.k = mm.ev.length; mmShow(); } };
+  $("mm-reset").onclick = mmInit;
+  $("mm-in").onchange = mmInit;
+  $("mm-modo").onchange = mmInit;
+  mmInit();
+
+  // ---------------------------------------------------------- quanti confronti per qualunque n
+  function contaMM(n, modo, memo) {
+    var chiave = modo + ":" + n;
+    if (memo[chiave]) return memo[chiave];
+    var r;
+    if (n === 1) r = [0, 1];
+    else if (n === 2 && modo !== "uno") r = [1, 0];
+    else {
+      var sx = dividi(n, modo), a = contaMM(sx, modo, memo), b = contaMM(n - sx, modo, memo);
+      r = [a[0] + b[0] + 2, a[1] + b[1]];
+    }
+    memo[chiave] = r;
+    return r;
+  }
+  function conta() {
+    var n = Number($("ct-n").value), tab = $("ct-tab"), nota = $("ct-nota");
+    if (!(n >= 1 && n <= 1000000 && Math.floor(n) === n)) {
+      tab.innerHTML = ""; nota.innerHTML = "Scegli un intero n tra 1 e 1 000 000.";
+      return;
+    }
+    var memo = {}, righe = [
+      ["col FOR (sezione 2)", [2 * n - 2, n], "ogni elemento arriva da solo"],
+      ["divide et impera, a metà (lavagna)", contaMM(n, "meta", memo), ""],
+      ["divide et impera, alla potenza di 2 (esercizio 2.7)", contaMM(n, "pot2", memo), ""],
+      ["a metà, con il solo caso base n = 1", contaMM(n, "uno", memo), ""]
+    ];
+    var h = "<tr><th>versione</th><th>confronti</th><th>elementi soli s</th><th>3n/2 − 2 + s/2</th></tr>";
+    righe.forEach(function (r) {
+      var C = r[1][0], s = r[1][1];
+      h += "<tr><td>" + r[0] + "</td><td><b>" + fmt(C) + "</b></td><td>" + fmt(s) + (r[2] ? " <span class='piccolo'>(" + r[2] + ")</span>" : "") +
+        "</td><td>" + fmt((3 * n + s - 4) / 2) + "</td></tr>";
+    });
+    tab.innerHTML = h;
+    var minimo = Math.ceil(3 * n / 2) - 2, meta = righe[1][1][0], tot = 2 * n - 2;
+    nota.innerHTML = "Il minimo possibile è ⌈3n/2⌉ − 2 = <b>" + fmt(minimo) + "</b>." +
+      (n > 2 ? " Rispetto al FOR, dividere alla potenza di 2 risparmia " + fmt(tot - minimo) + " confronti (" + Math.round(100 * (tot - minimo) / tot) + "%)." : "") +
+      (meta > minimo ? " Dividere a metà ne costa " + fmt(meta - minimo) + " in più del minimo, perché lascia " + fmt(righe[1][1][1]) + " elementi soli." :
+        (n > 2 ? " Qui dividere a metà arriva già al minimo." : ""));
+  }
+  $("ct-n").oninput = conta;
+  conta();
+
+  // ---------------------------------------------------------- teorema fondamentale: costo per livello
+  var PRESET = {
+    "ms-p1": [1, 2, 0, "ricerca binaria: H(n) = H(n/2) + 1"],
+    "ms-p2": [2, 2, 1, "mergeSort: T(n) = 2T(n/2) + bn"],
+    "ms-p3": [2, 2, 0, "minMax: C(n) = 2C(n/2) + 2"],
+    "ms-p4": [8, 2, 2, "matrici a blocchi: T(n) = 8T(n/2) + n²"],
+    "ms-p5": [7, 2, 2, "Strassen: T(n) = 7T(n/2) + 6n²"],
+    "ms-p6": [2, 2, 0, "potenza con due chiamate: T(y) = 2T(y/2) + 5"]
+  };
+  var ms = { R: [], nome: "", sel: 0 };
+  function dec(x) {
+    var r = Math.round(x * 1000) / 1000;
+    return String(r).replace(".", ",");
+  }
+  function potenzaN(e) {
+    if (Math.abs(e) < 1e-9) return "1";
+    if (Math.abs(e - 1) < 1e-9) return "n";
+    return "n<sup>" + dec(e) + "</sup>";
+  }
+  function perc(x) {
+    return x < 0.001 ? "meno di 0,1%" : dec(Math.round(x * 1000) / 10) + "%";
+  }
+  function compatto(v) {
+    if (v < 1e4) return fmt(Math.round(v * 100) / 100);
+    if (v < 1e6) return fmt(Math.round(v / 100) / 10) + " mila";
+    if (v < 1e9) return fmt(Math.round(v / 1e5) / 10) + " mln";
+    if (v < 1e12) return fmt(Math.round(v / 1e8) / 10) + " mld";
+    var e = Math.floor(Math.log(v) / Math.LN10);
+    return dec(Math.round(v / Math.pow(10, e) * 10) / 10) + "·10^" + e;
+  }
+  function msCalcola() {
+    var m = Number($("ms-m").value), a = Number($("ms-a").value), c = Number($("ms-c").value);
+    var ok = m >= 1 && m <= 16 && Math.floor(m) === m && a >= 2 && a <= 8 && Math.floor(a) === a && c >= 0 && c <= 3;
+    if (!ok) {
+      ms.R = [];
+      $("ms-eq").innerHTML = "";
+      $("ms-verdetto").innerHTML = "Scegli m intero tra 1 e 16, a intero tra 2 e 8, c tra 0 e 3.";
+      $("ms-tit").textContent = ""; $("ms-svg").innerHTML = ""; $("ms-tab").innerHTML = "";
+      return;
+    }
+    var ac = Math.pow(a, c), L = Math.max(3, Math.round(Math.log(1024) / Math.log(a))), N = Math.pow(a, L), q = m / ac;
+    var caso = Math.abs(m - ac) < 1e-9 ? 2 : (m < ac ? 1 : 3), e = Math.log(m) / Math.log(a), theta;
+    if (caso === 1) theta = "Θ(" + potenzaN(c) + ")";
+    else if (caso === 2) theta = "Θ(" + (Math.abs(c) < 1e-9 ? "log n" : potenzaN(c) + " log n") + ")";
+    else theta = "Θ(n<sup>log<sub>" + a + "</sub> " + m + "</sup>)" + (Math.abs(e - Math.round(e)) < 1e-9 ? " = Θ(" + potenzaN(Math.round(e)) + ")" : " ≈ Θ(" + potenzaN(e) + ")");
+    $("ms-eq").innerHTML = "F(n) = " + (m === 1 ? "" : m + " ") + "F(n/" + a + ") + " + potenzaN(c) +
+      " &nbsp;→&nbsp; m = " + m + ", a = " + a + ", c = " + dec(c) + ", a<sup>c</sup> = " + dec(ac);
+    ms.R = [];
+    var tot = 0, i;
+    for (i = 0; i <= L; i++) {
+      var chiamate = Math.pow(m, i), dim = Math.pow(a, L - i), costo = chiamate * Math.pow(dim, c);
+      ms.R.push({ i: i, nome: i === 0 ? "radice" : (i === L ? "foglie" : "livello " + i), chiamate: chiamate, dim: dim, costo: costo });
+      tot += costo;
+    }
+    var radice = ms.R[0].costo / tot, foglie = ms.R[L].costo / tot, v;
+    if (caso === 1) v = "m = " + m + " &lt; a<sup>c</sup> = " + dec(ac) + ": scendendo, ogni livello costa q = m/a<sup>c</sup> = " + dec(q) +
+      " volte quello sopra, sempre meno. <b>Paga di più la radice</b>: F(n) = " + theta + ".";
+    else if (caso === 2) v = "m = a<sup>c</sup> = " + dec(ac) + ": q = 1, tutti i livelli costano uguale, e i livelli sono log<sub>" + a +
+      "</sub> n + 1. <b>Pagano tutti uguale</b>: F(n) = " + theta + ".";
+    else v = "m = " + m + " &gt; a<sup>c</sup> = " + dec(ac) + ": scendendo, ogni livello costa q = " + dec(q) +
+      " volte quello sopra, sempre di più. <b>Pagano di più le foglie</b>, che sono m<sup>log<sub>" + a + "</sub> n</sup> = n<sup>log<sub>" + a + "</sub> " + m +
+      "</sup>: F(n) = " + theta + ".";
+    v += " Con n = " + a + "<sup>" + L + "</sup> = " + fmt(N) + ", quota del lavoro totale: radice " + perc(radice) + ", foglie " + perc(foglie) + ".";
+    if (ms.nome) v = "<b>" + ms.nome + ".</b> " + v;
+    $("ms-verdetto").innerHTML = v;
+    $("ms-tit").innerHTML = "Costo di ogni livello dell'albero, con b′ = b″ = 1 e n = " + a + "<sup>" + L + "</sup> = " + fmt(N) +
+      ". Passa sopra una barra, o seleziona il grafico e usa le frecce ↑ ↓, per leggere il livello.";
+    var h = "<table><tr><th>livello</th><th>chiamate</th><th>elementi ciascuna</th><th>costo del livello</th></tr>";
+    ms.R.forEach(function (r) {
+      h += "<tr><td>" + r.nome + "</td><td>" + fmt(r.chiamate) + "</td><td>" + fmt(r.dim) + "</td><td>" + fmt(Math.round(r.costo * 100) / 100) + "</td></tr>";
+    });
+    h += "<tr><td><b>totale</b></td><td></td><td></td><td><b>" + fmt(Math.round(tot * 100) / 100) + "</b></td></tr></table>";
+    $("ms-tab").innerHTML = h;
+    ms.sel = 0;
+    msDisegna();
+  }
+  var MG = { W: 640, riga: 26, sx: 76, dx: 74, su: 4 };
+  function barra(x, y, w, h, r) {
+    if (w <= r) return "M" + x + "," + y + " h" + w + " v" + h + " h" + (-w) + " Z";
+    return "M" + x + "," + y + " H" + (x + w - r) + " Q" + (x + w) + "," + y + " " + (x + w) + "," + (y + r) +
+      " V" + (y + h - r) + " Q" + (x + w) + "," + (y + h) + " " + (x + w - r) + "," + (y + h) + " H" + x + " Z";
+  }
+  function lungBarra(k) {
+    var max = 0;
+    ms.R.forEach(function (r) { if (r.costo > max) max = r.costo; });
+    return Math.max(2, (MG.W - MG.sx - MG.dx) * ms.R[k].costo / max);
+  }
+  function msDisegna() {
+    if (!ms.R.length) return;
+    var larg = $("ms-svg").clientWidth;
+    MG.W = larg ? Math.max(280, Math.round(larg)) : 640;
+    var H = MG.su * 2 + ms.R.length * MG.riga, parti = [], max = 0, kmax = 0;
+    ms.R.forEach(function (r, k) { if (r.costo > max) { max = r.costo; kmax = k; } });
+    parti.push("<svg viewBox='0 0 " + MG.W + " " + H + "' id='ms-svg-el' tabindex='0' role='img' aria-label='Costo dei livelli: radice " +
+      compatto(ms.R[0].costo) + ", foglie " + compatto(ms.R[ms.R.length - 1].costo) + ". I valori di tutti i livelli sono nella tabella sotto.'>");
+    parti.push("<line class='asse' x1='" + MG.sx + "' x2='" + MG.sx + "' y1='" + MG.su + "' y2='" + (H - MG.su) + "'></line>");
+    ms.R.forEach(function (r, k) {
+      var y = MG.su + k * MG.riga + 5, w = lungBarra(k);
+      parti.push("<text class='tick' x='" + (MG.sx - 8) + "' y='" + (y + 12) + "' text-anchor='end'>" + r.nome + "</text>");
+      parti.push("<path class='barra' id='ms-b" + k + "' d='" + barra(MG.sx, y, w, 16, 4) + "'></path>");
+      if (k === 0 || k === ms.R.length - 1 || k === kmax) {
+        parti.push("<text class='val' x='" + (MG.sx + w + 6) + "' y='" + (y + 12) + "'>" + compatto(r.costo) + "</text>");
+      }
+    });
+    parti.push("</svg>");
+    $("ms-svg").innerHTML = parti.join("");
+    var svg = document.getElementById("ms-svg-el");
+    if (svg && svg.addEventListener) {
+      svg.addEventListener("pointermove", function (ev) { msTip(rigaDa(ev)); });
+      svg.addEventListener("pointerdown", function (ev) { msTip(rigaDa(ev)); });
+      svg.addEventListener("pointerleave", msNascondi);
+      svg.addEventListener("focus", function () { msTip(ms.sel); });
+      svg.addEventListener("blur", msNascondi);
+      svg.addEventListener("keydown", function (ev) {
+        if (ev.key === "ArrowDown" && ms.sel < ms.R.length - 1) { ms.sel++; msTip(ms.sel); ev.preventDefault(); }
+        if (ev.key === "ArrowUp" && ms.sel > 0) { ms.sel--; msTip(ms.sel); ev.preventDefault(); }
+      });
+    }
+  }
+  function rigaDa(ev) {
+    var svg = document.getElementById("ms-svg-el"), r = svg.getBoundingClientRect();
+    var y = (ev.clientY - r.top) * (MG.su * 2 + ms.R.length * MG.riga) / r.height;
+    return Math.max(0, Math.min(ms.R.length - 1, Math.floor((y - MG.su) / MG.riga)));
+  }
+  function msTip(k) {
+    var svg = document.getElementById("ms-svg-el"), tip = $("ms-tip");
+    if (!svg || !svg.getBoundingClientRect || !ms.R[k]) return;
+    ms.sel = k;
+    ms.R.forEach(function (r, j) {
+      var b = document.getElementById("ms-b" + j);
+      if (b && b.setAttribute) b.setAttribute("class", j === k ? "barra attiva" : "barra");
+    });
+    var r = ms.R[k], box = $("ms-graf").getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    tip.innerHTML = "";
+    var riga1 = el("div"), chiave = el("span", "chiave"), val = el("b", "", fmt(Math.round(r.costo * 100) / 100));
+    riga1.appendChild(chiave); riga1.appendChild(val);
+    tip.appendChild(riga1);
+    tip.appendChild(el("div", "", r.nome + ": " + fmt(r.chiamate) + (r.chiamate === 1 ? " chiamata" : " chiamate") + " su " + fmt(r.dim) +
+      (r.dim === 1 ? " elemento" : " elementi") + " ciascuna"));
+    tip.style.display = "block";
+    var scala = sr.width / MG.W, w = tip.offsetWidth || 200, h = tip.offsetHeight || 50;
+    var px = (MG.sx + lungBarra(k)) * scala + (sr.left - box.left), py = (MG.su + k * MG.riga + 5) * scala + (sr.top - box.top);
+    var left = px + 10 + w <= box.width ? px + 10 : Math.max(0, px - 10 - w);
+    var top = py - h - 6 >= 0 ? py - h - 6 : py + 24;
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+  function msNascondi() {
+    $("ms-tip").style.display = "none";
+    ms.R.forEach(function (r, j) {
+      var b = document.getElementById("ms-b" + j);
+      if (b && b.setAttribute) b.setAttribute("class", "barra");
+    });
+  }
+  Object.keys(PRESET).forEach(function (id) {
+    $(id).onclick = function () {
+      var p = PRESET[id];
+      $("ms-m").value = p[0]; $("ms-a").value = p[1]; $("ms-c").value = p[2];
+      ms.nome = p[3];
+      msCalcola();
+    };
+  });
+  ["ms-m", "ms-a", "ms-c"].forEach(function (id) { $(id).oninput = function () { ms.nome = ""; msCalcola(); }; });
+  ms.nome = PRESET["ms-p2"][3];
+  msCalcola();
+  if (window.addEventListener) window.addEventListener("resize", msDisegna);
+
+  // ---------------------------------------------------------- Strassen su matrici 2 × 2
+  var st = { A: [[1, 2], [3, 8]], B: [[4, 7], [9, 12]] };
+  function mat(M) {
+    return "<table class='mat'><tr><td>" + num(M[0][0]) + "</td><td>" + num(M[0][1]) + "</td></tr><tr><td>" + num(M[1][0]) +
+      "</td><td>" + num(M[1][1]) + "</td></tr></table>";
+  }
+  function par(v) { return v < 0 ? "(" + num(v) + ")" : num(v); }
+  function stCalcola() {
+    var a = st.A, b = st.B;
+    var a11 = a[0][0], a12 = a[0][1], a21 = a[1][0], a22 = a[1][1], b11 = b[0][0], b12 = b[0][1], b21 = b[1][0], b22 = b[1][1];
+    var M = [
+      ["(A<sub>21</sub> + A<sub>22</sub> − A<sub>11</sub>) · (B<sub>22</sub> − B<sub>12</sub> + B<sub>11</sub>)", a21 + a22 - a11, b22 - b12 + b11],
+      ["A<sub>11</sub> · B<sub>11</sub>", a11, b11],
+      ["A<sub>12</sub> · B<sub>21</sub>", a12, b21],
+      ["(A<sub>11</sub> − A<sub>21</sub>) · (B<sub>22</sub> − B<sub>12</sub>)", a11 - a21, b22 - b12],
+      ["(A<sub>21</sub> + A<sub>22</sub>) · (B<sub>12</sub> − B<sub>11</sub>)", a21 + a22, b12 - b11],
+      ["(A<sub>12</sub> − A<sub>21</sub> + A<sub>11</sub> − A<sub>22</sub>) · B<sub>22</sub>", a12 - a21 + a11 - a22, b22],
+      ["A<sub>22</sub> · (B<sub>11</sub> + B<sub>22</sub> − B<sub>12</sub> − B<sub>21</sub>)", a22, b11 + b22 - b12 - b21]
+    ];
+    var v = M.map(function (r) { return r[1] * r[2]; });
+    var CS = [[v[1] + v[2], v[0] + v[1] + v[4] + v[5]], [v[0] + v[1] + v[3] - v[6], v[0] + v[1] + v[3] + v[4]]];
+    var CD = [[a11 * b11 + a12 * b21, a11 * b12 + a12 * b22], [a21 * b11 + a22 * b21, a21 * b12 + a22 * b22]];
+    var uguali = CS[0][0] === CD[0][0] && CS[0][1] === CD[0][1] && CS[1][0] === CD[1][0] && CS[1][1] === CD[1][1];
+    var h = "<div class='formula'>A = " + mat(a) + " &nbsp; B = " + mat(b) + "</div>";
+    h += "<div class='strassen-m'>";
+    M.forEach(function (r, k) {
+      h += "M<sub>" + (k + 1) + "</sub> = " + r[0] + " = " + par(r[1]) + " · " + par(r[2]) + " = <b>" + num(v[k]) + "</b><br>";
+    });
+    h += "</div>";
+    h += "<div class='fianco'><div class='lato'><div class='lato-tit'>C con Strassen</div><div class='lato-sotto'>7 prodotti e 24 somme o sottrazioni: 31 operazioni</div>" +
+      "<div class='formula'>" + mat(CS) + "</div></div>" +
+      "<div class='lato'><div class='lato-tit'>C con la definizione</div><div class='lato-sotto'>8 prodotti e 4 somme: 12 operazioni</div>" +
+      "<div class='formula'>" + mat(CD) + "</div></div></div>";
+    h += "<p style='margin:10px 0 0'>" + (uguali ? "<span class='ok'>✓ Stesso risultato.</span> " : "<span class='rosso'>✗ Risultati diversi!</span> ") +
+      "Per esempio C<sub>11</sub> = M<sub>2</sub> + M<sub>3</sub> = " + num(v[1]) + " + " + par(v[2]) + " = " + num(CS[0][0]) +
+      ", e con la definizione a<sub>11</sub>b<sub>11</sub> + a<sub>12</sub>b<sub>21</sub> = " + num(a11 * b11) + " + " + par(a12 * b21) + " = " + num(CD[0][0]) +
+      ". Con n = 2 Strassen fa più operazioni: il guadagno arriva solo con matrici grandi, quando i blocchi sono a loro volta matrici e ogni prodotto risparmiato vale moltissimo.</p>";
+    $("st-out").innerHTML = h;
+  }
+  function casuale() { return Math.floor(Math.random() * 13) - 3; }
+  $("st-nuove").onclick = function () {
+    st.A = [[casuale(), casuale()], [casuale(), casuale()]];
+    st.B = [[casuale(), casuale()], [casuale(), casuale()]];
+    stCalcola();
+  };
+  stCalcola();
+})();
+</script>
+</body>
+</html>

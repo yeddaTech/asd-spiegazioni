@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cercare in un array</title>
+<link rel="stylesheet" href="stile.css">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 3 · lezioni 6–7 · slide 1</span>
+</div>
+
+<h1>Cercare in un array</h1>
+<p class="sottotitolo">Ricerca sequenziale e ricerca binaria. È la storia di come trovare una cosa tra tante, prima aprendo i cassetti uno alla volta e poi in modo furbo.</p>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#problema">Il problema</a></li>
+    <li><a href="#sequenziale">Ricerca sequenziale (Codice 1.1)</a></li>
+    <li><a href="#lazy">Lazy evaluation: perché non si esce dall'array</a></li>
+    <li><a href="#fondo">Cercare dal fondo (Codice 1.2)</a></li>
+    <li><a href="#costo-seq">Quanto costa la ricerca sequenziale</a></li>
+    <li><a href="#binaria">Array ordinato: la ricerca binaria</a></li>
+    <li><a href="#porzioni">Le porzioni: sx incluso, dx escluso</a></li>
+    <li><a href="#ricorsiva">La versione ricorsiva (Codice 1.3)</a></li>
+    <li><a href="#record">I record di attivazione</a></li>
+    <li><a href="#costo-bin">Quante chiamate? Tempo e spazio</a></li>
+    <li><a href="#iterativa">Dalla ricorsione al ciclo (Codice 1.4)</a></li>
+    <li><a href="#riassunto">Riassunto ed esame</a></li>
+    <li><a href="#esercizi">Esercizi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="problema"><span class="num">1</span>Il problema</h2>
+
+<p>Immagina una cassettiera lunghissima, con i cassetti numerati da 0 in avanti. In ogni cassetto c'è un numero. Qualcuno ti chiede: <em>«In quale cassetto c'è il 22?»</em></p>
+
+<p>Questa è la ricerca in un array. Detta come la scrive il prof:</p>
+
+<div class="box def">
+  <span class="etichetta">Problema: ricerca in un array</span>
+  <p><strong>Input:</strong> un array <code>A[0..n−1]</code> e un elemento <code>x</code>.<br>
+  <strong>Output:</strong> un indice <code>i</code> tale che <code>A[i] = x</code>, oppure <code>−1</code> se <code>A</code> non contiene <code>x</code>.</p>
+</div>
+
+<p>Perché proprio −1? Gli indici validi vanno da 0 a n−1, quindi −1 <strong>non può essere</strong> la posizione di un elemento. È il modo più semplice per dire «non c'è» usando comunque un numero.</p>
+
+<p>L'array della lavagna:</p>
+<div class="array" id="arr-lavagna"></div>
+<p class="piccolo">Il numero 8 c'è due volte (cassetti 0 e 15). Il problema chiede <em>un</em> indice, quindi rispondere 0 oppure 15 va bene in entrambi i casi.</p>
+
+<!-- ============================================================ 2 -->
+<h2 id="sequenziale"><span class="num">2</span>Ricerca sequenziale</h2>
+
+<p>Il modo più naturale: apri il cassetto 0. Non c'è? Apri il cassetto 1. Poi il 2, e così via. Ti fermi in uno di due casi:</p>
+<ul>
+  <li><strong>l'hai trovato</strong>, e allora sai dov'è;</li>
+  <li><strong>i cassetti sono finiti</strong>, e allora non c'era.</li>
+</ul>
+<p>Il ciclo dell'algoritmo è esattamente questa frase: «finché ci sono ancora cassetti <em>e</em> non l'ho trovato, vai avanti».</p>
+
+<p class="titolo-codice">Codice 1.1 · Ricerca sequenziale</p>
+<pre class="pseudo"><b>Algoritmo</b> ricercaSequenziale (array A[0..n−1], elemento x) → indice
+  i ← 0
+  <b>while</b> i &lt; n <b>and</b> A[i] ≠ x <b>do</b>      <span class="com">// ci sono cassetti E non l'ho trovato</span>
+    i ← i + 1
+  <b>if</b> i = n <b>then return</b> −1               <span class="com">// i cassetti sono finiti</span>
+  <b>else return</b> i                       <span class="com">// mi sono fermato perché A[i] = x</span></pre>
+
+<p>Quando il <code>while</code> finisce, non sai ancora <em>perché</em> è finito: magari hai trovato x, magari sei arrivato in fondo. L'<code>if</code> finale serve a capirlo.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">Hai scritto la fine così: «if A[i] = x then return i else return −1», e accanto: «non va tanto bene, fa pasticci, problema, non so bene il perché».</p>
+  <p>Hai ragione, fa pasticci. Ecco perché. Se x <strong>non c'è</strong>, il ciclo va avanti finché <code>i</code> diventa <code>n</code>. A quel punto la tua versione controlla <code>A[n]</code>. Ma <code>A[n]</code> <strong>non esiste</strong>: è il cassetto dopo l'ultimo.</p>
+  <ul>
+    <li>In <strong>Go</strong> il programma si blocca con <code>panic: index out of range</code>.</li>
+    <li>In <strong>C</strong> legge la memoria che c'è dopo l'array, cioè spazzatura. Se per caso quella spazzatura vale proprio x, l'algoritmo risponde <code>n</code>, una posizione che non esiste.</li>
+  </ul>
+  <p>La versione del prof controlla <code>i = n</code>: guarda <strong>solo il contatore</strong> e non tocca mai l'array. Così è sempre sicura.</p>
+</div>
+
+<div class="widget" id="w-seq">
+  <h4>PROVA TU · ricerca sequenziale, un passo alla volta</h4>
+  <div class="controlli">
+    <label>x = <input type="number" id="seq-x" value="22"></label>
+    <select id="seq-ver" style="width:auto">
+      <option value="1">Codice 1.1 (da sinistra)</option>
+      <option value="2">Codice 1.2 (dal fondo)</option>
+    </select>
+    <button class="primario" id="seq-passo">Passo →</button>
+    <button id="seq-fine">Fino alla fine</button>
+    <button id="seq-reset">Ricomincia</button>
+  </div>
+  <div class="array" id="seq-arr"></div>
+  <div class="narrazione" id="seq-txt"></div>
+  <p class="piccolo" style="margin:8px 0 0">Prova x = 22 (trovato), x = 50 (non c'è: guarda cosa succede quando i esce dall'array) e x = 8 con le due versioni.</p>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="lazy"><span class="num">3</span>Lazy evaluation: perché non si esce dall'array</h2>
+
+<p>C'è un dettaglio nascosto nella condizione <code>i &lt; n and A[i] ≠ x</code>. Quando <code>i</code> vale <code>n</code>, la parte destra <code>A[n] ≠ x</code> non ha senso, perché il cassetto n non esiste. Eppure l'algoritmo funziona. Come mai?</p>
+
+<p>Pensa a questa frase: <em>«Se il cassetto numero i esiste e dentro ci sono le chiavi, prendile»</em>. Se il cassetto non esiste, non provi nemmeno ad aprirlo: la prima parte è già falsa, quindi tutta la frase è falsa, qualunque cosa ci sia «dentro».</p>
+
+<div class="box def">
+  <span class="etichetta">Valutazione cortocircuitata (lazy evaluation)</span>
+  <ul>
+    <li>In <code>a <b>and</b> b</code>, la condizione <code>b</code> viene valutata <strong>solo se <code>a</code> è vera</strong>. Se <code>a</code> è falsa, il risultato è già falso.</li>
+    <li>In <code>a <b>or</b> b</code>, la condizione <code>b</code> viene valutata <strong>solo se <code>a</code> è falsa</strong>. Se <code>a</code> è vera, il risultato è già vero.</li>
+  </ul>
+  <p>Nel corso si assume sempre la lazy evaluation. Go, C e Java la usano per <code>&amp;&amp;</code> e <code>||</code>.</p>
+</div>
+
+<p>Quindi, quando <code>i = n</code>, la condizione <code>i &lt; n</code> è falsa e <code>A[n]</code> <strong>non viene mai letto</strong>.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">L'ordine conta</span>
+  <p>Sulla lavagna il prof ha scritto prima <code>A[i] ≠ x AND i &lt; n</code> e poi l'ha <strong>cancellato</strong>. Con le condizioni in quest'ordine, quando <code>i = n</code> si valuta prima <code>A[n]</code>, cioè si esce dall'array prima di controllare l'indice. La regola è: <strong>prima controlli che l'indice sia valido, poi usi l'indice</strong>.</p>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="fondo"><span class="num">4</span>Cercare dal fondo</h2>
+
+<p>Si può evitare l'<code>if</code> finale con un trucco: cerchi <strong>partendo dall'ultimo cassetto</strong> e vai all'indietro. Se x non c'è, l'indice scende fino a −1, che è proprio la risposta «non c'è»! Così <code>return i</code> va bene in tutti e due i casi.</p>
+
+<p class="titolo-codice">Codice 1.2 · Ricerca sequenziale dal fondo</p>
+<pre class="pseudo"><b>Algoritmo</b> ricercaSequenziale (array A[0..n−1], elemento x) → indice
+  i ← n − 1
+  <b>while</b> i ≥ 0 <b>and</b> A[i] ≠ x <b>do</b>
+    i ← i − 1
+  <b>return</b> i                <span class="com">// o la posizione di x, o −1</span></pre>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Domanda: non va fuori il pointer, A[i] ≠ x, se i diventa −1?»</p>
+  <p>No, grazie alla lazy evaluation. Quando <code>i</code> diventa −1, il ciclo ricontrolla la condizione: <code>i ≥ 0</code> è <strong>falsa</strong>, quindi <code>A[−1] ≠ x</code> non viene valutata e <code>A[−1]</code> non viene mai letto. Si esce dal ciclo e si restituisce −1.</p>
+  <p>Esempio con <code>A = [4, 9, 2]</code> e x = 7:</p>
+  <div class="tabella-wrap"><table>
+    <tr><th>i</th><th>i ≥ 0 ?</th><th>A[i] ≠ x ?</th><th>cosa succede</th></tr>
+    <tr><td>2</td><td class="verde">sì</td><td>2 ≠ 7 sì</td><td>i ← 1</td></tr>
+    <tr><td>1</td><td class="verde">sì</td><td>9 ≠ 7 sì</td><td>i ← 0</td></tr>
+    <tr><td>0</td><td class="verde">sì</td><td>4 ≠ 7 sì</td><td>i ← −1</td></tr>
+    <tr><td>−1</td><td class="rosso">no</td><td class="piccolo">non valutata</td><td>esco, return −1</td></tr>
+  </table></div>
+</div>
+
+<p>Una differenza curiosa: se x compare più volte, la versione 1.1 trova la <strong>prima</strong> posizione e la 1.2 l'<strong>ultima</strong>. Nell'array della lavagna, con x = 8, la 1.1 risponde 0 e la 1.2 risponde 15. Sono giuste tutte e due.</p>
+
+<!-- ============================================================ 5 -->
+<h2 id="costo-seq"><span class="num">5</span>Quanto costa la ricerca sequenziale</h2>
+
+<p>Ogni giro del ciclo fa poche cose: un confronto tra indici, un confronto tra <code>A[i]</code> e <code>x</code>, un incremento. Se confrontare due elementi costa O(1) (numeri normali, non stringhe lunghissime), <strong>ogni giro costa O(1)</strong>. I giri sono <strong>al massimo n</strong>.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>caso</th><th>quando succede</th><th>giri del ciclo</th><th>tempo</th></tr>
+  <tr><td>migliore</td><td>x è nel primo cassetto guardato</td><td>0</td><td class="verde">Θ(1)</td></tr>
+  <tr><td>peggiore</td><td>x non c'è (se è nell'ultimo cassetto i giri sono n − 1)</td><td>n</td><td class="rosso">Θ(n)</td></tr>
+</table></div>
+
+<p><strong>Spazio: O(1).</strong> Oltre all'array serve solo la variabile <code>i</code>. L'array non viene copiato: l'algoritmo riceve un riferimento (vedi il <a href="02-array.html#parametri">pacco 2</a>).</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">Accanto all'algoritmo del 2026 hai scritto «O(n)» e «Θ(n)» con un punto di domanda.</p>
+  <p>Sono giuste tutte e due, ma dicono cose diverse:</p>
+  <ul>
+    <li><strong>«Il tempo è O(n)»</strong> vale <em>per ogni input</em>: non si fanno mai più di n giri. Però per alcuni input può essere molto meno: se x è in <code>A[0]</code> basta un controllo.</li>
+    <li><strong>«Il tempo è Θ(n)»</strong>, come ha scritto il prof, parla del <strong>caso peggiore</strong>. Ricorda la definizione della lezione 5: T(n) è il tempo <em>massimo</em> tra gli input lunghi n. Nel caso peggiore i giri sono esattamente n, quindi T(n) = Θ(n).</li>
+  </ul>
+  <p>In una riga: <em>al massimo apro n cassetti, e in qualche caso li apro proprio tutti</em>. «Al massimo» è la O, «in qualche caso tutti» rende il caso peggiore Θ.</p>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Collegamento: si può fare meglio?</span>
+  <p>Se l'array <strong>non è ordinato</strong>, no. Qualunque algoritmo, nel caso peggiore, deve guardare tutti i cassetti: se ne salta uno, x potrebbe essere proprio lì. Quindi il problema richiede Ω(n) e la ricerca sequenziale è <strong>ottima</strong>. È lo stesso ragionamento del minimo nella lezione 5 (<a href="01-quanto-costa.html#problema">pacco 1</a>).</p>
+  <p>Per fare meglio serve un'informazione in più: che l'array sia <strong>ordinato</strong>.</p>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="binaria"><span class="num">6</span>Array ordinato: la ricerca binaria</h2>
+
+<p>Gioco: penso un numero tra 1 e 100, tu provi a indovinarlo e io ti dico solo «più alto» o «più basso». Non parti da 1, 2, 3… Dici <strong>50</strong>. Se rispondo «più basso», in un colpo solo hai eliminato 50 numeri. Poi dici 25, poi 12… In circa <strong>7 domande</strong> lo trovi sempre, perché 2<sup>7</sup> = 128 ≥ 100.</p>
+
+<p>Con un array <strong>ordinato</strong> si fa la stessa cosa. Guardi il cassetto in mezzo, <code>A[m]</code>:</p>
+<ul>
+  <li><code>x = A[m]</code>: trovato!</li>
+  <li><code>x &lt; A[m]</code>: x può stare <strong>solo a sinistra</strong> di m, perché a destra sono tutti più grandi. Butti via la metà destra.</li>
+  <li><code>x &gt; A[m]</code>: x può stare <strong>solo a destra</strong>. Butti via la metà sinistra.</li>
+</ul>
+
+<svg viewBox="0 0 640 120" width="100%" role="img" aria-label="Array diviso in tre parti dal centro m">
+  <g fill="none" stroke="var(--orange)" stroke-width="2">
+    <rect x="40" y="20" width="560" height="34" />
+  </g>
+  <g stroke="var(--orange)" stroke-width="1.5">
+    <line x1="75" y1="20" x2="75" y2="54"/><line x1="110" y1="20" x2="110" y2="54"/><line x1="145" y1="20" x2="145" y2="54"/>
+    <line x1="180" y1="20" x2="180" y2="54"/><line x1="215" y1="20" x2="215" y2="54"/><line x1="250" y1="20" x2="250" y2="54"/>
+    <line x1="285" y1="20" x2="285" y2="54"/><line x1="320" y1="20" x2="320" y2="54"/>
+    <line x1="355" y1="20" x2="355" y2="54"/><line x1="390" y1="20" x2="390" y2="54"/><line x1="425" y1="20" x2="425" y2="54"/>
+    <line x1="460" y1="20" x2="460" y2="54"/><line x1="495" y1="20" x2="495" y2="54"/><line x1="530" y1="20" x2="530" y2="54"/>
+    <line x1="565" y1="20" x2="565" y2="54"/>
+  </g>
+  <rect x="285" y="20" width="35" height="34" fill="var(--hl)" stroke="var(--orange)" stroke-width="2"/>
+  <text x="302" y="43" text-anchor="middle" font-size="15" font-weight="700" fill="var(--fg)">m</text>
+  <path d="M42 66 q0 10 10 10 h220 q10 0 10 10 q0 -10 10 -10 h0" fill="none" stroke="var(--accent)" stroke-width="2"/>
+  <text x="160" y="104" text-anchor="middle" font-size="15" fill="var(--accent)">se x &lt; A[m], è qui</text>
+  <path d="M322 66 q0 10 10 10 h120 q10 0 10 10 q0 -10 10 -10 h118 q10 0 10 -10" fill="none" stroke="var(--accent)" stroke-width="2"/>
+  <text x="462" y="104" text-anchor="middle" font-size="15" fill="var(--accent)">se x &gt; A[m], è qui</text>
+  <text x="40" y="14" font-size="12" fill="var(--green)">0</text>
+  <text x="580" y="14" font-size="12" fill="var(--green)">n−1</text>
+</svg>
+
+<p>Si chiama <strong>ricerca binaria</strong> (o <strong>dicotomica</strong>, dal greco «tagliare in due») perché a ogni passo taglia in due la parte dove cercare.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Funziona solo se l'array è ordinato</span>
+  <p>Tutto il ragionamento si basa su «a destra di m sono tutti più grandi». Se l'array non è ordinato, l'algoritmo può buttare via proprio la metà che contiene x e rispondere −1 anche se x c'è. Nell'<a href="#esercizi">esercizio 5</a> c'è un esempio.</p>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="porzioni"><span class="num">7</span>Le porzioni: sx incluso, dx escluso</h2>
+
+<p>Per descrivere «la parte dell'array dove sto ancora cercando» bastano due indici, <code>sx</code> e <code>dx</code>. Il prof li usa così:</p>
+
+<div class="box def">
+  <span class="etichetta">Convenzione del corso</span>
+  <p><code>sx</code> è il <strong>primo</strong> cassetto da guardare (<strong>incluso</strong>).<br>
+  <code>dx</code> è il primo cassetto, dopo la porzione, da <strong>non</strong> guardare (<strong>escluso</strong>).</p>
+  <p>La porzione è quindi <code>A[sx], A[sx+1], …, A[dx−1]</code> e contiene <strong>dx − sx</strong> elementi. È <strong>vuota quando dx ≤ sx</strong>.</p>
+</div>
+
+<p>All'inizio si cerca in tutto l'array, quindi <code>sx = 0</code> e <code>dx = n</code>. Sulla lavagna c'è un indice 8 sotto un array di 8 elementi (indici 0…7): è proprio <code>dx = n</code>, il cassetto «subito dopo la fine», che non esiste e infatti non viene mai aperto.</p>
+
+<p>Il centro è <code>m ← (sx + dx)/2</code>, con la divisione <strong>intera</strong> (si arrotonda per difetto). Dopo il confronto con <code>A[m]</code>:</p>
+<ul>
+  <li>a sinistra resta <code>[sx, m)</code>: si richiama con <code>dx = m</code>. A[m] è già stato guardato, ed essendo dx escluso resta fuori da solo;</li>
+  <li>a destra resta <code>[m+1, dx)</code>: si richiama con <code>sx = m + 1</code>, perché A[m] va escluso a mano.</li>
+</ul>
+<p class="piccolo">Nei tuoi appunti l'hai scritto bene: sx «inclusa», dx «esclusa!». Il vantaggio di questa convenzione è che il numero di elementi è semplicemente dx − sx, senza i «+1» che fanno sbagliare.</p>
+
+<!-- ============================================================ 8 -->
+<h2 id="ricorsiva"><span class="num">8</span>La versione ricorsiva</h2>
+
+<p>La ricerca binaria è naturalmente <strong>ricorsiva</strong>: per cercare in una porzione guardi il centro e poi <em>cerchi nello stesso modo</em> in una porzione più piccola. La funzione <code>ricercaRic</code> cerca nella porzione <code>[sx, dx)</code>; l'algoritmo principale la chiama su tutto l'array.</p>
+
+<p class="titolo-codice">Codice 1.3 · Ricerca binaria ricorsiva</p>
+<pre class="pseudo"><b>Algoritmo</b> ricercaBinaria (array A[0..n−1], elemento x) → indice
+  <b>return</b> ricercaRic(A, 0, n, x)
+
+<b>Funzione</b> ricercaRic (array A, indice sx, indice dx, elemento x) → indice
+  <b>if</b> dx ≤ sx <b>then return</b> −1          <span class="com">// porzione vuota: x non c'è</span>
+  <b>else</b>
+    m ← (sx + dx)/2
+    <b>if</b> x = A[m] <b>then return</b> m
+    <b>else if</b> x &lt; A[m] <b>then</b>
+      <b>return</b> ricercaRic(A, sx, m, x)     <span class="com">// cerco a sinistra</span>
+    <b>else</b>
+      <b>return</b> ricercaRic(A, m+1, dx, x)   <span class="com">// cerco a destra</span></pre>
+
+<p>Leggila così:</p>
+<ol>
+  <li><strong>Caso base.</strong> Se la porzione è vuota, x non può esserci: −1.</li>
+  <li>Altrimenti guardo il centro. Se è x, ho finito.</li>
+  <li>Se no, <strong>affido il lavoro</strong> a una nuova chiamata su metà porzione e restituisco quello che mi risponde.</li>
+</ol>
+
+<p class="piccolo">Nei tuoi appunti, nell'ultima riga c'è scritto «ricerca(x, m+1, dx, x)»: il primo argomento è <code>A</code>, cioè <code>ricercaRic(A, m+1, dx, x)</code>.</p>
+
+<!-- ============================================================ 9 -->
+<h2 id="record"><span class="num">9</span>I record di attivazione</h2>
+
+<p>Ogni volta che una funzione viene chiamata, il computer le prepara un <strong>foglietto</strong> tutto suo, dove tiene i parametri e le variabili locali: per <code>ricercaRic</code> sono <code>A, sx, dx, x, m</code>. Questo foglietto si chiama <strong>record di attivazione</strong>.</p>
+
+<p>I foglietti si impilano uno sopra l'altro, come piatti (la <strong>pila</strong>, o <em>stack</em>):</p>
+<ul>
+  <li>una chiamata nuova mette un foglietto <strong>in cima</strong>;</li>
+  <li>quando una chiamata finisce, il suo foglietto viene <strong>buttato via</strong> e il risultato passa al foglietto sotto.</li>
+</ul>
+<p>Le chiamate non si confondono tra loro perché ognuna ha il suo foglietto: lo <code>sx</code> di una chiamata non è lo <code>sx</code> di un'altra.</p>
+
+<div class="widget" id="w-bin">
+  <h4>PROVA TU · ricerca binaria con la pila dei record</h4>
+  <div class="controlli">
+    <label>x = <input type="number" id="bin-x" value="12"></label>
+    <select id="bin-ver" style="width:auto">
+      <option value="ric">Codice 1.3 (ricorsiva)</option>
+      <option value="it">Codice 1.4 (iterativa)</option>
+    </select>
+    <button class="primario" id="bin-passo">Passo →</button>
+    <button id="bin-fine">Fino alla fine</button>
+    <button id="bin-reset">Ricomincia</button>
+  </div>
+  <div class="array" id="bin-arr"></div>
+  <div class="narrazione" id="bin-txt"></div>
+  <div class="pila" id="bin-pila"></div>
+  <p class="piccolo" style="margin:8px 0 0">L'array è quello della lavagna. Prova x = 12 (come il prof), x = 11 (non c'è: si arriva al caso base), x = 0 (il caso peggiore: 5 chiamate) e x = 20.</p>
+</div>
+
+<h3>L'esempio della lavagna: x = 12</h3>
+<p>A = 1 5 7 12 16 18 20 22 (indici 0…7), n = 8.</p>
+<div class="tabella-wrap"><table>
+  <tr><th>chiamata</th><th>sx</th><th>dx</th><th>m</th><th>A[m]</th><th>decisione</th></tr>
+  <tr><td>ricercaRic(A, 0, 8, 12)</td><td>0</td><td>8</td><td>4</td><td>16</td><td>12 &lt; 16 → sinistra</td></tr>
+  <tr><td>ricercaRic(A, 0, 4, 12)</td><td>0</td><td>4</td><td>2</td><td>7</td><td>12 &gt; 7 → destra</td></tr>
+  <tr><td>ricercaRic(A, 3, 4, 12)</td><td>3</td><td>4</td><td>3</td><td>12</td><td class="verde">trovato: return 3</td></tr>
+</table></div>
+<p>Poi il 3 <strong>torna indietro</strong>: la terza chiamata lo restituisce alla seconda, la seconda alla prima, la prima a <code>ricercaBinaria</code>. È il «3» che il prof ha scritto con le frecce arancioni accanto a ogni chiamata.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«E se avessi avuto 11, si attiva il base case ✓»</p>
+  <p>Esatto. Le prime tre chiamate sono uguali (11 &lt; 16, 11 &gt; 7), poi nella terza <code>A[3] = 12</code> e 11 &lt; 12, quindi si va a sinistra con <code>ricercaRic(A, 3, 3, 11)</code>. Qui <code>dx = sx = 3</code>: la porzione è vuota, <strong>caso base</strong>, return −1. In tutto 4 chiamate, e il −1 risale fino in cima.</p>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="costo-bin"><span class="num">10</span>Quante chiamate? Tempo e spazio</h2>
+
+<p>Contiamo nel caso peggiore, quando x non c'è e bisogna arrivare a una porzione vuota. Ogni chiamata lavora su <strong>metà</strong> degli elementi della precedente (prendiamo n potenza di 2, per fare i conti puliti):</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>chiamata</th><th>elementi nella porzione</th></tr>
+  <tr><td>1ª</td><td>n</td></tr>
+  <tr><td>2ª</td><td>n/2</td></tr>
+  <tr><td>3ª</td><td>n/2<sup>2</sup></td></tr>
+  <tr><td>…</td><td>…</td></tr>
+  <tr><td>i-esima</td><td>n/2<sup>i−1</sup></td></tr>
+</table></div>
+
+<p>Quando si arriva a <strong>un solo elemento</strong>?</p>
+<div class="formula">n / 2<sup>i−1</sup> = 1 &nbsp;⟺&nbsp; n = 2<sup>i−1</sup> &nbsp;⟺&nbsp; i − 1 = log<sub>2</sub> n &nbsp;⟺&nbsp; i = 1 + log<sub>2</sub> n</div>
+<p>Dopo quella c'è ancora <strong>una chiamata con 0 elementi</strong>, il caso base. Totale:</p>
+<div class="formula grande"><mark>2 + log<sub>2</sub> n chiamate</mark></div>
+<p class="piccolo">Per n = 8: 2 + 3 = 5 chiamate (prova x = 0 nel widget qui sopra). È il «2 + log<sub>2</sub> n = 5 chiamate» dei tuoi appunti.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Parte intera ??»</p>
+  <p>La parte intera (⌊ ⌋, arrotondare per difetto) entra in due punti.</p>
+  <p><strong>1. Nel calcolo di m.</strong> <code>m ← (sx + dx)/2</code> è una divisione intera, perché un indice deve essere un numero intero. Con sx = 0 e dx = 5 viene 2,5, quindi m = <strong>2</strong>. Come in Go: <code>5/2</code> tra interi fa 2.</p>
+  <p><strong>2. Nel numero di chiamate.</strong> Il conto 2 + log<sub>2</sub> n è pulito solo se n è una potenza di 2 (8, 16, 1024…). Se n = 10, log<sub>2</sub> 10 ≈ 3,32, ma le chiamate sono per forza un numero intero. Le porzioni diventano 10 → 5 → 2 → 1 → 0, cioè 5 chiamate = ⌊3,32⌋ + 2. In generale:</p>
+  <p class="formula">chiamate nel caso peggiore = ⌊log<sub>2</sub> n⌋ + 2</p>
+  <p>Per la complessità non cambia niente: ⌊log<sub>2</sub> n⌋ + 2 è comunque Θ(log n). La parte intera serve solo per contare le chiamate esatte.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Tempo</span>
+  <p>Ogni chiamata, <em>senza contare quelle che fa lei</em>, esegue un numero fisso di operazioni: un test, una divisione, uno o due confronti. Se i confronti tra elementi costano Θ(1), ogni chiamata costa Θ(1), quindi:</p>
+  <p class="formula">tempo nel caso peggiore = (2 + log<sub>2</sub> n) · Θ(1) = <strong>Θ(log n)</strong></p>
+  <p class="piccolo">Nel caso migliore x è proprio al centro e basta una chiamata: Θ(1).</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">Accanto a «se i confronti x ⇔ A[m] costano tempo costante → T(n) = Θ(log n)» hai scritto: «ho capito perché log(n) ma non ho capito cosa dice qua».</p>
+  <p>Hai capito la parte difficile: le chiamate sono circa log<sub>2</sub> n. Ma il <strong>numero di chiamate</strong> non è ancora il <strong>tempo</strong>. Il tempo è:</p>
+  <p class="formula">tempo = (numero di chiamate) × (quanto costa una chiamata)</p>
+  <p>Come per un viaggio: il tempo totale è il numero di tappe per la durata di una tappa. Cosa fa una chiamata?</p>
+  <ul>
+    <li>controlla <code>dx ≤ sx</code>, calcola <code>m</code>: costo costante, sono numeri piccoli;</li>
+    <li>confronta <strong>x con A[m]</strong>, una o due volte: <strong>dipende da cosa sono gli elementi!</strong></li>
+  </ul>
+  <p>Se gli elementi sono <strong>numeri</strong>, un confronto costa Θ(1), ogni chiamata costa Θ(1) e il tempo è log n × Θ(1) = <strong>Θ(log n)</strong>.</p>
+  <p>Se invece gli elementi sono <strong>parole lunghe</strong> (un dizionario!), confrontare due parole costa fino a M, la loro lunghezza: lettera per lettera, come nel <a href="01-quanto-costa.html#elementare">pacco 1</a>. Allora ogni chiamata costa O(M) e il tempo diventa O(M · log n).</p>
+  <p>Quindi la frase del prof è la <strong>condizione</strong> che permette di dire «ogni chiamata costa O(1)». Senza quell'ipotesi il conto delle chiamate resta giusto, ma il tempo no.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Spazio della versione ricorsiva</span>
+  <p>Nel momento peggiore sulla pila ci sono <strong>tutti</strong> i record, uno per chiamata: 2 + log<sub>2</sub> n. Ogni record occupa O(1), perché contiene numeri e un <strong>puntatore</strong> ad A, non una copia dell'array:</p>
+  <p class="formula">spazio = <strong>Θ(log n)</strong></p>
+</div>
+
+<p>Quanto si guadagna rispetto alla ricerca sequenziale? Scrivi un n:</p>
+<div class="widget">
+  <h4>CASSETTI APERTI NEL CASO PEGGIORE</h4>
+  <div class="controlli">
+    <label>n = <input type="number" id="cmp-n" value="1000000" min="1" style="width:150px"></label>
+  </div>
+  <div id="cmp-out" class="narrazione"></div>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th>n</th><th>sequenziale (n)</th><th>binaria (⌊log<sub>2</sub> n⌋ + 2)</th></tr>
+  <tr><td>8</td><td>8</td><td>5</td></tr>
+  <tr><td>1 000</td><td>1 000</td><td>11</td></tr>
+  <tr><td>1 000 000</td><td>1 000 000</td><td>21</td></tr>
+  <tr><td>1 000 000 000</td><td>1 000 000 000</td><td>31</td></tr>
+</table></div>
+<p>Un miliardo di cassetti, 31 chiamate. È questo che fa il logaritmo: <strong>raddoppiare n aggiunge una sola chiamata</strong>.</p>
+
+<!-- ============================================================ 11 -->
+<h2 id="iterativa"><span class="num">11</span>Dalla ricorsione al ciclo</h2>
+
+<p>Guarda bene le due chiamate ricorsive nel Codice 1.3: sono l'<strong>ultima cosa</strong> che la funzione fa. Dopo aver ricevuto il risultato non lo modifica: lo passa e basta. Si chiamano <strong>ricorsioni in coda</strong> (o <em>terminali</em>), ed è quello che il prof ha sottolineato in giallo.</p>
+
+<p>Allora la pila di foglietti è inutile! Ogni foglietto aspetta solo di passare la risposta a quello sotto. Invece di aprire un foglietto nuovo, si può <strong>riscrivere sx e dx sullo stesso foglietto</strong> e ricominciare da capo: è un ciclo.</p>
+
+<p class="titolo-codice">Codice 1.4 · Ricerca binaria iterativa</p>
+<pre class="pseudo"><b>Algoritmo</b> ricercaBinaria (array A[0..n−1], elemento x) → indice
+  sx ← 0
+  dx ← n
+  pos ← −1                          <span class="com">// −1 = "non ancora trovato"</span>
+  <b>while</b> sx &lt; dx <b>and</b> pos = −1 <b>do</b>   <span class="com">// porzione non vuota E non trovato</span>
+    m ← (sx + dx)/2
+    <b>if</b> x = A[m] <b>then</b> pos ← m
+    <b>else if</b> x &lt; A[m] <b>then</b> dx ← m    <span class="com">// tengo [sx, m)</span>
+    <b>else</b> sx ← m + 1                  <span class="com">// tengo [m+1, dx)</span>
+  <b>return</b> pos</pre>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti</span>
+  <p class="citazione">«Dopo le chiamate ricorsive propaga… ricorsione in coda → si possono far ripartire con soluzione ITERATIVA»</p>
+  <p>Esatto: dopo la chiamata ricorsiva la funzione si limita a <em>propagare</em> il risultato, quindi è una ricorsione in coda e si trasforma in un ciclo. Due piccole correzioni alla tua versione iterativa:</p>
+  <ul>
+    <li>la condizione è una sola: <code>while sx &lt; dx and pos = −1 do</code> (il <code>do</code> va alla fine);</li>
+    <li>il secondo ramo è <code>else if x &lt; A[m] then dx ← m</code>: hai scritto «else x &lt; A[m]», manca l'<code>if</code>.</li>
+  </ul>
+</div>
+
+<p>È la stessa idea: <code>sx &lt; dx</code> è il contrario del caso base <code>dx ≤ sx</code>, e le due chiamate diventano due assegnamenti. La variabile <code>pos</code> fa da bandierina: vale −1 finché non trovi x, e se x non c'è resta −1 fino alla fine.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>versione</th><th>tempo (caso peggiore)</th><th>spazio</th><th>perché</th></tr>
+  <tr><td>ricorsiva (1.3)</td><td>Θ(log n)</td><td class="rosso">Θ(log n)</td><td>un record per chiamata sulla pila</td></tr>
+  <tr><td>iterativa (1.4)</td><td>Θ(log n)</td><td class="verde">O(1)</td><td>solo sx, dx, m, pos</td></tr>
+</table></div>
+
+<div class="box domanda">
+  <span class="etichetta">Dai tuoi appunti · inizio lezione 7</span>
+  <p class="citazione">«Ricorsione del tutto inutile, perché!! — Tempo Θ(log n) — Spazio costante perché??»</p>
+  <p><strong>Perché la ricorsione qui è «inutile».</strong> Immagina una fila di persone. La prima chiede alla seconda, la seconda alla terza, e così via. Quando l'ultima trova la risposta, la risposta torna indietro di mano in mano, e <em>nessuno ci aggiunge niente</em>: ognuno la ripete e basta. Tutte quelle persone in piedi ad aspettare non servono a nulla. Basta <strong>una persona sola con un foglietto</strong>: scrive sx e dx, guarda il centro, cancella, riscrive i nuovi sx e dx, e ricomincia. Non è che la ricorsione sia sbagliata: dà la risposta giusta, ma tiene occupata memoria che non serve. Succede perché la chiamata ricorsiva è l'<em>ultima</em> cosa che la funzione fa (ricorsione in coda).</p>
+  <p><strong>Perché il tempo resta Θ(log n).</strong> La versione col ciclo guarda <em>esattamente gli stessi</em> m, nello stesso ordine: ogni giro del while corrisponde a una chiamata della versione ricorsiva. I giri sono al massimo log<sub>2</sub> n + 1 e ognuno costa O(1), quindi il tempo è sempre Θ(log n). Cambia la memoria, non il lavoro.</p>
+  <p><strong>Perché lo spazio è costante.</strong> Conta le variabili della versione iterativa: <code>sx</code>, <code>dx</code>, <code>m</code>, <code>pos</code>, più i parametri <code>x</code> e il riferimento ad <code>A</code>. Sono 6, sia con n = 8 sia con n = un miliardo: il loro numero <strong>non dipende da n</strong>, e «non dipende da n» vuol dire proprio O(1). Nella versione ricorsiva invece ogni chiamata aggiunge un record alla pila, e i record arrivano a ⌊log<sub>2</sub> n⌋ + 2: più cresce n, più record ci sono, quindi Θ(log n).</p>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">E se l'array venisse copiato a ogni chiamata?</span>
+  <p>I conti sopra valgono perché l'array è passato <strong>per riferimento</strong>: ogni chiamata riceve solo un puntatore, in tempo O(1). In Go gli array (<code>[8]int</code>) invece sono passati <strong>per valore</strong>: ogni chiamata copierebbe tutto l'array, Θ(n) a chiamata, e la ricerca binaria diventerebbe più lenta di quella sequenziale! Per questo in Go si usano gli <strong>slice</strong> (<code>[]int</code>), che sono passati come riferimento. Più dettagli nel <a href="02-array.html#parametri">pacco 2</a>.</p>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="riassunto"><span class="num">12</span>Riassunto ed esame</h2>
+
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>sequenziale</th><th>binaria</th></tr>
+  <tr><td>serve l'array ordinato?</td><td>no</td><td class="rosso">sì</td></tr>
+  <tr><td>caso migliore</td><td>Θ(1)</td><td>Θ(1)</td></tr>
+  <tr><td>caso peggiore</td><td>Θ(n)</td><td class="verde">Θ(log n)</td></tr>
+  <tr><td>spazio</td><td>O(1)</td><td>ricorsiva Θ(log n), iterativa O(1)</td></tr>
+</table></div>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li>−1 significa «non c'è» perché non è un indice valido.</li>
+    <li>Lazy evaluation: in <code>a and b</code>, b si valuta solo se a è vera. Per questo si scrive prima <code>i &lt; n</code> (o <code>i ≥ 0</code>) e poi <code>A[i] ≠ x</code>.</li>
+    <li>Dopo il ciclo della 1.1 si controlla <code>i = n</code>, non <code>A[i] = x</code>, per non leggere <code>A[n]</code>.</li>
+    <li>Porzione <code>[sx, dx)</code>: sx incluso, dx escluso, dx − sx elementi, vuota se dx ≤ sx.</li>
+    <li>Ricerca binaria: al massimo 2 + log<sub>2</sub> n chiamate, tempo Θ(log n).</li>
+    <li>Le chiamate della 1.3 sono ricorsioni in coda, quindi si trasformano in un ciclo e lo spazio scende da Θ(log n) a O(1).</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <p>All'orale ti possono chiedere di:</p>
+  <ul>
+    <li>scrivere i Codici 1.1–1.4 e spiegare ogni condizione;</li>
+    <li>dire cosa succederebbe senza lazy evaluation o con le condizioni scambiate;</li>
+    <li>simulare la ricerca binaria su un array, con i record di attivazione (come sulla lavagna);</li>
+    <li>ricavare le 2 + log<sub>2</sub> n chiamate e il tempo Θ(log n);</li>
+    <li>confrontare tempo e spazio della versione ricorsiva e di quella iterativa.</li>
+  </ul>
+  <p>Negli scritti degli ultimi anni non c'è un esercizio dedicato alla ricerca binaria, ma l'idea di «guardo il centro e scarto metà» torna negli <strong>alberi di ricerca</strong>, che sono nell'esercizio 1 di ogni appello.</p>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="esercizi"><span class="num">13</span>Esercizi</h2>
+<p>Prova a rispondere prima di aprire la soluzione.</p>
+
+<details class="esercizio">
+  <summary>1. A = [4, 2, 9, 2], x = 2. Cosa restituiscono il Codice 1.1 e il Codice 1.2?</summary>
+  <div class="soluzione">
+    <p>La 1.1 parte da sinistra: A[0] = 4 ≠ 2, A[1] = 2 = x, quindi si ferma con i = 1 ≠ n e restituisce <strong>1</strong>.</p>
+    <p>La 1.2 parte da destra: A[3] = 2 = x, quindi si ferma subito e restituisce <strong>3</strong>.</p>
+    <p>Sono corrette tutte e due: il problema chiede <em>un</em> indice con A[i] = x.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. Nel Codice 1.1 scrivo <code>while A[i] ≠ x and i &lt; n</code>. Cosa può andare storto?</summary>
+  <div class="soluzione">
+    <p>Se x non c'è, prima o poi i = n. A quel punto la condizione valuta <strong>per prima</strong> <code>A[n] ≠ x</code>, cioè legge fuori dall'array, prima di accorgersi che <code>i &lt; n</code> è falsa. In Go è un <code>panic</code>, in C si legge memoria a caso. Con l'ordine giusto la lazy evaluation evita la lettura.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. Ricerca binaria ricorsiva su A = [1, 5, 7, 12, 16, 18, 20, 22] con x = 20: elenca le chiamate.</summary>
+  <div class="soluzione">
+    <p><code>ricercaRic(A, 0, 8, 20)</code>: m = 4, A[4] = 16, 20 &gt; 16, a destra.<br>
+    <code>ricercaRic(A, 5, 8, 20)</code>: m = (5+8)/2 = 6, A[6] = 20, <strong>trovato</strong>, return 6.</p>
+    <p>Due chiamate, il risultato è 6.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. Al massimo quante chiamate fa la ricerca binaria con n = 1024? E con n = 1 000 000?</summary>
+  <div class="soluzione">
+    <p>n = 1024 = 2<sup>10</sup>: 2 + 10 = <strong>12</strong> chiamate.</p>
+    <p>n = 1 000 000: 2<sup>19</sup> = 524 288 ≤ 10<sup>6</sup> &lt; 2<sup>20</sup>, quindi ⌊log<sub>2</sub> n⌋ = 19 e le chiamate sono al massimo 19 + 2 = <strong>21</strong>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. Trova un array NON ordinato su cui la ricerca binaria sbaglia.</summary>
+  <div class="soluzione">
+    <p>A = [5, 1, 9, 3, 7], x = 3 (x c'è, in posizione 3).</p>
+    <p>(0, 5): m = 2, A[2] = 9, 3 &lt; 9, quindi a sinistra.<br>
+    (0, 2): m = 1, A[1] = 1, 3 &gt; 1, quindi a destra.<br>
+    (2, 2): porzione vuota, return <strong>−1</strong>. Sbagliato!</p>
+    <p>Al primo passo ha buttato via la metà destra, «sicuro» che lì fossero tutti più grandi di 9. Ma l'array non è ordinato.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. Nel Codice 1.4 scrivo <code>dx ← m − 1</code> invece di <code>dx ← m</code>. È giusto?</summary>
+  <div class="soluzione">
+    <p>No. dx è <strong>escluso</strong>: con dx = m − 1 la nuova porzione è [sx, m−1) e salta A[m−1].</p>
+    <p>Esempio: A della lavagna, x = 12. (0, 8): m = 4, 12 &lt; 16, dx ← 3. La porzione [0, 3) contiene 1, 5, 7 e non arriva mai a A[3] = 12. Risultato −1, sbagliato.</p>
+    <p>Il «−1» andrebbe bene con la convenzione «dx incluso», che però non è quella del corso.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="02-array.html">← Pacco 2 · Array</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="04-ordinamenti-elementari.html">Pacco 4 · Ordinare →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  function disegna(el, valori, opz) {
+    // opz: {extra: bool (cella n), prima: bool (cella −1), stato(i) -> classe, freccia(i) -> testo}
+    el.innerHTML = "";
+    var da = opz.prima ? -1 : 0, a = opz.extra ? valori.length : valori.length - 1;
+    for (var i = da; i <= a; i++) {
+      var c = document.createElement("div");
+      var dentro = i >= 0 && i < valori.length;
+      c.className = "cella" + (dentro ? "" : " oltre") + (opz.stato ? " " + (opz.stato(i) || "") : "");
+      var f = document.createElement("div"); f.className = "f"; f.textContent = opz.freccia ? (opz.freccia(i) || "") : "";
+      var v = document.createElement("div"); v.className = "v"; v.textContent = dentro ? valori[i] : "";
+      var k = document.createElement("div"); k.className = "i"; k.textContent = i;
+      c.appendChild(f); c.appendChild(v); c.appendChild(k);
+      el.appendChild(c);
+    }
+  }
+
+  // ---------------------------------------------------------- array della lavagna
+  var LAV = [8, 4, 1, 7, 14, 3, 22, 48, 5, 9, 11, 27, 33, 45, 99, 8];
+  disegna(document.getElementById("arr-lavagna"), LAV, {});
+
+  // ---------------------------------------------------------- ricerca sequenziale
+  function passiSeq(A, x, ver) {
+    var n = A.length, P = [], i;
+    if (ver === "1") {
+      i = 0;
+      P.push({ i: i, t: "<b>i ← 0</b>: parto dal primo cassetto." });
+      while (true) {
+        if (!(i < n)) {
+          P.push({ i: i, t: "<b>i &lt; n?</b> " + i + " &lt; " + n + " è <span class='rosso'>falso</span>: i cassetti sono finiti. " +
+            "Per la lazy evaluation <b>A[" + i + "] non viene letto</b> (non esiste!). Esco dal ciclo." });
+          P.push({ i: i, t: "<b>i = n</b>, quindi <b>return −1</b>: x non c'è.", fine: -1 });
+          break;
+        }
+        if (A[i] === x) {
+          P.push({ i: i, t: "<b>i &lt; n?</b> sì. <b>A[" + i + "] ≠ x?</b> A[" + i + "] = " + A[i] + " = x, quindi è <span class='rosso'>falso</span>: esco dal ciclo." });
+          P.push({ i: i, t: "i = " + i + " ≠ n, quindi <b>return " + i + "</b>: trovato!", fine: i });
+          break;
+        }
+        P.push({ i: i, t: "<b>i &lt; n?</b> sì. <b>A[" + i + "] ≠ x?</b> " + A[i] + " ≠ " + x + ", <span class='verde'>vero</span>: <b>i ← " + (i + 1) + "</b>." });
+        i++;
+      }
+    } else {
+      i = n - 1;
+      P.push({ i: i, t: "<b>i ← n − 1 = " + i + "</b>: parto dall'ultimo cassetto." });
+      while (true) {
+        if (!(i >= 0)) {
+          P.push({ i: i, t: "<b>i ≥ 0?</b> " + i + " ≥ 0 è <span class='rosso'>falso</span>. Per la lazy evaluation <b>A[−1] non viene letto</b>. Esco dal ciclo." });
+          P.push({ i: i, t: "<b>return i</b>, cioè <b>−1</b>: x non c'è. Nessun if finale!", fine: -1 });
+          break;
+        }
+        if (A[i] === x) {
+          P.push({ i: i, t: "<b>i ≥ 0?</b> sì. <b>A[" + i + "] ≠ x?</b> A[" + i + "] = " + A[i] + " = x, <span class='rosso'>falso</span>: esco dal ciclo." });
+          P.push({ i: i, t: "<b>return " + i + "</b>: trovato!", fine: i });
+          break;
+        }
+        P.push({ i: i, t: "<b>i ≥ 0?</b> sì. <b>A[" + i + "] ≠ x?</b> " + A[i] + " ≠ " + x + ", <span class='verde'>vero</span>: <b>i ← " + (i - 1) + "</b>." });
+        i--;
+      }
+    }
+    return P;
+  }
+
+  var seq = { P: [], k: 0 };
+  function seqInit() {
+    var x = parseInt(document.getElementById("seq-x").value, 10);
+    if (isNaN(x)) x = 0;
+    seq.P = passiSeq(LAV, x, document.getElementById("seq-ver").value);
+    seq.k = 0; seqShow();
+  }
+  function seqShow() {
+    var p = seq.P[seq.k], ver = document.getElementById("seq-ver").value;
+    disegna(document.getElementById("seq-arr"), LAV, {
+      extra: ver === "1", prima: ver === "2",
+      stato: function (i) {
+        if (p.fine !== undefined && p.fine >= 0 && i === p.fine) return "trovata";
+        return i === p.i ? "attiva" : "";
+      },
+      freccia: function (i) { return i === p.i ? "i" : ""; }
+    });
+    document.getElementById("seq-txt").innerHTML = "<span class='piccolo'>passo " + (seq.k + 1) + " di " + seq.P.length + "</span><br>" + p.t;
+    document.getElementById("seq-passo").disabled = seq.k >= seq.P.length - 1;
+  }
+  document.getElementById("seq-passo").onclick = function () { if (seq.k < seq.P.length - 1) { seq.k++; seqShow(); } };
+  document.getElementById("seq-fine").onclick = function () { seq.k = seq.P.length - 1; seqShow(); };
+  document.getElementById("seq-reset").onclick = seqInit;
+  document.getElementById("seq-x").onchange = seqInit;
+  document.getElementById("seq-ver").onchange = seqInit;
+  seqInit();
+
+  // ---------------------------------------------------------- ricerca binaria
+  function N(v) { return String(v).replace("-", "−"); }
+  var BIN = [1, 5, 7, 12, 16, 18, 20, 22];
+
+  function passiRic(A, x) {
+    var P = [], pila = [], nchiam = 0;
+    function snap(sx, dx, m, t, extra) {
+      var o = { sx: sx, dx: dx, m: m, t: t, pila: pila.map(function (r) { return Object.assign({}, r); }) };
+      if (extra) Object.assign(o, extra);
+      P.push(o);
+    }
+    function ric(sx, dx) {
+      nchiam++;
+      var rec = { nome: "ricercaRic(A, " + sx + ", " + dx + ", " + x + ")", sx: sx, dx: dx, m: "?", ris: null };
+      pila.push(rec);
+      snap(sx, dx, null, "Chiamata n° " + nchiam + ": <b>" + rec.nome + "</b>. Nuovo record in cima alla pila. Porzione [" + sx + ", " + dx + ") con " + Math.max(0, dx - sx) + " elementi.");
+      var r;
+      if (dx <= sx) {
+        r = -1;
+        snap(sx, dx, null, "<b>dx ≤ sx</b> (" + dx + " ≤ " + sx + "): porzione <b>vuota</b>, caso base, <b>return −1</b>.");
+      } else {
+        var m = Math.floor((sx + dx) / 2);
+        rec.m = m;
+        if (x === A[m]) {
+          r = m;
+          snap(sx, dx, m, "m = (" + sx + " + " + dx + ")/2 = <b>" + m + "</b>. A[" + m + "] = " + A[m] + " = x: <b>trovato, return " + m + "</b>.", { trovata: m });
+        } else if (x < A[m]) {
+          snap(sx, dx, m, "m = (" + sx + " + " + dx + ")/2 = <b>" + m + "</b>. x = " + x + " &lt; A[" + m + "] = " + A[m] + ": cerco a <b>sinistra</b>, in [" + sx + ", " + m + ").");
+          r = ric(sx, m);
+        } else {
+          snap(sx, dx, m, "m = (" + sx + " + " + dx + ")/2 = <b>" + m + "</b>. x = " + x + " &gt; A[" + m + "] = " + A[m] + ": cerco a <b>destra</b>, in [" + (m + 1) + ", " + dx + ").");
+          r = ric(m + 1, dx);
+        }
+      }
+      rec.ris = r;
+      snap(sx, dx, rec.m === "?" ? null : rec.m, "<b>" + rec.nome + "</b> finisce e restituisce <b>" + N(r) + "</b>" +
+        (pila.length > 1 ? " alla chiamata sotto. Il suo record viene buttato via." : " a ricercaBinaria."), r >= 0 ? { trovata: r } : null);
+      pila.pop();
+      return r;
+    }
+    var ris = ric(0, A.length);
+    P.push({ sx: 0, dx: A.length, m: null, pila: [], t: "<b>ricercaBinaria restituisce " + N(ris) + "</b>. Chiamate in tutto: " + nchiam + ". La pila ha avuto al massimo " + nchiam + " record.", trovata: ris >= 0 ? ris : undefined });
+    return P;
+  }
+
+  function passiIt(A, x) {
+    var P = [], sx = 0, dx = A.length, pos = -1, giri = 0;
+    function snap(m, t, extra) {
+      var o = { sx: sx, dx: dx, m: m, t: t, pila: [{ nome: "variabili di ricercaBinaria", sx: sx, dx: dx, m: m === null ? "?" : m, pos: pos, ris: null }] };
+      if (extra) Object.assign(o, extra);
+      P.push(o);
+    }
+    snap(null, "<b>sx ← 0, dx ← n = " + dx + ", pos ← −1</b>. Un solo record, che verrà riscritto.");
+    while (true) {
+      if (!(sx < dx && pos === -1)) {
+        var perche = pos !== -1 ? "pos = " + pos + " ≠ −1 (trovato)" : "sx = " + sx + " non è &lt; dx = " + dx + " (porzione vuota)";
+        snap(null, "Condizione del while falsa: " + perche + ". <b>return pos = " + N(pos) + "</b>. Giri del ciclo: " + giri + ".", pos >= 0 ? { trovata: pos } : null);
+        break;
+      }
+      giri++;
+      var m = Math.floor((sx + dx) / 2);
+      if (x === A[m]) {
+        pos = m;
+        snap(m, "Giro " + giri + ": m = (" + sx + " + " + dx + ")/2 = <b>" + m + "</b>. A[" + m + "] = x: <b>pos ← " + m + "</b>.", { trovata: m });
+      } else if (x < A[m]) {
+        snap(m, "Giro " + giri + ": m = (" + sx + " + " + dx + ")/2 = <b>" + m + "</b>. " + x + " &lt; " + A[m] + ": <b>dx ← " + m + "</b>.");
+        dx = m;
+      } else {
+        snap(m, "Giro " + giri + ": m = (" + sx + " + " + dx + ")/2 = <b>" + m + "</b>. " + x + " &gt; " + A[m] + ": <b>sx ← " + (m + 1) + "</b>.");
+        sx = m + 1;
+      }
+    }
+    return P;
+  }
+
+  var bin = { P: [], k: 0 };
+  function binInit() {
+    var x = parseInt(document.getElementById("bin-x").value, 10);
+    if (isNaN(x)) x = 0;
+    bin.P = document.getElementById("bin-ver").value === "ric" ? passiRic(BIN, x) : passiIt(BIN, x);
+    bin.k = 0; binShow();
+  }
+  function binShow() {
+    var p = bin.P[bin.k];
+    disegna(document.getElementById("bin-arr"), BIN, {
+      extra: true,
+      stato: function (i) {
+        if (p.trovata !== undefined && p.trovata !== null && i === p.trovata) return "trovata";
+        if (i === p.m) return "attiva";
+        if (i < BIN.length && (i < p.sx || i >= p.dx)) return "fuori";
+        return "";
+      },
+      freccia: function (i) {
+        var t = [];
+        if (i === p.sx) t.push("sx");
+        if (i === p.m) t.push("m");
+        if (i === p.dx) t.push("dx");
+        return t.join(" ");
+      }
+    });
+    document.getElementById("bin-txt").innerHTML = "<span class='piccolo'>passo " + (bin.k + 1) + " di " + bin.P.length + "</span><br>" + p.t;
+    var pila = document.getElementById("bin-pila");
+    pila.innerHTML = "";
+    p.pila.forEach(function (r, idx) {
+      var d = document.createElement("div");
+      d.className = "record" + (r.ris !== null ? " finito" : "");
+      d.innerHTML = "<span class='tit'>" + (idx === p.pila.length - 1 ? "▲ in cima · " : "") + r.nome + "</span><br>sx = " + r.sx + "   dx = " + r.dx + "   m = " + r.m +
+        (r.pos !== undefined ? "   pos = " + N(r.pos) : "") + "   x = " + document.getElementById("bin-x").value + "   A = →array" +
+        (r.ris !== null ? "   <b>restituisce " + N(r.ris) + "</b>" : "");
+      pila.appendChild(d);
+    });
+    document.getElementById("bin-passo").disabled = bin.k >= bin.P.length - 1;
+  }
+  document.getElementById("bin-passo").onclick = function () { if (bin.k < bin.P.length - 1) { bin.k++; binShow(); } };
+  document.getElementById("bin-fine").onclick = function () { bin.k = bin.P.length - 1; binShow(); };
+  document.getElementById("bin-reset").onclick = binInit;
+  document.getElementById("bin-x").onchange = binInit;
+  document.getElementById("bin-ver").onchange = binInit;
+  binInit();
+
+  // ---------------------------------------------------------- confronto n vs log n
+  function cmp() {
+    var n = parseInt(document.getElementById("cmp-n").value, 10), out = document.getElementById("cmp-out");
+    if (!(n >= 1) || n > 1e15) { out.textContent = "Scrivi un numero tra 1 e 10^15."; return; }
+    var k = 0, p = 1;
+    while (p * 2 <= n) { p *= 2; k++; }
+    var fmt = function (v) { return v.toLocaleString("it-IT"); };
+    out.innerHTML = "Sequenziale: fino a <b>" + fmt(n) + "</b> cassetti aperti.<br>Binaria: fino a <b>" + (k + 2) +
+      "</b> chiamate (⌊log<sub>2</sub> n⌋ = " + k + ", perché 2<sup>" + k + "</sup> = " + fmt(p) + " ≤ n &lt; " + fmt(p * 2) + ").";
+  }
+  document.getElementById("cmp-n").oninput = cmp;
+  cmp();
+})();
+</script>
+</body>
+</html>
