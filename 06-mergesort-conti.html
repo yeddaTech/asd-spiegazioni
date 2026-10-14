@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quanto costa mergeSort</title>
-<link rel="stylesheet" href="stile.css">
+<link rel="stylesheet" href="stile.css?v=2">
 </head>
 <body>
 <div class="pagina">
@@ -36,7 +36,7 @@
 <div class="box idea">
   <span class="etichetta">Dove eravamo rimasti</span>
   <p>Nel <a href="05-mergesort.html">pacco 5</a> (lezione 8) abbiamo scritto mergeSort e l'equazione dei suoi confronti nel caso peggiore:</p>
-  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</span><span class="cond">altrimenti</span></span></span></div>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">C(⌊n/2⌋) + C(⌈n/2⌉) + n − 1</span><span class="cond">altrimenti</span></span></span></div>
   <p>Sapevamo calcolarla a mano, numero per numero (C(8) = 17, C(16) = 49), ma non sapevamo quanto vale <em>in generale</em>. La lezione 9 (12 ottobre 2026) risponde.</p>
 </div>
 
@@ -235,7 +235,7 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
 
 <p>Ora risolviamo l'equazione. Prendiamo n potenza di 2. Allora ⌊n/2⌋ = ⌈n/2⌉ = n/2, e l'equazione diventa più semplice:</p>
 
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">2 C(n/2) + n − 1</span><span class="cond">se n &gt; 1</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 1</span><span class="val">2 C(n/2) + n − 1</span><span class="cond">se n &gt; 1</span></span></span></div>
 
 <div class="box idea">
   <span class="etichetta">Idea · la matrioska</span>
@@ -400,7 +400,7 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
 
 <p>Con questi nomi, e con n potenza di 2 come per C(n), l'equazione del tempo è:</p>
 
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">a</span><span class="cond">se n ≤ 1</span><span class="val">2 T(n/2) + bn + c</span><span class="cond">altrimenti</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">a</span><span class="cond">se n ≤ 1</span><span class="val">2 T(n/2) + bn + c</span><span class="cond">altrimenti</span></span></span></div>
 
 <p><strong>Perché non lasciare Θ(n) dentro l'equazione?</strong> Perché Θ(n) non è un numero: è un'intera famiglia di funzioni. Srotolando dovresti sommare tanti Θ quanti sono i livelli, e i livelli dipendono da n: lì è facilissimo sbagliare. Allora si sceglie un rappresentante concreto, bn + c, si fanno i conti con lui, e solo alla fine si torna al Θ.</p>
 
@@ -473,7 +473,7 @@ N  = <span class="uno">1</span>00000   = 32   un 1 e poi zeri, una cifra in più
   <li><strong>n &gt; 1:</strong> il record corrente, più la torre più alta tra le due chiamate:</li>
 </ul>
 
-<div class="mat-blocco"><span class="casi"><span class="casi-sx">H(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1</span><span class="val">1 + max(H(⌊n/2⌋), H(⌈n/2⌉))</span><span class="cond">se n &gt; 1</span></span></span></div>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">H(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1</span><span class="val">1 + max(H(⌊n/2⌋), H(⌈n/2⌉))</span><span class="cond">se n &gt; 1</span></span></span></div>
 
 <p>Per n potenza di 2 le due metà sono uguali e diventa H(n) = H(n/2) + 1. Si srotola come prima, ed è ancora più facile, perché ogni passo aggiunge solo 1:</p>
 
