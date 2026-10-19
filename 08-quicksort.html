@@ -1,0 +1,1742 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QuickSort: ordinare intorno a un perno</title>
+<link rel="stylesheet" href="stile.css?v=4">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 8 · lezione 11 (16 ottobre 2026)</span>
+</div>
+
+<h1>QuickSort: ordinare intorno a un perno</h1>
+<p class="sottotitolo">La lezione 11 presenta quickSort, un altro algoritmo di ordinamento che usa la tecnica divide et impera. Sceglie un elemento, il perno, sposta i più piccoli a sinistra e i più grandi a destra, e poi ordina le due parti con lo stesso metodo. Poi conta i confronti: nel caso peggiore sono tanti quanti negli ordinamenti elementari, ma in media sono pochissimi. Per questo si chiama «quick», veloce.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di matematica o di pseudocodice che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>«Lavagna, pagina N» indica la pagina del PDF della lavagna della lezione 11 da cui viene quel contenuto. «Le slide» sono le dispense del capitolo 4, su quickSort.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+  <p><b>I colori delle caselle</b>, uguali in tutte le figure e in tutti i riquadri interattivi:</p>
+  <div class="legenda-celle">
+    <span><span class="q perno"></span>il perno</span>
+    <span><span class="q zsx"></span>già controllato: ≤ perno (va a sinistra)</span>
+    <span><span class="q zdx"></span>già controllato: &gt; perno (va a destra)</span>
+    <span><span class="q attiva"></span>la casella che si sta guardando</span>
+    <span><span class="q posto"></span>al suo posto definitivo</span>
+  </div>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#idea">L'idea: dividere intorno a un perno</a></li>
+    <li><a href="#partiziona">Cosa deve fare partiziona</a></li>
+    <li><a href="#strategia">La strategia: due indici che si vengono incontro</a></li>
+    <li><a href="#codice">Il Codice 4.2 riga per riga</a></li>
+    <li><a href="#confronti-part">Quanti confronti fa partiziona</a></li>
+    <li><a href="#quicksort">quickSort completo</a></li>
+    <li><a href="#equazione">Quanti confronti fa quickSort: l'equazione</a></li>
+    <li><a href="#peggiore">Il caso peggiore</a></li>
+    <li><a href="#migliore">Il caso migliore</a></li>
+    <li><a href="#medio">Il caso medio: l'equazione</a></li>
+    <li><a href="#medio-dim">Il caso medio: C(n) ≤ 2n ln n</a></li>
+    <li><a href="#confronto">I tre casi a confronto: perché «quick»</a></li>
+    <li><a href="#riassunto">Riassunto e cosa serve per l'esame</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="idea"><span class="num">1</span>L'idea: dividere intorno a un perno</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'idea di quickSort raccontata con un esempio, l'esempio della lavagna, la differenza con mergeSort e lo schema ad alto livello che il prof ha scritto (Codice 4.1).</p>
+
+<h3>L'idea, con una storia</h3>
+<p>Hai un mazzo di carte numerate, tutte con numeri diversi, da mettere in ordine. Fai così:</p>
+<ol>
+  <li>prendi una carta qualunque, per esempio il 55, e la metti al centro del tavolo;</li>
+  <li>guardi le altre carte una alla volta: quelle più piccole di 55 le metti in una pila alla sua sinistra, quelle più grandi in una pila alla sua destra. L'ordine dentro le pile non conta;</li>
+  <li>dai la pila di sinistra a un amico e quella di destra a un altro amico, e chiedi a ciascuno di ordinarla <em>con lo stesso metodo</em>;</li>
+  <li>quando te le restituiscono ordinate, le rimetti al loro posto: pila di sinistra, poi il 55, poi pila di destra. Il mazzo è ordinato.</li>
+</ol>
+<p>Perché alla fine è tutto in ordine? Le carte della pila di sinistra sono tutte più piccole di 55, e sono in ordine tra loro. Il 55 viene subito dopo. Le carte della pila di destra sono tutte più grandi di 55, e sono in ordine tra loro. Non resta niente da sistemare: <strong>basta mettere le pile una accanto all'altra</strong>.</p>
+<p>Gli amici, a loro volta, fanno la stessa cosa con la loro pila: scelgono una carta, fanno due pile più piccole, le passano ad altri amici. Ci si ferma quando una pila ha una carta sola, o nessuna: una pila così è già in ordine.</p>
+<p>Questo è <strong>quickSort</strong>. La carta scelta si chiama <strong>perno</strong> (in inglese <em>pivot</em>). Lo spostare gli elementi più piccoli da una parte e quelli più grandi dall'altra si chiama <strong>partizionamento</strong>, o partizione.</p>
+
+<h3>L'esempio della lavagna</h3>
+<p>Alla lavagna, pagina 4, il prof parte da otto numeri e sceglie come perno il 55. La Figura 1 mostra i quattro momenti dell'idea.</p>
+<div class="figura">
+<div class="etich-array">1. L'array da ordinare. Scelgo un elemento, il perno: qui 55 (cerchiato in rosso).</div>
+<div class="array qs"><div class="cella"><div class="f"></div><div class="v">44</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">55</div><div class="i"></div></div><div class="cella"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella"><div class="f"></div><div class="v">42</div><div class="i"></div></div><div class="cella"><div class="f"></div><div class="v">94</div><div class="i"></div></div><div class="cella"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i"></div></div><div class="cella"><div class="f"></div><div class="v">64</div><div class="i"></div></div></div>
+<div class="etich-array">2. Divido: a sinistra gli elementi minori di 55, a destra quelli maggiori, in un ordine qualunque.</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">44</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">42</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">18</div><div class="i"></div></div><div class="stacco"></div><div class="cella perno"><div class="f"></div><div class="v">55</div><div class="i"></div></div><div class="stacco"></div><div class="cella zdx"><div class="f"></div><div class="v">64</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">94</div><div class="i"></div></div></div>
+<div class="etich-array">3. Ordino separatamente le due parti (con lo stesso metodo: ricorsione). Il perno non si tocca.</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">18</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">42</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">44</div><div class="i"></div></div><div class="stacco"></div><div class="cella perno"><div class="f"></div><div class="v">55</div><div class="i"></div></div><div class="stacco"></div><div class="cella zdx"><div class="f"></div><div class="v">64</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">94</div><div class="i"></div></div></div>
+<div class="etich-array">4. Metto le parti una accanto all'altra: l'array è ordinato. Non c'è niente da fondere.</div>
+<div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">18</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">42</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">44</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">55</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">64</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">94</div><div class="i"></div></div></div>
+<div class="didascalia"><b>Figura 1.</b> L'idea di quickSort sui numeri della lavagna, pagina 4: si sceglie il perno (55), si divide, si ordinano le due parti, si mettono una accanto all'altra.</div>
+</div>
+<p>Nella Figura 1 il perno è il secondo elemento, il 55: per spiegare l'idea va bene qualunque elemento. Nel codice vero, a partire dalla sezione 3, il perno sarà sempre il <strong>primo</strong> elemento.</p>
+
+<div class="box idea">
+  <span class="etichetta">quickSort e mergeSort: chi fa la fatica, e quando</span>
+  <p>Tutti e due dividono l'array in due parti, le ordinano separatamente con una chiamata ricorsiva e poi ricombinano i risultati. Ma la fatica sta in punti diversi:</p>
+  <div class="tabella-wrap"><table>
+    <tr><th></th><th>dividere</th><th>ricombinare</th></tr>
+    <tr><td><strong>mergeSort</strong></td><td>facile: si taglia l'array a metà, senza guardare gli elementi</td><td>faticoso: serve il merge, che fonde due parti ordinate</td></tr>
+    <tr><td><strong>quickSort</strong></td><td>faticoso: serve la partizione, che confronta ogni elemento con il perno e lo sposta</td><td>facile: non si fa niente, le parti sono già al posto giusto</td></tr>
+  </table></div>
+</div>
+
+<h3>Lo schema ad alto livello (lavagna, pagina 5)</h3>
+<p>Il prof ha scritto l'idea come uno schema di algoritmo, che nelle slide si chiama Codice 4.1:</p>
+<p class="titolo-codice">Lavagna, pagina 5 (Codice 4.1)</p>
+<pre class="pseudo"><b>ALGORITMO</b> quickSort(array A)
+  <b>IF</b> lunghezza di A &gt; 1 <b>THEN</b>
+    scegli un elemento x in A
+    B ← {y ∈ A | y &lt; x}            <span class="com">// partizionamento:</span>
+    C ← {y ∈ A | y &gt; x}            <span class="com">// «divide»</span>
+    quickSort(B)
+    quickSort(C)
+    A ← concatenazione di B, x, C    <span class="com">// «impera»</span></pre>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: la notazione degli insiemi</span>
+  <p><code>{y ∈ A | y &lt; x}</code> si legge «l'insieme degli y che stanno in A e tali che y &lt; x». Il simbolo ∈ vuol dire «appartiene a», la sbarra | vuol dire «tali che».</p>
+  <p>Esempio con l'array della Figura 1, A = 44 55 12 42 94 9 18 64, e con x = 55:</p>
+  <ul>
+    <li>{y ∈ A | y &lt; 55} = {44, 12, 42, 9, 18}: gli elementi minori di 55;</li>
+    <li>{y ∈ A | y &gt; 55} = {94, 64}: gli elementi maggiori di 55.</li>
+  </ul>
+  <p>Le slide avvertono che la notazione degli insiemi qui è usata «impropriamente», per semplicità: serve a dire che l'ordine con cui gli elementi finiscono in B e in C non conta.</p>
+</div>
+
+<p>Riga per riga:</p>
+<ul>
+  <li><code>IF lunghezza di A &gt; 1</code>: se A ha 0 o 1 elementi è già ordinato, e non si fa niente. È il <strong>caso base</strong>.</li>
+  <li><code>scegli un elemento x in A</code>: x è il perno.</li>
+  <li><code>B ← …</code> e <code>C ← …</code>: B raccoglie gli elementi minori del perno, C quelli maggiori. Queste due righe sono il <strong>partizionamento</strong>: è la parte «divide» della tecnica divide et impera.</li>
+  <li><code>quickSort(B)</code> e <code>quickSort(C)</code>: le due chiamate ricorsive ordinano B e C con lo stesso metodo.</li>
+  <li><code>A ← concatenazione di B, x, C</code>: «concatenare» vuol dire mettere in fila: prima tutti gli elementi di B (ordinati), poi x, poi tutti quelli di C (ordinati). È la parte «impera», cioè il ricombinare, e non richiede nessun confronto.</li>
+</ul>
+
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: e se ci sono valori ripetuti?</span>
+  <p>Lo schema della lavagna funziona quando i valori sono tutti diversi, come nell'esempio. Se invece in A ci fosse un secondo 55, quel 55 non sarebbe né &lt; 55 né &gt; 55: non finirebbe né in B né in C, e andrebbe perso.</p>
+  <p>Le slide, infatti, scrivono B ← {y ∈ A | y ≤ perno}: gli elementi <strong>uguali</strong> al perno vanno a sinistra. Anche il codice vero, dalla sezione 3 in poi, fa così: a sinistra gli elementi ≤ perno, a destra quelli &gt; perno.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li><strong>quickSort</strong>: si sceglie un elemento, il <strong>perno</strong>; si mettono a sinistra gli elementi minori o uguali e a destra quelli maggiori (<strong>partizionamento</strong>); si ordinano le due parti con lo stesso metodo; si mettono una accanto all'altra.</li>
+    <li>Al contrario di mergeSort, la fatica sta nel dividere; il ricombinare non costa niente.</li>
+    <li>Caso base: un array con 0 o 1 elementi è già ordinato.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="partiziona"><span class="num">2</span>Cosa deve fare partiziona</h2>
+<p class="in-questa"><b>In questa sezione:</b> perché si vuole partizionare l'array «sul posto», senza costruire B e C; cosa deve fare la procedura partiziona (lavagna, pagina 6); un esempio in cui le soluzioni giuste sono più di una (pagina 7).</p>
+
+<h3>Perché non costruire B e C</h3>
+<p>Lo schema della sezione 1 costruisce due nuovi insiemi, B e C. In un programma vorrebbe dire creare due array in più e copiarci dentro gli elementi: memoria in più, grande quanto l'array da ordinare. Le slide dicono che questo si vuole evitare.</p>
+<p>Si usa invece una procedura, <strong>partiziona</strong>, che sposta gli elementi <em>dentro lo stesso array</em> A, scambiandoli di posto, finché quelli piccoli sono a sinistra e quelli grandi a destra. Le slide aggiungono una seconda richiesta: il numero di confronti deve restare lineare, cioè dell'ordine di n per n elementi. Si confronta ogni elemento con il perno circa una volta, non di più.</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: la porzione A[i..f − 1]</span>
+  <p>Le procedure di questa pagina lavorano su un pezzo di array, indicato da due indici: <strong>i</strong> (incluso) e <strong>f</strong> (escluso). La porzione è A[i..f − 1], cioè le caselle A[i], A[i + 1], …, A[f − 1]. Il numero di elementi della porzione è <strong>f − i</strong>.</p>
+  <p>Esempio: con i = 2 e f = 6 la porzione è A[2], A[3], A[4], A[5]: 4 elementi, e infatti 6 − 2 = 4. La casella A[6] non fa parte della porzione: f indica la prima casella <em>dopo</em> la porzione.</p>
+  <p>Per tutto l'array A[0..n − 1] si usa i = 0 e f = n.</p>
+</div>
+
+<h3>La specifica di partiziona (lavagna, pagina 6)</h3>
+<div class="box def">
+  <span class="etichetta">ALGORITMO partiziona(Array A, indice i, indice f) → indice</span>
+  <ul>
+    <li>Partiziona A[i..f − 1] rispetto a un elemento di A[i..f − 1] scelto come perno, spostando gli elementi in modo che alla fine la porzione sia come nella Figura 2.</li>
+    <li>Restituisce la posizione finale del perno (pos).</li>
+  </ul>
+</div>
+<div class="figura">
+<svg viewBox="0 0 620 175" width="620" height="175" role="img" aria-label="Dopo partiziona: da i fino a pos − 1 gli elementi minori o uguali al perno, in pos il perno, da pos + 1 fino a f − 1 gli elementi maggiori del perno."><defs><marker id="f2-p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="punta" fill="#5b6270"/></marker></defs><g font-size="14" text-anchor="middle"><rect x="20" y="70" width="60" height="36" class="r-box" fill="#ffffff" stroke="#e4ddcf" stroke-width="1.5"/><text x="50" y="93" class="t-muted" fill="#5b6270">…</text><rect x="80" y="70" width="250" height="36" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="205" y="93" class="t-testo" fill="#1f2328">elementi ≤ perno</text><rect x="330" y="70" width="34" height="36" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="2"/><text x="347" y="92" class="t-rosso" fill="#b42318" font-size="11">perno</text><rect x="364" y="70" width="196" height="36" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="462" y="93" class="t-testo" fill="#1f2328">elementi &gt; perno</text><rect x="560" y="70" width="40" height="36" class="r-box" fill="#ffffff" stroke="#e4ddcf" stroke-width="1.5"/><text x="580" y="93" class="t-muted" fill="#5b6270">…</text><path d="M82.0,64.0 Q82.0,56.0 90.0,56.0 L197.0,56.0 Q205.0,56.0 205.0,48.0 Q205.0,56.0 213.0,56.0 L320.0,56.0 Q328.0,56.0 328.0,64.0" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.8"/><path d="M366.0,64.0 Q366.0,56.0 374.0,56.0 L454.0,56.0 Q462.0,56.0 462.0,48.0 Q462.0,56.0 470.0,56.0 L550.0,56.0 Q558.0,56.0 558.0,64.0" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.8"/><text x="205" y="42" class="t-verde" fill="#17803d">≤ perno</text><text x="462" y="42" class="t-verde" fill="#17803d">&gt; perno</text><text x="88" y="126" class="t-verde" fill="#17803d">i</text><text x="568" y="126" class="t-verde" fill="#17803d">f</text><line x1="347" y1="110" x2="347" y2="142" class="l-muted" stroke="#5b6270" stroke-width="1.5" marker-end="url(#f2-p)"/><text x="347" y="160" class="t-verde" fill="#17803d">pos</text></g></svg>
+<div class="didascalia"><b>Figura 2.</b> Come deve essere la porzione A[i..f − 1] alla fine di partiziona (lavagna, pagina 6): da i fino a pos − 1 gli elementi ≤ perno, in pos il perno, da pos + 1 fino a f − 1 gli elementi &gt; perno. Fuori dalla porzione (i puntini) non cambia niente.</div>
+</div>
+<p>La freccia «→ indice» nell'intestazione vuol dire che partiziona restituisce un numero: la posizione pos in cui è finito il perno.</p>
+<p>Un fatto importante: <strong>dopo partiziona, il perno è già nella posizione che avrà nell'array ordinato</strong>. Infatti a sinistra di pos ci sono tutti e soli gli elementi ≤ perno, a destra tutti e soli quelli più grandi. Nell'array ordinato il perno avrà davanti esattamente quegli elementi più piccoli o uguali. Quindi il perno non dovrà più muoversi.</p>
+
+<h3>Più soluzioni giuste (lavagna, pagina 7)</h3>
+<p>La specifica non dice quale elemento scegliere come perno, e non dice in che ordine mettere gli elementi dentro le due parti. Per questo, dato un array, le partizioni giuste sono tante. La Figura 3 mostra l'esempio della lavagna, pagina 7, con «due delle molte soluzioni possibili».</p>
+<div class="figura">
+<div class="etich-array">Dato: la porzione A[i..f − 1], qui con i = 0 e f = 10.</div>
+<div class="array qs"><div class="cella"><div class="f"></div><div class="v">12</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">45</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">17</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">22</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">46</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">24</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">9</div></div></div>
+<div class="etich-array">Una soluzione possibile, con perno 17: finisce in posizione pos = 4.</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="stacco"></div><div class="cella perno"><div class="f">pos</div><div class="v">17</div><div class="i">4</div></div><div class="stacco"></div><div class="cella zdx"><div class="f"></div><div class="v">46</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">33</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">24</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">22</div><div class="i">8</div></div><div class="cella zdx"><div class="f"></div><div class="v">45</div><div class="i">9</div></div></div>
+<div class="etich-array">Un'altra soluzione possibile, con perno 33: finisce in posizione pos = 7.</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">24</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="cella zsx"><div class="f"></div><div class="v">22</div><div class="i">4</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">5</div></div><div class="cella zsx"><div class="f"></div><div class="v">17</div><div class="i">6</div></div><div class="stacco"></div><div class="cella perno"><div class="f">pos</div><div class="v">33</div><div class="i">7</div></div><div class="stacco"></div><div class="cella zdx"><div class="f"></div><div class="v">46</div><div class="i">8</div></div><div class="cella zdx"><div class="f"></div><div class="v">45</div><div class="i">9</div></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 7: un array e due partizioni corrette, con due perni diversi (17 e 33). In tutte e due, a sinistra del perno ci sono solo elementi ≤ perno e a destra solo elementi &gt; perno. Le due parti non sono ordinate, e va bene così.</div>
+</div>
+<p>Guarda la prima soluzione della Figura 3: la parte sinistra è 12 8 2 1, che non è in ordine. Non importa: partiziona deve solo mettere ogni elemento <em>dalla parte giusta</em>. Metterli in ordine sarà il compito delle chiamate ricorsive.</p>
+<p>Il codice della sezione 4 sceglie sempre come perno il primo elemento. Con l'array della Figura 3 il perno sarebbe quindi 12, e il risultato una terza soluzione ancora: 1 8 2 <b>12</b> 46 22 33 24 17 45. È l'esercizio 6 della sezione 14.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li><strong>partiziona(A, i, f)</strong> riorganizza la porzione A[i..f − 1] dentro A stesso: a sinistra gli elementi ≤ perno, poi il perno, a destra gli elementi &gt; perno. Restituisce la posizione del perno.</li>
+    <li>Dopo partiziona il perno è al suo <strong>posto definitivo</strong>.</li>
+    <li>Le soluzioni giuste sono molte: l'ordine dentro le due parti non conta.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="strategia"><span class="num">3</span>La strategia: due indici che si vengono incontro</h2>
+<p class="in-questa"><b>In questa sezione:</b> il metodo con cui partiziona sposta gli elementi senza usare altri array, raccontato a parole (lavagna, pagina 8) e seguito passo per passo su un esempio; la proprietà che resta vera durante tutto il lavoro (pagina 10).</p>
+
+<h3>Una storia: due guardiani in un corridoio</h3>
+<p>Immagina una fila di persone in un corridoio. La prima della fila è il perno. La regola è: alla fine, chi non è più alto del perno deve stare a sinistra, chi è più alto deve stare a destra.</p>
+<p>Ci sono due guardiani. Il guardiano <span class="lab-dx">dx</span> parte dal fondo destro del corridoio e cammina verso sinistra. Il guardiano <span class="lab-sx">sx</span> parte dall'inizio e cammina verso destra.</p>
+<ul>
+  <li>Il guardiano dx supera tutte le persone più alte del perno: sono già dalla parte giusta. Si ferma davanti alla prima persona che <em>non</em> è più alta del perno: quella dovrebbe stare a sinistra.</li>
+  <li>Il guardiano sx supera tutte le persone non più alte del perno: sono già dalla parte giusta. Si ferma davanti alla prima persona più alta del perno: quella dovrebbe stare a destra.</li>
+  <li>Le due persone davanti ai guardiani sono tutte e due dalla parte sbagliata: si scambiano di posto. Poi i guardiani riprendono a camminare.</li>
+  <li>Quando i due guardiani si incontrano, tutte le persone sono state controllate. A quel punto il perno si scambia con la persona davanti al guardiano dx.</li>
+</ul>
+
+<h3>Le regole della lavagna (pagina 8)</h3>
+<div class="box def">
+  <span class="etichetta">La strategia di partizione</span>
+  <ol>
+    <li>perno ← il primo elemento della porzione.</li>
+    <li>Scansiona da destra (indice dx) fino a raggiungere un elemento ≤ perno.</li>
+    <li>Scansiona da sinistra (indice sx) fino a raggiungere un elemento &gt; perno.</li>
+    <li>Scambia i due elementi. Poi ripeti dal punto 2. Si termina quando i due indici si incontrano.</li>
+    <li>Scambia l'elemento di indice dx con il perno.</li>
+    <li>Restituisci l'indice dx.</li>
+  </ol>
+</div>
+<p>«Scansionare» vuol dire guardare le caselle una dopo l'altra. Attenzione all'ordine: la scansione da <strong>destra</strong> viene <strong>prima</strong>.</p>
+
+<h3>Un esempio passo per passo</h3>
+<p>La Figura 4 segue la strategia sull'array della lavagna, pagina 8 (lo stesso esempio è nelle slide). Il perno è 12, il primo elemento.</p>
+<div class="figura">
+<div class="etich-array">Passo 0. Contenuto iniziale. Perno = A[0] = 12. Sotto ogni casella c'è il suo indice.</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">12</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">7</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">9</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">56</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">7</div></div></div>
+<div class="etich-array">Passo 1. dx scende da destra e si ferma su 2 (2 ≤ 12). sx sale da sinistra e si ferma su 33 (33 > 12).</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">12</div><div class="i">0</div></div><div class="cella attiva"><div class="f"><span class="lab-sx">sx</span></div><div class="v">33</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">7</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">9</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">56</div><div class="i">6</div></div><div class="cella attiva"><div class="f"><span class="lab-dx">dx</span></div><div class="v">2</div><div class="i">7</div></div></div>
+<div class="etich-array">Passo 2. Scambio 33 e 2. Poi dx riparte: salta 56 (56 > 12) e si ferma su 9. sx riparte e si ferma su 15.</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">12</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella attiva"><div class="f"><span class="lab-sx">sx</span></div><div class="v">15</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">7</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">4</div></div><div class="cella attiva"><div class="f"><span class="lab-dx">dx</span></div><div class="v">9</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">56</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">33</div><div class="i">7</div></div></div>
+<div class="etich-array">Passo 3. Scambio 15 e 9. dx riparte: salta 19 e si ferma su 7. sx sale di uno e trova sx = dx = 3: si ferma senza confrontare.</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">12</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">9</div><div class="i">2</div></div><div class="cella attiva"><div class="f"><span class="lab-sx">sx</span><span class="lab-dx">dx</span></div><div class="v">7</div><div class="i">3</div></div><div class="cella zdx"><div class="f"></div><div class="v">19</div><div class="i">4</div></div><div class="cella zdx"><div class="f"></div><div class="v">15</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">56</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">33</div><div class="i">7</div></div></div>
+<div class="etich-array">Passo 4. Gli indici si sono incontrati: scambio il perno con A[dx] = A[3] = 7. Fine: partiziona restituisce 3.</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">7</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">9</div><div class="i">2</div></div><div class="stacco"></div><div class="cella perno"><div class="f"></div><div class="v">12</div><div class="i">3</div></div><div class="stacco"></div><div class="cella zdx"><div class="f"></div><div class="v">19</div><div class="i">4</div></div><div class="cella zdx"><div class="f"></div><div class="v">15</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">56</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">33</div><div class="i">7</div></div></div>
+<div class="didascalia"><b>Figura 4.</b> La partizione di 12 33 15 7 19 9 56 2 (lavagna, pagina 8). Le scritte arancio <span class="lab-sx">sx</span> e verde <span class="lab-dx">dx</span> sopra le caselle dicono dove si sono fermati i due indici. Le caselle azzurre sono già state controllate e stanno a sinistra (≤ 12), quelle arancio chiaro stanno a destra (&gt; 12). Alla fine il 12 è in posizione 3.</div>
+</div>
+<p>Rileggi la Figura 4 riga per riga:</p>
+<ul>
+  <li><b>Passo 1.</b> dx parte da destra e guarda il 2: 2 ≤ 12, quindi si ferma subito. sx parte da sinistra e guarda il 33: 33 &gt; 12, quindi si ferma subito. Il 33 deve andare a destra e il 2 a sinistra: si scambiano.</li>
+  <li><b>Passo 2.</b> Dopo lo scambio, il 2 (in posizione 1) è a sinistra e il 33 (in posizione 7) è a destra, tutti e due al posto giusto. dx riparte dalla posizione 6: 56 &gt; 12, lo supera; 9 ≤ 12, si ferma. sx riparte dalla posizione 2: 15 &gt; 12, si ferma. Si scambiano 15 e 9.</li>
+  <li><b>Passo 3.</b> dx riparte dalla posizione 4: 19 &gt; 12, lo supera; 7 ≤ 12, si ferma in posizione 3. sx avanza in posizione 3, ma lì c'è già dx: i due indici si sono incontrati e sx si ferma senza guardare.</li>
+  <li><b>Passo 4.</b> Tutte le caselle sono state controllate. Si scambia il perno 12 (posizione 0) con l'elemento in posizione dx = 3, cioè il 7. Il 7 è ≤ 12, quindi può andare all'inizio. Il 12 va in posizione 3: a sinistra 7 2 9, tutti ≤ 12; a destra 19 15 56 33, tutti &gt; 12.</li>
+</ul>
+
+<h3>La proprietà che resta sempre vera (lavagna, pagina 10)</h3>
+<p>In ogni momento del lavoro, le caselle si dividono in tre zone, che nelle figure hanno tre colori:</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">Proprietà:</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">A[i], …, A[sx − 1] ≤ perno</span><span class="cond">la zona azzurra (e il perno)</span><span class="val">A[dx + 1], …, A[f − 1] &gt; perno</span><span class="cond">la zona arancio chiaro</span></span></span></div>
+<p>Tra sx e dx ci sono le caselle non ancora controllate. Ogni passo di una scansione allarga una delle due zone colorate di una casella; ogni scambio sistema due caselle in una volta. Quando gli indici si incontrano, la zona centrale è vuota: ogni elemento è stato messo dalla parte giusta.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Due indici: <strong>dx</strong> scende da destra e si ferma su un elemento ≤ perno; <strong>sx</strong> sale da sinistra e si ferma su un elemento &gt; perno. Si scambiano i due elementi e si continua.</li>
+    <li>Quando gli indici si incontrano, si scambia il perno con l'elemento in posizione dx, e si restituisce dx.</li>
+    <li>Proprietà: a sinistra di sx tutto ≤ perno, a destra di dx tutto &gt; perno.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="codice"><span class="num">4</span>Il Codice 4.2 riga per riga</h2>
+<p class="in-questa"><b>In questa sezione:</b> lo pseudocodice di partiziona (lavagna, pagina 9), il ciclo DO … WHILE, perché le due scansioni sono scritte in modo diverso, tre esempi della lavagna (pagina 10) e un riquadro interattivo per seguire partiziona su qualunque array, anche in ordine decrescente, come capita all'esame.</p>
+
+<p class="titolo-codice">Lavagna, pagina 9 (Codice 4.2)</p>
+<pre class="pseudo"><b>ALGORITMO</b> partiziona(Array A, indice i, indice f) → indice
+  perno ← A[i]
+  dx ← f, sx ← i
+  <b>WHILE</b> sx &lt; dx <b>DO</b>
+    <b>DO</b> dx ← dx − 1 <b>WHILE</b> A[dx] &gt; perno
+    <b>DO</b> sx ← sx + 1 <b>WHILE</b> sx &lt; dx <b>AND</b> A[sx] ≤ perno
+    <b>IF</b> sx &lt; dx <b>THEN</b>
+      scambia A[sx] con A[dx]
+  scambia A[i] con A[dx]
+  <b>RETURN</b> dx</pre>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: il ciclo DO … WHILE</span>
+  <p><code>DO istruzione WHILE condizione</code> funziona così: <strong>prima</strong> esegue l'istruzione, <strong>poi</strong> controlla la condizione. Se è vera, ricomincia; se è falsa, smette. L'istruzione viene quindi eseguita almeno una volta.</p>
+  <p>Il ciclo <code>WHILE condizione DO istruzione</code>, invece, controlla prima la condizione, e può anche non eseguire mai l'istruzione.</p>
+  <p>Esempio: partendo da x = 0, <code>DO x ← x + 1 WHILE x &lt; 3</code> fa x = 1 (1 &lt; 3 è vero, ricomincia), x = 2 (vero, ricomincia), x = 3 (3 &lt; 3 è falso, smette). Alla fine x = 3.</p>
+  <p>In Go non c'è il DO … WHILE; si scrive <code>for { x++; if !(x &lt; 3) { break } }</code>.</p>
+</div>
+
+<h3>Riga per riga</h3>
+<ul>
+  <li><code>perno ← A[i]</code>: il perno è il primo elemento della porzione. Durante tutto il ciclo resta fermo in posizione i; si sposta solo alla fine.</li>
+  <li><code>dx ← f, sx ← i</code>: dx parte da f, cioè una casella <em>dopo</em> la fine della porzione; sx parte da i, cioè dalla casella del perno. Sembrano posizioni sbagliate, ma le due scansioni sono cicli DO … WHILE che <em>prima</em> spostano l'indice e <em>poi</em> guardano. Quindi la prima casella guardata da dx è f − 1 (l'ultima della porzione) e la prima guardata da sx è i + 1 (quella subito dopo il perno).</li>
+  <li><code>WHILE sx &lt; dx DO</code>: si continua finché tra i due indici possono esserci caselle non ancora controllate.</li>
+  <li><code>DO dx ← dx − 1 WHILE A[dx] &gt; perno</code>: dx si sposta a sinistra di una casella alla volta, e continua finché trova elementi &gt; perno (che stanno già bene a destra). Si ferma sul primo elemento ≤ perno.</li>
+  <li><code>DO sx ← sx + 1 WHILE sx &lt; dx AND A[sx] ≤ perno</code>: sx si sposta a destra di una casella alla volta, e continua finché trova elementi ≤ perno (che stanno già bene a sinistra). Si ferma sul primo elemento &gt; perno, oppure quando raggiunge dx.</li>
+  <li><code>IF sx &lt; dx THEN scambia A[sx] con A[dx]</code>: se gli indici non si sono incontrati, in posizione sx c'è un elemento &gt; perno (sta a sinistra, ma dovrebbe stare a destra) e in posizione dx un elemento ≤ perno (il contrario). Si scambiano.</li>
+  <li><code>scambia A[i] con A[dx]</code>: finito il ciclo, il perno va in posizione dx e l'elemento che era in dx va all'inizio.</li>
+  <li><code>RETURN dx</code>: la posizione finale del perno.</li>
+</ul>
+
+<h3>Tre esempi della lavagna (pagina 10)</h3>
+<p>Alla lavagna, pagina 10, il prof ha fatto girare il codice su tre array. Sono nella Figura 5. L'esempio (a) è speciale: tutti gli elementi dopo il perno sono più grandi di lui.</p>
+<div class="figura">
+<p class="piccolo"><b>Esempio (a): 12 13 14 15.</b></p>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">12</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">13</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">14</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">3</div></div></div>
+<div class="etich-array">dx scende fino in fondo: 15, 14, 13 sono tutti > 12, e si ferma solo sul perno (12 > 12 è falso). sx sale a 1 e si ferma subito, perché 1 < 0 è falso.</div>
+<div class="array qs"><div class="cella perno"><div class="f"><span class="lab-dx">dx</span></div><div class="v">12</div><div class="i">0</div></div><div class="stacco"></div><div class="cella zdx"><div class="f"><span class="lab-sx">sx</span></div><div class="v">13</div><div class="i">1</div></div><div class="cella zdx"><div class="f"></div><div class="v">14</div><div class="i">2</div></div><div class="cella zdx"><div class="f"></div><div class="v">15</div><div class="i">3</div></div></div>
+<div class="etich-array">Il perno viene «scambiato con sé stesso» e resta in posizione 0. A sinistra non c'è niente.</div>
+<p class="piccolo" style="margin-top:14px"><b>Esempio (b): 24 8 31 16 17 40 29 23 27.</b></p>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">24</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella attiva"><div class="f"><span class="lab-sx">sx</span></div><div class="v">31</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">16</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">17</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">40</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">29</div><div class="i">6</div></div><div class="cella attiva"><div class="f"><span class="lab-dx">dx</span></div><div class="v">23</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">27</div><div class="i">8</div></div></div>
+<div class="etich-array">dx salta 27 e si ferma su 23; sx salta 8 e si ferma su 31. Si scambiano 31 e 23.</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">24</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">23</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">16</div><div class="i">3</div></div><div class="cella attiva"><div class="f"><span class="lab-sx">sx</span><span class="lab-dx">dx</span></div><div class="v">17</div><div class="i">4</div></div><div class="cella zdx"><div class="f"></div><div class="v">40</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">29</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">31</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">27</div><div class="i">8</div></div></div>
+<div class="etich-array">dx salta 31, 29, 40 e si ferma su 17; sx salta 16 e arriva a sx = dx = 4. Scambio il perno 24 con 17:</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">17</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">23</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">16</div><div class="i">3</div></div><div class="stacco"></div><div class="cella perno"><div class="f"></div><div class="v">24</div><div class="i">4</div></div><div class="stacco"></div><div class="cella zdx"><div class="f"></div><div class="v">40</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">29</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">31</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">27</div><div class="i">8</div></div></div>
+<p class="piccolo" style="margin-top:14px"><b>Esempio (c): 25 7 4 33 2 27 55 12 34 42.</b></p>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">7</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella attiva"><div class="f"><span class="lab-sx">sx</span></div><div class="v">33</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">27</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">55</div><div class="i">6</div></div><div class="cella attiva"><div class="f"><span class="lab-dx">dx</span></div><div class="v">12</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">34</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">42</div><div class="i">9</div></div></div>
+<div class="etich-array">dx salta 42 e 34 e si ferma su 12; sx salta 7 e 4 e si ferma su 33. Si scambiano 33 e 12.</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">7</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">3</div></div><div class="cella attiva"><div class="f"><span class="lab-sx">sx</span><span class="lab-dx">dx</span></div><div class="v">2</div><div class="i">4</div></div><div class="cella zdx"><div class="f"></div><div class="v">27</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">55</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">33</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">34</div><div class="i">8</div></div><div class="cella zdx"><div class="f"></div><div class="v">42</div><div class="i">9</div></div></div>
+<div class="etich-array">dx salta 33, 55, 27 e si ferma su 2; sx arriva a sx = dx = 4. Scambio il perno 25 con 2:</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">7</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">3</div></div><div class="stacco"></div><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="stacco"></div><div class="cella zdx"><div class="f"></div><div class="v">27</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">55</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">33</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">34</div><div class="i">8</div></div><div class="cella zdx"><div class="f"></div><div class="v">42</div><div class="i">9</div></div></div>
+<div class="didascalia"><b>Figura 5.</b> I tre esempi della lavagna, pagina 10. In (a) dx scende fino al perno e alla fine si trova a sinistra di sx (gli indici «si incrociano»). In (b) e (c) gli indici si fermano sulla stessa casella (si «incontrano»).</div>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Perché la scansione da destra non controlla sx &lt; dx</span>
+  <p>La scansione da sinistra ha la condizione <code>sx &lt; dx AND …</code>, quella da destra no. Il motivo:</p>
+  <ul>
+    <li><strong>dx non può uscire dalla porzione.</strong> Scendendo verso sinistra, al massimo arriva in posizione i, dove c'è il perno; e la condizione «perno &gt; perno» è falsa, quindi lì si ferma di sicuro. Il perno fa da <em>sentinella</em>: è l'esempio (a) della Figura 5.</li>
+    <li><strong>sx, senza controllo, potrebbe uscire.</strong> Prendi 15 12 13 14: tutti gli elementi sono ≤ 15. dx si ferma subito sul 14 (posizione 3). Senza la condizione sx &lt; dx, sx salirebbe sul 12, sul 13, sul 14 e poi in posizione 4, fuori dalla porzione. Con la condizione, sx si ferma in posizione 3, dove c'è dx.</li>
+  </ul>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: l'AND valutato «pigramente»</span>
+  <p>Nella condizione <code>sx &lt; dx AND A[sx] ≤ perno</code>, se la prima parte (sx &lt; dx) è falsa, la seconda <strong>non viene nemmeno calcolata</strong>: il risultato dell'AND è comunque falso. Si chiama valutazione pigra (in inglese <em>short-circuit</em>; in Go fa così <code>&amp;&amp;</code>).</p>
+  <p>Due conseguenze: quando sx raggiunge dx, A[sx] non viene confrontato con il perno (quel confronto non si conta); e sx non legge mai caselle fuori dalla porzione.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Perché alla fine lo scambio con A[dx] è giusto</span>
+  <p>dx si ferma solo quando la condizione «A[dx] &gt; perno» diventa falsa, cioè su un elemento <strong>≤ perno</strong>. Quindi, alla fine, A[dx] ≤ perno: portarlo in posizione i, all'inizio della porzione, va bene, perché a sinistra devono stare proprio gli elementi ≤ perno.</p>
+  <p>Alla fine del ciclo gli indici sono in una di due situazioni:</p>
+  <ul>
+    <li><strong>si incontrano</strong>: sx = dx, come nella Figura 4 e negli esempi (b) e (c) della Figura 5;</li>
+    <li><strong>si incrociano</strong>: sx = dx + 1, cioè dx è una casella a sinistra di sx, come nell'esempio (a) della Figura 5.</li>
+  </ul>
+  <p>In tutte e due le situazioni, per la proprietà della sezione 3, le caselle prima di dx contengono elementi ≤ perno e quelle dopo dx elementi &gt; perno. Quindi dx è la posizione giusta per il perno.</p>
+</div>
+
+<p>Nel riquadro seguente puoi far girare il Codice 4.2 un passo alla volta. La riga gialla nel codice è quella che si sta eseguendo. Nel menu «Esempio» ci sono gli array della lavagna e alcuni array dei temi d'esame; puoi anche scrivere il tuo (al massimo 10 numeri).</p>
+
+<div class="widget" id="w-pa">
+  <h4>partiziona, un passo alla volta</h4>
+  <div class="controlli">
+    <label>Esempio <select id="pa-es" style="width:auto"></select></label>
+  </div>
+  <div class="controlli">
+    <label>A = <input type="text" id="pa-in" value="12, 33, 15, 7, 19, 9, 56, 2" style="width:230px"></label>
+    <label>Ordine <select id="pa-ord" style="width:auto">
+      <option value="c">crescente</option>
+      <option value="d">decrescente</option>
+    </select></label>
+  </div>
+  <div class="controlli">
+    <button class="primario" id="pa-passo">Passo →</button>
+    <button id="pa-fine">Fino alla fine</button>
+    <button id="pa-reset">Ricomincia</button>
+  </div>
+  <pre class="pseudo" id="pa-cod"></pre>
+  <div class="array qs" id="pa-arr"></div>
+  <div class="contatori" id="pa-cont"></div>
+  <div class="narrazione" id="pa-txt"></div>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">All'esame: l'ordine decrescente</span>
+  <p>Alcuni temi d'esame chiedono la partizione «per ordinare in modo decrescente» (o «non crescente»). Si fa la stessa cosa allo specchio: a sinistra vanno gli elementi <strong>≥ perno</strong>, a destra quelli <strong>&lt; perno</strong>. Nel codice cambiano solo i due confronti con il perno:</p>
+<pre class="pseudo">    <b>DO</b> dx ← dx − 1 <b>WHILE</b> A[dx] <mark>&lt;</mark> perno
+    <b>DO</b> sx ← sx + 1 <b>WHILE</b> sx &lt; dx <b>AND</b> A[sx] <mark>≥</mark> perno</pre>
+  <p>Tutto il resto (il perno è il primo elemento, dx parte per primo, lo scambio finale) è identico. Nel riquadro «partiziona, un passo alla volta» scegli «decrescente» nel menu «Ordine».</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Il Codice 4.2 usa due cicli DO … WHILE: prima spostano l'indice, poi guardano. Per questo dx parte da f e sx da i.</li>
+    <li>dx non ha bisogno del controllo sx &lt; dx: il perno lo ferma. sx invece sì, per non uscire dalla porzione.</li>
+    <li>Alla fine gli indici si incontrano (sx = dx) o si incrociano (sx = dx + 1); in tutti e due i casi A[dx] ≤ perno e il perno va in posizione dx.</li>
+    <li>Ordine decrescente: stessi passi, con &lt; al posto di &gt; nella scansione da destra e ≥ al posto di ≤ in quella da sinistra.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="confronti-part"><span class="num">5</span>Quanti confronti fa partiziona</h2>
+<p class="in-questa"><b>In questa sezione:</b> quanti confronti con il perno fa partiziona su una porzione di n elementi, e perché a volte sono n − 1 e a volte n (lavagna, pagina 10).</p>
+
+<p>Qui n è il numero di elementi della porzione, perno compreso: n = f − i. Si contano i <strong>confronti tra elementi</strong>, cioè quelli tra un elemento dell'array e il perno: «A[dx] &gt; perno» e «A[sx] ≤ perno». I confronti tra indici, come sx &lt; dx, non si contano: confrontano posizioni, non elementi. Si conta così in tutti gli algoritmi di ordinamento, anche negli ordinamenti elementari e in mergeSort.</p>
+<p><strong>Almeno n − 1 confronti servono sempre:</strong> ogni elemento diverso dal perno deve essere confrontato con il perno almeno una volta, altrimenti non si saprebbe da che parte metterlo.</p>
+<p>Alla lavagna, pagina 10, il prof scrive: <strong>«# confronti: n o n − 1»</strong> (il simbolo # vuol dire «numero di»). Ecco quando succede l'uno o l'altro:</p>
+<ul>
+  <li><strong>Se gli indici si incontrano (sx = dx), i confronti sono n − 1.</strong> Ogni casella da i + 1 a f − 1 viene guardata da una sola delle due scansioni, una volta sola. Quando sx arriva sulla casella di dx non confronta (è l'AND pigro della sezione 4). Esempio: la Figura 4, con n = 8 e 7 confronti.</li>
+  <li><strong>Se gli indici si incrociano (sx = dx + 1), i confronti sono n.</strong> La casella su cui si ferma dx era già stata guardata una volta: o dalla scansione da sinistra, prima di uno scambio, oppure è la casella del perno, che dx confronta con sé stesso. Esempio: la Figura 5 (a), con n = 4 e 4 confronti: 15, 14, 13 e poi il perno 12.</li>
+</ul>
+<div class="tabella-wrap"><table>
+  <tr><th>array (il perno è il primo)</th><th>n</th><th>confronti</th><th>alla fine gli indici…</th></tr>
+  <tr><td>12 33 15 7 19 9 56 2 (Figura 4)</td><td>8</td><td>7</td><td>si incontrano: n − 1</td></tr>
+  <tr><td>12 13 14 15 (Figura 5 a)</td><td>4</td><td>4</td><td>si incrociano: n</td></tr>
+  <tr><td>24 8 31 16 17 40 29 23 27 (Figura 5 b)</td><td>9</td><td>8</td><td>si incontrano: n − 1</td></tr>
+  <tr><td>25 7 4 33 2 27 55 12 34 42 (Figura 5 c)</td><td>10</td><td>9</td><td>si incontrano: n − 1</td></tr>
+  <tr><td>25 7 4 33 2 27 55 12 <b>24</b> 42 (slide)</td><td>10</td><td>10</td><td>si incrociano: n</td></tr>
+</table></div>
+<p>L'ultima riga è l'esempio delle slide, che differisce dalla Figura 5 (c) in un solo numero (24 invece di 34). Lì la casella in posizione 5 viene guardata due volte: prima da sx, quando contiene 27 (27 &gt; 25, sx si ferma); poi, dopo lo scambio, contiene 12, e dx la guarda di nuovo (12 ≤ 25, dx si ferma). Puoi seguirlo nel riquadro «partiziona, un passo alla volta» della sezione 4, scegliendo l'esempio delle slide.</p>
+<p>Nei conti delle prossime sezioni il prof usa sempre <strong>n</strong> confronti per partizionare n elementi. A volte è 1 in più del vero, ma le slide osservano che questa semplificazione non cambia le stime che si ottengono.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>partiziona su n elementi fa <strong>n − 1</strong> confronti se gli indici si incontrano, <strong>n</strong> se si incrociano.</li>
+    <li>Nei conti di quickSort si usa sempre n.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="quicksort"><span class="num">6</span>quickSort completo</h2>
+<p class="in-questa"><b>In questa sezione:</b> la procedura ricorsiva quickSort, che usa partiziona (lavagna, pagina 11); perché il perno resta fuori dalle chiamate ricorsive; l'albero delle chiamate su un esempio e un riquadro interattivo.</p>
+
+<p class="titolo-codice">Lavagna, pagina 11 (Codice 4.3)</p>
+<pre class="pseudo"><b>PROCEDURA</b> quickSort(Array A, indice i, indice f)     <span class="com">// ordina A[i..f − 1]</span>
+  <b>IF</b> f − i &gt; 1 <b>THEN</b>
+    m ← partiziona(A, i, f)
+    quickSort(A, i, m)
+    quickSort(A, m + 1, f)
+
+<b>ALGORITMO</b> quickSort(Array A[0..n − 1])
+  quickSort(A, 0, n)</pre>
+<p>Riga per riga:</p>
+<ul>
+  <li><code>IF f − i &gt; 1</code>: si lavora solo se la porzione ha più di un elemento. Con 0 o 1 elementi la porzione è già ordinata e la procedura non fa niente: è il caso base.</li>
+  <li><code>m ← partiziona(A, i, f)</code>: dopo questa riga il perno è in posizione m, al suo posto definitivo. A sinistra (posizioni da i a m − 1) ci sono gli elementi ≤ perno, a destra (da m + 1 a f − 1) quelli &gt; perno.</li>
+  <li><code>quickSort(A, i, m)</code>: ordina A[i..m − 1], la parte sinistra (m − i elementi). Ricorda che f è escluso: qui «f» vale m, quindi la casella m, quella del perno, non fa parte della chiamata.</li>
+  <li><code>quickSort(A, m + 1, f)</code>: ordina A[m + 1..f − 1], la parte destra (f − m − 1 elementi).</li>
+  <li><code>ALGORITMO quickSort(Array A[0..n − 1])</code>: per ordinare tutto l'array si chiama la procedura con i = 0 e f = n.</li>
+</ul>
+<p>Le due chiamate ricorsive <strong>saltano il perno</strong>, perché è già al suo posto. E dopo le due chiamate non c'è nessuna istruzione: la fase «impera» è vuota. Quando le due parti sono ordinate, tutta la porzione è ordinata: prima gli elementi ≤ perno in ordine, poi il perno, poi gli elementi &gt; perno in ordine.</p>
+<p>Una chiamata può anche ricevere <strong>0 elementi</strong>. Succede quando il perno finisce nella prima posizione della porzione (m = i): allora quickSort(A, i, m) è quickSort(A, i, i), e siccome f − i = 0 non è &gt; 1, non fa niente. Lo stesso a destra, se il perno finisce nell'ultima posizione.</p>
+
+<h3>L'albero delle chiamate</h3>
+<p>La Figura 6 mostra tutte le chiamate di quickSort sui numeri della lavagna, pagina 4, con il codice vero: il perno, quindi, è il primo elemento (44), non il 55 della Figura 1. Ogni riga è un livello di profondità della ricorsione; ogni riquadro è una chiamata, con il suo pezzo di array <em>dopo</em> la partizione.</p>
+<div class="figura">
+<div class="albero"><div class="livello"><div class="nome">profondità 0</div><div class="pezzo"><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">18</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">42</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">44</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">94</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">55</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">64</div><div class="i"></div></div></div><div class="nota">A[0..7], perno 44
+8 confronti</div></div></div><div class="livello"><div class="nome">profondità 1</div><div class="pezzo"><div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">18</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">42</div><div class="i"></div></div></div><div class="nota">A[0..3], perno 9
+4 confronti</div></div><div class="pezzo"><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">64</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">55</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">94</div><div class="i"></div></div></div><div class="nota">A[5..7], perno 94
+2 confronti</div></div></div><div class="livello"><div class="nome">profondità 2</div><div class="pezzo"><div class="vuoto">vuoto</div><div class="nota">quickSort(A, 0, 0)
+0 elementi</div></div><div class="pezzo"><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">18</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">42</div><div class="i"></div></div></div><div class="nota">A[1..3], perno 18
+2 confronti</div></div><div class="pezzo"><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">55</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">64</div><div class="i"></div></div></div><div class="nota">A[5..6], perno 64
+1 confronti</div></div><div class="pezzo"><div class="vuoto">vuoto</div><div class="nota">quickSort(A, 8, 8)
+0 elementi</div></div></div><div class="livello"><div class="nome">profondità 3</div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">12</div><div class="i"></div></div></div><div class="nota">A[1..1]
+1 elemento</div></div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">42</div><div class="i"></div></div></div><div class="nota">A[3..3]
+1 elemento</div></div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">55</div><div class="i"></div></div></div><div class="nota">A[5..5]
+1 elemento</div></div><div class="pezzo"><div class="vuoto">vuoto</div><div class="nota">quickSort(A, 7, 7)
+0 elementi</div></div></div></div>
+<div class="didascalia"><b>Figura 6.</b> Le chiamate di quickSort su 44 55 12 42 94 9 18 64. Sotto ogni pezzo: le posizioni, il perno e i confronti fatti da partiziona. In tutto 8 + 4 + 2 + 2 + 1 = 17 confronti.</div>
+</div>
+<p>Leggi la Figura 6 dall'alto:</p>
+<ul>
+  <li><b>Profondità 0.</b> partiziona su tutto l'array, perno 44: risultato 9 18 12 42 | <b>44</b> | 94 55 64. Il 44 finisce in posizione 4. Gli indici si incrociano, quindi 8 confronti (n = 8).</li>
+  <li><b>Profondità 1.</b> A sinistra, A[0..3] = 9 18 12 42 con perno 9: il 9 è il più piccolo, resta in posizione 0, e la sua parte sinistra è vuota. A destra, A[5..7] = 94 55 64 con perno 94: il 94 è il più grande e va in fondo.</li>
+  <li><b>Profondità 2 e 3.</b> Si continua finché ogni pezzo ha 0 o 1 elementi. I riquadri tratteggiati «vuoto» sono le chiamate con 0 elementi.</li>
+</ul>
+<p>Nel riquadro seguente puoi seguire le chiamate una alla volta, nell'ordine in cui il computer le esegue. Le caselle verdi sono quelle già al loro posto definitivo. La «pila» mostra le chiamate aperte, cioè iniziate e non ancora finite: in alto c'è l'ultima.</p>
+
+<div class="widget" id="w-qs">
+  <h4>quickSort, chiamata per chiamata</h4>
+  <div class="controlli">
+    <label>Esempio <select id="qs-es" style="width:auto"></select></label>
+  </div>
+  <div class="controlli">
+    <label>A = <input type="text" id="qs-in" value="44, 55, 12, 42, 94, 9, 18, 64" style="width:230px"></label>
+    <button id="qs-caso">10 numeri a caso</button>
+  </div>
+  <div class="controlli">
+    <button class="primario" id="qs-passo">Passo →</button>
+    <button id="qs-fine">Fino alla fine</button>
+    <button id="qs-reset">Ricomincia</button>
+  </div>
+  <div class="array qs" id="qs-arr"></div>
+  <div class="contatori" id="qs-cont"></div>
+  <div class="narrazione" id="qs-txt"></div>
+  <div class="etich-array">Le chiamate aperte (la pila; in alto l'ultima)</div>
+  <div class="pila" id="qs-pila"></div>
+  <div class="etich-array">L'albero delle chiamate, finora</div>
+  <div class="albero" id="qs-alb"></div>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">quickSort lavora «in loco»</span>
+  <p>Tutti gli spostamenti sono scambi dentro A: quickSort non usa array di appoggio, al contrario di mergeSort, che per il merge ha bisogno di un secondo array grande quanto quello da ordinare. Per questo si dice che quickSort è un algoritmo <strong>in loco</strong>. (La ricorsione usa comunque un po' di memoria, per la pila delle chiamate: nelle slide questo discorso viene dopo, e non fa parte della lezione 11.)</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>quickSort(A, i, f): se ci sono almeno 2 elementi, m ← partiziona(A, i, f), poi quickSort(A, i, m) e quickSort(A, m + 1, f).</li>
+    <li>Il perno resta fuori dalle chiamate ricorsive: è già al suo posto. Dopo le chiamate non c'è niente da fare.</li>
+    <li>Per tutto l'array: quickSort(A, 0, n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="equazione"><span class="num">7</span>Quanti confronti fa quickSort: l'equazione</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'equazione di ricorrenza per il numero di confronti di quickSort (lavagna, pagina 12) e perché dipende da dove finisce il perno.</p>
+
+<p>Chiamiamo <strong>C(n)</strong> il numero di confronti che quickSort fa per ordinare n elementi. Guardiamo il Codice 4.3:</p>
+<ul>
+  <li><strong>Se n = 0 o n = 1</strong>, la condizione f − i &gt; 1 è falsa e non si fa niente: C(n) = 0.</li>
+  <li><strong>Altrimenti</strong> si fanno tre cose, e i confronti si sommano: la partizione, l'ordinamento della parte sinistra, l'ordinamento della parte destra.</li>
+</ul>
+<p>Quanti elementi ha ciascuna parte? Dipende da dove finisce il perno. Se, dopo la partizione, il perno si trova in posizione <strong>k</strong> (contando da 0), a sinistra ci sono k elementi (le posizioni da 0 a k − 1) e a destra ce ne sono n − k − 1: tutti gli n, meno i k di sinistra, meno il perno. È la Figura 7.</p>
+<div class="figura">
+<svg viewBox="0 0 620 165" width="620" height="165" role="img" aria-label="Dopo la prima partizione il perno è in posizione k: a sinistra ci sono k elementi, a destra n − k − 1."><g font-size="14" text-anchor="middle"><rect x="60" y="40" width="240" height="36" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="180" y="63" class="t-testo" fill="#1f2328">posizioni 0 … k − 1</text><rect x="300" y="40" width="34" height="36" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="2"/><text x="317" y="62" class="t-rosso" fill="#b42318" font-size="11">perno</text><rect x="334" y="40" width="226" height="36" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="447" y="63" class="t-testo" fill="#1f2328">posizioni k + 1 … n − 1</text><text x="68" y="32" class="t-verde" fill="#17803d">0</text><text x="317" y="32" class="t-verde" fill="#17803d">k</text><text x="568" y="32" class="t-verde" fill="#17803d">n</text><path d="M62.0,82.0 Q62.0,90.0 70.0,90.0 L172.0,90.0 Q180.0,90.0 180.0,98.0 Q180.0,90.0 188.0,90.0 L290.0,90.0 Q298.0,90.0 298.0,82.0" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.8"/><path d="M336.0,82.0 Q336.0,90.0 344.0,90.0 L439.0,90.0 Q447.0,90.0 447.0,98.0 Q447.0,90.0 455.0,90.0 L550.0,90.0 Q558.0,90.0 558.0,82.0" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.8"/><text x="180" y="118" class="t-verde" fill="#17803d">k elementi</text><text x="180" y="138" class="t-verde" fill="#17803d">C(k) confronti per ordinarli</text><text x="447" y="118" class="t-verde" fill="#17803d">n − k − 1 elementi</text><text x="447" y="138" class="t-verde" fill="#17803d">C(n − k − 1) confronti</text></g></svg>
+<div class="didascalia"><b>Figura 7.</b> Lavagna, pagina 12: se il perno finisce in posizione k, la parte sinistra ha k elementi e la parte destra n − k − 1.</div>
+</div>
+<p>Quindi, se n ≥ 2:</p>
+<div class="formula">C(n) = C<sub>part</sub>(n) + C(k) + C(n − k − 1)</div>
+<ul>
+  <li>C<sub>part</sub>(n) sono i confronti di partiziona su n elementi: come detto nella sezione 5, si usa n.</li>
+  <li>C(k) sono i confronti di quickSort sulla parte sinistra, che ha k elementi.</li>
+  <li>C(n − k − 1) sono i confronti di quickSort sulla parte destra.</li>
+</ul>
+<div class="box def">
+  <span class="etichetta">L'equazione di quickSort (lavagna, pagina 12)</span>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n = 0 o n = 1</span><span class="val">n + C(k) + C(n − k − 1)</span><span class="cond">altrimenti, se il perno finisce in posizione k</span></span></span></div>
+</div>
+<p>Esempio con la Figura 6: n = 8 e il perno 44 finisce in posizione k = 4. A sinistra 4 elementi, a destra 8 − 4 − 1 = 3. Con i confronti veri della figura: 8 per la prima partizione, 4 + 2 = 6 per la parte sinistra, 2 + 1 = 3 per la parte destra. Totale 8 + 6 + 3 = 17.</p>
+<p>C'è un problema: <strong>k dipende dai dati</strong>. Lo stesso n può dare k diversi, a seconda di quale elemento è il primo. Per questo ci sono tre domande diverse, una per sezione:</p>
+<ul>
+  <li><strong>caso peggiore</strong> (sezione 8): quanti confronti, al massimo, con la scelta di k più sfortunata?</li>
+  <li><strong>caso migliore</strong> (sezione 9): quanti, al minimo, con la scelta più fortunata?</li>
+  <li><strong>caso medio</strong> (sezioni 10 e 11): quanti, in media, se tutte le posizioni del perno sono ugualmente probabili?</li>
+</ul>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>C(n) = 0 se n ≤ 1; altrimenti C(n) = n + C(k) + C(n − k − 1), dove k è la posizione finale del perno.</li>
+    <li>k dipende dai dati: per questo si studiano tre casi, peggiore, migliore e medio.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="peggiore"><span class="num">8</span>Il caso peggiore</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'equazione del caso peggiore (lavagna, pagina 13), quali array lo producono, la sua soluzione n(n + 1)/2 − 1 e cosa vuol dire Θ(n²).</p>
+
+<p>Il numero di confronti nel caso peggiore si scrive <strong>C<sub>w</sub>(n)</strong> (w sta per <em>worst</em>, «peggiore» in inglese). Nel caso peggiore il perno finisce, ogni volta, nella posizione k che fa fare più confronti:</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C<sub>w</sub>(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">n + max{ C<sub>w</sub>(k) + C<sub>w</sub>(n − k − 1) | k = 0, …, n − 1 }</span><span class="cond">altrimenti</span></span></span></div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: max{ … | k = 0, …, n − 1 }</span>
+  <p>Si legge «il massimo dei valori dell'espressione, quando k vale 0, poi 1, …, fino a n − 1». Si calcola l'espressione per ogni k e si tiene il valore più grande.</p>
+  <p>Esempio con n = 3. Servono C<sub>w</sub>(0) = C<sub>w</sub>(1) = 0 e C<sub>w</sub>(2) = 2 (con 2 elementi, una partizione da 2 confronti e due parti con 0 e 1 elementi). Allora:</p>
+  <ul>
+    <li>k = 0: C<sub>w</sub>(0) + C<sub>w</sub>(2) = 0 + 2 = 2;</li>
+    <li>k = 1: C<sub>w</sub>(1) + C<sub>w</sub>(1) = 0 + 0 = 0;</li>
+    <li>k = 2: C<sub>w</sub>(2) + C<sub>w</sub>(0) = 2 + 0 = 2.</li>
+  </ul>
+  <p>Il massimo è 2, quindi C<sub>w</sub>(3) = 3 + 2 = 5.</p>
+</div>
+
+<p>Nell'esempio con n = 3 il massimo si ottiene con k = 0 e con k = 2 = n − 1, cioè quando il perno finisce a un estremo. La lavagna, pagina 13, dice che vale sempre: <strong>il massimo si ottiene per k = 0 o k = n − 1</strong>. È la partizione più sbilanciata possibile: una parte è vuota e l'altra ha n − 1 elementi. Le slide dicono che «è possibile dimostrare» questo fatto, senza farlo; se ti incuriosisce, una dimostrazione è nella sezione 15, ed è facoltativa.</p>
+
+<h3>Quando succede</h3>
+<p>Con il perno uguale al primo elemento, succede per esempio con un array <strong>già ordinato</strong>. Il primo elemento è il più piccolo, quindi finisce in posizione k = 0, e la parte destra contiene tutti gli altri, ancora in ordine. Nella chiamata successiva succede di nuovo, e così via. La Figura 8 mostra l'albero delle chiamate con 1 2 3 4 5.</p>
+<div class="figura">
+<div class="albero"><div class="livello"><div class="nome">profondità 0</div><div class="pezzo"><div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">1</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">2</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">3</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">4</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">5</div><div class="i"></div></div></div><div class="nota">A[0..4], perno 1
+5 confronti</div></div></div><div class="livello"><div class="nome">profondità 1</div><div class="pezzo"><div class="vuoto">vuoto</div><div class="nota">quickSort(A, 0, 0)
+0 elementi</div></div><div class="pezzo"><div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">2</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">3</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">4</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">5</div><div class="i"></div></div></div><div class="nota">A[1..4], perno 2
+4 confronti</div></div></div><div class="livello"><div class="nome">profondità 2</div><div class="pezzo"><div class="vuoto">vuoto</div><div class="nota">quickSort(A, 1, 1)
+0 elementi</div></div><div class="pezzo"><div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">3</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">4</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">5</div><div class="i"></div></div></div><div class="nota">A[2..4], perno 3
+3 confronti</div></div></div><div class="livello"><div class="nome">profondità 3</div><div class="pezzo"><div class="vuoto">vuoto</div><div class="nota">quickSort(A, 2, 2)
+0 elementi</div></div><div class="pezzo"><div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">4</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">5</div><div class="i"></div></div></div><div class="nota">A[3..4], perno 4
+2 confronti</div></div></div><div class="livello"><div class="nome">profondità 4</div><div class="pezzo"><div class="vuoto">vuoto</div><div class="nota">quickSort(A, 3, 3)
+0 elementi</div></div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">5</div><div class="i"></div></div></div><div class="nota">A[4..4]
+1 elemento</div></div></div></div>
+<div class="didascalia"><b>Figura 8.</b> quickSort su un array già ordinato: a ogni livello il perno resta in testa, la parte sinistra è vuota e la destra perde un solo elemento. Confronti: 5 + 4 + 3 + 2 = 14.</div>
+</div>
+<p>Un altro esempio delle slide: il massimo in prima posizione seguito dagli altri in ordine, come 8 1 2 3 4 5 6 7. Lì il perno finisce sempre in fondo, cioè k = n − 1.</p>
+
+<h3>La soluzione, srotolando</h3>
+<p>Con k = 0 la parte sinistra è vuota (C<sub>w</sub>(0) = 0) e la destra ha n − 1 elementi. L'equazione diventa C<sub>w</sub>(n) = n + C<sub>w</sub>(n − 1). La si applica di nuovo a C<sub>w</sub>(n − 1), poi a C<sub>w</sub>(n − 2), e così via: si dice <strong>srotolare</strong> l'equazione. Prima con i numeri, n = 5:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C<sub>w</sub>(5)</span><span class="rel">=</span><span class="dx">5 + C<sub>w</sub>(4)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">5 + 4 + C<sub>w</sub>(3)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">5 + 4 + 3 + C<sub>w</sub>(2)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">5 + 4 + 3 + 2 + C<sub>w</sub>(1)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">5 + 4 + 3 + 2 + 0 = 14</span><span class="perche">come nella Figura 8</span></span></div>
+<p>Poi con le lettere, come alla lavagna, pagina 13:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C<sub>w</sub>(n)</span><span class="rel">=</span><span class="dx">n + C<sub>w</sub>(n − 1)</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + (n − 1) + C<sub>w</sub>(n − 2)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + (n − 1) + (n − 2) + C<sub>w</sub>(n − 3)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">…</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + (n − 1) + (n − 2) + … + 2 + C<sub>w</sub>(1)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">Σ<sub>i=2</sub><sup>n</sup> i</span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n(n + 1)/2 − 1</span><span class="perche"><span class="rif">5</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">Θ(n²)</span><span class="perche"><span class="rif">6</span></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>L'equazione con k = 0: n + C<sub>w</sub>(0) + C<sub>w</sub>(n − 1) = n + 0 + C<sub>w</sub>(n − 1).</p>
+  <p><span class="rif">2</span>La stessa equazione, scritta per un numero più piccolo: C<sub>w</sub>(n − 1) = (n − 1) + C<sub>w</sub>(n − 2), poi C<sub>w</sub>(n − 2) = (n − 2) + C<sub>w</sub>(n − 3). Ogni volta si sostituisce l'ultimo termine.</p>
+  <p><span class="rif">3</span>Ci si ferma quando si arriva a C<sub>w</sub>(1), che è un caso base. L'ultimo numero sommato è 2, quello che viene da C<sub>w</sub>(2) = 2 + C<sub>w</sub>(1).</p>
+  <p><span class="rif">4</span>C<sub>w</sub>(1) = 0. Restano i numeri da 2 a n, scritti con il simbolo di somma (vedi l'attrezzo «Il simbolo Σ», subito dopo).</p>
+  <p><span class="rif">5</span>La somma 1 + 2 + … + n vale n(n + 1)/2 (vedi l'attrezzo «La somma di Gauss»). La nostra somma parte da 2, quindi le manca il termine 1: n(n + 1)/2 − 1.</p>
+  <p><span class="rif">6</span>n(n + 1)/2 − 1 = n²/2 + n/2 − 1. Per n grande conta il termine n²/2, e la funzione cresce come n² (vedi l'attrezzo «Θ in due righe»).</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: il simbolo Σ</span>
+  <p>Σ<sub>i=2</sub><sup>n</sup> i si legge «somma di i, per i che va da 2 a n». Vuol dire 2 + 3 + 4 + … + n. Sotto Σ c'è il primo valore di i, sopra l'ultimo; a destra di Σ c'è cosa sommare. Esempio: Σ<sub>i=2</sub><sup>5</sup> i = 2 + 3 + 4 + 5 = 14.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: la somma di Gauss</span>
+  <p class="formula">1 + 2 + … + n = n(n + 1)/2</p>
+  <p>Scrivi la somma due volte, una al contrario, e somma in colonna (qui con n = 5):</p>
+<pre class="binario">   S  = 1 + 2 + 3 + 4 + 5
+   S  = 5 + 4 + 3 + 2 + 1
+  2S  = 6 + 6 + 6 + 6 + 6  =  5 · 6  =  30
+   S  = 30 / 2 = 15</pre>
+  <p>Ogni colonna fa n + 1, e le colonne sono n: 2S = n(n + 1), cioè S = n(n + 1)/2. Con n = 5: 5 · 6 / 2 = 15.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: Θ in due righe</span>
+  <p>Una funzione f(n) è <strong>Θ(n²)</strong> se, da un certo n in poi, sta tra c · n² e d · n² per due costanti positive c e d. Vuol dire: cresce come n², a meno di un fattore costante.</p>
+  <p>Qui, per ogni n ≥ 2: n²/2 ≤ n(n + 1)/2 − 1 ≤ n². La prima disuguaglianza vale perché n(n + 1)/2 − 1 = n²/2 + (n/2 − 1) e n/2 − 1 ≥ 0. La seconda perché n²/2 + n/2 − 1 ≤ n²/2 + n²/2. Quindi c = 1/2 e d = 1.</p>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Il risultato (lavagna, pagina 13)</span>
+  <p class="formula grande">C<sub>w</sub>(n) = n(n + 1)/2 − 1 = Θ(n²)</p>
+  <p>Controllo con i numeri: n = 5 dà 15 − 1 = 14 (la Figura 8); n = 8 dà 36 − 1 = 35. La lavagna, pagina 19, lo riassume come C(n) ≈ n²/2.</p>
+  <p>Nel caso peggiore quickSort fa quindi un numero di confronti dello stesso ordine degli ordinamenti elementari (selectionSort, insertionSort, bubbleSort), che sono anch'essi Θ(n²).</p>
+</div>
+<p>Una curiosità sul codice vero: su un array già ordinato, ogni partizione fa <em>esattamente</em> n confronti, perché dx scende fino al perno e gli indici si incrociano (come nella Figura 5 a). Quindi, su un array ordinato, il numero vero di confronti è proprio n(n + 1)/2 − 1: con 1 2 3 4 5 6 7 8 sono 35. La semplificazione «n confronti per partizione» qui è esatta.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Caso peggiore: partizioni completamente sbilanciate, k = 0 o k = n − 1. Con il perno uguale al primo elemento succede, per esempio, con un array già ordinato.</li>
+    <li>C<sub>w</sub>(n) = n + C<sub>w</sub>(n − 1); srotolando, n + (n − 1) + … + 2 = <strong>n(n + 1)/2 − 1 = Θ(n²)</strong>, circa n²/2.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="migliore"><span class="num">9</span>Il caso migliore</h2>
+<p class="in-questa"><b>In questa sezione:</b> quando quickSort fa meno confronti, l'equazione del caso migliore (lavagna, pagina 14) e perché il risultato è circa n log<sub>2</sub> n, come per mergeSort.</p>
+
+<p>Il numero di confronti nel caso migliore si scrive <strong>C<sub>b</sub>(n)</strong> (b sta per <em>best</em>, «migliore»). È la stessa equazione del caso peggiore, con il minimo al posto del massimo:</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">C<sub>b</sub>(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">n + min{ C<sub>b</sub>(k) + C<sub>b</sub>(n − k − 1) | k = 0, …, n − 1 }</span><span class="cond">altrimenti</span></span></span></div>
+<p>Il minimo si ottiene quando <strong>la partizione è bilanciata</strong>: il perno finisce circa a metà, k ≈ n/2, e le due parti hanno circa n/2 elementi ciascuna. In realtà le parti hanno (n − 1)/2 elementi ciascuna, perché il perno non sta in nessuna delle due: con n = 7, per esempio, 3 e 3. Il prof scrive n/2 per avere un'equazione più semplice da risolvere; la crescita del risultato non cambia. Così C<sub>b</sub>(k) + C<sub>b</sub>(n − k − 1) diventa circa 2 C<sub>b</sub>(n/2):</p>
+<div class="box def">
+  <span class="etichetta">L'equazione del caso migliore (lavagna, pagina 14)</span>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C<sub>b</sub>(n) ≈</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">2 C<sub>b</sub>(n/2) + n</span><span class="cond">altrimenti</span></span></span></div>
+</div>
+<p>È la stessa equazione del numero di confronti di mergeSort, con n al posto del costo del merge. La risolviamo srotolando, con n potenza di 2 (così n/2, n/4, … sono interi). Prima con i numeri, n = 8:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C<sub>b</sub>(8)</span><span class="rel">=</span><span class="dx">2 C<sub>b</sub>(4) + 8</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2 [2 C<sub>b</sub>(2) + 4] + 8</span><span class="perche">C<sub>b</sub>(4) = 2 C<sub>b</sub>(2) + 4</span><span class="sx"></span><span class="rel">=</span><span class="dx">4 C<sub>b</sub>(2) + 16</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">4 [2 C<sub>b</sub>(1) + 2] + 16</span><span class="perche">C<sub>b</sub>(2) = 2 C<sub>b</sub>(1) + 2</span><span class="sx"></span><span class="rel">=</span><span class="dx">8 C<sub>b</sub>(1) + 24 = 24</span><span class="perche">C<sub>b</sub>(1) = 0; e 8 log<sub>2</sub> 8 = 24</span></span></div>
+<p>Poi con le lettere:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C<sub>b</sub>(n)</span><span class="rel">=</span><span class="dx">2 C<sub>b</sub>(n/2) + n</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2 [2 C<sub>b</sub>(n/4) + n/2] + n = <span class="nuova">4 C<sub>b</sub>(n/4) + 2n</span></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">4 [2 C<sub>b</sub>(n/8) + n/4] + 2n = <span class="nuova">8 C<sub>b</sub>(n/8) + 3n</span></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">…</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx"><span class="nuova">2<sup>j</sup> C<sub>b</sub>(n/2<sup>j</sup>) + j · n</span></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n · C<sub>b</sub>(1) + n log<sub>2</sub> n</span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n log<sub>2</sub> n</span><span class="perche"><span class="rif">5</span></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>L'equazione del caso migliore, per n ≥ 2.</p>
+  <p><span class="rif">2</span>La stessa equazione applicata alla metà: C<sub>b</sub>(n/2) = 2 C<sub>b</sub>(n/4) + n/2. Poi si moltiplica: 2 · 2 C<sub>b</sub>(n/4) = 4 C<sub>b</sub>(n/4) e 2 · n/2 = n, che con l'altro n fa 2n. Allo stesso modo al passo dopo: 4 · n/4 = n, che con 2n fa 3n.</p>
+  <p><span class="rif">3</span>Lo schema dopo j passi, guardando le parti gialle: davanti a C<sub>b</sub> c'è 2<sup>j</sup>, dentro c'è n/2<sup>j</sup>, e fuori si sono accumulati j volte n. Ogni livello dell'albero delle chiamate costa n confronti in tutto: 2<sup>j</sup> chiamate da n/2<sup>j</sup> elementi ciascuna.</p>
+  <p><span class="rif">4</span>Ci si ferma quando il pezzo ha 1 elemento: n/2<sup>j</sup> = 1, cioè 2<sup>j</sup> = n, cioè j = log<sub>2</sub> n (vedi l'attrezzo «Il logaritmo in base 2», subito dopo).</p>
+  <p><span class="rif">5</span>C<sub>b</sub>(1) = 0.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: il logaritmo in base 2</span>
+  <p><strong>log<sub>2</sub> n</strong> è l'esponente da dare a 2 per ottenere n: 2<sup>log<sub>2</sub> n</sup> = n. Esempi: log<sub>2</sub> 8 = 3, perché 2³ = 8; log<sub>2</sub> 1024 = 10; log<sub>2</sub> 1 = 0.</p>
+  <p>Un modo concreto di pensarlo: log<sub>2</sub> n è <strong>quante volte puoi dimezzare n prima di arrivare a 1</strong>. 8 → 4 → 2 → 1: tre dimezzamenti, e log<sub>2</sub> 8 = 3. Per questo l'albero di un caso migliore ha circa log<sub>2</sub> n livelli.</p>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Il risultato (lavagna, pagina 14)</span>
+  <p class="formula grande">C<sub>b</sub>(n) ≈ n log<sub>2</sub> n</p>
+  <p>Nel caso migliore quickSort si comporta come mergeSort.</p>
+</div>
+
+<h3>Un esempio di caso migliore (lavagna, pagina 14)</h3>
+<p>Con il perno uguale al primo elemento, serve un array in cui il primo elemento sia a metà tra gli altri, e in cui lo stesso succeda dentro ogni parte. La lavagna, pagina 14, usa 8 1 6 4 10 9 15. La Figura 9 mostra le sue chiamate.</p>
+<div class="figura">
+<div class="albero"><div class="livello"><div class="nome">profondità 0</div><div class="pezzo"><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">4</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">6</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">8</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">10</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">15</div><div class="i"></div></div></div><div class="nota">A[0..6], perno 8
+6 confronti</div></div></div><div class="livello"><div class="nome">profondità 1</div><div class="pezzo"><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">4</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">6</div><div class="i"></div></div></div><div class="nota">A[0..2], perno 4
+2 confronti</div></div><div class="pezzo"><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">9</div><div class="i"></div></div><div class="cella perno"><div class="f"></div><div class="v">10</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">15</div><div class="i"></div></div></div><div class="nota">A[4..6], perno 10
+2 confronti</div></div></div><div class="livello"><div class="nome">profondità 2</div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">1</div><div class="i"></div></div></div><div class="nota">A[0..0]
+1 elemento</div></div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">6</div><div class="i"></div></div></div><div class="nota">A[2..2]
+1 elemento</div></div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">9</div><div class="i"></div></div></div><div class="nota">A[4..4]
+1 elemento</div></div><div class="pezzo"><div class="array qs"><div class="cella posto"><div class="f"></div><div class="v">15</div><div class="i"></div></div></div><div class="nota">A[6..6]
+1 elemento</div></div></div></div>
+<div class="didascalia"><b>Figura 9.</b> quickSort su 8 1 6 4 10 9 15 (lavagna, pagina 14): ogni partizione divide a metà. Il perno 8 lascia 3 elementi per parte; poi 4 e 10 lasciano 1 elemento per parte. Confronti: 6 + 2 + 2 = 10.</div>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">Due precisazioni su questo esempio</span>
+  <ul>
+    <li>Alla lavagna, pagina 14, la freccia di sx è disegnata sotto il 10, una casella dopo dx. Seguendo il Codice 4.2 riga per riga, sx si ferma invece sul 4, nella stessa casella di dx, perché la condizione sx &lt; dx diventa falsa (3 &lt; 3). Il risultato della partizione è lo stesso: 4 1 6 8 10 9 15. Puoi controllarlo nel riquadro «partiziona, un passo alla volta» della sezione 4.</li>
+    <li>I confronti veri sono 10, meno di 7 log<sub>2</sub> 7 ≈ 19,7. Non è un errore: il «≈» vale per n grandi. L'equazione semplificata conta n confronti per partizione invece di n − 1, e parti da n/2 elementi invece di (n − 1)/2. Per n piccoli queste approssimazioni pesano; quello che conta è come cresce il numero di confronti, cioè come n log<sub>2</sub> n.</li>
+  </ul>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Caso migliore: partizioni bilanciate, il perno finisce a metà. Esempio della lavagna: 8 1 6 4 10 9 15.</li>
+    <li>C<sub>b</sub>(n) ≈ 2 C<sub>b</sub>(n/2) + n; srotolando, <strong>C<sub>b</sub>(n) ≈ n log<sub>2</sub> n</strong>, come mergeSort.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="medio"><span class="num">10</span>Il caso medio: l'equazione</h2>
+<p class="in-questa"><b>In questa sezione:</b> cosa vuol dire «numero medio di confronti», come si scrive la sua equazione (lavagna, pagina 17) e come la si semplifica in C(n) = n + (2/n) Σ C(i).</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: la media</span>
+  <p>Se una cosa può andare in n modi, tutti con la stessa probabilità 1/n, e il modo numero k costa x<sub>k</sub>, il costo <strong>medio</strong> è la somma dei costi divisa per n:</p>
+  <p class="formula">(1/n) · (x<sub>0</sub> + x<sub>1</sub> + … + x<sub>n−1</sub>) = (1/n) Σ<sub>k=0</sub><sup>n−1</sup> x<sub>k</sub></p>
+  <p>Esempio: lanci un dado a tre facce, ugualmente probabili, che costano 4, 7 e 10. In media paghi (4 + 7 + 10)/3 = 21/3 = 7.</p>
+</div>
+
+<h3>L'ipotesi: tutte le posizioni del perno sono ugualmente probabili</h3>
+<p>Per parlare di media serve un'ipotesi su come sono fatti gli array in ingresso. Le slide assumono una <strong>distribuzione uniforme</strong>: dopo la partizione, il perno può trovarsi in ciascuna delle posizioni k = 0, 1, …, n − 1 con la stessa probabilità, <strong>1/n</strong>.</p>
+<p>Perché è ragionevole? La posizione finale del perno è il numero di elementi più piccoli di lui (con valori tutti diversi). Se tutti gli ordini degli elementi sono ugualmente probabili, il primo elemento ha la stessa probabilità di essere il più piccolo, il secondo più piccolo, …, il più grande. Quindi ogni k ha probabilità 1/n.</p>
+
+<h3>L'equazione (lavagna, pagina 17)</h3>
+<p>Per ogni k il costo è n + C(k) + C(n − k − 1), come nella sezione 7. Il costo medio è la media di questi n costi:</p>
+<div class="box def">
+  <span class="etichetta">Il numero medio di confronti (lavagna, pagina 17)</span>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">(1/n) Σ<sub>k=0</sub><sup>n−1</sup> ( n + C(k) + C(n − k − 1) )</span><span class="cond">altrimenti</span></span></span></div>
+</div>
+<p>Da qui in poi, nelle sezioni 10 e 11, C(n) indica il numero <strong>medio</strong> di confronti. Proviamo con numeri piccoli, sapendo che C(0) = C(1) = 0:</p>
+<ul>
+  <li><strong>n = 2.</strong> k vale 0 o 1. C(2) = (1/2) · [ (2 + C(0) + C(1)) + (2 + C(1) + C(0)) ] = (1/2) · (2 + 2) = 2.</li>
+  <li><strong>n = 3.</strong> k vale 0, 1 o 2. C(3) = (1/3) · [ (3 + C(0) + C(2)) + (3 + C(1) + C(1)) + (3 + C(2) + C(0)) ] = (1/3) · (5 + 3 + 5) = 13/3 ≈ 4,33.</li>
+</ul>
+<p>Confronta n = 3 con i casi estremi: il caso peggiore costa 5 (k = 0 o k = 2), il migliore 3 (k = 1). La media, 4,33, sta in mezzo.</p>
+
+<h3>La semplificazione (lavagna, pagina 17)</h3>
+<p>Per n ≥ 2 l'equazione si semplifica così:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">C(n)</span><span class="rel">=</span><span class="dx">(1/n) Σ<sub>k=0</sub><sup>n−1</sup> ( n + C(k) + C(n − k − 1) )</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">(1/n) Σ<sub>k=0</sub><sup>n−1</sup> n + (1/n) Σ<sub>k=0</sub><sup>n−1</sup> C(k) + (1/n) Σ<sub>k=0</sub><sup>n−1</sup> C(n − k − 1)</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + (1/n) Σ<sub>k=0</sub><sup>n−1</sup> C(k) + (1/n) Σ<sub>k=0</sub><sup>n−1</sup> C(k)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + (2/n) Σ<sub>i=0</sub><sup>n−1</sup> C(i)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + (2/n) Σ<sub>i=2</sub><sup>n−1</sup> C(i)</span><span class="perche"><span class="rif">4</span></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>Una somma di tre pezzi si può spezzare in tre somme separate, e il fattore 1/n va davanti a ciascuna (vedi l'attrezzo «Regole delle somme», subito dopo).</p>
+  <p><span class="rif">2</span>Prima somma: si somma n per n volte (k da 0 a n − 1), cioè n · n; diviso n fa n. Terza somma: quando k va da 0 a n − 1, n − k − 1 va da n − 1 a 0. Si sommano quindi gli stessi numeri C(0), …, C(n − 1) della seconda somma, solo in ordine inverso. La tabella per n = 4, subito dopo, lo mostra.</p>
+  <p><span class="rif">3</span>Due somme uguali fanno due volte quella somma. Il nome della variabile non conta: si chiama i invece di k.</p>
+  <p><span class="rif">4</span>C(0) = C(1) = 0, quindi i termini con i = 0 e i = 1 si possono togliere.</p>
+</div>
+<p>La tabella per n = 4 mostra il passaggio <span class="rif">2</span>: la colonna di C(k) e quella di C(n − k − 1) contengono gli stessi valori, al contrario.</p>
+<div class="tabella-wrap"><table>
+  <tr><th>k</th><th>C(k)</th><th>n − k − 1</th><th>C(n − k − 1)</th></tr>
+  <tr><td>0</td><td>C(0)</td><td>3</td><td>C(3)</td></tr>
+  <tr><td>1</td><td>C(1)</td><td>2</td><td>C(2)</td></tr>
+  <tr><td>2</td><td>C(2)</td><td>1</td><td>C(1)</td></tr>
+  <tr><td>3</td><td>C(3)</td><td>0</td><td>C(0)</td></tr>
+</table></div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: regole delle somme</span>
+  <ul>
+    <li>Una somma di somme si spezza: Σ (a<sub>k</sub> + b<sub>k</sub>) = Σ a<sub>k</sub> + Σ b<sub>k</sub>. È solo un modo diverso di raggruppare gli stessi addendi.</li>
+    <li>Un fattore che non dipende da k esce dalla somma: Σ c · a<sub>k</sub> = c · Σ a<sub>k</sub>.</li>
+    <li>Sommare un numero fisso c per n volte dà n · c: Σ<sub>k=0</sub><sup>n−1</sup> c = n · c.</li>
+  </ul>
+</div>
+
+<div class="box def">
+  <span class="etichetta">L'equazione semplificata (lavagna, pagina 18)</span>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">C(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">0</span><span class="cond">se n ≤ 1</span><span class="val">n + (2/n) Σ<sub>i=2</sub><sup>n−1</sup> C(i)</span><span class="cond">altrimenti</span></span></span></div>
+</div>
+<p>Controllo con i valori calcolati prima: C(3) = 3 + (2/3) · C(2) = 3 + 4/3 = 13/3 ✓. E il valore successivo: C(4) = 4 + (2/4) · (C(2) + C(3)) = 4 + (1/2) · (2 + 13/3) = 4 + 19/6 = 43/6 ≈ 7,17.</p>
+<p>Questa equazione è diversa da quelle dei casi peggiore e migliore: C(n) dipende da <strong>tutti</strong> i valori precedenti C(2), C(3), …, C(n − 1), non da uno o due soltanto. Per questo la dimostrazione della sezione 11 userà l'induzione completa.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Ipotesi: dopo la partizione, ogni posizione k del perno ha probabilità 1/n.</li>
+    <li>Il numero medio di confronti è la media dei costi n + C(k) + C(n − k − 1).</li>
+    <li>Semplificando: <strong>C(n) = n + (2/n) Σ<sub>i=2</sub><sup>n−1</sup> C(i)</strong> per n ≥ 2, con C(0) = C(1) = 0.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="medio-dim"><span class="num">11</span>Il caso medio: C(n) ≤ 2n ln n</h2>
+<p class="in-questa"><b>In questa sezione:</b> il risultato del caso medio, C(n) ≤ 2n ln n ≈ 1,39 n log<sub>2</sub> n, e la sua dimostrazione per induzione (lavagna, pagina 18). Prima servono due attrezzi: maggiorare una somma con un integrale (pagina 15) e calcolare quell'integrale (pagina 16).</p>
+
+<h3>11.1 Il piano</h3>
+<p>Il prof non risolve l'equazione della sezione 10 in modo esatto. Dimostra invece un limite superiore, cioè che il numero medio di confronti non supera una certa funzione:</p>
+<div class="formula grande">C(n) ≤ 2n ln n &nbsp;&nbsp; per ogni n ≥ 1</div>
+<div class="box def">
+  <span class="etichetta">Attrezzo: il logaritmo naturale ln</span>
+  <p><strong>ln x</strong> è il logaritmo in base e, dove e ≈ 2,718 è un numero speciale della matematica (la base «naturale»). Si usa ln invece di log<sub>2</sub> perché esce dall'integrale della sezione 11.3. Le proprietà che servono:</p>
+  <ul>
+    <li>ln 1 = 0, e ln x &gt; 0 per x &gt; 1;</li>
+    <li>ln è crescente: se x &lt; y allora ln x &lt; ln y;</li>
+    <li>ln 2 ≈ 0,693. Il passaggio da ln a log<sub>2</sub> è nella sezione 11.5.</li>
+  </ul>
+</div>
+<p>La dimostrazione è per induzione, e il passo induttivo arriva a una somma, Σ<sub>i=2</sub><sup>n−1</sup> i ln i, che bisogna saper maggiorare. Quindi si procede in tre tempi: prima si maggiora la somma con un integrale (11.2), poi si calcola l'integrale (11.3), infine si fa l'induzione (11.4).</p>
+
+<h3>11.2 Maggiorare la somma con un integrale (lavagna, pagina 15)</h3>
+<p>Il «Problema» della lavagna, pagina 15: <strong>trovare una limitazione superiore per Σ<sub>i=2</sub><sup>n−1</sup> i ln i</strong>, cioè un'espressione semplice che sia sicuramente maggiore o uguale a questa somma.</p>
+<div class="box def">
+  <span class="etichetta">Attrezzo: l'integrale come area</span>
+  <p>Se g(x) ≥ 0, l'integrale <strong>∫<sub>a</sub><sup>b</sup> g(x) dx</strong> è l'area della regione sotto il grafico di g, sopra l'asse x, tra x = a e x = b.</p>
+  <p>Esempio: g(x) = 3 tra 0 e 2 è un rettangolo di base 2 e altezza 3, e ∫<sub>0</sub><sup>2</sup> 3 dx = 6.</p>
+</div>
+<p>L'idea della lavagna è nella Figura 10: ogni termine della somma diventa l'area di un rettangolo, e i rettangoli stanno tutti sotto la curva x ln x.</p>
+<div class="figura">
+<svg viewBox="0 0 620 330" width="620" height="330" role="img" aria-label="La curva x ln x da 1 a 8 e, sotto, i rettangoli di base 1 e altezza i ln i per i da 2 a 7: stanno tutti sotto la curva, quindi la loro area totale è minore dell'area sotto la curva tra 2 e 8."><g font-size="13"><path d="M149.4,284.0 L149.4,264.0 L154.5,262.1 L159.5,260.2 L164.5,258.3 L169.5,256.3 L174.5,254.3 L179.5,252.3 L184.5,250.2 L189.5,248.1 L194.5,246.0 L199.5,243.8 L204.5,241.6 L209.5,239.4 L214.5,237.1 L219.5,234.9 L224.5,232.6 L229.6,230.2 L234.6,227.9 L239.6,225.5 L244.6,223.1 L249.6,220.7 L254.6,218.2 L259.6,215.7 L264.6,213.2 L269.6,210.7 L274.6,208.2 L279.6,205.6 L284.6,203.0 L289.6,200.4 L294.6,197.8 L299.6,195.2 L304.6,192.5 L309.6,189.8 L314.7,187.1 L319.7,184.4 L324.7,181.7 L329.7,178.9 L334.7,176.2 L339.7,173.4 L344.7,170.6 L349.7,167.8 L354.7,164.9 L359.7,162.1 L364.7,159.2 L369.7,156.3 L374.7,153.4 L379.7,150.5 L384.7,147.6 L389.8,144.6 L394.8,141.7 L399.8,138.7 L404.8,135.7 L409.8,132.7 L414.8,129.7 L419.8,126.7 L424.8,123.7 L429.8,120.6 L434.8,117.5 L439.8,114.5 L444.8,111.4 L449.8,108.3 L454.8,105.1 L459.8,102.0 L464.8,98.9 L469.9,95.7 L474.9,92.5 L479.9,89.4 L484.9,86.2 L489.9,83.0 L494.9,79.8 L499.9,76.5 L504.9,73.3 L509.9,70.1 L514.9,66.8 L519.9,63.5 L524.9,60.3 L529.9,57.0 L534.9,53.7 L539.9,50.4 L544.9,47.0 L550.0,43.7 L550.0,284.0 Z" class="area-curva" fill="#2a78d6" fill-opacity="0.12" stroke="none"/><rect x="149.4" y="264.0" width="66.8" height="20.0" class="r-rett" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><text x="182.8" y="259.0" text-anchor="middle" class="t-rosso" fill="#b42318" font-size="11.5">1,4</text><rect x="216.2" y="236.4" width="66.8" height="47.6" class="r-rett" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><text x="249.6" y="231.4" text-anchor="middle" class="t-rosso" fill="#b42318" font-size="11.5">3,3</text><rect x="282.9" y="203.9" width="66.8" height="80.1" class="r-rett" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><text x="316.3" y="198.9" text-anchor="middle" class="t-rosso" fill="#b42318" font-size="11.5">5,5</text><rect x="349.7" y="167.8" width="66.8" height="116.2" class="r-rett" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><text x="383.1" y="162.8" text-anchor="middle" class="t-rosso" fill="#b42318" font-size="11.5">8,0</text><rect x="416.5" y="128.7" width="66.8" height="155.3" class="r-rett" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><text x="449.8" y="123.7" text-anchor="middle" class="t-rosso" fill="#b42318" font-size="11.5">10,8</text><rect x="483.2" y="87.2" width="66.8" height="196.8" class="r-rett" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><text x="516.6" y="82.2" text-anchor="middle" class="t-rosso" fill="#b42318" font-size="11.5">13,6</text><line x1="56.0" y1="284.0" x2="590.0" y2="284.0" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="56.0" y1="284.0" x2="56.0" y2="24.0" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><text x="82.7" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">1</text><text x="149.4" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">2</text><text x="216.2" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">3</text><text x="282.9" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">4</text><text x="349.7" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">5</text><text x="416.5" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">6</text><text x="483.2" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">7</text><text x="550.0" y="302.0" text-anchor="middle" class="t-muted" fill="#5b6270">8</text><text x="50.0" y="288.0" text-anchor="end" class="t-muted" fill="#5b6270">0</text><text x="50.0" y="215.8" text-anchor="end" class="t-muted" fill="#5b6270">5</text><text x="50.0" y="143.6" text-anchor="end" class="t-muted" fill="#5b6270">10</text><text x="50.0" y="71.3" text-anchor="end" class="t-muted" fill="#5b6270">15</text><path d="M82.7,284.0 L86.9,283.1 L91.0,282.1 L95.2,281.1 L99.4,280.0 L103.6,278.8 L107.7,277.7 L111.9,276.5 L116.1,275.2 L120.2,273.9 L124.4,272.6 L128.6,271.2 L132.8,269.9 L136.9,268.4 L141.1,267.0 L145.3,265.5 L149.4,264.0 L153.6,262.4 L157.8,260.9 L162.0,259.3 L166.1,257.6 L170.3,256.0 L174.5,254.3 L178.7,252.6 L182.8,250.9 L187.0,249.2 L191.2,247.4 L195.3,245.6 L199.5,243.8 L203.7,242.0 L207.9,240.1 L212.0,238.3 L216.2,236.4 L220.4,234.5 L224.5,232.6 L228.7,230.6 L232.9,228.7 L237.1,226.7 L241.2,224.7 L245.4,222.7 L249.6,220.7 L253.7,218.6 L257.9,216.6 L262.1,214.5 L266.3,212.4 L270.4,210.3 L274.6,208.2 L278.8,206.1 L282.9,203.9 L287.1,201.7 L291.3,199.6 L295.5,197.4 L299.6,195.2 L303.8,193.0 L308.0,190.7 L312.2,188.5 L316.3,186.2 L320.5,184.0 L324.7,181.7 L328.8,179.4 L333.0,177.1 L337.2,174.8 L341.4,172.5 L345.5,170.1 L349.7,167.8 L353.9,165.4 L358.0,163.0 L362.2,160.6 L366.4,158.3 L370.6,155.8 L374.7,153.4 L378.9,151.0 L383.1,148.6 L387.2,146.1 L391.4,143.7 L395.6,141.2 L399.8,138.7 L403.9,136.2 L408.1,133.7 L412.3,131.2 L416.5,128.7 L420.6,126.2 L424.8,123.7 L429.0,121.1 L433.1,118.6 L437.3,116.0 L441.5,113.4 L445.7,110.8 L449.8,108.3 L454.0,105.7 L458.2,103.1 L462.3,100.4 L466.5,97.8 L470.7,95.2 L474.9,92.5 L479.0,89.9 L483.2,87.2 L487.4,84.6 L491.5,81.9 L495.7,79.2 L499.9,76.5 L504.1,73.9 L508.2,71.1 L512.4,68.4 L516.6,65.7 L520.7,63.0 L524.9,60.3 L529.1,57.5 L533.3,54.8 L537.4,52.0 L541.6,49.3 L545.8,46.5 L550.0,43.7 L554.1,40.9 L558.3,38.1 L562.5,35.3 L566.6,32.5 L570.8,29.7 L575.0,26.9 L579.2,24.1 L583.3,21.2" class="l-curva" fill="none" stroke="#2a78d6" stroke-width="2.2"/><text x="426.5" y="58.7" class="t-blu" fill="#2f52c4" font-weight="600">x ln x</text><text x="590.0" y="320.0" text-anchor="end" class="t-muted" fill="#5b6270">x →</text></g></svg>
+<div class="didascalia"><b>Figura 10.</b> Lavagna, pagina 15, con n = 8. La curva blu è x ln x. Il rettangolo rosso che parte da i ha base 1 e altezza i ln i (il numero sopra, con una cifra decimale): la sua area è i ln i. Tutti i rettangoli stanno sotto la curva. L'area azzurra sotto la curva, tra 2 e 8, è ∫<sub>2</sub><sup>8</sup> x ln x dx.</div>
+</div>
+<p>Il ragionamento, un pezzo alla volta:</p>
+<ol>
+  <li><strong>I rettangoli.</strong> Per ogni i da 2 a n − 1 disegna un rettangolo con base da i a i + 1 (larghezza 1) e altezza i ln i. La sua area è 1 · i ln i = i ln i. Quindi la somma delle aree dei rettangoli è proprio Σ<sub>i=2</sub><sup>n−1</sup> i ln i.</li>
+  <li><strong>La curva sale.</strong> Per x ≥ 1 la funzione x ln x è crescente: x cresce, ln x cresce e non è negativo, quindi il prodotto cresce.</li>
+  <li><strong>Ogni rettangolo sta sotto la curva.</strong> Tra i e i + 1 la curva parte dall'altezza i ln i e poi sale. Quindi sopra tutta la base del rettangolo la curva è alta almeno i ln i, cioè almeno quanto il rettangolo.</li>
+  <li><strong>Conclusione.</strong> I rettangoli occupano, uno accanto all'altro, la striscia da 2 a n, tutti sotto la curva. La loro area totale è quindi minore o uguale all'area sotto la curva tra 2 e n.</li>
+</ol>
+<div class="formula grande">Σ<sub>i=2</sub><sup>n−1</sup> i ln i ≤ ∫<sub>2</sub><sup>n</sup> x ln x dx</div>
+<p>Con n = 8 la somma vale 2 ln 2 + 3 ln 3 + … + 7 ln 7 ≈ 1,4 + 3,3 + 5,5 + 8,0 + 10,8 + 13,6 ≈ 42,6: sono i numeri sopra i rettangoli della Figura 10.</p>
+
+<h3>11.3 Calcolare l'integrale (lavagna, pagina 16)</h3>
+<div class="box def">
+  <span class="etichetta">Attrezzo: primitive e integrale definito</span>
+  <p>Una <strong>primitiva</strong> di g è una funzione G la cui derivata è g: G′(x) = g(x). Si scrive ∫ g(x) dx = G(x) + C, dove C è una costante qualunque (la derivata di una costante è 0).</p>
+  <p>L'area si calcola così: <strong>∫<sub>a</sub><sup>b</sup> g(x) dx = G(b) − G(a)</strong>, e si scrive anche [G(x)]<sub>a</sub><sup>b</sup>.</p>
+  <p>Le derivate che servono qui: (ln x)′ = 1/x, &nbsp;(x²/2)′ = x, &nbsp;(x²/4)′ = x/2.</p>
+</div>
+<div class="box def">
+  <span class="etichetta">Attrezzo: l'integrazione per parti</span>
+  <p class="formula">∫ f(x) g′(x) dx = f(x) g(x) − ∫ f′(x) g(x) dx</p>
+  <p>Viene dalla regola della derivata di un prodotto, (f g)′ = f′ g + f g′: integrando tutti e due i lati, f g = ∫ f′ g dx + ∫ f g′ dx, e basta spostare un pezzo dall'altra parte. Serve quando ∫ f′ g è più facile di ∫ f g′.</p>
+  <p>Qui, come alla lavagna: <strong>f(x) = ln x</strong> e <strong>g′(x) = x</strong>. Allora f′(x) = 1/x e g(x) = x²/2.</p>
+</div>
+<div class="mat-blocco"><span class="catena"><span class="sx">∫ x ln x dx</span><span class="rel">=</span><span class="dx">(x²/2) ln x − ∫ (1/x) · (x²/2) dx</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(x²/2) ln x − ∫ (x/2) dx</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(x²/2) ln x − x²/4 + C</span><span class="perche"><span class="rif">3</span></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>La formula per parti con f = ln x, g′ = x, f′ = 1/x, g = x²/2: f g = (x²/2) ln x, e f′ g = (1/x) · (x²/2).</p>
+  <p><span class="rif">2</span>(1/x) · (x²/2) = x²/(2x) = x/2.</p>
+  <p><span class="rif">3</span>Una primitiva di x/2 è x²/4, perché (x²/4)′ = 2x/4 = x/2.</p>
+</div>
+<p><strong>Verifica</strong>, derivando il risultato con la regola del prodotto: ((x²/2) ln x − x²/4)′ = x · ln x + (x²/2) · (1/x) − x/2 = x ln x + x/2 − x/2 = x ln x ✓.</p>
+<p>Ora l'integrale tra 2 e n. Il valore della primitiva in x = 2 è (4/2) ln 2 − 4/4 = 2 ln 2 − 1:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">∫<sub>2</sub><sup>n</sup> x ln x dx</span><span class="rel">=</span><span class="dx">[ (x²/2) ln x − x²/4 ]<sub>2</sub><sup>n</sup></span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">(n²/2) ln n − n²/4 − (2 ln 2 − 1)</span><span class="perche">G(n) − G(2)</span><span class="sx"></span><span class="rel">=</span><span class="dx">(n²/2) ln n − n²/4 − 2 ln 2 + 1</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">(n²/2) ln n − n²/4</span><span class="perche"><span class="rif">1</span></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">Il passaggio spiegato</div>
+  <p><span class="rif">1</span>−2 ln 2 + 1 ≈ −1,386 + 1 = −0,386: è un numero negativo. Togliendolo, il risultato diventa un po' più grande, quindi si scrive ≤. Si fa per avere un'espressione più semplice.</p>
+</div>
+<div class="box esame">
+  <span class="etichetta">La maggiorazione (lavagna, pagina 16)</span>
+  <p class="formula grande">Σ<sub>i=2</sub><sup>n−1</sup> i ln i ≤ (n²/2) ln n − n²/4</p>
+  <p>Controllo: con n = 8 la somma vale circa 42,6, e (64/2) ln 8 − 64/4 ≈ 66,5 − 16 = 50,5 ✓. Con n = 10: circa 79,1 contro 90,1 ✓.</p>
+</div>
+
+<h3>11.4 La dimostrazione per induzione (lavagna, pagina 18)</h3>
+<div class="box def">
+  <span class="etichetta">Attrezzo: l'induzione completa</span>
+  <p>Per dimostrare una proprietà P(n) per ogni n ≥ 1 basta dimostrare:</p>
+  <ul>
+    <li><strong>base</strong>: P(1) è vera;</li>
+    <li><strong>passo</strong>: per n ≥ 2, se P è vera per <em>tutti</em> i numeri da 1 a n − 1 (questa supposizione è l'<em>ipotesi induttiva</em>, HI), allora P(n) è vera.</li>
+  </ul>
+  <p>Funziona come una fila di tessere del domino in cui ogni tessera viene spinta da tutte quelle prima: P(1) è vera per la base; P(2) per il passo, perché P(1) è vera; P(3) perché P(1) e P(2) sono vere; e così via. Si chiama <em>completa</em> perché l'ipotesi riguarda tutti i numeri più piccoli, non solo n − 1: qui serve, perché C(n) dipende da C(2), …, C(n − 1).</p>
+</div>
+<div class="dim">
+  <div class="dim-tit">Dimostrazione (induzione completa su n)</div>
+  <p class="enunciato">Per ogni n ≥ 1: &nbsp; C(n) ≤ 2n ln n</p>
+  <div class="parte prima">Base: n = 1</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">C(1)</span><span class="rel">=</span><span class="dx">0 = 2 · 1 · ln 1</span><span class="perche">✓ (ln 1 = 0)</span></span></div>
+  <div class="parte">Passo: n ≥ 2</div>
+  <p class="riga-ip"><b>HI:</b> C(i) ≤ 2i ln i &nbsp;per ogni i con 1 ≤ i &lt; n</p>
+  <p class="riga-ip"><b>Tesi:</b> C(n) ≤ 2n ln n</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">C(n)</span><span class="rel">=</span><span class="dx">n + (2/n) Σ<sub>i=2</sub><sup>n−1</sup> C(i)</span><span class="perche">l'equazione, per n ≥ 2</span><span class="sx"></span><span class="rel">≤</span><span class="dx">n + (2/n) Σ<sub>i=2</sub><sup>n−1</sup> <span class="hl-ip">2i ln i</span></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + (4/n) Σ<sub>i=2</sub><sup>n−1</sup> i ln i</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">≤</span><span class="dx">n + (4/n) · ( (n²/2) ln n − n²/4 )</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n + 2n ln n − n</span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2n ln n</span><span class="perche">✓</span></span></div>
+  <p class="qed">∎</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Ipotesi induttiva su ogni termine della somma: i va da 2 a n − 1, quindi è sempre minore di n, e C(i) ≤ 2i ln i. Sostituendo ogni C(i) con un numero maggiore o uguale, la somma diventa maggiore o uguale; e moltiplicarla per 2/n, che è positivo, non cambia il verso del ≤.</p>
+    <p><span class="rif">2</span>Il 2 di «2i ln i» esce dalla somma (vedi l'attrezzo «Regole delle somme» della sezione 10): (2/n) · 2 = 4/n.</p>
+    <p><span class="rif">3</span>La maggiorazione della sezione 11.3. Anche qui 4/n è positivo, quindi il ≤ resta.</p>
+    <p><span class="rif">4</span>Si moltiplica: (4/n) · (n²/2) ln n = (4n²/(2n)) ln n = 2n ln n, e (4/n) · (n²/4) = n. Poi n − n = 0.</p>
+  </div>
+  <p class="piccolo">Il caso n = 2 va bene anche lui: la somma da 2 a 1 è vuota e vale 0, e tutti i passaggi restano veri (C(2) = 2 ≤ 4 ln 2 ≈ 2,77).</p>
+</div>
+
+<h3>11.5 Da ln a log<sub>2</sub></h3>
+<div class="box def">
+  <span class="etichetta">Attrezzo: cambiare la base del logaritmo</span>
+  <p>Ogni numero n &gt; 0 si scrive come potenza di 2: n = 2<sup>log<sub>2</sub> n</sup>. Prendendo ln da tutte e due le parti, e usando ln(a<sup>b</sup>) = b · ln a:</p>
+  <p class="formula">ln n = log<sub>2</sub> n · ln 2 ≈ 0,693 · log<sub>2</sub> n</p>
+</div>
+<p>Quindi 2n ln n = 2 ln 2 · n log<sub>2</sub> n ≈ 2 · 0,693 · n log<sub>2</sub> n ≈ <strong>1,39 n log<sub>2</sub> n</strong>.</p>
+<div class="box esame">
+  <span class="etichetta">Il risultato (lavagna, pagine 18 e 19)</span>
+  <p class="formula grande">Caso medio: &nbsp; C(n) ≤ 2n ln n ≈ 1,39 n log<sub>2</sub> n</p>
+  <p>Dimostrato per induzione, usando la maggiorazione con l'integrale.</p>
+</div>
+<p>I numeri esatti dell'equazione della sezione 10, calcolati uno dopo l'altro, confrontati con il limite superiore e con n log<sub>2</sub> n:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>n</th><th>C(n) medio, dall'equazione</th><th>limite 2n ln n</th><th>n log<sub>2</sub> n</th></tr>
+  <tr><td>10</td><td>30,8</td><td>46,1</td><td>33,2</td></tr>
+  <tr><td>100</td><td>714,2</td><td>921,0</td><td>664,4</td></tr>
+  <tr><td>1000</td><td>11&nbsp;652</td><td>13&nbsp;816</td><td>9&nbsp;966</td></tr>
+  <tr><td>1&nbsp;000&nbsp;000</td><td>25&nbsp;452&nbsp;149</td><td>27&nbsp;631&nbsp;021</td><td>19&nbsp;931&nbsp;569</td></tr>
+</table></div>
+<p>Il numero medio resta sempre sotto il limite. Il rapporto tra il numero medio e n log<sub>2</sub> n sale piano piano (1,07 per n = 100, 1,17 per n = 1000, 1,28 per un milione) e si avvicina a 1,39 solo per n enormi: per questo la lavagna scrive «≈ 1,39 n log<sub>2</sub> n».</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Maggiorazione con l'integrale: Σ<sub>i=2</sub><sup>n−1</sup> i ln i ≤ ∫<sub>2</sub><sup>n</sup> x ln x dx ≤ (n²/2) ln n − n²/4 (rettangoli sotto una curva crescente, poi integrazione per parti).</li>
+    <li>Per induzione completa: <strong>C(n) ≤ 2n ln n ≈ 1,39 n log<sub>2</sub> n</strong>.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="confronto"><span class="num">12</span>I tre casi a confronto: perché «quick»</h2>
+<p class="in-questa"><b>In questa sezione:</b> il riepilogo dei tre casi (lavagna, pagina 19), il motivo del nome quickSort, un grafico e un esperimento con il codice vero.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>caso</th><th>confronti (lavagna, pagina 19)</th><th>quando succede</th></tr>
+  <tr><td><strong>peggiore</strong></td><td>C(n) ≈ n²/2 &nbsp;(esattamente n(n + 1)/2 − 1)</td><td>partizioni sbilanciate: per esempio, con il perno uguale al primo elemento, un array già ordinato</td></tr>
+  <tr><td><strong>migliore</strong></td><td>C(n) ≈ n log<sub>2</sub> n</td><td>partizioni bilanciate: il perno finisce sempre a metà</td></tr>
+  <tr><td><strong>medio</strong></td><td>C(n) ≈ 1,39 n log<sub>2</sub> n &nbsp;(al più 2n ln n)</td><td>in media, se tutte le posizioni del perno sono ugualmente probabili</td></tr>
+</table></div>
+<h3>Perché si chiama «quick»?</h3>
+<p>Le slide fanno proprio questa domanda: perché chiamarlo «veloce», se nel caso peggiore fa tanti confronti quanti gli ordinamenti elementari? La risposta è nel caso medio:</p>
+<ul>
+  <li>il numero medio di confronti, 1,39 n log<sub>2</sub> n, è molto vicino a quello del caso migliore, n log<sub>2</sub> n. Se la media è così vicina al minimo, i casi molto costosi, come il caso peggiore, devono essere <strong>estremamente rari</strong>;</li>
+  <li>la costante 1,39 è piccola. Per confronto, mergeSort fa al più n log<sub>2</sub> n − n + 1 confronti (con n potenza di 2): quickSort, in media, ne fa solo circa il 39% in più, e in cambio non ha bisogno dell'array di appoggio.</li>
+</ul>
+<p>Per questo quickSort è molto usato nella pratica ed è classificato tra gli algoritmi di ordinamento veloci.</p>
+<p>Il grafico seguente mette a confronto il caso peggiore e il caso medio. Con n piccoli sono vicini; già con n = 100 il caso peggiore (5049 confronti) è circa sette volte il caso medio (circa 714). Prova a ingrandire n con il menu.</p>
+
+<div class="widget" id="w-gr">
+  <h4>Caso peggiore e caso medio, al crescere di n</h4>
+  <div class="controlli">
+    <label>n fino a <select id="gr-n" style="width:auto">
+      <option value="20">20</option>
+      <option value="100" selected>100</option>
+      <option value="1000">1000</option>
+    </select></label>
+  </div>
+  <div class="legenda" id="gr-leg"></div>
+  <div class="grafico" id="gr-graf">
+    <div id="gr-svg"></div>
+    <div class="tooltip" id="gr-tip"></div>
+  </div>
+  <div class="narrazione" id="gr-txt"></div>
+  <details class="esercizio" style="margin-top:10px">
+    <summary>Tabella: i valori per alcuni n</summary>
+    <div class="tabella-wrap" id="gr-tab"></div>
+  </details>
+</div>
+
+<p>Il grafico usa l'equazione del caso medio, cioè una formula. Nel riquadro seguente, invece, il computer fa girare davvero il Codice 4.2 e il Codice 4.3 su array mescolati a caso, e conta i confronti uno per uno.</p>
+
+<div class="widget" id="w-sp">
+  <h4>Esperimento: quickSort su array mescolati a caso</h4>
+  <div class="controlli">
+    <label>n = <input type="number" id="sp-n" value="1000" min="2" max="5000"></label>
+    <label>quanti array <select id="sp-k" style="width:auto">
+      <option value="1">1</option>
+      <option value="20">20</option>
+      <option value="200" selected>200</option>
+    </select></label>
+  </div>
+  <div class="controlli">
+    <button class="primario" id="sp-via">Mescola e ordina</button>
+    <button id="sp-ord">Prova con l'array già ordinato</button>
+  </div>
+  <div class="tabella-wrap" id="sp-tab"></div>
+  <div class="narrazione" id="sp-txt"></div>
+</div>
+
+<div class="box idea">
+  <span class="etichetta">Dalle slide: come evitare il caso peggiore</span>
+  <p>Con il perno uguale al primo elemento, un array già ordinato è il caso peggiore; e capita spesso di dover ordinare array già quasi in ordine. Le slide citano alcune contromisure (alla lavagna della lezione 11 non ci sono):</p>
+  <ul>
+    <li>scegliere come perno l'elemento centrale: su un array ordinato diventa il caso migliore;</li>
+    <li>mescolare a caso l'array prima di ordinarlo;</li>
+    <li>scegliere come perno un elemento a caso, scambiarlo con il primo e poi partizionare con il Codice 4.2.</li>
+  </ul>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Peggiore ≈ n²/2, migliore ≈ n log<sub>2</sub> n, medio ≈ 1,39 n log<sub>2</sub> n.</li>
+    <li>«Quick» perché in media è quasi come il caso migliore: il caso peggiore è rarissimo, e la costante 1,39 è piccola.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="riassunto"><span class="num">13</span>Riassunto e cosa serve per l'esame</h2>
+<p class="in-questa"><b>In questa sezione:</b> tutta la lezione in pochi punti, la ricetta per l'esercizio d'esame sulla partizione e gli errori da evitare.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ol>
+    <li><strong>Idea:</strong> si sceglie un perno, si mettono a sinistra gli elementi ≤ perno e a destra quelli &gt; perno, si ordinano le due parti ricorsivamente. Il ricombinare non costa niente.</li>
+    <li><strong>partiziona (Codice 4.2):</strong> perno = A[i]; dx scende da destra fino a un elemento ≤ perno; sx sale da sinistra fino a un elemento &gt; perno (o fino a dx); se sx &lt; dx si scambiano; alla fine si scambia A[i] con A[dx] e si restituisce dx. Il perno è al suo posto definitivo.</li>
+    <li><strong>Confronti di partiziona:</strong> n − 1 se gli indici si incontrano, n se si incrociano; nei conti si usa n.</li>
+    <li><strong>quickSort (Codice 4.3):</strong> se f − i &gt; 1: m ← partiziona(A, i, f); quickSort(A, i, m); quickSort(A, m + 1, f).</li>
+    <li><strong>Equazione:</strong> C(n) = 0 se n ≤ 1, altrimenti n + C(k) + C(n − k − 1), con k la posizione finale del perno.</li>
+    <li><strong>Caso peggiore:</strong> k = 0 o k = n − 1 (array già ordinato); C<sub>w</sub>(n) = n(n + 1)/2 − 1 = Θ(n²).</li>
+    <li><strong>Caso migliore:</strong> partizioni bilanciate; C<sub>b</sub>(n) ≈ 2C<sub>b</sub>(n/2) + n, quindi ≈ n log<sub>2</sub> n.</li>
+    <li><strong>Caso medio:</strong> C(n) = n + (2/n) Σ<sub>i=2</sub><sup>n−1</sup> C(i); per induzione, con Σ i ln i ≤ ∫<sub>2</sub><sup>n</sup> x ln x dx ≤ (n²/2) ln n − n²/4, si ottiene C(n) ≤ 2n ln n ≈ 1,39 n log<sub>2</sub> n.</li>
+  </ol>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Cosa serve per l'esame</span>
+  <ul>
+    <li><strong>Scritto, esercizio 2:</strong> in quasi tutti i temi d'esame c'è una domanda come «Supponete di ordinare la sequenza in modo crescente mediante quickSort, scegliendo come perno il primo elemento ed utilizzando la strategia presentata a lezione. Indicate il contenuto dell'array dopo avere effettuato la partizione, prima delle chiamate ricorsive». A volte è chiesta anche in modo decrescente. È un esercizio da fare a mano, senza errori: la ricetta è subito sotto, e la sezione 14 ne ha cinque risolti.</li>
+    <li><strong>Orale:</strong> lo schema (Codice 4.1), partiziona (Codice 4.2) con la sua proprietà, quickSort (Codice 4.3), l'equazione C(n), i tre casi con i loro conti: srotolamento per il peggiore, l'equazione alla mergeSort per il migliore, l'equazione del caso medio con la dimostrazione per induzione e la maggiorazione con l'integrale. E perché si chiama quickSort.</li>
+  </ul>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Ricetta per l'esercizio sulla partizione</span>
+  <ol>
+    <li>Scrivi l'array con gli indici sotto, da 0 a n − 1. Il perno è il primo elemento: cerchialo.</li>
+    <li><strong>Prima dx</strong>: parti dall'ultima casella e vai verso sinistra; fermati sul primo elemento ≤ perno (in ordine decrescente: ≥ perno).</li>
+    <li><strong>Poi sx</strong>: parti dalla casella dopo il perno e vai verso destra; fermati sul primo elemento &gt; perno (in ordine decrescente: &lt; perno), oppure quando arrivi sulla casella di dx.</li>
+    <li>Se sx è ancora a sinistra di dx, scambia i due elementi e torna al punto 2, ripartendo da dove si erano fermati gli indici.</li>
+    <li>Quando gli indici si incontrano o si incrociano, scambia il perno con l'elemento su cui si è fermato <strong>dx</strong>. La risposta è l'array a questo punto.</li>
+  </ol>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">Errori tipici</span>
+  <ul>
+    <li>Far partire sx prima di dx: l'ordine è <strong>prima dx</strong>, poi sx.</li>
+    <li>Dimenticare lo scambio finale tra il perno e A[dx], oppure scambiare il perno con A[sx].</li>
+    <li>Mettere gli elementi uguali al perno dalla parte sbagliata. In ordine crescente un elemento uguale al perno <strong>ferma dx</strong> (non è &gt; perno) e <strong>non ferma sx</strong> (è ≤ perno): alla fine sta a sinistra. In ordine decrescente è lo stesso: ferma dx (non è &lt; perno), non ferma sx (è ≥ perno).</li>
+    <li>In ordine decrescente, cambiare un solo confronto invece di tutti e due.</li>
+    <li>Andare avanti con le chiamate ricorsive: la domanda chiede l'array <strong>dopo la sola partizione</strong>.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 14 -->
+<h2 id="esercizi"><span class="num">14</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> cinque esercizi dai temi d'esame sulla partizione (anche in ordine decrescente), l'esempio della lavagna, pagina 7, con il codice vero, la stabilità, l'array con elementi tutti uguali, come costruire un caso migliore, e due conti sui casi peggiore e medio. Prova a farli da solo prima di aprire la soluzione; per controllare puoi usare il riquadro «partiziona, un passo alla volta» della sezione 4.</p>
+
+<details class="esercizio">
+  <summary>1. (Tema d'esame del 16 gennaio 2026) Partizione in ordine crescente, perno il primo elemento: 16 25 33 40 11 50 14 47.</summary>
+  <div class="soluzione">
+    <p>Perno = 16. Indici da 0 a 7.</p>
+    <ol>
+      <li>dx: 47 &gt; 16, avanti; 14 ≤ 16, si ferma in posizione 6. sx: 25 &gt; 16, si ferma in posizione 1. Scambio 25 e 14: <code>16 14 33 40 11 50 25 47</code>.</li>
+      <li>dx: 50 &gt; 16, avanti; 11 ≤ 16, si ferma in posizione 4. sx: 33 &gt; 16, si ferma in posizione 2. Scambio 33 e 11: <code>16 14 11 40 33 50 25 47</code>.</li>
+      <li>dx: 40 &gt; 16, avanti; 11 ≤ 16, si ferma in posizione 2. sx sale in posizione 3, ma 3 &lt; 2 è falso: si ferma. Gli indici si sono incrociati.</li>
+      <li>Scambio il perno (posizione 0) con A[2] = 11.</li>
+    </ol>
+    <p><strong>Risposta: 11 14 16 40 33 50 25 47.</strong> Il perno è in posizione 2. Confronti: 8 = n, perché gli indici si sono incrociati.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. (Tema d'esame del 27 febbraio 2026) Partizione in ordine crescente: 15 11 44 18 42 12 33 24.</summary>
+  <div class="soluzione">
+    <p>Perno = 15.</p>
+    <ol>
+      <li>dx: 24 e 33 sono &gt; 15; 12 ≤ 15, si ferma in posizione 5. sx: 11 ≤ 15, avanti; 44 &gt; 15, si ferma in posizione 2. Scambio 44 e 12: <code>15 11 12 18 42 44 33 24</code>.</li>
+      <li>dx: 42 e 18 sono &gt; 15; 12 ≤ 15, si ferma in posizione 2. sx sale in posizione 3: 3 &lt; 2 è falso, si ferma. Incrociati.</li>
+      <li>Scambio il perno con A[2] = 12.</li>
+    </ol>
+    <p><strong>Risposta: 12 11 15 18 42 44 33 24.</strong></p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. (Tema d'esame del 19 settembre 2025) Partizione in ordine crescente: 25 16 14 13 48 56 29 26.</summary>
+  <div class="soluzione">
+    <p>Perno = 25.</p>
+    <ol>
+      <li>dx: 26, 29, 56, 48 sono tutti &gt; 25; 13 ≤ 25, si ferma in posizione 3. sx: 16 e 14 sono ≤ 25; in posizione 3 c'è dx, quindi sx si ferma lì. Gli indici si incontrano subito: nessuno scambio nel ciclo.</li>
+      <li>Scambio il perno con A[3] = 13.</li>
+    </ol>
+    <p><strong>Risposta: 13 16 14 25 48 56 29 26.</strong> Un caso semplice ma insidioso: si fa solo lo scambio finale.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. (Tema d'esame del 12 luglio 2024) Partizione in ordine crescente: 12 14 17 24 2 33 46 21 15.</summary>
+  <div class="soluzione">
+    <p>Perno = 12. Indici da 0 a 8.</p>
+    <ol>
+      <li>dx: 15, 21, 46, 33 sono &gt; 12; 2 ≤ 12, si ferma in posizione 4. sx: 14 &gt; 12, si ferma in posizione 1. Scambio 14 e 2: <code>12 2 17 24 14 33 46 21 15</code>.</li>
+      <li>dx: 24 e 17 sono &gt; 12; 2 ≤ 12, si ferma in posizione 1. sx sale in posizione 2: 2 &lt; 1 è falso, si ferma. Incrociati.</li>
+      <li>Scambio il perno con A[1] = 2.</li>
+    </ol>
+    <p><strong>Risposta: 2 12 17 24 14 33 46 21 15.</strong> Il perno finisce in posizione 1: la parte sinistra ha un solo elemento.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. (Tema d'esame del 6 febbraio 2026) La sequenza 18 44 11 24 13 22 31 33: (a) partizione in ordine non decrescente; (b) partizione in ordine non crescente.</summary>
+  <div class="soluzione">
+    <p>«Non decrescente» vuol dire crescente (con eventuali valori uguali vicini), «non crescente» vuol dire decrescente.</p>
+    <p><strong>(a) Crescente.</strong> Perno = 18.</p>
+    <ol>
+      <li>dx: 33, 31, 22 sono &gt; 18; 13 ≤ 18, si ferma in posizione 4. sx: 44 &gt; 18, si ferma in posizione 1. Scambio: <code>18 13 11 24 44 22 31 33</code>.</li>
+      <li>dx: 24 &gt; 18; 11 ≤ 18, si ferma in posizione 2. sx sale in posizione 2, dove c'è dx: si ferma. Si incontrano.</li>
+      <li>Scambio il perno con A[2] = 11.</li>
+    </ol>
+    <p><strong>Risposta (a): 11 13 18 24 44 22 31 33.</strong></p>
+    <p><strong>(b) Decrescente.</strong> Perno = 18. Ora dx salta gli elementi <strong>&lt; 18</strong> e si ferma su uno ≥ 18; sx salta gli elementi <strong>≥ 18</strong> e si ferma su uno &lt; 18.</p>
+    <ol>
+      <li>dx: 33 non è &lt; 18, si ferma subito in posizione 7. sx: 44 ≥ 18, avanti; 11 &lt; 18, si ferma in posizione 2. Scambio 11 e 33: <code>18 44 33 24 13 22 31 11</code>.</li>
+      <li>dx: 31 non è &lt; 18, si ferma in posizione 6. sx: 24 ≥ 18, avanti; 13 &lt; 18, si ferma in posizione 4. Scambio 13 e 31: <code>18 44 33 24 31 22 13 11</code>.</li>
+      <li>dx: 22 non è &lt; 18, si ferma in posizione 5. sx sale in posizione 5, dove c'è dx: si ferma.</li>
+      <li>Scambio il perno con A[5] = 22.</li>
+    </ol>
+    <p><strong>Risposta (b): 22 44 33 24 31 18 13 11.</strong> A sinistra del 18 tutti gli elementi sono ≥ 18, a destra tutti &lt; 18.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. (Lavagna, pagina 7) Applica il Codice 4.2 all'array della Figura 3: 12 45 17 22 46 1 33 24 2 8.</summary>
+  <div class="soluzione">
+    <p>Perno = 12, il primo elemento (non 17 o 33 come nelle soluzioni della lavagna).</p>
+    <ol>
+      <li>dx: 8 ≤ 12, si ferma in posizione 9. sx: 45 &gt; 12, si ferma in posizione 1. Scambio: <code>12 8 17 22 46 1 33 24 2 45</code>.</li>
+      <li>dx: 2 ≤ 12, si ferma in posizione 8. sx: 17 &gt; 12, si ferma in posizione 2. Scambio: <code>12 8 2 22 46 1 33 24 17 45</code>.</li>
+      <li>dx: 24, 33 sono &gt; 12; 1 ≤ 12, si ferma in posizione 5. sx: 22 &gt; 12, si ferma in posizione 3. Scambio: <code>12 8 2 1 46 22 33 24 17 45</code>.</li>
+      <li>dx: 46 &gt; 12; 1 ≤ 12, si ferma in posizione 3. sx sale in posizione 4: 4 &lt; 3 è falso. Incrociati.</li>
+      <li>Scambio il perno con A[3] = 1.</li>
+    </ol>
+    <p><strong>Risposta: 1 8 2 12 46 22 33 24 17 45</strong>, perno in posizione 3. È una terza soluzione corretta, diversa dalle due della Figura 3. Confronti: 10 = n.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>7. (Dalle slide) quickSort non è stabile: trova un esempio.</summary>
+  <div class="soluzione">
+    <p>Un algoritmo di ordinamento è <strong>stabile</strong> se due elementi con la stessa chiave restano, alla fine, nello stesso ordine in cui erano all'inizio. Per distinguere due chiavi uguali le scriviamo 1<sub>a</sub> e 1<sub>b</sub>.</p>
+    <p>Basta l'array <strong>1<sub>a</sub> 1<sub>b</sub></strong>. Perno = 1<sub>a</sub>. dx: 1<sub>b</sub> &gt; 1 è falso, si ferma subito in posizione 1. sx sale in posizione 1, dove c'è dx: si ferma. Scambio finale tra il perno (posizione 0) e A[1]: l'array diventa <strong>1<sub>b</sub> 1<sub>a</sub></strong>. Le chiamate ricorsive hanno 1 e 0 elementi e non fanno niente.</p>
+    <p>Risultato: 1<sub>b</sub> prima di 1<sub>a</sub>, l'ordine si è invertito. Quindi quickSort non è stabile. (Le slide ricordano che esistono versioni stabili di quickSort, con le stesse prestazioni asintotiche ma costanti più alte.)</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>8. Quanti confronti fa quickSort su un array di n elementi tutti uguali?</summary>
+  <div class="soluzione">
+    <p>Prendi 5 5 5 5. Nella prima partizione dx guarda l'ultimo 5: 5 &gt; 5 è falso, si ferma subito (1 confronto). sx sale e trova solo 5 ≤ 5, finché arriva su dx (2 confronti). Gli indici si incontrano in fondo e il perno va in ultima posizione: k = n − 1. In tutto n − 1 = 3 confronti.</p>
+    <p>La parte sinistra ha n − 1 elementi, ancora tutti uguali, e succede la stessa cosa. Quindi C(n) = (n − 1) + C(n − 1), e srotolando:</p>
+    <div class="formula">C(n) = (n − 1) + (n − 2) + … + 1 = n(n − 1)/2 = Θ(n²)</div>
+    <p>Con 5 5 5 5: 3 + 2 + 1 = 6. Un array di elementi tutti uguali, che è già ordinato, è quindi un caso peggiore per questa versione di quickSort.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>9. Costruisci un caso migliore con i numeri da 1 a 7 (perno = primo elemento).</summary>
+  <div class="soluzione">
+    <p>Il primo elemento deve essere il mediano, 4, così finisce in posizione 3 con tre elementi per parte. Ma non basta: dopo la partizione, anche le due parti devono avere il loro mediano in prima posizione.</p>
+    <p>Chi finisce in prima posizione dopo la partizione? L'elemento su cui si ferma dx, che si scambia con il perno. Proviamo con <strong>4 1 3 2 6 5 7</strong>: dx salta 7, 5, 6 e si ferma sul 2 (posizione 3); sx salta 1 e 3 e arriva su dx. Scambio finale: <code>2 1 3 4 6 5 7</code>. A sinistra 2 1 3 ha il mediano 2 in testa: diventa 1 2 3. A destra 6 5 7 ha il mediano 6 in testa: diventa 5 6 7.</p>
+    <p>Confronti: 6 + 2 + 2 = 10, come per l'array della lavagna, pagina 14 (Figura 9). Con 7 elementi non si può fare meno.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>10. Calcola C<sub>w</sub>(4) usando la formula con il massimo, e controlla che valga n(n + 1)/2 − 1.</summary>
+  <div class="soluzione">
+    <p>Servono C<sub>w</sub>(0) = C<sub>w</sub>(1) = 0, C<sub>w</sub>(2) = 2 e C<sub>w</sub>(3) = 5 (calcolato nell'attrezzo della sezione 8).</p>
+    <ul>
+      <li>k = 0: C<sub>w</sub>(0) + C<sub>w</sub>(3) = 0 + 5 = 5;</li>
+      <li>k = 1: C<sub>w</sub>(1) + C<sub>w</sub>(2) = 0 + 2 = 2;</li>
+      <li>k = 2: C<sub>w</sub>(2) + C<sub>w</sub>(1) = 2 + 0 = 2;</li>
+      <li>k = 3: C<sub>w</sub>(3) + C<sub>w</sub>(0) = 5 + 0 = 5.</li>
+    </ul>
+    <p>Il massimo è 5 (per k = 0 e k = 3, gli estremi). C<sub>w</sub>(4) = 4 + 5 = 9, e 4 · 5/2 − 1 = 9 ✓.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>11. Calcola il numero medio di confronti C(2), C(3), C(4), C(5) con l'equazione semplificata e controlla che stiano sotto 2n ln n.</summary>
+  <div class="soluzione">
+    <p>Con C(n) = n + (2/n) Σ<sub>i=2</sub><sup>n−1</sup> C(i):</p>
+    <ul>
+      <li>C(2) = 2 + (2/2) · 0 = 2 (la somma da 2 a 1 è vuota). Limite: 4 ln 2 ≈ 2,77 ✓.</li>
+      <li>C(3) = 3 + (2/3) · C(2) = 3 + 4/3 = 13/3 ≈ 4,33. Limite: 6 ln 3 ≈ 6,59 ✓.</li>
+      <li>C(4) = 4 + (2/4) · (2 + 13/3) = 4 + 19/6 = 43/6 ≈ 7,17. Limite: 8 ln 4 ≈ 11,09 ✓.</li>
+      <li>C(5) = 5 + (2/5) · (2 + 13/3 + 43/6) = 5 + (2/5) · (81/6) = 5 + 27/5 = 52/5 = 10,4. Limite: 10 ln 5 ≈ 16,09 ✓.</li>
+    </ul>
+  </div>
+</details>
+
+<!-- ============================================================ 15 -->
+<h2 id="approfondimenti"><span class="num">15</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> un approfondimento che non viene dalla lezione e non serve per l'esame. È chiuso: aprilo solo se ti va.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo · Perché nel caso peggiore il massimo si ottiene per k = 0 o k = n − 1</summary>
+  <div class="soluzione">
+    <p><strong>L'intuizione.</strong> Il costo cresce come il quadrato della lunghezza. Se due parti hanno lunghezza totale fissa, la somma dei quadrati è massima quando una parte è vuota: con totale 5, 5² + 0² = 25, mentre 4² + 1² = 17 e 3² + 2² = 13. Sbilanciare conviene a chi vuole far lavorare quickSort il più possibile.</p>
+    <p><strong>La dimostrazione</strong>, per induzione completa su n. L'ipotesi induttiva è che C<sub>w</sub>(j) = j(j + 1)/2 − 1 per 1 ≤ j &lt; n (e C<sub>w</sub>(0) = 0). Chiamiamo a = k e b = n − 1 − k le lunghezze delle due parti: a + b = n − 1.</p>
+    <ul>
+      <li>Agli estremi (a = 0 oppure b = 0) la somma vale C<sub>w</sub>(n − 1) = (n − 1)n/2 − 1.</li>
+      <li>All'interno (a ≥ 1 e b ≥ 1) vale a(a + 1)/2 − 1 + b(b + 1)/2 − 1 = (a² + b² + n − 1)/2 − 2, usando a + b = n − 1.</li>
+    </ul>
+    <p>Siccome (a + b)² = a² + b² + 2ab, si ha a² + b² = (n − 1)² − 2ab. Con a, b ≥ 1 e a + b = n − 1, il prodotto ab è almeno n − 2, perché ab − (n − 2) = ab − a − b + 1 = (a − 1)(b − 1) ≥ 0. Per esempio con n − 1 = 5 i prodotti possibili sono 1 · 4 = 4 e 2 · 3 = 6, e il minimo è 4 = n − 2. Quindi all'interno:</p>
+    <div class="formula">(a² + b² + n − 1)/2 − 2 ≤ ((n − 1)² − 2(n − 2) + n − 1)/2 − 2</div>
+    <p>Facendo la differenza con il valore agli estremi, ((n − 1)² + n − 1)/2 − 1, resta (n − 2) + 1 = n − 1 &gt; 0. Quindi gli estremi danno sempre di più, il massimo è C<sub>w</sub>(n − 1), e C<sub>w</sub>(n) = n + (n − 1)n/2 − 1 = n(n + 1)/2 − 1: l'ipotesi vale anche per n.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="07-divide-et-impera.html">← Pacco 7 · Divide et impera</a>
+  <a href="index.html">Tutti i pacchi →</a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  function fmt(v) { return Number(v).toLocaleString("it-IT"); }
+  function dec(x, k) { return Number(x).toLocaleString("it-IT", { maximumFractionDigits: k === undefined ? 1 : k }); }
+  function leggiArray(txt, max) {
+    var parti = String(txt).split(/[\s,;]+/).filter(function (s) { return s !== ""; });
+    if (parti.length < 1 || parti.length > max) return null;
+    var A = parti.map(Number);
+    for (var k = 0; k < A.length; k++) if (!isFinite(A[k])) return null;
+    return A;
+  }
+  var SX = "<span class='lab-sx'>sx</span>", DX = "<span class='lab-dx'>dx</span>";
+  function cella(v, cls, top, bot) {
+    var c = el("div", "cella" + (cls ? " " + cls : ""));
+    var f = el("div", "f");
+    f.innerHTML = top || "";
+    c.appendChild(f);
+    c.appendChild(el("div", "v", String(v)));
+    c.appendChild(el("div", "i", bot === undefined ? "" : String(bot)));
+    return c;
+  }
+  function riempiMenu(sel, voci) {
+    sel.innerHTML = "";
+    voci.forEach(function (v, k) {
+      var o = el("option", "", v[0]);
+      o.value = String(k);
+      sel.appendChild(o);
+    });
+  }
+
+  // il Codice 4.2, con i confronti contati come alla lavagna
+  function partiziona(A, i, f) {
+    var perno = A[i], sx = i, dx = f, cfr = 0, t;
+    while (sx < dx) {
+      do { dx--; cfr++; } while (A[dx] > perno);
+      do { sx++; if (!(sx < dx)) break; cfr++; } while (A[sx] <= perno);
+      if (sx < dx) { t = A[sx]; A[sx] = A[dx]; A[dx] = t; }
+    }
+    t = A[i]; A[i] = A[dx]; A[dx] = t;
+    return { m: dx, cfr: cfr };
+  }
+
+  // ---------------------------------------------------------- partiziona, un passo alla volta
+  var PA_ES = [
+    ["Lavagna, pagina 8: 12 33 15 7 19 9 56 2", "12, 33, 15, 7, 19, 9, 56, 2", "c"],
+    ["Lavagna, pagina 10 (a): 12 13 14 15", "12, 13, 14, 15", "c"],
+    ["Lavagna, pagina 10 (b): 24 8 31 16 17 40 29 23 27", "24, 8, 31, 16, 17, 40, 29, 23, 27", "c"],
+    ["Lavagna, pagina 10 (c): 25 7 4 33 2 27 55 12 34 42", "25, 7, 4, 33, 2, 27, 55, 12, 34, 42", "c"],
+    ["Slide: 25 7 4 33 2 27 55 12 24 42 (si incrociano)", "25, 7, 4, 33, 2, 27, 55, 12, 24, 42", "c"],
+    ["Lavagna, pagina 7: 12 45 17 22 46 1 33 24 2 8", "12, 45, 17, 22, 46, 1, 33, 24, 2, 8", "c"],
+    ["Lavagna, pagina 14: 8 1 6 4 10 9 15", "8, 1, 6, 4, 10, 9, 15", "c"],
+    ["Esame 16/1/2026: 16 25 33 40 11 50 14 47", "16, 25, 33, 40, 11, 50, 14, 47", "c"],
+    ["Esame 19/9/2025: 25 16 14 13 48 56 29 26", "25, 16, 14, 13, 48, 56, 29, 26", "c"],
+    ["Esame 6/2/2026 (b), decrescente: 18 44 11 24 13 22 31 33", "18, 44, 11, 24, 13, 22, 31, 33", "d"],
+    ["Esame 17/1/2025 (b), decrescente: 14 19 23 11 45 18 43 52", "14, 19, 23, 11, 45, 18, 43, 52", "d"],
+    ["Tutti uguali: 5 5 5 5", "5, 5, 5, 5", "c"],
+    ["Scrivi tu: modifica A", null, null]
+  ];
+  var PA = { ev: [], k: 0 };
+  function paCodice(decr, righe) {
+    var L = [
+      "<b>ALGORITMO</b> partiziona(Array A, indice i, indice f) → indice",
+      "  perno ← A[i]",
+      "  dx ← f, sx ← i",
+      "  <b>WHILE</b> sx &lt; dx <b>DO</b>",
+      "    <b>DO</b> dx ← dx − 1 <b>WHILE</b> A[dx] " + (decr ? "&lt;" : "&gt;") + " perno",
+      "    <b>DO</b> sx ← sx + 1 <b>WHILE</b> sx &lt; dx <b>AND</b> A[sx] " + (decr ? "≥" : "≤") + " perno",
+      "    <b>IF</b> sx &lt; dx <b>THEN</b>",
+      "      scambia A[sx] con A[dx]",
+      "  scambia A[i] con A[dx]",
+      "  <b>RETURN</b> dx"];
+    return L.map(function (s, k) {
+      return "<span class='riga" + (righe.indexOf(k) >= 0 ? " ora" : "") + "'>" + s + "</span>";
+    }).join("");
+  }
+  function paEventi(A0, decr) {
+    var A = A0.slice(), n = A.length, i = 0, f = n, perno = A[0];
+    var sx = i, dx = f, cfr = 0, sc = 0, zl = i, zr = f, ev = [], giro = 0;
+    var simD = decr ? "&lt;" : "&gt;", simS = decr ? "≥" : "≤";
+    var vaDestra = decr ? function (a) { return a < perno; } : function (a) { return a > perno; };
+    var staSinistra = decr ? function (a) { return a >= perno; } : function (a) { return a <= perno; };
+    function push(righe, testo, att, fine) {
+      ev.push({ A: A.slice(), sx: sx, dx: dx, zl: zl, zr: zr, righe: righe, testo: testo, cfr: cfr, sc: sc, att: att, fine: fine || 0, n: n, decr: decr, perno: perno });
+    }
+    push([1, 2], "Il perno è il primo elemento: perno ← A[0] = " + perno + ". dx parte da f = " + f +
+      " (la casella tratteggiata, una dopo la fine) e sx da i = 0 (la casella del perno): i due cicli DO … WHILE spostano l'indice prima di guardare. Premi «Passo».", -1);
+    while (true) {
+      var dentro = sx < dx;
+      push([3], "WHILE sx &lt; dx: " + sx + " &lt; " + dx + (dentro ? " è vero: " + (giro ? "si continua." : "si entra nel ciclo.") :
+        " è falso: il ciclo finisce. Tutte le caselle sono state controllate."), -1);
+      if (!dentro) break;
+      giro++;
+      var cont;
+      do {
+        dx--; cfr++;
+        cont = vaDestra(A[dx]);
+        var t = "dx ← " + dx + ". A[" + dx + "] = " + A[dx] + " " + simD + " " + perno + "? ";
+        if (cont) { zr = dx; t += "Sì: sta già bene a destra, dx continua."; }
+        else if (dx === i) t += "No: è il perno stesso, che ferma dx. dx si ferma qui.";
+        else t += "No: " + A[dx] + " deve stare a sinistra, dx si ferma qui.";
+        push([4], t, dx);
+      } while (cont);
+      while (true) {
+        sx++;
+        if (!(sx < dx)) {
+          if (sx - 1 > zl) zl = sx - 1;
+          push([5], "sx ← " + sx + ". sx &lt; dx? " + sx + " &lt; " + dx +
+            " è falso: sx si ferma senza confrontare (nell'AND, se la prima condizione è falsa la seconda non si guarda).", -1);
+          break;
+        }
+        cfr++;
+        var t2 = "sx ← " + sx + ". sx &lt; dx (" + sx + " &lt; " + dx + ") e A[" + sx + "] = " + A[sx] + " " + simS + " " + perno + "? ";
+        if (staSinistra(A[sx])) { zl = sx; push([5], t2 + "Sì: sta già bene a sinistra, sx continua.", sx); }
+        else { push([5], t2 + "No: " + A[sx] + " deve stare a destra, sx si ferma qui.", sx); break; }
+      }
+      if (sx < dx) {
+        var a = A[sx], b = A[dx];
+        A[sx] = b; A[dx] = a; sc++; zl = sx; zr = dx;
+        push([6, 7], "IF sx &lt; dx (" + sx + " &lt; " + dx + "): scambio A[" + sx + "] = " + a + " con A[" + dx + "] = " + b +
+          ". Ora " + b + " è a sinistra e " + a + " è a destra, tutti e due dalla parte giusta.", -1);
+      } else {
+        push([6], "IF sx &lt; dx? " + sx + " &lt; " + dx + " è falso: nessuno scambio.", -1);
+      }
+    }
+    var x = A[dx];
+    A[dx] = A[i]; A[i] = x; sc++;
+    var incr = sx > dx;
+    push([8], "Scambio il perno A[0] = " + perno + " con A[dx] = A[" + dx + "] = " + x +
+      (dx === i ? " (è il perno stesso: non cambia niente)" : "") + ". Il perno è al suo posto definitivo, in posizione " + dx + ".", -1, 1);
+    push([9], "RETURN " + dx + ". A sinistra del perno tutti gli elementi sono " + (decr ? "≥ " : "≤ ") + perno + ", a destra tutti " +
+      (decr ? "&lt; " : "&gt; ") + perno + ". Confronti con il perno: " + cfr + " = " + (incr ? "n" : "n − 1") + " (n = " + n + "), perché gli indici " +
+      (incr ? "si sono incrociati (sx = " + sx + ", dx = " + dx + ")." : "si sono incontrati (sx = dx = " + dx + ")."), -1, 2);
+    return ev;
+  }
+  function paInit() {
+    var A = leggiArray($("pa-in").value, 10);
+    var decr = $("pa-ord").value === "d";
+    if (!A) {
+      PA.ev = [];
+      $("pa-cod").innerHTML = paCodice(decr, []);
+      $("pa-arr").innerHTML = ""; $("pa-cont").innerHTML = "";
+      $("pa-txt").innerHTML = "Scrivi da 1 a 10 numeri separati da virgole o spazi.";
+      $("pa-passo").disabled = true; $("pa-fine").disabled = true;
+      return;
+    }
+    PA.ev = paEventi(A, decr); PA.k = 0;
+    paMostra();
+  }
+  function paMostra() {
+    var e = PA.ev[PA.k], A = e.A, n = e.n, out = $("pa-arr"), k;
+    $("pa-cod").innerHTML = paCodice(e.decr, e.righe);
+    out.innerHTML = "";
+    for (k = 0; k < n; k++) {
+      var cls = "", top = "";
+      if (e.fine) cls = k < e.dx ? "zsx" : (k === e.dx ? "perno" : "zdx");
+      else if (k === 0) cls = "perno";
+      else if (k === e.att) cls = "attiva";
+      else if (k <= e.zl) cls = "zsx";
+      else if (k >= e.zr) cls = "zdx";
+      if (!e.fine) { if (e.sx === k) top += SX; if (e.dx === k) top += DX; }
+      else if (k === e.dx) top = "pos";
+      out.appendChild(cella(A[k], cls, top, k));
+    }
+    if (!e.fine && e.dx === n) out.appendChild(cella("", "oltre", DX, n));
+    $("pa-cont").innerHTML = "<span>perno = <b>" + e.perno + "</b></span><span>sx = <b>" + e.sx + "</b></span><span>dx = <b>" + e.dx +
+      "</b></span><span>confronti con il perno: <b>" + e.cfr + "</b></span><span>scambi: <b>" + e.sc + "</b></span>";
+    $("pa-txt").innerHTML = e.testo;
+    var fine = PA.k >= PA.ev.length - 1;
+    $("pa-passo").disabled = fine; $("pa-fine").disabled = fine;
+  }
+  riempiMenu($("pa-es"), PA_ES);
+  $("pa-es").onchange = function () {
+    var v = PA_ES[Number($("pa-es").value)];
+    if (v && v[1]) { $("pa-in").value = v[1]; $("pa-ord").value = v[2]; }
+    paInit();
+  };
+  $("pa-in").onchange = function () { $("pa-es").value = String(PA_ES.length - 1); paInit(); };
+  $("pa-ord").onchange = paInit;
+  $("pa-passo").onclick = function () { if (PA.k < PA.ev.length - 1) { PA.k++; paMostra(); } };
+  $("pa-fine").onclick = function () { if (PA.ev.length) { PA.k = PA.ev.length - 1; paMostra(); } };
+  $("pa-reset").onclick = function () { if (PA.ev.length) { PA.k = 0; paMostra(); } else paInit(); };
+  paInit();
+
+  // ---------------------------------------------------------- quickSort, chiamata per chiamata
+  var QS_ES = [
+    ["Lavagna, pagina 4: 44 55 12 42 94 9 18 64", "44, 55, 12, 42, 94, 9, 18, 64"],
+    ["Già ordinato (caso peggiore): 1 2 3 4 5 6 7 8", "1, 2, 3, 4, 5, 6, 7, 8"],
+    ["Lavagna, pagina 14 (caso migliore): 8 1 6 4 10 9 15", "8, 1, 6, 4, 10, 9, 15"],
+    ["Massimo in testa: 8 1 2 3 4 5 6 7", "8, 1, 2, 3, 4, 5, 6, 7"],
+    ["Tutti uguali: 5 5 5 5 5", "5, 5, 5, 5, 5"],
+    ["Scrivi tu: modifica A", null]
+  ];
+  var QS = { ev: [], k: 0 };
+  function qsEventi(A0) {
+    var A = A0.slice(), n = A.length, ev = [], pila = [], nodi = [], fissi = {}, tot = 0, chiamate = 0, hmax = 0;
+    function snap(o) {
+      o.A = A.slice();
+      o.pila = pila.map(function (r) { return { i: r.i, f: r.f, m: r.m, fin: r.fin }; });
+      o.nodi = nodi.slice();
+      o.fissi = {};
+      for (var key in fissi) o.fissi[key] = true;
+      o.tot = tot; o.chiamate = chiamate; o.h = pila.length; o.hmax = hmax;
+      ev.push(o);
+    }
+    function pezzo(i, f) { return f > i ? A.slice(i, f).join(" ") : "niente"; }
+    function rec(i, f, d) {
+      chiamate++;
+      pila.push({ i: i, f: f, m: null, fin: false });
+      if (pila.length > hmax) hmax = pila.length;
+      var nome = "quickSort(A, " + i + ", " + f + ")";
+      if (f - i <= 1) {
+        if (f - i === 1) fissi[i] = true;
+        nodi.push({ d: d, t: f - i === 1 ? "u" : "v", i: i, f: f, vals: A.slice(i, f) });
+        pila[pila.length - 1].fin = true;
+        snap({ i: i, f: f, testo: "<b>" + nome + "</b>: " + (f - i === 1 ? "un solo elemento, A[" + i + "] = " + A[i] + ", che resta dov'è." :
+          "nessun elemento (f − i = 0).") + " f − i &gt; 1 è falso, quindi la chiamata non fa niente e finisce subito." });
+        pila.pop();
+        return;
+      }
+      var prima = pezzo(i, f), perno = A[i];
+      var r = partiziona(A, i, f);
+      tot += r.cfr; fissi[r.m] = true; pila[pila.length - 1].m = r.m;
+      nodi.push({ d: d, t: "p", i: i, f: f, vals: A.slice(i, f), k: r.m - i, cfr: r.cfr });
+      snap({ i: i, f: f, m: r.m, testo: "<b>" + nome + "</b> deve ordinare A[" + i + ".." + (f - 1) + "] = " + prima + " (" + (f - i) +
+        " elementi). Chiama partiziona con perno " + perno + ": il risultato è " + pezzo(i, f) + ", con il perno in posizione m = " + r.m +
+        " (" + r.cfr + " confronti). Il " + perno + " è al suo posto definitivo. Adesso quickSort(A, " + i + ", " + r.m + ") ordina la parte sinistra (" +
+        (r.m - i) + " elementi), poi quickSort(A, " + (r.m + 1) + ", " + f + ") la destra (" + (f - r.m - 1) + " elementi)." });
+      rec(i, r.m, d + 1);
+      rec(r.m + 1, f, d + 1);
+      pila[pila.length - 1].fin = true;
+      snap({ i: i, f: f, esce: true, testo: "<b>" + nome + "</b> finisce: le sue due chiamate hanno ordinato le due parti, quindi A[" + i + ".." + (f - 1) +
+        "] = " + pezzo(i, f) + " è ordinato. Non c'è niente da ricombinare." });
+      pila.pop();
+    }
+    snap({ inizio: true, testo: "Si parte con quickSort(A, 0, " + n + "), cioè con tutto l'array. Premi «Passo»." });
+    rec(0, n, 0);
+    snap({ fine: true, testo: "<b>Finito</b>: l'array è ordinato. Confronti in tutto: " + tot + ". Per confronto, con n = " + n +
+      ": caso peggiore n(n + 1)/2 − 1 = " + (n * (n + 1) / 2 - 1) + "; n log<sub>2</sub> n ≈ " + dec(n * Math.log(n) / Math.LN2, 1) + "." });
+    return ev;
+  }
+  function qsInit() {
+    var A = leggiArray($("qs-in").value, 10);
+    if (!A) {
+      QS.ev = [];
+      ["qs-arr", "qs-cont", "qs-pila", "qs-alb"].forEach(function (id) { $(id).innerHTML = ""; });
+      $("qs-txt").innerHTML = "Scrivi da 1 a 10 numeri separati da virgole o spazi.";
+      $("qs-passo").disabled = true; $("qs-fine").disabled = true;
+      return;
+    }
+    QS.ev = qsEventi(A); QS.k = 0;
+    qsMostra();
+  }
+  function qsMostra() {
+    var e = QS.ev[QS.k], A = e.A, out = $("qs-arr"), k;
+    out.innerHTML = "";
+    var attiva = !e.inizio && !e.fine;
+    for (k = 0; k < A.length; k++) {
+      var cls = e.fissi[k] ? "posto" : "", top = "";
+      if (attiva && e.m !== undefined && k >= e.i && k < e.f) {
+        cls = k < e.m ? "zsx" : (k === e.m ? "perno" : "zdx");
+        if (k === e.m) top = "m";
+      }
+      if (attiva && (k < e.i || k >= e.f)) cls += (cls ? " " : "") + "fuori";
+      out.appendChild(cella(A[k], cls, top, k));
+    }
+    $("qs-cont").innerHTML = "<span>confronti finora: <b>" + e.tot + "</b></span><span>chiamate: <b>" + e.chiamate +
+      "</b></span><span>chiamate aperte: <b>" + e.h + "</b> (al massimo " + e.hmax + ")</span>";
+    $("qs-txt").innerHTML = e.testo;
+    var pila = $("qs-pila");
+    pila.innerHTML = "";
+    if (!e.pila.length) pila.appendChild(el("div", "piccolo", e.fine ? "Nessuna chiamata aperta: è tutto finito." : "Nessuna chiamata aperta."));
+    e.pila.forEach(function (r) {
+      var d = el("div", "record" + (r.fin ? " finito" : ""));
+      d.appendChild(el("span", "tit", "quickSort(A, " + r.i + ", " + r.f + ")"));
+      d.appendChild(document.createTextNode("  ordina A[" + r.i + ".." + (r.f - 1) + "]" + (r.m !== null ? ", m = " + r.m : "") + (r.fin ? ", finita" : "")));
+      pila.appendChild(d);
+    });
+    var alb = $("qs-alb"), livelli = [];
+    alb.innerHTML = "";
+    e.nodi.forEach(function (nd) { (livelli[nd.d] = livelli[nd.d] || []).push(nd); });
+    livelli.forEach(function (lv, d) {
+      if (!lv) return;
+      var riga = el("div", "livello");
+      riga.appendChild(el("div", "nome", "profondità " + d));
+      lv.forEach(function (nd) {
+        var p = el("div", "pezzo");
+        if (nd.t === "v") {
+          p.appendChild(el("div", "vuoto", "vuoto"));
+          p.appendChild(el("div", "nota", "quickSort(A, " + nd.i + ", " + nd.f + ")\n0 elementi"));
+        } else {
+          var ar = el("div", "array qs");
+          nd.vals.forEach(function (v, j) {
+            var c = nd.t === "u" ? "posto" : (j < nd.k ? "zsx" : (j === nd.k ? "perno" : "zdx"));
+            ar.appendChild(cella(v, c));
+          });
+          p.appendChild(ar);
+          p.appendChild(el("div", "nota", nd.t === "u" ? "A[" + nd.i + ".." + nd.i + "]\n1 elemento" :
+            "A[" + nd.i + ".." + (nd.f - 1) + "], perno " + nd.vals[nd.k] + "\n" + nd.cfr + " confronti"));
+        }
+        riga.appendChild(p);
+      });
+      alb.appendChild(riga);
+    });
+    if (!e.nodi.length) alb.appendChild(el("div", "piccolo", "Ancora nessuna chiamata."));
+    var fine = QS.k >= QS.ev.length - 1;
+    $("qs-passo").disabled = fine; $("qs-fine").disabled = fine;
+  }
+  riempiMenu($("qs-es"), QS_ES);
+  $("qs-es").onchange = function () {
+    var v = QS_ES[Number($("qs-es").value)];
+    if (v && v[1]) $("qs-in").value = v[1];
+    qsInit();
+  };
+  $("qs-in").onchange = function () { $("qs-es").value = String(QS_ES.length - 1); qsInit(); };
+  $("qs-caso").onclick = function () {
+    var pool = [], k;
+    for (k = 1; k <= 99; k++) pool.push(k);
+    for (k = pool.length - 1; k > 0; k--) { var j = Math.floor(Math.random() * (k + 1)), t = pool[k]; pool[k] = pool[j]; pool[j] = t; }
+    $("qs-in").value = pool.slice(0, 10).join(", ");
+    $("qs-es").value = String(QS_ES.length - 1);
+    qsInit();
+  };
+  $("qs-passo").onclick = function () { if (QS.k < QS.ev.length - 1) { QS.k++; qsMostra(); } };
+  $("qs-fine").onclick = function () { if (QS.ev.length) { QS.k = QS.ev.length - 1; qsMostra(); } };
+  $("qs-reset").onclick = function () { if (QS.ev.length) { QS.k = 0; qsMostra(); } else qsInit(); };
+  qsInit();
+
+  // ---------------------------------------------------------- caso medio dall'equazione: C(n) = n + (2/n) Σ C(i)
+  var MEDIO = [0, 0];
+  function medio(n) {
+    if (n < MEDIO.length) return MEDIO[n];
+    var S = 0, j;
+    for (j = 2; j < MEDIO.length; j++) S += MEDIO[j];
+    for (j = MEDIO.length; j <= n; j++) {
+      // qui S = C(2) + … + C(j − 1)
+      var c = j + 2 * S / j;
+      MEDIO.push(c);
+      S += c;
+    }
+    return MEDIO[n];
+  }
+  function peggiore(n) { return n < 1 ? 0 : n * (n + 1) / 2 - 1; }
+  function log2(x) { return Math.log(x) / Math.LN2; }
+
+  // ---------------------------------------------------------- grafico: caso peggiore e caso medio
+  var GR = { W: 640, H: 240, sx: 62, dx: 16, su: 16, giu: 34, N: 100, Y: 100, sel: 50 };
+  function passoBello(max, quante) {
+    var grezzo = max / quante, p = Math.pow(10, Math.floor(Math.log(grezzo) / Math.LN10)), r = grezzo / p;
+    return (r <= 1 ? 1 : r <= 2 ? 2 : r <= 5 ? 5 : 10) * p;
+  }
+  function grX(n) { return GR.sx + (GR.W - GR.sx - GR.dx) * (n - 1) / (GR.N - 1); }
+  function grY(v) { return GR.su + (GR.H - GR.su - GR.giu) * (1 - v / GR.Y); }
+  function grCalcola() {
+    GR.N = Number($("gr-n").value) || 100;
+    medio(GR.N);
+    var py = passoBello(peggiore(GR.N), 4);
+    GR.Y = Math.ceil(peggiore(GR.N) / py) * py;
+    GR.py = py;
+    $("gr-leg").innerHTML = "<span><span class='k b'></span>caso peggiore: n(n + 1)/2 − 1</span><span><span class='k a'></span>caso medio: dall'equazione della sezione 10</span>";
+    var w = peggiore(GR.N), m = medio(GR.N);
+    $("gr-txt").innerHTML = "Con n = " + fmt(GR.N) + ": caso peggiore <b>" + fmt(w) + "</b> confronti, caso medio circa <b>" + dec(m, 0) +
+      "</b>. Il caso peggiore è circa <b>" + dec(w / m, 1) + " volte</b> il caso medio, e il distacco cresce con n.";
+    var righe = [10, 20, 50, 100, 200, 500, 1000], tb = "<table><tr><th>n</th><th>caso peggiore</th><th>caso medio</th><th>migliore ≈ n log<sub>2</sub> n</th><th>limite 2n ln n</th></tr>";
+    medio(1000);
+    righe.forEach(function (n) {
+      tb += "<tr><td>" + fmt(n) + "</td><td>" + fmt(peggiore(n)) + "</td><td>" + dec(medio(n), 1) + "</td><td>" + dec(n * log2(n), 1) + "</td><td>" + dec(2 * n * Math.log(n), 1) + "</td></tr>";
+    });
+    $("gr-tab").innerHTML = tb + "</table>";
+    grDisegna();
+  }
+  function grDisegna() {
+    var larg = $("gr-svg").clientWidth;
+    GR.W = larg ? Math.max(280, Math.round(larg)) : 640;
+    GR.H = GR.W < 480 ? 220 : 250;
+    var p = [], n, dA = "", dB = "", v;
+    for (n = 1; n <= GR.N; n++) {
+      dA += (n > 1 ? " L" : "M") + grX(n).toFixed(1) + "," + grY(medio(n)).toFixed(1);
+      dB += (n > 1 ? " L" : "M") + grX(n).toFixed(1) + "," + grY(peggiore(n)).toFixed(1);
+    }
+    p.push("<svg viewBox='0 0 " + GR.W + " " + GR.H + "' id='gr-svg-el' tabindex='0' role='img' aria-label='Confronti di quickSort per n da 1 a " +
+      GR.N + ": il caso peggiore cresce come n al quadrato, il caso medio molto più lentamente. I valori sono nella tabella sotto il grafico.'>");
+    for (v = 0; v <= GR.Y + 1e-9; v += GR.py) {
+      p.push("<line class='asse' x1='" + GR.sx + "' x2='" + (GR.W - GR.dx) + "' y1='" + grY(v).toFixed(1) + "' y2='" + grY(v).toFixed(1) + "'></line>");
+      p.push("<text class='tick' x='" + (GR.sx - 6) + "' y='" + (grY(v) + 4).toFixed(1) + "' text-anchor='end'>" + fmt(v) + "</text>");
+    }
+    var px = passoBello(GR.N, 5);
+    for (v = 0; v <= GR.N; v += px) {
+      var vv = Math.max(1, v);
+      p.push("<text class='tick' x='" + grX(vv).toFixed(1) + "' y='" + (GR.H - GR.giu + 16) + "' text-anchor='middle'>" + fmt(vv) + "</text>");
+    }
+    p.push("<text class='tit-asse' x='" + (GR.W - GR.dx) + "' y='" + (GR.H - 4) + "' text-anchor='end'>n →</text>");
+    p.push("<text class='tit-asse' x='" + GR.sx + "' y='11'>confronti ↑</text>");
+    p.push("<path class='serie-b' d='" + dB + "'></path>");
+    p.push("<path class='serie-a' d='" + dA + "'></path>");
+    var xe = grX(GR.N);
+    p.push("<text class='etich' x='" + (xe - 4) + "' y='" + (grY(peggiore(GR.N)) + 14).toFixed(1) + "' text-anchor='end'>caso peggiore</text>");
+    p.push("<text class='etich' x='" + (xe - 4) + "' y='" + (grY(medio(GR.N)) - 7).toFixed(1) + "' text-anchor='end'>caso medio</text>");
+    p.push("<line class='croce' id='gr-croce' x1='0' x2='0' y1='" + GR.su + "' y2='" + grY(0) + "' style='display:none'></line>");
+    p.push("<circle class='punto-b' id='gr-pb' r='4' cx='0' cy='0' style='display:none'></circle>");
+    p.push("<circle class='punto-a' id='gr-pa' r='4' cx='0' cy='0' style='display:none'></circle>");
+    p.push("</svg>");
+    $("gr-svg").innerHTML = p.join("");
+    var svg = document.getElementById("gr-svg-el");
+    if (svg && svg.addEventListener) {
+      svg.addEventListener("pointermove", function (e) { grTip(grN(e)); });
+      svg.addEventListener("pointerdown", function (e) { grTip(grN(e)); });
+      svg.addEventListener("pointerleave", grNascondi);
+      svg.addEventListener("focus", function () { grTip(GR.sel = Math.round(GR.N / 2)); });
+      svg.addEventListener("blur", grNascondi);
+      svg.addEventListener("keydown", function (e) {
+        var passo = Math.max(1, Math.round(GR.N / 20));
+        if (e.key === "ArrowRight") { GR.sel = Math.min(GR.N, GR.sel + passo); grTip(GR.sel); e.preventDefault(); }
+        if (e.key === "ArrowLeft") { GR.sel = Math.max(1, GR.sel - passo); grTip(GR.sel); e.preventDefault(); }
+      });
+    }
+  }
+  function grN(e) {
+    var svg = document.getElementById("gr-svg-el"), r = svg.getBoundingClientRect();
+    var x = (e.clientX - r.left) * GR.W / r.width;
+    var n = 1 + (x - GR.sx) * (GR.N - 1) / (GR.W - GR.sx - GR.dx);
+    return Math.max(1, Math.min(GR.N, Math.round(n)));
+  }
+  function grTip(n) {
+    var svg = document.getElementById("gr-svg-el"), tip = $("gr-tip"), cr = document.getElementById("gr-croce");
+    if (!svg || !svg.getBoundingClientRect) return;
+    GR.sel = n;
+    var x = grX(n);
+    cr.setAttribute("x1", x); cr.setAttribute("x2", x); cr.style.display = "";
+    var pa = document.getElementById("gr-pa"), pb = document.getElementById("gr-pb");
+    pa.setAttribute("cx", x); pa.setAttribute("cy", grY(medio(n))); pa.style.display = "";
+    pb.setAttribute("cx", x); pb.setAttribute("cy", grY(peggiore(n))); pb.style.display = "";
+    tip.innerHTML = "";
+    tip.appendChild(el("div", "", "n = " + fmt(n)));
+    [["b", fmt(peggiore(n)), "caso peggiore"], ["a", dec(medio(n), 1), "caso medio"]].forEach(function (s) {
+      var r = el("div"), k = el("span", "chiave " + s[0]), v = el("b", "", s[1]);
+      r.appendChild(k); r.appendChild(v); r.appendChild(document.createTextNode(" " + s[2]));
+      tip.appendChild(r);
+    });
+    if (n > 1) {
+      tip.appendChild(el("div", "piccolo", "migliore ≈ n log₂ n: " + dec(n * log2(n), 1)));
+      tip.appendChild(el("div", "piccolo", "limite 2n ln n: " + dec(2 * n * Math.log(n), 1)));
+    }
+    tip.style.display = "block";
+    var box = $("gr-graf").getBoundingClientRect(), sr = svg.getBoundingClientRect();
+    var px = (x / GR.W) * sr.width + (sr.left - box.left), w = tip.offsetWidth || 160;
+    tip.style.left = (px + 12 + w <= box.width ? px + 12 : Math.max(0, px - 12 - w)) + "px";
+    tip.style.top = "6px";
+  }
+  function grNascondi() {
+    $("gr-tip").style.display = "none";
+    ["gr-croce", "gr-pa", "gr-pb"].forEach(function (id) { var e = document.getElementById(id); if (e && e.style) e.style.display = "none"; });
+  }
+  $("gr-n").onchange = grCalcola;
+  grCalcola();
+  if (window.addEventListener) {
+    var grT = null;
+    window.addEventListener("resize", function () { clearTimeout(grT); grT = setTimeout(grDisegna, 150); });
+  }
+
+  // ---------------------------------------------------------- esperimento con il codice vero
+  function contaQuickSort(A) {
+    var st = [0, A.length], cfr = 0;
+    while (st.length) {
+      var f = st.pop(), i = st.pop();
+      if (f - i > 1) { var r = partiziona(A, i, f); cfr += r.cfr; st.push(i, r.m, r.m + 1, f); }
+    }
+    return cfr;
+  }
+  var SP = { ultimo: null };
+  function spN() {
+    var n = Math.round(Number($("sp-n").value));
+    if (!isFinite(n) || n < 2) n = 2;
+    if (n > 5000) n = 5000;
+    $("sp-n").value = n;
+    return n;
+  }
+  function spTabella(n, righe) {
+    var tb = "<table><tr><th>che cosa</th><th>confronti</th></tr>";
+    righe.forEach(function (r) { tb += "<tr><td>" + r[0] + "</td><td>" + r[1] + "</td></tr>"; });
+    tb += "<tr><td>n log<sub>2</sub> n (caso migliore, circa)</td><td>" + dec(n * log2(n), 0) + "</td></tr>";
+    tb += "<tr><td>caso medio dall'equazione (n confronti per partizione)</td><td>" + dec(medio(n), 0) + "</td></tr>";
+    tb += "<tr><td>limite 2n ln n ≈ 1,39 n log<sub>2</sub> n</td><td>" + dec(2 * n * Math.log(n), 0) + "</td></tr>";
+    tb += "<tr><td>caso peggiore n(n + 1)/2 − 1</td><td>" + fmt(peggiore(n)) + "</td></tr>";
+    $("sp-tab").innerHTML = tb + "</table>";
+  }
+  function spVia() {
+    var n = spN(), quanti = Number($("sp-k").value) || 1, min = Infinity, max = 0, somma = 0, A = new Array(n), t, k, j;
+    for (t = 0; t < quanti; t++) {
+      for (k = 0; k < n; k++) A[k] = k + 1;
+      for (k = n - 1; k > 0; k--) { j = Math.floor(Math.random() * (k + 1)); var s = A[k]; A[k] = A[j]; A[j] = s; }
+      var c = contaQuickSort(A);
+      if (c < min) min = c;
+      if (c > max) max = c;
+      somma += c;
+    }
+    var media = somma / quanti;
+    SP.ultimo = { n: n, media: media };
+    var righe = quanti > 1 ? [["misurati: il minimo su " + quanti + " array", fmt(min)], ["misurati: la media", "<b>" + dec(media, 0) + "</b>"], ["misurati: il massimo", fmt(max)]] :
+      [["misurati su 1 array", "<b>" + fmt(min) + "</b>"]];
+    spTabella(n, righe);
+    $("sp-txt").innerHTML = (quanti > 1 ? "Su " + quanti + " array mescolati a caso di " + fmt(n) + " elementi, quickSort ha fatto in media <b>" + dec(media, 0) +
+      "</b> confronti (da " + fmt(min) + " a " + fmt(max) + ")." : "Su un array mescolato a caso di " + fmt(n) + " elementi, quickSort ha fatto <b>" + fmt(min) + "</b> confronti.") +
+      " È sotto il limite 2n ln n e lontanissimo dal caso peggiore. Il codice vero fa un po' meno confronti dell'equazione, perché a volte una partizione costa n − 1 invece di n." +
+      (quanti > 1 ? " Nota anche quanto sono vicini il minimo e il massimo: un array a caso che si avvicini al caso peggiore, in pratica, non capita." : "");
+  }
+  function spOrd() {
+    var n = spN(), A = new Array(n), k;
+    for (k = 0; k < n; k++) A[k] = k + 1;
+    var c = contaQuickSort(A);
+    spTabella(n, [["misurati sull'array già ordinato 1, 2, …, " + fmt(n), "<b>" + fmt(c) + "</b>"]]);
+    $("sp-txt").innerHTML = "Con l'array già ordinato quickSort ha fatto <b>" + fmt(c) + "</b> confronti: esattamente n(n + 1)/2 − 1, il caso peggiore." +
+      (SP.ultimo && SP.ultimo.n === n ? " Sugli array mescolati a caso, con lo stesso n, la media era circa " + dec(SP.ultimo.media, 0) + ": circa " +
+        dec(c / SP.ultimo.media, 0) + " volte meno." : "");
+  }
+  $("sp-via").onclick = spVia;
+  $("sp-ord").onclick = spOrd;
+  spVia();
+})();
+
+</script>
+</body>
+</html>

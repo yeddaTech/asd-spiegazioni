@@ -409,3 +409,80 @@ tr.riga-attuale td { background: var(--hl); }
   .catena { font-size: .9rem; }
   .casi { font-size: .93rem; }
 }
+
+/* ---------- pacco 7: figure, riquadri «in questa sezione», matrici evidenziate ---------- */
+.in-questa { font: 15px/1.5 system-ui, sans-serif; color: var(--muted); margin: -4px 0 16px; }
+.in-questa b { color: var(--fg); }
+.figura { margin: 18px 0; overflow-x: auto; }
+.figura svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.figura .didascalia { font: 13.5px/1.45 system-ui, sans-serif; color: var(--muted); text-align: center; margin-top: 6px; }
+.figura .didascalia b { color: var(--fg); }
+svg .t-testo { fill: var(--fg); }
+svg .t-muted { fill: var(--muted); }
+svg .t-blu { fill: var(--accent); }
+svg .t-verde { fill: var(--green); }
+svg .t-arancio { fill: var(--orange); }
+svg .t-rosso { fill: var(--red); }
+svg .t-viola { fill: var(--violet); }
+svg .r-box { fill: var(--card); stroke: var(--border); stroke-width: 1.5; }
+svg .r-blu { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+svg .r-verde { fill: var(--green-soft); stroke: var(--green); stroke-width: 1.5; }
+svg .r-arancio { fill: var(--orange-soft); stroke: var(--orange); stroke-width: 1.5; }
+svg .r-viola { fill: var(--violet-soft); stroke: var(--violet); stroke-width: 1.5; }
+svg .l-muted { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+svg .l-blu { stroke: var(--accent); stroke-width: 1.8; fill: none; }
+svg .l-arancio { stroke: var(--orange); stroke-width: 1.8; fill: none; }
+svg .punta { fill: var(--muted); }
+table.mat.blocchi { border-spacing: 0; }
+table.mat td.cliccabile { cursor: pointer; }
+table.mat td.cliccabile:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+table.mat td.hl-r { background: var(--accent-soft); }
+table.mat td.hl-c { background: var(--orange-soft); }
+table.mat td.hl-x { background: var(--hl); font-weight: 700; }
+table.mat td.blk11 { background: var(--accent-soft); }
+table.mat td.blk12 { background: var(--orange-soft); }
+table.mat td.blk21 { background: var(--green-soft); }
+table.mat td.blk22 { background: var(--violet-soft); }
+table.mat td.sep-dx { border-right: 2px solid var(--fg); }
+table.mat tr.sep-sotto td { border-bottom: 2px solid var(--fg); }
+.nome-mat { font: 600 14px system-ui, sans-serif; color: var(--muted); display: block; text-align: center; margin-bottom: 2px; }
+.affianco { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-start; justify-content: center; margin: 10px 0; }
+.affianco > div { text-align: center; }
+svg .r-cella { fill: var(--card); stroke: var(--orange); stroke-width: 2; }
+.controlli > label { max-width: 100%; min-width: 0; }
+
+/* ---------- pacco 8: quickSort (perno, zone ≤ / >, indici sx e dx) ---------- */
+.cella.perno .v { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.cella.zsx .v { background: var(--accent-soft); }
+.cella.zdx .v { background: var(--orange-soft); }
+.cella.posto .v { border-color: var(--green); background: var(--green-soft); }
+.array.qs .cella .f { font-size: 12.5px; white-space: nowrap; }
+.array.qs .cella .i { color: var(--muted); white-space: nowrap; }
+.lab-sx { color: var(--orange); font-weight: 700; }
+.lab-dx { color: var(--green); font-weight: 700; }
+.lab-sx + .lab-dx { margin-left: 3px; }
+.vuoto { width: 44px; height: 32px; border: 2px dashed var(--border); border-radius: 6px; text-align: center;
+  font: 12px/28px system-ui, sans-serif; color: var(--muted); }
+.legenda-celle { display: flex; flex-wrap: wrap; gap: 4px 16px; font: 13.5px system-ui, sans-serif; color: var(--muted); margin: 6px 0 2px; }
+.legenda-celle .q { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--orange); border-radius: 3px;
+  background: var(--card); vertical-align: -2px; margin-right: 6px; }
+.legenda-celle .q.perno { border-color: var(--red); background: var(--red-soft); }
+.legenda-celle .q.zsx { background: var(--accent-soft); }
+.legenda-celle .q.zdx { background: var(--orange-soft); }
+.legenda-celle .q.posto { border-color: var(--green); background: var(--green-soft); }
+.legenda-celle .q.attiva { background: var(--hl); }
+pre.pseudo .riga { display: block; padding: 0 4px; border-radius: 4px; }
+pre.pseudo .riga.ora { background: var(--hl); }
+svg .r-rosso { fill: var(--red-soft); stroke: var(--red); }
+svg .r-rett { fill: var(--red-soft); stroke: var(--red); }
+svg .l-verde { stroke: var(--green); fill: none; }
+svg .l-curva { stroke: var(--serie-a); fill: none; }
+svg .area-curva { fill: var(--serie-a); fill-opacity: .12; }
+@media (max-width: 520px) {
+  .array.qs .cella { width: 28px; }
+  .array.qs .cella .v { height: 32px; line-height: 32px; font-size: 13.5px; }
+  .array.qs .stacco { width: 6px; }
+  .array.qs .cella .f, .array.qs .cella .i { font-size: 11px; }
+  .livello .array.qs .cella { width: 28px; }
+  .livello .array.qs .cella .v { height: 28px; line-height: 28px; }
+}

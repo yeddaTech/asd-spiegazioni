@@ -16,6 +16,7 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 5 · Dividi e fondi: mergeSort | merge, divide et impera, albero delle chiamate | 8 |
 | 6 · Quanto costa mergeSort | l'equazione C(n), il tempo T(n), l'altezza della pila, il Codice 3.3 | 9 |
 | 7 · Divide et impera e teorema fondamentale | minMax, Master theorem, prodotto di matrici, Strassen | 10 |
+| 8 · QuickSort | partizione con il perno, i tre casi (peggiore, migliore, medio), esercizi d'esame sulla partizione | 11 |
 
 ## Come si usa
 
