@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alberi binari e visite</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 12 · lezioni 13–14 (26 ottobre 2026), seconda parte</span>
+</div>
+
+<h1>Alberi binari: com'è fatto un albero e come si visita</h1>
+<p class="sottotitolo">In una lista ogni nodo ha un solo successore; in un albero binario ne ha fino a due, il figlio sinistro e il figlio destro. In questa pagina: le parole degli alberi (radice, foglie, livelli, altezza…), come si rappresenta un albero in memoria, e le visite: in ampiezza con una coda, in profondità con una pila o con la ricorsione, nei tre ordini anticipato, simmetrico e posticipato. Poi gli alberi delle espressioni e la notazione polacca inversa, e il tipo di domanda che arriva all'esame: la visita di un albero dato con il vettore posizionale.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di matematica o di programmazione che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>«Lavagna, pagina N» indica la pagina del PDF della lavagna delle lezioni 13 e 14 (26 ottobre 2026). Il prof questa volta è andato di fretta, e alcune cose (il codice completo delle visite con la coda e con la pila, il costo, il giro intorno all'albero) vengono dalla lavagna della stessa lezione dell'anno scorso: è scritto ogni volta.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in sei domande</span>
+  <ol>
+    <li><b>Cos'è un albero binario?</b> Un insieme di nodi in cui ogni nodo ha al massimo due figli, sinistro e destro, a partire da un nodo speciale, la radice.</li>
+    <li><b>Come si misura?</b> Con la profondità (o livello) dei nodi: 0 la radice, 1 i suoi figli, e così via. L'altezza dell'albero è la profondità massima.</li>
+    <li><b>Come sta in memoria?</b> Ogni nodo ha il dato e due riferimenti, sx e dx, ai figli (null se il figlio non c'è).</li>
+    <li><b>Cosa vuol dire visitare?</b> Passare da tutti i nodi, una volta ciascuno. L'ordine dipende da dove si tengono i nodi «in attesa»: una coda dà la visita in ampiezza (livello per livello), una pila quella in profondità.</li>
+    <li><b>E la visita ricorsiva?</b> Visita la radice, il sottoalbero sinistro e il destro: l'ordine in cui lo fa dà i tre ordini anticipato (R sx dx), simmetrico (sx R dx) e posticipato (sx dx R).</li>
+    <li><b>Quanto costa una visita?</b> Θ(n), dove n è il numero dei nodi.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#alberi">Dalle liste agli alberi</a></li>
+    <li><a href="#parole">Le parole degli alberi</a></li>
+    <li><a href="#memoria">Un albero in memoria</a></li>
+    <li><a href="#generica">Visitare un albero: la visita generica</a></li>
+    <li><a href="#ampiezza">La visita in ampiezza: S è una coda</a></li>
+    <li><a href="#profondita">La visita in profondità: S è una pila</a></li>
+    <li><a href="#ricorsivo">L'albero binario visto ricorsivamente</a></li>
+    <li><a href="#ordini">La visita ricorsiva e i tre ordini</a></li>
+    <li><a href="#giro">Il giro intorno all'albero</a></li>
+    <li><a href="#espressioni">Gli alberi delle espressioni e la notazione polacca inversa</a></li>
+    <li><a href="#costo">Quanto costa una visita</a></li>
+    <li><a href="#esame">All'esame: la visita di un vettore posizionale</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti (anche il foglio 4 e i temi d'esame)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="alberi"><span class="num">1</span>Dalle liste agli alberi</h2>
+<p class="in-questa"><b>In questa sezione:</b> le due slide «Dalle liste agli alberi» (lavagna, pagine 30 e 31): cosa cambia passando da un successore a due.</p>
+
+<p>In una <strong>lista lineare</strong> i nodi sono collegati tramite riferimenti, e a ogni nodo è associato <em>un unico successore</em> (il nodo indicato dal suo campo pros). Le slide aggiungono: «mediante riferimenti/puntatori è possibile definire strutture più complicate, ma più flessibili».</p>
+<p>La prima è l'<strong>albero binario</strong>: a ogni nodo possono essere associati <em>due</em> «successori», detti <strong>figlio sinistro</strong> e <strong>figlio destro</strong>. «Possono»: un nodo può avere due figli, uno solo (il sinistro o il destro) o nessuno. La Figura 1 mette a confronto la lista e i due alberi delle slide.</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="lista 10 2 4 7" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/></svg><div class="nome-mat">(a) lista: ogni nodo ha un solo successore</div></div></div><div class="affianco"><div><svg viewBox="0 0 396 246" width="396" height="246" role="img" aria-label="albero 8 14 11 22 12 5 1 3" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="183.9" y1="39.5" x2="120.1" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="212.1" y1="39.5" x2="275.9" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="95.9" y1="105.7" x2="70.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="116.1" y1="105.7" x2="141.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="146.1" y1="169.9" x2="134.9" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="157.9" y1="169.9" x2="169.1" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="300.1" y1="105.7" x2="325.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="198" cy="30" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="198" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="106" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="106" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="60" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="152" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="152" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="129" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="129" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="175" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="290" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="290" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="336" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></g></svg><div class="nome-mat">(b) albero binario: ogni nodo ha fino a due successori</div></div><div><svg viewBox="0 0 396 246" width="396" height="246" role="img" aria-label="albero dell'espressione" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="183.9" y1="39.5" x2="120.1" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="212.1" y1="39.5" x2="275.9" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="95.9" y1="105.7" x2="70.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="116.1" y1="105.7" x2="141.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="279.9" y1="105.7" x2="254.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="300.1" y1="105.7" x2="325.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="238.1" y1="169.9" x2="226.9" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="249.9" y1="169.9" x2="261.1" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="198" cy="30" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="198" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">*</text><circle cx="106" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="106" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">+</text><circle cx="60" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="152" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="152" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="290" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="290" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">*</text><circle cx="244" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="244" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">+</text><circle cx="221" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="221" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="267" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="267" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="336" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></g></svg><div class="nome-mat">(c) un'espressione come albero binario</div></div></div>
+<div class="didascalia"><b>Figura 1.</b> Le due slide della lavagna, pagine 30 e 31. (a) Una lista: da ogni nodo si va avanti in un modo solo. (b) Un albero binario: da 8 si può scendere a sinistra verso 14 o a destra verso 11. Gli alberi si disegnano a testa in giù: la radice in alto. (c) Un albero che rappresenta un'espressione aritmetica: lo riprenderemo nella sezione 10.</div>
+</div>
+<p>Nell'albero (b), 12 ha due figli (1 e 3), 11 ne ha uno solo (il destro, 5), e 22 nessuno. Attenzione: «sinistro» e «destro» non sono solo una questione di disegno. Il 5 è il figlio <em>destro</em> di 11; un albero in cui il 5 fosse il figlio sinistro di 11 sarebbe un albero binario diverso.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Lista: ogni nodo ha al massimo un successore. Albero binario: ogni nodo ha al massimo due figli, sinistro e destro.</li>
+    <li>Il lato conta: figlio sinistro e figlio destro sono due posti diversi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="parole"><span class="num">2</span>Le parole degli alberi</h2>
+<p class="in-questa"><b>In questa sezione:</b> tutte le parole che il prof scrive alla lavagna, pagina 32, sull'albero di prima: radice, padre, figli, archi, foglie, nodi interni, sottoalberi, profondità o livello, altezza.</p>
+
+<div class="figura">
+<svg viewBox="0 0 620 288" width="620" height="288" role="img" aria-label="radice, padre, figli, foglie" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="294.9" y1="53.8" x2="205.1" y2="100.2" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="325.1" y1="53.8" x2="414.9" y2="100.2" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="178.2" y1="120.2" x2="141.8" y2="157.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="201.8" y1="120.2" x2="238.2" y2="157.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="242.6" y1="185.3" x2="227.4" y2="216.7" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="257.4" y1="185.3" x2="272.6" y2="216.7" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="441.8" y1="120.2" x2="478.2" y2="157.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="310" cy="46" r="17" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="310" y="51" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="190" cy="108" r="17" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="190" y="113" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="130" cy="170" r="17" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="130" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="250" cy="170" r="17" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="250" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="220" cy="232" r="17" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="220" y="237" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="280" cy="232" r="17" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="280" y="237" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="430" cy="108" r="17" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="430" y="113" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="490" cy="170" r="17" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="490" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><text x="245" y="50" font-size="12.5" font-weight="600" text-anchor="end" class="t-verde" fill="#17803d">radice</text><line x1="249" y1="46" x2="286" y2="46" class="l-verde" stroke="#17803d" stroke-width="1.3"/><path d="M290 46 l-7.3 3.3 l0 -6.5 z" class="t-verde" fill="#17803d"/><text x="345" y="23" font-size="12.5" font-weight="600" text-anchor="start" class="t-arancio" fill="#b4500f">padre di 14 e 11</text><line x1="341" y1="19" x2="323.6" y2="30.2" class="l-arancio" stroke="#b4500f" stroke-width="1.3"/><path d="M320.2 32.4 l4.4 -6.7 l3.5 5.5 z" class="t-arancio" fill="#b4500f"/><text x="495" y="105" font-size="12.5" font-weight="600" text-anchor="start" class="t-arancio" fill="#b4500f">figlio destro</text><text x="495" y="119" font-size="12.5" font-weight="600" text-anchor="start" class="t-arancio" fill="#b4500f">della radice</text><line x1="491" y1="108" x2="454" y2="108" class="l-arancio" stroke="#b4500f" stroke-width="1.3"/><path d="M450 108 l7.3 -3.3 l0 6.5 z" class="t-arancio" fill="#b4500f"/><text x="125" y="105" font-size="12.5" font-weight="600" text-anchor="end" class="t-arancio" fill="#b4500f">figlio sinistro</text><text x="125" y="119" font-size="12.5" font-weight="600" text-anchor="end" class="t-arancio" fill="#b4500f">della radice</text><line x1="129" y1="108" x2="166" y2="108" class="l-arancio" stroke="#b4500f" stroke-width="1.3"/><path d="M170 108 l-7.3 3.3 l0 -6.5 z" class="t-arancio" fill="#b4500f"/><text x="130" y="217" font-size="12.5" font-weight="600" text-anchor="middle" class="t-rosso" fill="#b42318">foglia</text><line x1="130" y1="205" x2="130" y2="194" class="l-rosso" stroke="#b42318" stroke-width="1.3"/><path d="M130 190 l3.3 7.3 l-6.5 0 z" class="t-rosso" fill="#b42318"/><text x="220" y="279" font-size="12.5" font-weight="600" text-anchor="middle" class="t-rosso" fill="#b42318">foglia</text><line x1="220" y1="267" x2="220" y2="256" class="l-rosso" stroke="#b42318" stroke-width="1.3"/><path d="M220 252 l3.3 7.3 l-6.5 0 z" class="t-rosso" fill="#b42318"/><text x="280" y="279" font-size="12.5" font-weight="600" text-anchor="middle" class="t-rosso" fill="#b42318">foglia</text><line x1="280" y1="267" x2="280" y2="256" class="l-rosso" stroke="#b42318" stroke-width="1.3"/><path d="M280 252 l3.3 7.3 l-6.5 0 z" class="t-rosso" fill="#b42318"/><text x="490" y="217" font-size="12.5" font-weight="600" text-anchor="middle" class="t-rosso" fill="#b42318">foglia</text><line x1="490" y1="205" x2="490" y2="194" class="l-rosso" stroke="#b42318" stroke-width="1.3"/><path d="M490 190 l3.3 7.3 l-6.5 0 z" class="t-rosso" fill="#b42318"/></g></svg>
+<div class="didascalia"><b>Figura 2.</b> L'albero della lavagna, pagina 32, con i nomi dei nodi. In azzurro i nodi interni (quelli che hanno almeno un figlio), in rosso le foglie (quelli senza figli).</div>
+</div>
+<div class="box def">
+  <span class="etichetta">Definizioni (lavagna, pagina 32)</span>
+  <ul>
+    <li><strong>Radice</strong>: il nodo in cima, l'unico che non è figlio di nessuno. Qui è 8.</li>
+    <li><strong>Padre e figli</strong>: se da un nodo si scende direttamente a un altro, il primo è il <em>padre</em> e il secondo un <em>figlio</em>. 8 è il padre di 14 e di 11; 11 è il figlio destro della radice. Ogni nodo, tranne la radice, ha esattamente un padre.</li>
+    <li><strong>Archi</strong> (o collegamenti): le linee che uniscono un padre a un figlio.</li>
+    <li><strong>Foglie</strong>: i nodi senza figli. Qui 22, 1, 3 e 5.</li>
+    <li><strong>Nodi interni</strong>: i nodi che hanno almeno un figlio. Qui 8, 14, 12 e 11.</li>
+    <li><strong>Sottoalbero</strong>: un nodo con tutti i nodi che stanno sotto di lui. Il sottoalbero sinistro di un nodo è quello che parte dal suo figlio sinistro, il destro quello che parte dal figlio destro.</li>
+  </ul>
+</div>
+<div class="figura">
+<svg viewBox="0 0 610 266" width="610" height="266" role="img" aria-label="sottoalberi e livelli" font-family="system-ui, sans-serif"><g transform="translate(64,0)"><rect x="44" y="66" width="192" height="176" rx="26" class="r-viola" fill="#f1eafc" fill-opacity="0.55" stroke="#6d3fc0" stroke-width="1.4" stroke-dasharray="5 4"/><text x="48" y="257" font-size="12.5" font-weight="600" text-anchor="start" class="t-viola" fill="#6d3fc0">sottoalbero sinistro della radice</text><rect x="131" y="131" width="102" height="108" rx="23" class="r-arancio" fill="#fdf0e3" fill-opacity="0.55" stroke="#b4500f" stroke-width="1.4" stroke-dasharray="5 4"/><text x="239" y="212" font-size="12.5" font-weight="600" text-anchor="start" class="t-arancio" fill="#b4500f">sottoalbero</text><text x="239" y="227" font-size="12.5" font-weight="600" text-anchor="start" class="t-arancio" fill="#b4500f">destro di 14</text><text x="-58" y="34" font-size="12" class="t-muted" fill="#5b6270">livello 0</text><line x1="-6" y1="30" x2="470" y2="30" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="96" font-size="12" class="t-muted" fill="#5b6270">livello 1</text><line x1="-6" y1="92" x2="470" y2="92" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="158" font-size="12" class="t-muted" fill="#5b6270">livello 2</text><line x1="-6" y1="154" x2="470" y2="154" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="220" font-size="12" class="t-muted" fill="#5b6270">livello 3</text><line x1="-6" y1="216" x2="470" y2="216" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><line x1="223.1" y1="38.2" x2="140.9" y2="83.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="252.9" y1="38.2" x2="335.1" y2="83.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="114.6" y1="104.6" x2="81.4" y2="141.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="137.4" y1="104.6" x2="170.6" y2="141.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="175" y1="169.5" x2="161" y2="200.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="189" y1="169.5" x2="203" y2="200.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="361.4" y1="104.6" x2="394.6" y2="141.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="238" cy="30" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="238" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="126" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="126" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="70" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="70" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="182" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="182" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="154" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="154" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="210" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="210" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="350" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="350" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="406" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="406" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></g></svg>
+<div class="didascalia"><b>Figura 3.</b> Ancora la lavagna, pagina 32. In viola il sottoalbero sinistro della radice: parte da 14 e contiene 14, 22, 12, 1, 3. In arancione il sottoalbero destro di 14: parte da 12 e contiene 12, 1, 3. A sinistra i livelli: la radice è al livello 0, i suoi figli al livello 1, e così via.</div>
+</div>
+<div class="box def">
+  <span class="etichetta">Definizioni: profondità e altezza (lavagna, pagina 32)</span>
+  <ul>
+    <li><strong>Profondità</strong> o <strong>livello</strong> di un nodo: la radice ha profondità 0; i figli di un nodo di profondità k hanno profondità k + 1. In altre parole: il numero di archi da attraversare per arrivare al nodo partendo dalla radice.</li>
+    <li><strong>Altezza</strong> (o profondità) dell'albero: la massima profondità delle foglie.</li>
+  </ul>
+</div>
+<p>Nell'albero della Figura 3: 8 ha profondità 0; 14 e 11 profondità 1; 22, 12 e 5 profondità 2; 1 e 3 profondità 3. Le foglie hanno profondità 2 (22 e 5) e 3 (1 e 3): la massima è 3, quindi l'albero ha <strong>altezza 3</strong>, come scrive il prof cerchiandolo in blu.</p>
+<p>Si può dire anche «la massima profondità di un nodo» (così era scritto alla lavagna dell'anno scorso): è lo stesso numero, perché il nodo più profondo è sempre una foglia. Se avesse un figlio, il figlio sarebbe ancora più profondo.</p>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: l'albero con un solo nodo</span>
+  <p>Un albero fatto della sola radice ha altezza 0, non 1: la radice è una foglia (non ha figli) e ha profondità 0. L'altezza conta gli <em>archi</em> lungo il cammino più lungo dalla radice, non i nodi.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Radice (in cima, senza padre), padre e figli, archi, foglie (senza figli), nodi interni (con almeno un figlio), sottoalbero sinistro e destro.</li>
+    <li>Profondità (livello): 0 la radice, +1 a ogni discesa. Altezza dell'albero: la profondità massima. L'albero della lavagna ha altezza 3.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="memoria"><span class="num">3</span>Un albero in memoria</h2>
+<p class="in-questa"><b>In questa sezione:</b> come è fatto un nodo (lavagna, pagina 33), come si scrivono i suoi campi, e l'albero intero come insieme di nodi collegati.</p>
+<p>Come nella lista, ogni nodo è un piccolo blocco di memoria. Invece di un solo riferimento (pros) ne ha due, uno per ogni figlio. La Figura 4 (a) è il nodo disegnato alla lavagna, pagina 33: in alto il <strong>dato</strong> («campi vari»), in basso due scomparti, <strong>sx</strong> e <strong>dx</strong>, per l'«accesso ai sottoalberi».</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 250 120" width="250" height="120" role="img" aria-label="Un nodo: il dato e i due campi sx e dx" font-family="system-ui, sans-serif"><rect x="70" y="10" width="96" height="84" rx="4" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="64" x2="166" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="118" y1="64" x2="118" y2="94" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="118" y="34" font-size="13" text-anchor="middle" class="t-muted" fill="#5b6270">campi vari</text><text x="118" y="52" font-size="13" text-anchor="middle" class="t-muted" fill="#5b6270">(il dato)</text><text x="94" y="84" font-size="14" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">sx</text><text x="142" y="84" font-size="14" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">dx</text><text x="62" y="42" font-size="13" font-weight="600" text-anchor="end" class="t-rosso" fill="#b42318">dato</text><text x="118" y="114" font-size="12.5" font-weight="600" text-anchor="middle" class="t-rosso" fill="#b42318">accesso ai sottoalberi</text></svg><div class="nome-mat">(a) un nodo</div></div></div><div class="affianco"><div><svg viewBox="0 0 612 322" width="612" height="322" role="img" aria-label="I nodi dell'albero con i campi sx e dx" font-family="system-ui, sans-serif"><rect x="279" y="14" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="279" y1="36" x2="333" y2="36" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="306" y1="36" x2="306" y2="54" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="306" y="30" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="292.5" cy="45" r="2.6" class="t-verde" fill="#17803d"/><line x1="292.5" y1="45" x2="161.7" y2="97.5" class="l-verde" stroke="#17803d" stroke-width="1.6"/><path d="M158 99 l5.6 -5.7 l2.4 6.1 z" class="t-verde" fill="#17803d"/><circle cx="319.5" cy="45" r="2.6" class="t-verde" fill="#17803d"/><line x1="319.5" y1="45" x2="450.3" y2="97.5" class="l-verde" stroke="#17803d" stroke-width="1.6"/><path d="M454 99 l-8 0.3 l2.4 -6.1 z" class="t-verde" fill="#17803d"/><rect x="131" y="100" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="131" y1="122" x2="185" y2="122" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="158" y1="122" x2="158" y2="140" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="158" y="116" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="144.5" cy="131" r="2.6" class="t-verde" fill="#17803d"/><line x1="144.5" y1="131" x2="87" y2="182.3" class="l-verde" stroke="#17803d" stroke-width="1.6"/><path d="M84 185 l3.3 -7.3 l4.3 4.9 z" class="t-verde" fill="#17803d"/><circle cx="171.5" cy="131" r="2.6" class="t-verde" fill="#17803d"/><line x1="171.5" y1="131" x2="229" y2="182.3" class="l-verde" stroke="#17803d" stroke-width="1.6"/><path d="M232 185 l-7.6 -2.4 l4.3 -4.9 z" class="t-verde" fill="#17803d"/><rect x="57" y="186" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="57" y1="208" x2="111" y2="208" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="84" y1="208" x2="84" y2="226" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="84" y="202" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><text x="70.5" y="220.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><text x="97.5" y="220.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="205" y="186" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="205" y1="208" x2="259" y2="208" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="232" y1="208" x2="232" y2="226" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="232" y="202" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="218.5" cy="217" r="2.6" class="t-verde" fill="#17803d"/><line x1="218.5" y1="217" x2="196.6" y2="267.3" class="l-verde" stroke="#17803d" stroke-width="1.6"/><path d="M195 271 l-0.1 -8 l6 2.6 z" class="t-verde" fill="#17803d"/><circle cx="245.5" cy="217" r="2.6" class="t-verde" fill="#17803d"/><line x1="245.5" y1="217" x2="267.4" y2="267.3" class="l-verde" stroke="#17803d" stroke-width="1.6"/><path d="M269 271 l-5.9 -5.4 l6 -2.6 z" class="t-verde" fill="#17803d"/><rect x="168" y="272" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="168" y1="294" x2="222" y2="294" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="195" y1="294" x2="195" y2="312" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="195" y="288" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><text x="181.5" y="306.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><text x="208.5" y="306.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="242" y="272" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="294" x2="296" y2="294" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="269" y1="294" x2="269" y2="312" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="269" y="288" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><text x="255.5" y="306.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><text x="282.5" y="306.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="427" y="100" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="427" y1="122" x2="481" y2="122" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="454" y1="122" x2="454" y2="140" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="454" y="116" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><text x="440.5" y="134.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><circle cx="467.5" cy="131" r="2.6" class="t-verde" fill="#17803d"/><line x1="467.5" y1="131" x2="525" y2="182.3" class="l-verde" stroke="#17803d" stroke-width="1.6"/><path d="M528 185 l-7.6 -2.4 l4.3 -4.9 z" class="t-verde" fill="#17803d"/><rect x="501" y="186" width="54" height="40" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="501" y1="208" x2="555" y2="208" class="l-muted" stroke="#5b6270" stroke-width="1"/><line x1="528" y1="208" x2="528" y2="226" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="528" y="202" font-size="14.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><text x="514.5" y="220.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text><text x="541.5" y="220.5" font-size="9" text-anchor="middle" class="t-verde" fill="#17803d">null</text></svg><div class="nome-mat">(b) l'albero della lavagna fatto di nodi collegati</div></div></div>
+<div class="didascalia"><b>Figura 4.</b> (a) Un nodo, come alla lavagna, pagina 33. (b) L'albero della Figura 2 fatto di nodi: le frecce verdi partono dagli scomparti sx e dx e arrivano ai figli; dove il figlio non c'è, lo scomparto contiene null.</div>
+</div>
+<p>Con la stessa notazione delle liste, se r è un riferimento a un nodo:</p>
+<ul>
+  <li><code>r.sx</code> è il riferimento al figlio sinistro, cioè al sottoalbero sinistro (null se non c'è);</li>
+  <li><code>r.dx</code> è il riferimento al figlio destro (null se non c'è);</li>
+  <li>il dato del nodo si legge nei suoi campi (per esempio r.dato o r.chiave).</li>
+</ul>
+<p>E l'albero? Come una lista era il riferimento al suo primo nodo, un albero è il riferimento alla sua <strong>radice</strong>. Per questo nel codice che segue il parametro di tipo AlberoBinario si chiama r (o radice): da lì, seguendo sx e dx, si arriva a tutti i nodi. L'albero vuoto è il riferimento null.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Nodo = dato + due riferimenti, sx e dx, ai figli (null se mancano).</li>
+    <li>Un albero è il riferimento alla radice; l'albero vuoto è null.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="generica"><span class="num">4</span>Visitare un albero: la visita generica</h2>
+<p class="in-questa"><b>In questa sezione:</b> cosa vuol dire visitare; l'algoritmo generico della lavagna, pagina 34, con un insieme S di nodi «in attesa»; perché da come si preleva da S dipende l'ordine.</p>
+<p><strong>Visitare</strong> un albero vuol dire passare da tutti i suoi nodi, ognuno una volta sola, e fare qualcosa con ciascuno: stamparne il dato, sommarlo a un totale, cercare un valore… Quel «qualcosa» nel codice si scrive semplicemente «visita n».</p>
+<p>In una lista c'è un solo modo naturale di passare da tutti i nodi: dal primo all'ultimo. In un albero no: da un nodo si può scendere a sinistra o a destra, e bisogna ricordarsi delle strade non ancora prese. Il prof usa un insieme S, i nodi «in attesa»: quelli già scoperti (perché abbiamo visitato il padre) ma non ancora visitati.</p>
+<p class="titolo-codice">Lavagna, pagina 34</p>
+<pre class="pseudo"><b>ALGORITMO</b> visitaGenerica(AlberoBinario radice)
+  S ← {radice}                      <span class="com">// S è un insieme</span>
+  <b>WHILE</b> S ≠ ∅ <b>DO</b>
+    preleva un nodo n da S
+    visita n
+    S ← S ∪ {figli di n}</pre>
+<p>Riga per riga: all'inizio l'unico nodo in attesa è la radice. Finché S non è vuoto (≠ ∅, «diverso dall'insieme vuoto»), si toglie un nodo da S, lo si visita, e si aggiungono a S i suoi figli (∪ è l'unione di insiemi). Ogni nodo entra in S una volta sola, quando si visita suo padre, ed esce una volta sola: quindi ogni nodo viene visitato esattamente una volta.</p>
+<p>La riga «preleva un nodo n da S» non dice <em>quale</em> nodo prelevare. È lì che si decide l'ordine della visita:</p>
+<ul>
+  <li>se S è una <strong>coda</strong> si preleva il nodo entrato da più tempo: è la <strong>visita in ampiezza</strong> (sezione 5);</li>
+  <li>se S è una <strong>pila</strong> si preleva quello entrato per ultimo: è la <strong>visita in profondità</strong> (sezione 6).</li>
+</ul>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Visitare = passare da ogni nodo una volta e fare qualcosa con lui.</li>
+    <li>Visita generica: S ← {radice}; finché S non è vuoto, preleva n, visita n, aggiungi i figli di n.</li>
+    <li>S coda → in ampiezza; S pila → in profondità.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="ampiezza"><span class="num">5</span>La visita in ampiezza: S è una coda</h2>
+<p class="in-questa"><b>In questa sezione:</b> la visita generica con una coda (lavagna, pagina 35); il codice completo della lavagna dell'anno scorso, con i figli null; la visita sull'albero della lavagna giro per giro; perché visita livello per livello.</p>
+<p>Alla lavagna, pagina 35, il prof prende la visita generica e scrive accanto alle righe: «preleva un nodo n da S» → <em>dequeue</em>; «S ← S ∪ {figli di n}» → <em>enqueue</em> del figlio sinistro e poi del figlio destro. Il codice completo, scritto con le operazioni della coda, era alla lavagna della stessa lezione dell'anno scorso:</p>
+<p class="titolo-codice">Lavagna dell'anno scorso, stessa lezione</p>
+<pre class="pseudo"><b>ALGORITMO</b> visitaInAmpiezza(AlberoBinario r)
+  C ← coda vuota
+  C.enqueue(r)
+  <b>WHILE NOT</b> (C.isEmpty()) <b>DO</b>
+    n ← C.dequeue()
+    <b>IF</b> n ≠ null <b>THEN</b>
+      visita il nodo associato a n
+      C.enqueue(n.sx)
+      C.enqueue(n.dx)</pre>
+<p>Due cose da notare:</p>
+<ul>
+  <li><code>C.enqueue(r)</code> vuol dire «enqueue(r) sulla coda C»: quando nel codice c'è una struttura con un nome, le sue operazioni si scrivono con il nome davanti.</li>
+  <li>Il codice mette nella coda anche i figli che non ci sono: se n.sx è null, entra null. Per questo, quando si preleva, si controlla <code>IF n ≠ null</code>: un null prelevato si butta via e si passa oltre. (Si potrebbe anche controllare prima di inserire, con IF n.sx ≠ null THEN C.enqueue(n.sx): l'ordine di visita non cambia.)</li>
+</ul>
+<p>La Figura 5 mostra la visita sull'albero della lavagna, giro per giro. Il prof, a pagina 35, scrive lo stesso ordine: <strong>8 14 11 22 12 5 1 3</strong>.</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 396 246" width="396" height="246" role="img" aria-label="ordine in ampiezza" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="183.9" y1="39.5" x2="120.1" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="212.1" y1="39.5" x2="275.9" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="95.9" y1="105.7" x2="70.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="116.1" y1="105.7" x2="141.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="146.1" y1="169.9" x2="134.9" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="157.9" y1="169.9" x2="169.1" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="300.1" y1="105.7" x2="325.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="198" cy="30" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="198" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="212.5" cy="15.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="212.5" y="19.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">1</text><circle cx="106" cy="92" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="106" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="120.5" cy="77.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="120.5" y="81.1" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">2</text><circle cx="60" cy="154" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="60" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="74.5" cy="139.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="74.5" y="143.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">4</text><circle cx="152" cy="154" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="152" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="166.5" cy="139.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="166.5" y="143.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">5</text><circle cx="129" cy="216" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="129" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="143.5" cy="201.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="143.5" y="205.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">7</text><circle cx="175" cy="216" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="175" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="189.5" cy="201.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="189.5" y="205.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">8</text><circle cx="290" cy="92" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="290" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="304.5" cy="77.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="304.5" y="81.1" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">3</text><circle cx="336" cy="154" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="336" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="350.5" cy="139.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="350.5" y="143.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">6</text></g></svg><div class="nome-mat">l'ordine di visita in ampiezza</div></div></div><div class="tabella-wrap"><table><tr><th>giro</th><th>esce dalla coda e si visita</th><th>entrano</th><th>coda dopo il giro (primo → ultimo)</th></tr><tr><td>1</td><td><b>8</b></td><td>14, 11</td><td>14 11</td></tr><tr><td>2</td><td><b>14</b></td><td>22, 12</td><td>11 22 12</td></tr><tr><td>3</td><td><b>11</b></td><td>null, 5</td><td>22 12 <span class="piccolo">null</span> 5</td></tr><tr><td>4</td><td><b>22</b></td><td>null, null</td><td>12 <span class="piccolo">null</span> 5 <span class="piccolo">null</span> <span class="piccolo">null</span></td></tr><tr><td>5</td><td><b>12</b></td><td>1, 3</td><td><span class="piccolo">null</span> 5 <span class="piccolo">null</span> <span class="piccolo">null</span> 1 3</td></tr><tr><td>6</td><td><b>5</b></td><td>null, null</td><td><span class="piccolo">null</span> <span class="piccolo">null</span> 1 3 <span class="piccolo">null</span> <span class="piccolo">null</span></td></tr><tr><td>7</td><td><b>1</b></td><td>null, null</td><td>3 <span class="piccolo">null</span> <span class="piccolo">null</span> <span class="piccolo">null</span> <span class="piccolo">null</span></td></tr><tr><td>8</td><td><b>3</b></td><td>null, null</td><td><span class="piccolo">null</span> <span class="piccolo">null</span> <span class="piccolo">null</span> <span class="piccolo">null</span> <span class="piccolo">null</span> <span class="piccolo">null</span></td></tr></table></div>
+<div class="didascalia"><b>Figura 5.</b> La visita in ampiezza dell'albero della lavagna, pagina 35. Sull'albero, il numero viola è l'ordine di visita. Nella tabella, ogni riga è un giro del WHILE in cui si toglie un nodo vero; i giri in cui si toglie null (e non succede niente) non sono scritti, ma i null si vedono nella coda.</div>
+</div>
+<p>Perché l'ordine è «livello per livello», da sinistra a destra? Perché in una coda si esce nell'ordine di arrivo. I figli della radice (livello 1) entrano prima dei loro figli (livello 2), che entrano solo quando si visitano i nodi del livello 1, e così via: un nodo del livello k + 1 entra sempre dopo tutti quelli del livello k. È anche per questo che si chiama «in ampiezza»: prima si allarga a tutto un livello, poi si scende.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Visita in ampiezza: C.enqueue(r); finché la coda non è vuota: n ← C.dequeue(); se n ≠ null, visita n, C.enqueue(n.sx), C.enqueue(n.dx).</li>
+    <li>Visita livello per livello, da sinistra a destra. Albero della lavagna: 8 14 11 22 12 5 1 3.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="profondita"><span class="num">6</span>La visita in profondità: S è una pila</h2>
+<p class="in-questa"><b>In questa sezione:</b> la visita generica con una pila (lavagna, pagina 36), il codice della lavagna dell'anno scorso, perché si fa push prima del figlio destro, e un riquadro per seguire le due visite passo per passo.</p>
+<p>Ora S è una pila: «preleva» diventa <em>pop</em>, «aggiungi i figli» diventa <em>push</em>. Alla lavagna, pagina 36, il prof scrive: push del figlio destro, poi push del figlio sinistro. Il codice completo (lavagna dell'anno scorso):</p>
+<p class="titolo-codice">Lavagna dell'anno scorso, stessa lezione</p>
+<pre class="pseudo"><b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)
+  P ← pila vuota
+  P.push(r)
+  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>
+    n ← P.pop()
+    <b>IF</b> n ≠ null <b>THEN</b>
+      visita il nodo associato a n
+      P.push(n.dx)
+      P.push(n.sx)</pre>
+<p>Perché prima il <em>destro</em>? Perché la pila restituisce per primo l'ultimo entrato. Inserendo il destro e poi il sinistro, in cima c'è il sinistro, che sarà prelevato al giro successivo. Così la visita scende sempre prima a sinistra.</p>
+<p>La Figura 6 mostra la visita sull'albero della lavagna. Il prof, a pagina 36, scrive lo stesso ordine: <strong>8 14 22 12 1 3 11 5</strong>.</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 396 246" width="396" height="246" role="img" aria-label="ordine in profondità" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="183.9" y1="39.5" x2="120.1" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="212.1" y1="39.5" x2="275.9" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="95.9" y1="105.7" x2="70.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="116.1" y1="105.7" x2="141.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="146.1" y1="169.9" x2="134.9" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="157.9" y1="169.9" x2="169.1" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="300.1" y1="105.7" x2="325.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="198" cy="30" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="198" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="212.5" cy="15.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="212.5" y="19.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">1</text><circle cx="106" cy="92" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="106" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="120.5" cy="77.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="120.5" y="81.1" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">2</text><circle cx="60" cy="154" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="60" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="74.5" cy="139.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="74.5" y="143.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">3</text><circle cx="152" cy="154" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="152" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="166.5" cy="139.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="166.5" y="143.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">4</text><circle cx="129" cy="216" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="129" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="143.5" cy="201.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="143.5" y="205.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">5</text><circle cx="175" cy="216" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="175" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="189.5" cy="201.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="189.5" y="205.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">6</text><circle cx="290" cy="92" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="290" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="304.5" cy="77.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="304.5" y="81.1" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">7</text><circle cx="336" cy="154" r="17" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="336" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="350.5" cy="139.6" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="350.5" y="143.2" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">8</text></g></svg><div class="nome-mat">l'ordine di visita in profondità</div></div></div><div class="tabella-wrap"><table><tr><th>giro</th><th>esce dalla pila e si visita</th><th>entrano (prima dx, poi sx)</th><th>pila dopo il giro (fondo → cima)</th></tr><tr><td>1</td><td><b>8</b></td><td>11, 14</td><td>11 14</td></tr><tr><td>2</td><td><b>14</b></td><td>12, 22</td><td>11 12 22</td></tr><tr><td>3</td><td><b>22</b></td><td>null, null</td><td>11 12 <span class="piccolo">null</span> <span class="piccolo">null</span></td></tr><tr><td>4</td><td><b>12</b></td><td>3, 1</td><td>11 3 1</td></tr><tr><td>5</td><td><b>1</b></td><td>null, null</td><td>11 3 <span class="piccolo">null</span> <span class="piccolo">null</span></td></tr><tr><td>6</td><td><b>3</b></td><td>null, null</td><td>11 <span class="piccolo">null</span> <span class="piccolo">null</span></td></tr><tr><td>7</td><td><b>11</b></td><td>5, null</td><td>5 <span class="piccolo">null</span></td></tr><tr><td>8</td><td><b>5</b></td><td>null, null</td><td><span class="piccolo">null</span> <span class="piccolo">null</span></td></tr></table></div>
+<div class="didascalia"><b>Figura 6.</b> La visita in profondità con la pila, lavagna, pagina 36. La pila è scritta dal fondo alla cima: la cima è il numero più a destra, ed è quello che esce al giro dopo (se è null, esce e si butta via).</div>
+</div>
+<p>Si chiama «in profondità» perché, invece di allargarsi, scende: da 8 va a 14, da 14 a 22, fino in fondo; poi torna indietro all'ultima strada lasciata in sospeso (il 12, che aspettava nella pila), e così via. L'11, figlio destro della radice, aspetta in fondo alla pila per quasi tutta la visita.</p>
+
+<p>Nel riquadro seguente puoi seguire le due visite una riga alla volta, sui due alberi della lavagna e sui due del foglio di esercizi 4. Guarda come cambia S: con la coda i null si accumulano in fondo, con la pila escono subito.</p>
+<div class="widget" id="w-vi">
+  <h4>Le visite con la coda e con la pila</h4>
+  <div id="vi-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Visita in profondità: P.push(r); finché la pila non è vuota: n ← P.pop(); se n ≠ null, visita n, P.push(n.dx), P.push(n.sx).</li>
+    <li>Il destro entra per primo, così il sinistro è in cima ed esce prima. Albero della lavagna: 8 14 22 12 1 3 11 5.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="ricorsivo"><span class="num">7</span>L'albero binario visto ricorsivamente</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione ricorsiva della lavagna, pagina 37, e perché rende naturali gli algoritmi ricorsivi sugli alberi.</p>
+<div class="box def">
+  <span class="etichetta">Definizione (lavagna, pagina 37)</span>
+  <p>Un albero binario è:</p>
+  <ul>
+    <li>l'albero <strong>vuoto</strong>,</li>
+    <li>oppure un <strong>nodo</strong> (la radice) con associati <strong>2 sottoalberi</strong>, il sinistro e il destro, che sono a loro volta alberi binari.</li>
+  </ul>
+</div>
+<div class="figura">
+<svg viewBox="0 0 450 172" width="450" height="172" role="img" aria-label="Un albero binario è vuoto oppure un nodo con due sottoalberi" font-family="system-ui, sans-serif"><text x="60" y="80" font-size="15" text-anchor="middle" class="t-muted" fill="#5b6270">vuoto</text><text x="60" y="100" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">(nessun nodo)</text><text x="140" y="90" font-size="15" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">oppure</text><circle cx="300" cy="32" r="16" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="300" y="37" font-size="12" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><text x="324" y="22" font-size="12.5" font-weight="600" class="t-blu" fill="#2f52c4">radice</text><line x1="289" y1="44" x2="240" y2="78" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="311" y1="44" x2="370" y2="78" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M240 80 L190 150 L290 150 z" class="r-viola" fill="#f1eafc" stroke="#6d3fc0" stroke-width="1.5"/><path d="M370 80 L320 150 L420 150 z" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="240" y="168" font-size="12.5" font-weight="600" text-anchor="middle" class="t-viola" fill="#6d3fc0">sottoalbero sinistro</text><text x="370" y="168" font-size="12.5" font-weight="600" text-anchor="middle" class="t-arancio" fill="#b4500f">sottoalbero destro</text><text x="240" y="134" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">albero binario</text><text x="370" y="134" font-size="11.5" text-anchor="middle" class="t-arancio" fill="#b4500f">albero binario</text></svg>
+<div class="didascalia"><b>Figura 7.</b> La definizione ricorsiva, come la disegna il prof alla lavagna, pagina 37: una radice con due «triangoli», i due sottoalberi. Ognuno dei due triangoli è un albero binario, quindi può essere vuoto, oppure avere a sua volta una radice e due triangoli.</div>
+</div>
+<p>La definizione usa la parola che sta definendo («albero binario» compare anche a destra), ma non gira a vuoto: i sottoalberi sono più piccoli dell'albero, e scendendo si arriva sempre all'albero vuoto. È lo stesso schema dell'induzione e delle funzioni ricorsive: un caso base (vuoto) e un caso che si riduce a casi più piccoli.</p>
+<p>L'albero della Figura 2, letto così, è: la radice 8, con sottoalbero sinistro «l'albero con radice 14» e sottoalbero destro «l'albero con radice 11»; l'albero con radice 11 ha sottoalbero sinistro vuoto e destro «l'albero con radice 5»; e così via, fino alle foglie, che sono nodi con due sottoalberi vuoti.</p>
+<p>Il vantaggio: un problema su un albero si può spesso risolvere dicendo cosa fare con la radice e affidando i due sottoalberi a due chiamate ricorsive. Le visite ricorsive della prossima sezione funzionano proprio così.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Albero binario = vuoto, oppure radice + sottoalbero sinistro + sottoalbero destro (alberi binari anche loro).</li>
+    <li>Caso base: l'albero vuoto. Per questo gli algoritmi sugli alberi vengono naturalmente ricorsivi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="ordini"><span class="num">8</span>La visita ricorsiva e i tre ordini</h2>
+<p class="in-questa"><b>In questa sezione:</b> la visita in profondità ricorsiva (lavagna, pagina 38), i tre ordini anticipato, posticipato e simmetrico (pagine 39–41), come si calcolano a mano con l'albero della lavagna, e un riquadro con la pila delle chiamate.</p>
+<p>Dalla definizione ricorsiva viene subito un algoritmo. Per visitare un albero: se non è vuoto, visita la radice, poi visita (ricorsivamente) il sottoalbero sinistro, poi il destro. Alla lavagna, pagina 38, il prof lo scrive così, con accanto lo schizzo di una radice e due triangoli:</p>
+<p class="titolo-codice">Lavagna, pagina 38</p>
+<pre class="pseudo"><b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)
+  <b>IF</b> r ≠ null <b>THEN</b>
+    visita la radice
+    visitaInProfondità(r.sx)
+    visitaInProfondità(r.dx)</pre>
+<p>Il caso base è l'albero vuoto, r = null: non si fa niente. La pila della sezione 6 qui non si vede, ma c'è: è la pila delle chiamate, dove aspettano i record delle chiamate non ancora finite.</p>
+
+<h3>I tre ordini</h3>
+<p>Le tre righe dentro l'IF si possono mettere in ordini diversi. Il prof ne usa tre: lascia sempre il sinistro prima del destro, e sposta «visita la radice».</p>
+<div class="tabella-wrap"><table>
+  <tr><th>nome</th><th>in inglese</th><th>ordine delle righe</th><th>albero della lavagna</th></tr>
+  <tr><td><strong>ordine anticipato</strong> (pagina 39)</td><td>pre-order</td><td>radice, sx, dx (R sx dx)</td><td>8 14 22 12 1 3 11 5</td></tr>
+  <tr><td><strong>ordine posticipato</strong> (pagina 40)</td><td>post-order</td><td>sx, dx, radice (sx dx R)</td><td>22 1 3 12 14 5 11 8</td></tr>
+  <tr><td><strong>ordine simmetrico</strong> (pagina 41)</td><td>in-order</td><td>sx, radice, dx (sx R dx)</td><td>22 14 1 12 3 8 11 5</td></tr>
+</table></div>
+<p>I nomi dicono <em>quando</em> si visita la radice rispetto ai sottoalberi: prima (anticipato), dopo (posticipato) o in mezzo (simmetrico). L'ordine anticipato è lo stesso della visita con la pila della sezione 6: la pila delle chiamate fa lo stesso lavoro della pila P.</p>
+
+<h3>Come si calcolano a mano</h3>
+<p>Il trucco è usare la definizione ricorsiva anche a mano: la sequenza di un albero è fatta di tre pezzi, la radice e le sequenze dei due sottoalberi, messi nell'ordine giusto. La Figura 8 colora i tre pezzi, come fa il prof con le parentesi graffe sotto le sequenze («r.sx», «r.dx»).</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 396 246" width="396" height="246" role="img" aria-label="radice e due sottoalberi" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><rect x="34" y="66" width="167" height="176" rx="26" class="r-blu" fill="#e8edfc" fill-opacity="0.55" stroke="#2f52c4" stroke-width="1.4" stroke-dasharray="5 4"/><rect x="264" y="66" width="98" height="114" rx="26" class="r-arancio" fill="#fdf0e3" fill-opacity="0.55" stroke="#b4500f" stroke-width="1.4" stroke-dasharray="5 4"/><line x1="183.9" y1="39.5" x2="120.1" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="212.1" y1="39.5" x2="275.9" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="95.9" y1="105.7" x2="70.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="116.1" y1="105.7" x2="141.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="146.1" y1="169.9" x2="134.9" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="157.9" y1="169.9" x2="169.1" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="300.1" y1="105.7" x2="325.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="198" cy="30" r="17" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="198" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="106" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="106" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="60" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="152" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="152" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="129" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="129" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="175" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="290" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="290" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="336" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></g></svg><div class="nome-mat">l'albero della lavagna</div></div></div><div class="sequenza"><span class="tit">anticipato</span><span class="el radice">8</span><span class="el sx">14</span><span class="el sx">22</span><span class="el sx">12</span><span class="el sx">1</span><span class="el sx">3</span><span class="el dx">11</span><span class="el dx">5</span></div><div class="sequenza"><span class="tit">simmetrico</span><span class="el sx">22</span><span class="el sx">14</span><span class="el sx">1</span><span class="el sx">12</span><span class="el sx">3</span><span class="el radice">8</span><span class="el dx">11</span><span class="el dx">5</span></div><div class="sequenza"><span class="tit">posticipato</span><span class="el sx">22</span><span class="el sx">1</span><span class="el sx">3</span><span class="el sx">12</span><span class="el sx">14</span><span class="el dx">5</span><span class="el dx">11</span><span class="el radice">8</span></div>
+<div class="didascalia"><b>Figura 8.</b> I tre ordini, lavagna, pagine 39–41. In rosso la radice 8, in azzurro i nodi del sottoalbero sinistro (radice 14), in arancione quelli del sottoalbero destro (radice 11). In ogni sequenza i nodi di un sottoalbero stanno tutti vicini: cambia solo dove finisce la radice.</div>
+</div>
+<p>Esempio passo per passo, ordine anticipato (R sx dx):</p>
+<ol>
+  <li>Albero con radice 8: scrivo <b>8</b>, poi la sequenza del sottoalbero con radice 14, poi quella del sottoalbero con radice 11.</li>
+  <li>Sottoalbero con radice 14: scrivo <b>14</b>, poi il sottoalbero con radice 22, poi quello con radice 12.</li>
+  <li>Sottoalbero con radice 22: è una foglia, i suoi sottoalberi sono vuoti: scrivo <b>22</b>.</li>
+  <li>Sottoalbero con radice 12: scrivo <b>12</b>, poi <b>1</b>, poi <b>3</b> (due foglie).</li>
+  <li>Quindi il sottoalbero con radice 14 dà 14 22 12 1 3.</li>
+  <li>Sottoalbero con radice 11: scrivo <b>11</b>; il sinistro è vuoto (niente); il destro è la foglia <b>5</b>. Dà 11 5.</li>
+  <li>In tutto: 8, poi 14 22 12 1 3, poi 11 5, cioè <b>8 14 22 12 1 3 11 5</b>.</li>
+</ol>
+<p>Con lo stesso procedimento, in ordine posticipato (sx dx R) il sottoalbero con radice 12 dà 1 3 12, quello con radice 14 dà 22 1 3 12 14, quello con radice 11 dà 5 11, e tutto l'albero 22 1 3 12 14 | 5 11 | 8. In ordine simmetrico (sx R dx): 12 dà 1 12 3, 14 dà 22 14 1 12 3, 11 dà 11 5 (il sinistro è vuoto, quindi prima viene la radice), e tutto l'albero 22 14 1 12 3 | 8 | 11 5.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: il figlio che manca</span>
+  <p>Un sottoalbero vuoto non scrive niente, ma il suo «turno» c'è lo stesso. Nell'ordine simmetrico, l'11 ha solo il figlio destro: sx (vuoto, niente), R (11), dx (5), quindi 11 5. Se il 5 fosse il figlio <em>sinistro</em> di 11, il simmetrico darebbe 5 11. È uno degli errori più comuni negli esercizi.</p>
+</div>
+
+<p>Nel riquadro seguente puoi seguire la visita ricorsiva una riga alla volta, con la pila delle chiamate a destra. Le chiamate su null entrano ed escono subito: ce n'è una per ogni figlio mancante.</p>
+<div class="widget" id="w-ri">
+  <h4>La visita ricorsiva, chiamata per chiamata</h4>
+  <div id="ri-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Visita ricorsiva: IF r ≠ null THEN visita la radice e i due sottoalberi, nell'ordine scelto.</li>
+    <li>Anticipato R sx dx, posticipato sx dx R, simmetrico sx R dx. Il sinistro viene sempre prima del destro.</li>
+    <li>A mano: radice + sequenza del sottoalbero sinistro + sequenza del destro, nell'ordine giusto, scendendo fino alle foglie.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="giro"><span class="num">9</span>Il giro intorno all'albero</h2>
+<p class="in-questa"><b>In questa sezione:</b> un modo per scrivere le tre visite in profondità senza sbagliare, guardando il disegno: la linea che gira intorno all'albero. Il prof la disegna in verde sull'albero della lavagna dell'anno scorso; quest'anno, a pagina 39, ne disegna dei pezzi intorno ai sottoalberi.</p>
+<p>Immagina una formica che parte in alto a sinistra della radice e cammina lungo il bordo del disegno, sempre rasente ai nodi e agli archi: scende lungo il lato sinistro, passa sotto ogni nodo, risale dall'altra parte, e alla fine torna in alto a destra della radice. Passa accanto a ogni nodo tre volte: a sinistra, sotto e a destra. La Figura 9 mostra il percorso e le tre tacche di ogni nodo.</p>
+<div class="figura">
+<svg viewBox="0 0 396 272" width="396" height="272" role="img" aria-label="il giro intorno all'albero" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="183.9" y1="55.5" x2="120.1" y2="98.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="212.1" y1="55.5" x2="275.9" y2="98.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="95.9" y1="121.7" x2="70.1" y2="156.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="116.1" y1="121.7" x2="141.9" y2="156.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="146.1" y1="185.9" x2="134.9" y2="216.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="157.9" y1="185.9" x2="169.1" y2="216.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="300.1" y1="121.7" x2="325.9" y2="156.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M182.4 13.5 L172 46 L80 108 L34 170 L40.5 189.5 L60 196 L79.5 189.5 L86 170 L106 134 L126 170 L103 232 L109.5 251.5 L129 258 L148.5 251.5 L155 232 L152 196 L149 232 L155.5 251.5 L175 258 L194.5 251.5 L201 232 L178 170 L132 108 L198 72 L264 108 L270.5 127.5 L290 134 L310 170 L316.5 189.5 L336 196 L355.5 189.5 L362 170 L316 108 L224 46 L213.6 13.5" class="l-giro" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"/><path d="M182.4 13.5 L172 46 L80 108 L34 170 L40.5 189.5 L60 196 L79.5 189.5 L86 170 L106 134 L126 170 L103 232 L109.5 251.5 L129 258 L148.5 251.5 L155 232 L152 196 L149 232 L155.5 251.5 L175 258 L194.5 251.5 L201 232 L178 170 L132 108 L198 72 L264 108 L270.5 127.5 L290 134 L310 170 L316.5 189.5 L336 196 L355.5 189.5 L362 170 L316 108 L224 46 L213.6 13.5" class="l-giro-fatto" fill="none" stroke="#6d3fc0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="172" cy="46" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="80" cy="108" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="34" cy="170" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="60" cy="196" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="86" cy="170" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="106" cy="134" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="126" cy="170" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="103" cy="232" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="129" cy="258" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="155" cy="232" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="152" cy="196" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="149" cy="232" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="175" cy="258" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="201" cy="232" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="178" cy="170" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="132" cy="108" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="198" cy="72" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="264" cy="108" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="290" cy="134" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="310" cy="170" r="4.2" class="t-blu" fill="#2f52c4" stroke="#2f52c4" stroke-width="1.4"/><circle cx="336" cy="196" r="4.2" class="t-verde" fill="#17803d" stroke="#17803d" stroke-width="1.4"/><circle cx="362" cy="170" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="316" cy="108" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="224" cy="46" r="4.2" class="t-arancio" fill="#b4500f" stroke="#b4500f" stroke-width="1.4"/><circle cx="198" cy="46" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="198" y="51" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="106" cy="108" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="106" y="113" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="60" cy="170" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="152" cy="170" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="152" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="129" cy="232" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="129" y="237" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="175" cy="232" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="237" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="290" cy="108" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="290" y="113" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="336" cy="170" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></g></svg><div class="legenda-giro"><span><span class="pall pre"></span>a sinistra: anticipato</span><span><span class="pall in"></span>sotto: simmetrico</span><span><span class="pall post"></span>a destra: posticipato</span></div>
+<div class="didascalia"><b>Figura 9.</b> Il giro intorno all'albero della lavagna. Ogni nodo ha tre tacche: blu a sinistra, verde sotto, arancione a destra. Le foglie, che non hanno figli, sono «avvolte» da una piccola U: le tre tacche si incontrano una dopo l'altra.</div>
+</div>
+<p>La regola:</p>
+<ul>
+  <li>scrivi i nodi nell'ordine in cui la formica passa sulla loro tacca <span class="blu"><b>sinistra</b></span>: è l'ordine <strong>anticipato</strong>;</li>
+  <li>sulla tacca <span class="verde"><b>sotto</b></span>: è l'ordine <strong>simmetrico</strong>;</li>
+  <li>sulla tacca <span class="arancio"><b>destra</b></span>: è l'ordine <strong>posticipato</strong>.</li>
+</ul>
+<p>Perché funziona? Il giro intorno a un nodo segue esattamente la visita ricorsiva: arriva a sinistra del nodo (inizia la chiamata: «prima»), fa il giro di tutto il sottoalbero sinistro, passa sotto il nodo (finito il sinistro, prima del destro: «in mezzo»), fa il giro del sottoalbero destro, e risale a destra del nodo (finiti tutti e due: «dopo»).</p>
+<div class="widget" id="w-gi">
+  <h4>La formica che gira intorno all'albero</h4>
+  <div id="gi-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Gira intorno all'albero partendo da sinistra della radice. Ogni nodo si incontra tre volte: a sinistra, sotto, a destra.</li>
+    <li>Tacca sinistra = anticipato, tacca sotto = simmetrico, tacca destra = posticipato.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="espressioni"><span class="num">10</span>Gli alberi delle espressioni e la notazione polacca inversa</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'albero dell'espressione della lavagna, pagina 42; le sue tre visite; perché l'ordine simmetrico ha bisogno delle parentesi; la notazione polacca inversa e come si calcola con una pila.</p>
+<p>Un'espressione aritmetica si può scrivere come albero binario: le foglie sono i numeri, i nodi interni sono le operazioni, e ogni operazione si applica ai valori dei suoi due sottoalberi. L'albero della lavagna, pagina 42 (e della slide della Figura 1 (c)), è quello della Figura 10.</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 396 246" width="396" height="246" role="img" aria-label="albero dell'espressione" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="183.9" y1="39.5" x2="120.1" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="212.1" y1="39.5" x2="275.9" y2="82.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="95.9" y1="105.7" x2="70.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="116.1" y1="105.7" x2="141.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="279.9" y1="105.7" x2="254.1" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="300.1" y1="105.7" x2="325.9" y2="140.3" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="238.1" y1="169.9" x2="226.9" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="249.9" y1="169.9" x2="261.1" y2="200.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="198" cy="30" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="198" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">*</text><circle cx="106" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="106" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">+</text><circle cx="60" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="152" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="152" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="290" cy="92" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="290" y="97" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">*</text><circle cx="244" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="244" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">+</text><circle cx="221" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="221" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="267" cy="216" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="267" y="221" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="336" cy="154" r="17" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="159" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></g></svg><div class="nome-mat">(3 + 4) * ((2 + 3) * 5)</div></div></div><div class="sequenza"><span class="tit">anticipato</span><span class="el">*</span><span class="el">+</span><span class="el">3</span><span class="el">4</span><span class="el">*</span><span class="el">+</span><span class="el">2</span><span class="el">3</span><span class="el">5</span></div><div class="sequenza"><span class="tit">simmetrico</span><span class="el">3</span><span class="el">+</span><span class="el">4</span><span class="el">*</span><span class="el">2</span><span class="el">+</span><span class="el">3</span><span class="el">*</span><span class="el">5</span></div><div class="sequenza"><span class="tit">posticipato</span><span class="el">3</span><span class="el">4</span><span class="el">+</span><span class="el">2</span><span class="el">3</span><span class="el">+</span><span class="el">5</span><span class="el">*</span><span class="el">*</span></div>
+<div class="didascalia"><b>Figura 10.</b> L'albero dell'espressione e le sue tre visite in profondità, come alla lavagna, pagina 42.</div>
+</div>
+<p>Come si legge l'albero: il + in basso calcola 2 + 3 = 5; il * sopra di lui calcola (2 + 3) * 5 = 25; il + a sinistra calcola 3 + 4 = 7; la radice calcola 7 * 25 = <strong>175</strong>. L'espressione con tutte le parentesi è (3 + 4) * ((2 + 3) * 5). (L'anno scorso il prof la scriveva (3 + 4) * (2 + 3) * 5: il valore è lo stesso, perché le moltiplicazioni si possono raggruppare come si vuole.)</p>
+
+<h3>Il simmetrico perde le parentesi</h3>
+<p>La visita in ordine simmetrico dà 3 + 4 * 2 + 3 * 5: è l'espressione scritta come la scriviamo di solito (notazione <em>infissa</em>, con l'operatore in mezzo), ma senza parentesi. E così non funziona: con le precedenze solite (prima le moltiplicazioni) vale 3 + 8 + 15 = 26, non 175. Nell'ordine simmetrico, per avere l'espressione giusta bisogna aggiungere una coppia di parentesi intorno a ogni sottoalbero che è un'operazione.</p>
+
+<h3>Anticipato e posticipato non ne hanno bisogno</h3>
+<ul>
+  <li>L'ordine <strong>anticipato</strong> dà * + 3 4 * + 2 3 5: ogni operatore viene prima dei suoi due operandi. È la notazione <strong>prefissa</strong>, detta anche <em>polacca</em> (dal logico polacco che la inventò).</li>
+  <li>L'ordine <strong>posticipato</strong> dà 3 4 + 2 3 + 5 * *: ogni operatore viene dopo i suoi due operandi. È la notazione <strong>postfissa</strong>, o <strong>polacca inversa</strong> (alla lavagna, in verde: «notazione polacca inversa»).</li>
+</ul>
+<p>In queste due notazioni non servono parentesi: l'ordine dei simboli basta a dire quali numeri vanno con quale operatore. Il prof, a pagina 42, racchiude in rettangoli i pezzi della polacca inversa: [3 4 +] [[2 3 +] 5 *] *. Ogni rettangolo è un sottoalbero.</p>
+
+<h3>Calcolare la polacca inversa con una pila</h3>
+<p>Accanto, in verde, il prof calcola il valore con una pila. La regola:</p>
+<ul>
+  <li>si leggono i simboli da sinistra a destra;</li>
+  <li>un <strong>numero</strong> si mette sulla pila (push);</li>
+  <li>un <strong>operatore</strong> toglie dalla pila due numeri (due pop: il primo che esce è il secondo operando), li combina e rimette il risultato sulla pila;</li>
+  <li>alla fine nella pila resta un solo numero: il valore dell'espressione.</li>
+</ul>
+<div class="figura">
+<div class="tabella-wrap"><table><tr><th>simbolo letto</th><th>cosa si fa</th><th>pila dopo (fondo → cima)</th></tr><tr><td><b>3</b></td><td>push(3)</td><td>3</td></tr><tr><td><b>4</b></td><td>push(4)</td><td>3 4</td></tr><tr><td><b>+</b></td><td>pop → 4, pop → 3; 3 + 4 = 7; push</td><td>7</td></tr><tr><td><b>2</b></td><td>push(2)</td><td>7 2</td></tr><tr><td><b>3</b></td><td>push(3)</td><td>7 2 3</td></tr><tr><td><b>+</b></td><td>pop → 3, pop → 2; 2 + 3 = 5; push</td><td>7 5</td></tr><tr><td><b>5</b></td><td>push(5)</td><td>7 5 5</td></tr><tr><td><b>*</b></td><td>pop → 5, pop → 5; 5 * 5 = 25; push</td><td>7 25</td></tr><tr><td><b>*</b></td><td>pop → 25, pop → 7; 7 * 25 = 175; push</td><td>175</td></tr></table></div>
+<div class="didascalia"><b>Figura 11.</b> Il calcolo della lavagna, pagina 42, simbolo per simbolo: alla fine nella pila c'è 175.</div>
+</div>
+<p>Attenzione all'ordine dei due operandi: con la sottrazione e la divisione conta. Per 10 4 −, il primo pop dà 4 e il secondo 10, e il risultato è 10 − 4 = 6, non 4 − 10.</p>
+<div class="widget" id="w-rp">
+  <h4>La calcolatrice a pila</h4>
+  <div id="rp-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Albero di un'espressione: foglie = numeri, nodi interni = operatori.</li>
+    <li>Simmetrico = notazione infissa, ma servono le parentesi. Anticipato = polacca (prefissa); posticipato = polacca inversa (postfissa): niente parentesi.</li>
+    <li>La polacca inversa si calcola con una pila: numero → push; operatore → due pop, calcolo, push del risultato.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="costo"><span class="num">11</span>Quanto costa una visita</h2>
+<p class="in-questa"><b>In questa sezione:</b> il tempo delle visite (alla lavagna dell'anno scorso: «costo visita O(n)») e, per curiosità, lo spazio.</p>
+<p>Sia n il numero dei nodi.</p>
+<ul>
+  <li><strong>Visita con la coda o con la pila.</strong> Ogni nodo entra in S una volta (quando si visita il padre; la radice all'inizio) ed esce una volta. In più entrano ed escono i null, uno per ogni figlio mancante. Quanti sono? Ogni nodo ha 2 scomparti, sx e dx: 2n in tutto. Ogni nodo tranne la radice ha un padre, quindi esattamente n − 1 scomparti contengono un riferimento a un nodo. Gli altri 2n − (n − 1) = <strong>n + 1</strong> contengono null. In tutto entrano in S n + (n + 1) = 2n + 1 elementi, e ogni ingresso e uscita costa O(1): tempo <strong>Θ(n)</strong>.</li>
+  <li><strong>Visita ricorsiva.</strong> Ci sono n chiamate su nodi veri e n + 1 chiamate su null, ognuna con un lavoro costante: ancora <strong>Θ(n)</strong>.</li>
+</ul>
+<p>Non si può fare meglio: per visitare tutti i nodi bisogna almeno guardarli tutti.</p>
+<p>Lo spazio (non è stato detto a lezione, ma è lo stesso ragionamento dello spazio di quickSort): nella visita ricorsiva la pila delle chiamate contiene, in ogni momento, un record per ogni nodo del cammino dalla radice al nodo attuale, più uno per una chiamata su null; quindi al massimo altezza + 2 record. Se l'albero è «a catena» (ogni nodo ha un solo figlio) l'altezza è n − 1 e lo spazio è Θ(n); se è ben bilanciato l'altezza è circa log<sub>2</sub> n.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Tutte le visite costano Θ(n): ogni nodo entra ed esce (o viene chiamato) una volta, più n + 1 null.</li>
+    <li>In un albero binario con n nodi ci sono n + 1 riferimenti null.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="esame"><span class="num">12</span>All'esame: la visita di un vettore posizionale</h2>
+<p class="in-questa"><b>In questa sezione:</b> la domanda sulle visite che compare negli scritti, cos'è un vettore posizionale, una ricetta e un riquadro per allenarsi con i temi d'esame veri.</p>
+<p>Negli scritti degli ultimi anni, nell'esercizio 2, c'è spesso una domanda così (14 febbraio 2025):</p>
+<div class="box esame">
+  <span class="etichetta">Dal tema d'esame</span>
+  <p>«Considerate la seguente sequenza di numeri, memorizzata in un array: 23 11 10 13 46 22 48 44. […] Considerate l'albero binario quasi completo il cui vettore posizionale è l'array dato. Indicate la sequenza delle chiavi ottenuta visitando l'albero in ordine simmetrico.»</p>
+</div>
+<p>Negli altri temi cambia l'ordine richiesto: simmetrico (giugno e settembre 2025, febbraio 2026), posticipato (luglio 2025), anticipato (giugno e settembre 2026).</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: il vettore posizionale</span>
+  <p>Un albero binario <strong>quasi completo</strong> ha tutti i livelli pieni tranne al più l'ultimo, che è riempito da sinistra. Un albero così si può tenere in un array, senza riferimenti, mettendo i nodi livello per livello, da sinistra a destra:</p>
+  <ul>
+    <li>la radice è in posizione 0;</li>
+    <li>i figli del nodo in posizione i sono nelle posizioni <strong>2i + 1</strong> (sinistro) e <strong>2i + 2</strong> (destro), se esistono (cioè se sono minori della lunghezza dell'array).</li>
+  </ul>
+  <p>L'array si chiama <strong>vettore posizionale</strong> dell'albero. Lo userà heapSort, più avanti nel corso; per la domanda d'esame basta saperlo leggere.</p>
+</div>
+<p>La ricetta:</p>
+<ol>
+  <li><strong>Disegna l'albero livello per livello.</strong> Livello 0: A[0]. Livello 1: A[1] e A[2]. Livello 2: A[3], A[4], A[5], A[6]. Livello 3: da A[7] in poi. Ogni livello ha il doppio di posti del precedente, e i posti si riempiono da sinistra. Con 23 11 10 13 46 22 48 44: radice 23; figli 11 e 10; poi 13 e 46 (figli di 11), 22 e 48 (figli di 10); infine 44, figlio sinistro di 13.</li>
+  <li><strong>Controlla con la formula.</strong> I figli di 11 (posizione 1) sono in 2·1 + 1 = 3 e 2·1 + 2 = 4: 13 e 46. Il figlio sinistro di 13 (posizione 3) è in 7: il 44. Il destro sarebbe in 8, che non esiste.</li>
+  <li><strong>Fai la visita</strong> con la ricorsione a mano (sezione 8) o con il giro (sezione 9). Simmetrico: il sottoalbero di 11 dà 44 13 11 46 (attenzione: il 44 è il figlio <em>sinistro</em> di 13, quindi viene prima di 13); poi la radice 23; poi il sottoalbero di 10 dà 22 10 48. Risultato: <strong>44 13 11 46 23 22 10 48</strong>.</li>
+  <li><strong>Conta</strong>: la sequenza deve avere tanti numeri quanti l'array (qui 8), ognuno una volta.</li>
+</ol>
+<div class="widget" id="w-vp">
+  <h4>Allenamento: le visite dei temi d'esame</h4>
+  <div id="vp-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Vettore posizionale: radice in 0, figli di i in 2i + 1 e 2i + 2.</li>
+    <li>Disegna l'albero livello per livello, controlla con la formula, fai la visita richiesta, conta gli elementi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="riassunto"><span class="num">13</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Albero binario</b>: vuoto, oppure radice + sottoalbero sinistro + sottoalbero destro. Ogni nodo ha al massimo due figli, e il lato conta.</li>
+    <li><b>Parole</b>: radice, padre, figli, archi, foglie, nodi interni, sottoalberi. Profondità (livello): radice 0, figli +1. Altezza: profondità massima (della lavagna: 3).</li>
+    <li><b>In memoria</b>: nodo = dato + sx + dx; l'albero è il riferimento alla radice (null se vuoto).</li>
+    <li><b>Visita generica</b> con un insieme S. S coda → <b>in ampiezza</b> (livello per livello): 8 14 11 22 12 5 1 3. S pila (push dx, poi sx) → <b>in profondità</b>: 8 14 22 12 1 3 11 5.</li>
+    <li><b>Visita ricorsiva</b>: IF r ≠ null THEN radice e due sottoalberi. Anticipato R sx dx, simmetrico sx R dx, posticipato sx dx R.</li>
+    <li><b>Espressioni</b>: simmetrico = infissa (con parentesi), anticipato = polacca, posticipato = polacca inversa, che si calcola con una pila.</li>
+    <li><b>Costo</b> di ogni visita: Θ(n). Riferimenti null in un albero di n nodi: n + 1.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Allo scritto: la visita (anticipata, simmetrica, posticipata o in ampiezza) dell'albero quasi completo dato da un vettore posizionale. Esercitati con il riquadro della sezione 12 finché non la fai senza errori.</li>
+    <li>All'orale: il codice delle visite (ricorsiva e con coda/pila), perché nella pila si fa push del destro prima del sinistro, il costo Θ(n), le parole della sezione 2.</li>
+    <li>Più avanti nel corso le visite tornano con i grafi: in ampiezza con una coda, in profondità con una pila, come qui.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 14 -->
+<h2 id="esercizi"><span class="num">14</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> il foglio di esercizi 4, «Alberi binari», nella parte che riguarda questa lezione (gli esercizi 4.4, 4.5 e 4.7, sul legame tra numero di nodi e altezza, riguardano la parte successiva), e le visite dei temi d'esame. Prova prima da solo, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 4.1 del foglio: le quattro visite di un albero</summary>
+  <p>L'albero: radice 24; figli 6 e 19. 6 ha figli 55 e 33; 55 ha figli 12 e 3. 19 ha figli 17 (sinistro) e 14 (destro); 17 ha solo il figlio destro, 16; 16 ha figli 27 e 4. Scrivi le visite in profondità nei tre ordini e la visita in ampiezza. (Puoi disegnarlo con il riquadro della sezione 6, scegliendo «Esercizio 4.1 del foglio».)</p>
+  <div class="soluzione">
+    <ul>
+      <li><b>Anticipato</b> (R sx dx): 24 6 55 12 3 33 19 17 16 27 4 14</li>
+      <li><b>Simmetrico</b> (sx R dx): 12 55 3 6 33 24 17 27 16 4 19 14</li>
+      <li><b>Posticipato</b> (sx dx R): 12 3 55 33 6 27 4 16 17 14 19 24</li>
+      <li><b>In ampiezza</b>: 24 6 19 55 33 17 14 12 3 16 27 4</li>
+    </ul>
+    <p>Il punto delicato è il 17, che ha solo il figlio <em>destro</em>. Nel simmetrico: sx di 17 vuoto, poi 17, poi il sottoalbero di 16 (27 16 4): quindi 17 27 16 4. Nell'ampiezza, il livello 3 è 12 3 16 (da sinistra a destra) e il livello 4 è 27 4.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4.2 del foglio: l'albero di un'espressione</summary>
+  <p>L'albero: radice *; figli + (sinistro) e − (destro). Il + ha figli * (con figli 2 e 3) e 2. Il − ha figli 16 e + (con figli 5 e 4). Scrivi le quattro visite e l'espressione in notazione infissa, con le parentesi necessarie.</p>
+  <div class="soluzione">
+    <ul>
+      <li><b>In ampiezza</b>: * + − * 2 16 + 2 3 5 4</li>
+      <li><b>Anticipato</b>: * + * 2 3 2 − 16 + 5 4</li>
+      <li><b>Simmetrico</b>: 2 * 3 + 2 * 16 − 5 + 4</li>
+      <li><b>Posticipato</b>: 2 3 * 2 + 16 5 4 + − *</li>
+    </ul>
+    <p>Espressione: (2 * 3 + 2) * (16 − (5 + 4)). Le parentesi intorno a 2 * 3 non servono, perché la moltiplicazione si fa comunque prima della somma; servono invece quelle intorno a 2 * 3 + 2 e a 16 − (5 + 4), perché sono gli operandi di una moltiplicazione, e quelle intorno a 5 + 4, perché 16 − 5 + 4 vorrebbe dire (16 − 5) + 4. Valore: (6 + 2) * (16 − 9) = 8 * 7 = 56. Puoi controllarlo con la calcolatrice a pila della sezione 10, sull'esempio «Esercizio 4.2».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4.3 del foglio: la somma dei valori pari</summary>
+  <p>Scrivi una funzione ricorsiva che, ricevendo il riferimento alla radice di un albero binario di interi, restituisca la somma dei valori pari contenuti nei nodi.</p>
+  <div class="soluzione">
+<pre class="pseudo"><b>FUNZIONE</b> sommaPari(AlberoBinario r) → intero
+  <b>IF</b> r = null <b>THEN RETURN</b> 0
+  s ← sommaPari(r.sx) + sommaPari(r.dx)
+  <b>IF</b> r.dato mod 2 = 0 <b>THEN</b>
+    s ← s + r.dato
+  <b>RETURN</b> s</pre>
+    <p>È lo schema della definizione ricorsiva: l'albero vuoto ha somma 0; altrimenti la somma è quella dei due sottoalberi, più il dato della radice se è pari (resto 0 nella divisione per 2). È una visita in ordine posticipato: prima i due sottoalberi, poi la radice. Costo Θ(n).</p>
+    <p>Sull'albero della lavagna: 8 + 14 + 22 + 12 = 56 (1, 3, 11 e 5 sono dispari). Sull'albero dell'esercizio 4.1: 24 + 6 + 12 + 16 + 4 + 14 = 76.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4.6 del foglio: quanti puntatori null?</summary>
+  <p>In un albero binario con n nodi, rappresentato con i puntatori sx e dx, quanti puntatori valgono null?</p>
+  <div class="soluzione">
+    <p><b>n + 1.</b> I puntatori sono 2 per nodo, 2n in tutto. Ogni nodo tranne la radice è indicato da esattamente un puntatore, quello di suo padre: quindi i puntatori non null sono n − 1. Gli altri sono null: 2n − (n − 1) = n + 1.</p>
+    <p>Controllo sull'albero della lavagna: n = 8, e i null sono 9 (due per ciascuna delle foglie 22, 1, 3, 5, più il sinistro di 11), come si vede nella Figura 4 (b).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4.8 del foglio: la visita simmetrica senza ricorsione</summary>
+  <p>Progetta un algoritmo iterativo per la visita in ordine simmetrico. Il foglio suggerisce: una pila in cui, insieme a ogni nodo, si memorizza se è «non ancora raggiunto» oppure «raggiunto ma ancora da visitare». Quando si raggiunge un nodo per la prima volta, si caricano sulla pila il figlio destro (non raggiunto), il nodo stesso (raggiunto, da visitare) e il figlio sinistro (non raggiunto).</p>
+  <div class="soluzione">
+<pre class="pseudo"><b>ALGORITMO</b> visitaSimmetricaIterativa(AlberoBinario r)
+  P ← pila vuota
+  P.push((r, nonRaggiunto))
+  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>
+    (n, stato) ← P.pop()
+    <b>IF</b> n ≠ null <b>THEN</b>
+      <b>IF</b> stato = daVisitare <b>THEN</b>
+        visita il nodo associato a n
+      <b>ELSE</b>                              <span class="com">// n raggiunto per la prima volta</span>
+        P.push((n.dx, nonRaggiunto))
+        P.push((n, daVisitare))
+        P.push((n.sx, nonRaggiunto))</pre>
+    <p>Perché funziona: quando si raggiunge n, sulla pila vanno, dal basso, dx, n, sx. Esce per primo tutto il sottoalbero sinistro (che a sua volta si espande allo stesso modo), poi n stesso, che ora è «da visitare» e viene visitato, poi il sottoalbero destro: sx, R, dx. È la ricorsione con la pila scritta a mano. Sull'albero della lavagna dà 22 14 1 12 3 8 11 5 (provato su questo e sugli altri alberi della pagina).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4.9 del foglio: la visita posticipata senza ricorsione</summary>
+  <p>Come l'esercizio precedente, per l'ordine posticipato.</p>
+  <div class="soluzione">
+    <p>Basta cambiare l'ordine dei tre push. Per avere sx, dx, R bisogna che sulla pila, dal basso, ci siano n (da visitare), poi dx, poi sx:</p>
+<pre class="pseudo">      <b>ELSE</b>                              <span class="com">// n raggiunto per la prima volta</span>
+        P.push((n, daVisitare))
+        P.push((n.dx, nonRaggiunto))
+        P.push((n.sx, nonRaggiunto))</pre>
+    <p>Sull'albero della lavagna dà 22 1 3 12 14 5 11 8. (Con i tre push nell'ordine dx, sx, n, cioè con n in cima, si otterrebbe invece l'anticipato, che però si fa più semplicemente con la visita della sezione 6.)</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 18 luglio 2025: posticipato di 25 16 4 13 12 56 20 26</summary>
+  <p>Considera l'albero binario quasi completo il cui vettore posizionale è 25 16 4 13 12 56 20 26. Scrivi la visita in ordine posticipato.</p>
+  <div class="soluzione">
+    <p>L'albero: radice 25; figli 16 e 4; figli di 16: 13 e 12; figli di 4: 56 e 20; figlio sinistro di 13: 26 (posizione 7 = 2·3 + 1).</p>
+    <p>Posticipato (sx dx R): sottoalbero di 16 → sottoalbero di 13 (26 13), poi 12, poi 16: 26 13 12 16. Sottoalbero di 4 → 56 20 4. Poi la radice. Risultato: <b>26 13 12 16 56 20 4 25</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 19 giugno 2026: anticipato di 15 11 44 18 42 12 33 24</summary>
+  <p>Vettore posizionale 15 11 44 18 42 12 33 24. Scrivi la visita in ordine anticipato.</p>
+  <div class="soluzione">
+    <p>L'albero: radice 15; figli 11 e 44; figli di 11: 18 e 42; figli di 44: 12 e 33; figlio sinistro di 18: 24.</p>
+    <p>Anticipato (R sx dx): 15, poi il sottoalbero di 11 (11 18 24 42), poi quello di 44 (44 12 33). Risultato: <b>15 11 18 24 42 44 12 33</b>. (Lo stesso array, nel tema del 27 febbraio 2026, chiedeva il simmetrico: 24 18 11 42 15 12 44 33.)</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 18 settembre 2026: anticipato di 20 22 24 48 33 35 19 28 34</summary>
+  <p>Vettore posizionale 20 22 24 48 33 35 19 28 34 (9 elementi). Scrivi la visita in ordine anticipato.</p>
+  <div class="soluzione">
+    <p>L'albero: radice 20; figli 22 e 24; figli di 22: 48 e 33; figli di 24: 35 e 19; figli di 48: 28 (posizione 7) e 34 (posizione 8).</p>
+    <p>Anticipato: 20, poi il sottoalbero di 22 (22 48 28 34 33), poi quello di 24 (24 35 19). Risultato: <b>20 22 48 28 34 33 24 35 19</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Dalla sequenza al valore</summary>
+  <p>Calcola con una pila il valore dell'espressione in notazione polacca inversa 8 2 − 3 4 + *. Poi disegna il suo albero e scrivila in notazione infissa.</p>
+  <div class="soluzione">
+    <p>8 → pila 8. 2 → 8 2. − → pop 2, pop 8, 8 − 2 = 6 → pila 6. 3 → 6 3. 4 → 6 3 4. + → pop 4, pop 3, 3 + 4 = 7 → 6 7. * → pop 7, pop 6, 6 * 7 = 42 → pila 42. Valore: <b>42</b>.</p>
+    <p>L'albero: radice *, con figlio sinistro − (figli 8 e 2) e figlio destro + (figli 3 e 4). Infissa: (8 − 2) * (3 + 4).</p>
+  </div>
+</details>
+
+<!-- ============================================================ 15 -->
+<h2 id="approfondimenti"><span class="num">15</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> due cose che non vengono dalla lezione e non servono per lo scritto. Si aprono con un clic.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: una visita sola non basta a ricostruire l'albero</summary>
+  <div class="soluzione">
+    <p>Due alberi diversi possono avere la stessa visita. Esempio: la radice 1 con il solo figlio sinistro 2, e la radice 1 con il solo figlio destro 2. In ordine anticipato danno tutti e due 1 2. Quindi dalla sola sequenza anticipata non si può risalire all'albero.</p>
+    <p>Con <em>due</em> visite, anticipata e simmetrica, invece sì (se i valori sono tutti diversi): il primo elemento dell'anticipata è la radice; nella simmetrica, quello che sta a sinistra della radice è il sottoalbero sinistro e quello a destra il destro; si ripete sui due pezzi. Prova con l'albero della lavagna: anticipato 8 14 22 12 1 3 11 5, simmetrico 22 14 1 12 3 8 11 5. La radice è 8; nel simmetrico, a sinistra di 8 ci sono 22 14 1 12 3 (il sottoalbero sinistro) e a destra 11 5 (il destro). E così via.</p>
+  </div>
+</details>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: dove si usa la notazione polacca inversa</summary>
+  <div class="soluzione">
+    <p>Molte calcolatrici scientifiche di una volta funzionavano in polacca inversa: si scriveva 3 ENTER 4 + invece di 3 + 4 =. Lo stesso principio, «metti gli operandi su una pila e applica l'operatore», è quello delle macchine virtuali a pila: per esempio la macchina virtuale di Java esegue istruzioni che prendono gli operandi dalla cima di una pila. Un compilatore che trasforma 3 + 4 * 5 in istruzioni di questo tipo, in pratica, costruisce l'albero dell'espressione e lo visita in ordine posticipato.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="11-pile-code.html">← Pacco 11: pile e code</a>
+  <a href="index.html">Tutti i pacchi</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- liste.js
+// Disegno di nodi collegati, come alla lavagna: ogni nodo ha uno scomparto piccolo in alto (pros)
+// e uno grande in basso (la chiave, o il dato). Le frecce verdi sono i campi pros, quelle blu le variabili.
+// stato = {
+//   slots: [id, ...]                         nodi sulla riga, da sinistra a destra
+//   nodi: { id: { k: "11", pros: id|null } }
+//   gall: [ { id, tra: [idPrima|null, idDopo|null] } ]   nodi «galleggianti», disegnati sotto la riga
+//   vars: [ { nome, a: id|null, lato: "sx"|"sx2"|"sopra"|"sotto" } ]
+//   evid: { id: "attivo"|"nuovo"|"via"|"trovato" }
+//   tagli: [ { da: id|"var:nome", a: id } ]   collegamenti vecchi, disegnati barrati in rosso
+// }
+var LW = 48, LT = 16, LH = 46, LP = 86, LX0 = 70, LY0 = 58, LGY = 84;
+function svgMem(st, opz) {
+  opz = opz || {};
+  var pos = {}, s = [], k, nGall = (st.gall || []).length;
+  var haSotto = (st.vars || []).some(function (v) { return v.lato === "sx2" || v.lato === "sotto"; });
+  st.slots.forEach(function (id, j) { pos[id] = { x: LX0 + j * LP, y: LY0, riga: true, j: j }; });
+  var ultimoX = st.slots.length ? LX0 + (st.slots.length - 1) * LP : LX0 - LP;
+  (st.gall || []).forEach(function (g) {
+    var xb = g.tra[0] !== null && pos[g.tra[0]] ? pos[g.tra[0]].x : LX0 - LP * 0.5;
+    var xa = g.tra[1] !== null && pos[g.tra[1]] ? pos[g.tra[1]].x : ultimoX + LP;
+    var x = g.x !== undefined ? g.x : Math.max(34, (xb + xa) / 2);
+    pos[g.id] = { x: x, y: LY0 + LGY, riga: false };
+  });
+  var maxX = 0;
+  for (k in pos) maxX = Math.max(maxX, pos[k].x + LW);
+  if (!st.slots.length) maxX = Math.max(maxX, LX0 + 60);
+  var W = Math.max(opz.minW || 0, maxX + 18);
+  var galVar = (st.vars || []).some(function (v) { return (v.lato === "sopra" || v.lato === "sotto") && (st.gall || []).some(function (g) { return g.id === v.a; }); });
+  var H = LY0 + LH + (nGall ? LGY : 0) + (haSotto || galVar ? 44 : 0) + 12;
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "Una lista concatenata") + '" font-family="system-ui, sans-serif">');
+
+  function testa(x2, y2, x1, y1, cls, col) {
+    var a = Math.atan2(y2 - y1, x2 - x1), L = 8, b = 0.42;
+    var p1x = x2 - L * Math.cos(a - b), p1y = y2 - L * Math.sin(a - b), p2x = x2 - L * Math.cos(a + b), p2y = y2 - L * Math.sin(a + b);
+    return '<path d="M' + r1(x2) + ' ' + r1(y2) + ' L' + r1(p1x) + ' ' + r1(p1y) + ' L' + r1(p2x) + ' ' + r1(p2y) + ' z" class="' + cls + '" fill="' + col + '"/>';
+  }
+  function r1(v) { return Math.round(v * 10) / 10; }
+  // curva da (x1,y1) a (x2,y2) con punti di controllo c1, c2; tipo = "link" | "var" | "taglio"
+  function curva(x1, y1, c1x, c1y, c2x, c2y, x2, y2, tipo) {
+    var stile = tipo === "var" ? ['l-blu', '#2f52c4', 't-blu'] : tipo === "taglio" ? ['l-rosso', '#b42318', 't-rosso'] : ['l-verde', '#17803d', 't-verde'];
+    var d = 'M' + r1(x1) + ' ' + r1(y1) + ' C' + r1(c1x) + ' ' + r1(c1y) + ' ' + r1(c2x) + ' ' + r1(c2y) + ' ' + r1(x2) + ' ' + r1(y2);
+    var out = '<path d="' + d + '" class="' + stile[0] + '" fill="none" stroke="' + stile[1] + '" stroke-width="1.7"' + (tipo === "taglio" ? ' stroke-dasharray="4 3"' : '') + '/>';
+    if (tipo === "taglio") {
+      var mx = (x1 + 3 * c1x + 3 * c2x + x2) / 8, my = (y1 + 3 * c1y + 3 * c2y + y2) / 8;
+      out += '<path d="M' + r1(mx - 5) + ' ' + r1(my + 6) + ' L' + r1(mx + 1) + ' ' + r1(my - 6) + ' M' + r1(mx + 2) + ' ' + r1(my + 6) + ' L' + r1(mx + 8) + ' ' + r1(my - 6) + '" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/>';
+    } else out += testa(x2, y2, c2x, c2y, stile[2], stile[1]);
+    return out;
+  }
+  // il percorso di un collegamento dal nodo a al nodo b
+  function collega(a, b, tipo) {
+    var A = pos[a], B = pos[b];
+    if (!A || !B) return "";
+    var sx = A.x + LW / 2, sy = A.y + LT / 2;
+    if (A.riga && B.riga) {
+      if (B.j === A.j + 1) return curva(sx, sy, sx + 20, sy, B.x - 20, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo);
+      return curva(sx, sy, sx + 12, A.y - 42, B.x - 4, B.y - 42, B.x + 8, B.y - 1, tipo);
+    }
+    if (A.riga && !B.riga) return curva(sx, sy, sx + 32, sy + 4, B.x + LW / 2, B.y - 40, B.x + LW / 2, B.y - 1, tipo);
+    if (!A.riga && B.riga) return curva(sx, sy, sx + 38, sy, B.x + LW / 2, B.y + LH + 30, B.x + LW / 2, B.y + LH + 1, tipo);
+    return "";
+  }
+  // collegamenti barrati (vecchi valori)
+  (st.tagli || []).forEach(function (t) {
+    if (String(t.da).indexOf("var:") === 0) s.push(frecciaVar({ nome: t.da.slice(4), a: t.a, lato: t.lato || "sx" }, "taglio"));
+    else s.push(collega(t.da, t.a, "taglio"));
+  });
+  // nodi
+  for (k in pos) {
+    var n = st.nodi[k], P = pos[k], ev = (st.evid || {})[k];
+    var cls = ev === "attivo" ? ["r-blu", "#e8edfc", "#2f52c4"] : ev === "nuovo" ? ["r-verde", "#e6f5ea", "#17803d"] : ev === "via" ? ["r-rosso", "#fdecea", "#b42318"] : ev === "trovato" ? ["r-viola", "#f1eafc", "#6d3fc0"] : ["r-nodo", "#ffffff", "#9aa3b2"];
+    s.push('<rect x="' + r1(P.x) + '" y="' + P.y + '" width="' + LW + '" height="' + LH + '" rx="3" class="' + cls[0] + '" fill="' + cls[1] + '" stroke="' + cls[2] + '" stroke-width="1.5"/>');
+    s.push('<line x1="' + r1(P.x) + '" y1="' + (P.y + LT) + '" x2="' + r1(P.x + LW) + '" y2="' + (P.y + LT) + '" class="l-muted" stroke="#5b6270" stroke-width="1"/>');
+    s.push('<text x="' + r1(P.x + LW / 2) + '" y="' + (P.y + LT + 20) + '" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">' + n.k + '</text>');
+    if (n.pros === null) s.push('<text x="' + r1(P.x + LW / 2) + '" y="' + (P.y + 12) + '" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text>');
+    else if (n.pros !== undefined) s.push('<circle cx="' + r1(P.x + LW / 2) + '" cy="' + (P.y + LT / 2) + '" r="2.6" class="t-verde" fill="#17803d"/>');
+  }
+  // campi pros
+  for (k in pos) {
+    var nn = st.nodi[k];
+    if (nn.pros !== null && nn.pros !== undefined && pos[nn.pros]) s.push(collega(k, nn.pros, "link"));
+  }
+  // variabili
+  function frecciaVar(v, tipo) {
+    var out = "";
+    var B = v.a !== null && v.a !== undefined ? pos[v.a] : null;
+    if (v.lato === "sx" || v.lato === "sx2") {
+      var ly = v.lato === "sx" ? LY0 + LT / 2 : LY0 + LH + 26;
+      if (tipo !== "taglio") out += '<text x="' + 6 + '" y="' + (ly + 5) + '" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">' + v.nome + '</text>';
+      var x0 = 8 + v.nome.length * 8.4;
+      if (!B) {
+        if (tipo !== "taglio") out += curva(x0, ly, x0 + 8, ly, LX0 - 18, ly, LX0 - 10, ly, "var") + '<text x="' + (LX0 - 6) + '" y="' + (ly + 4.5) + '" font-size="12.5" class="t-verde" fill="#17803d">null</text>';
+        return out;
+      }
+      if (v.lato === "sx") {
+        if (B.riga && B.j === 0) out += curva(x0, ly, x0 + 12, ly, B.x - 14, ly, B.x - 1, ly, tipo === "taglio" ? "taglio" : "var");
+        else if (B.riga) out += curva(x0, ly, x0 + 30, LY0 - 46, B.x - 6, LY0 - 46, B.x + 6, LY0 - 1, tipo === "taglio" ? "taglio" : "var");
+        else {
+          var cx = 6 + v.nome.length * 4.2;
+          out += curva(cx, ly + 8, cx, B.y + LT / 2, B.x - 22, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo === "taglio" ? "taglio" : "var");
+        }
+      } else if (B.riga) {
+        var bx = B.x + LW / 2, by = B.y + LH + 1;
+        out += curva(x0, ly - 4, x0 + 30, ly + 22, bx, ly + 26, bx, by, tipo === "taglio" ? "taglio" : "var");
+      } else {
+        out += curva(x0, ly - 4, x0 + 40, ly + 10, B.x - 40, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo === "taglio" ? "taglio" : "var");
+      }
+      return out;
+    }
+    return "";
+  }
+  var sopra = {}, sotto = {};
+  (st.vars || []).forEach(function (v) {
+    if (v.lato === "sx" || v.lato === "sx2") { s.push(frecciaVar(v, "var")); return; }
+    if (v.a === null || v.a === undefined || !pos[v.a]) return;
+    var tab = v.lato === "sotto" ? sotto : sopra;
+    (tab[v.a] = tab[v.a] || []).push(v.nome);
+  });
+  for (k in sopra) {
+    var Q = pos[k], nomi = sopra[k].join(", ");
+    if (Q.riga) {
+      s.push('<text x="' + r1(Q.x + LW / 2) + '" y="' + (Q.y - 30) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + nomi + '</text>');
+      s.push(curva(Q.x + LW / 2, Q.y - 25, Q.x + LW / 2, Q.y - 18, Q.x + LW / 2, Q.y - 10, Q.x + LW / 2, Q.y - 2, "var"));
+    } else {
+      s.push('<text x="' + r1(Q.x + LW / 2) + '" y="' + (Q.y + LH + 38) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + nomi + '</text>');
+      s.push(curva(Q.x + LW / 2, Q.y + LH + 24, Q.x + LW / 2, Q.y + LH + 16, Q.x + LW / 2, Q.y + LH + 8, Q.x + LW / 2, Q.y + LH + 2, "var"));
+    }
+  }
+  for (k in sotto) {
+    var R = pos[k];
+    s.push('<text x="' + r1(R.x + LW / 2) + '" y="' + (R.y + LH + 38) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + sotto[k].join(", ") + '</text>');
+    s.push(curva(R.x + LW / 2, R.y + LH + 24, R.x + LW / 2, R.y + LH + 16, R.x + LW / 2, R.y + LH + 8, R.x + LW / 2, R.y + LH + 2, "var"));
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// lista semplice da un elenco di chiavi: nodi n0, n1, … collegati in ordine
+function statoLista(chiavi, vars, extra) {
+  var st = { slots: [], nodi: {}, gall: [], vars: vars || [], evid: {}, tagli: [] };
+  chiavi.forEach(function (c, j) {
+    st.slots.push("n" + j);
+    st.nodi["n" + j] = { k: String(c), pros: j + 1 < chiavi.length ? "n" + (j + 1) : null };
+  });
+  if (extra) for (var q in extra) st[q] = extra[q];
+  return st;
+}
+
+// ---- alberi.js
+// Alberi binari: costruzione, disegno, visite (pacco 12).
+// Un albero è { radice: id|null, nodi: { id: { v: "8", sx: id|null, dx: id|null } } }.
+function escA(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1a(v) { return Math.round(v * 10) / 10; }
+
+// "8(14(22,12(1,3)),11(,5))": etichetta, poi tra parentesi il sottoalbero sinistro e il destro (vuoto = niente)
+function alberoDa(testo) {
+  var s = testo.replace(/\s+/g, ""), k = 0, n = 0, nodi = {};
+  function nodo() {
+    var et = "";
+    while (k < s.length && "(),".indexOf(s[k]) < 0) et += s[k++];
+    if (et === "") return null;
+    var id = "a" + (n++);
+    nodi[id] = { v: et, sx: null, dx: null };
+    if (s[k] === "(") {
+      k++;
+      nodi[id].sx = nodo();
+      if (s[k] !== ",") throw new Error("manca la virgola in " + testo);
+      k++;
+      nodi[id].dx = nodo();
+      if (s[k] !== ")") throw new Error("manca la parentesi in " + testo);
+      k++;
+    }
+    return id;
+  }
+  var r = nodo();
+  return { radice: r, nodi: nodi };
+}
+// vettore posizionale: radice in A[0], figli di A[i] in A[2i+1] e A[2i+2]
+function alberoDaVettore(A) {
+  var nodi = {};
+  for (var i = 0; i < A.length; i++) nodi["p" + i] = { v: String(A[i]), sx: 2 * i + 1 < A.length ? "p" + (2 * i + 1) : null, dx: 2 * i + 2 < A.length ? "p" + (2 * i + 2) : null, pos: i };
+  return { radice: A.length ? "p0" : null, nodi: nodi };
+}
+function altezza(T, id) {
+  if (id === undefined) id = T.radice;
+  if (id === null) return -1;
+  return 1 + Math.max(altezza(T, T.nodi[id].sx), altezza(T, T.nodi[id].dx));
+}
+function contaNodi(T, id) { if (id === undefined) id = T.radice; if (id === null) return 0; return 1 + contaNodi(T, T.nodi[id].sx) + contaNodi(T, T.nodi[id].dx); }
+
+// posizioni: a profondità d il nodo occupa uno dei 2^d «posti» del livello (come nel vettore posizionale)
+function disponi(T, opz) {
+  opz = opz || {};
+  var h = Math.max(0, altezza(T)), slot = opz.slot || 46, dy = opz.dy || 62;
+  var W = Math.max(opz.minW || 0, Math.pow(2, h) * slot + 2 * (opz.margine || 14));
+  var pos = {}, m = opz.margine || 14, top = opz.top || 30;
+  function vai(id, d, k) {
+    if (id === null) return;
+    var largh = (W - 2 * m) / Math.pow(2, d);
+    pos[id] = { x: m + (k + 0.5) * largh, y: top + d * dy, d: d, k: k };
+    vai(T.nodi[id].sx, d + 1, 2 * k);
+    vai(T.nodi[id].dx, d + 1, 2 * k + 1);
+  }
+  vai(T.radice, 0, 0);
+  return { pos: pos, W: W, H: top + h * dy + (opz.basso || 30), h: h };
+}
+
+var STILE_NODO = {
+  normale: ["r-nodo", "#ffffff", "#9aa3b2", "t-testo", "#1f2328"],
+  visitato: ["r-verde", "#e6f5ea", "#17803d", "t-testo", "#1f2328"],
+  corrente: ["r-giallo", "#fff1a8", "#b4500f", "t-testo", "#1f2328"],
+  inS: ["r-blu", "#e8edfc", "#2f52c4", "t-testo", "#1f2328"],
+  spento: ["r-nodo", "#ffffff", "#9aa3b2", "t-muted", "#5b6270"],
+  rosso: ["r-rosso", "#fdecea", "#b42318", "t-testo", "#1f2328"],
+  viola: ["r-viola", "#f1eafc", "#6d3fc0", "t-testo", "#1f2328"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f", "t-testo", "#1f2328"]
+};
+// opz: { stato: {id: chiave di STILE_NODO}, ordine: {id: numero}, nulls: true, nullStato: {"id:sx": stile},
+//        etichette: [{id, testo, lato: "sx"|"dx"|"sopra"|"sotto", col}], gusci: [{id, testo, col, lato}],
+//        livelli: true, indici: true (mostra la posizione nel vettore), giro: {punti, fino, tacche}, aria }
+function svgAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, R = opz.r || 17, s = [], k;
+  var extraSx = opz.livelli ? 64 : 0, W = L.W + extraSx + (opz.extraDx || 0), H = L.H + (opz.nulls ? 34 : 0) + (opz.extraBasso || 0);
+  s.push('<svg viewBox="0 0 ' + r1a(W) + ' ' + r1a(H) + '" width="' + r1a(W) + '" height="' + r1a(H) + '" role="img" aria-label="' + escA(opz.aria || "Un albero binario") + '" font-family="system-ui, sans-serif">');
+  s.push('<g transform="translate(' + extraSx + ',0)">');
+  // gusci (sottoalberi evidenziati)
+  (opz.gusci || []).forEach(function (g) {
+    var ids = [];
+    (function raccogli(id) { if (id === null) return; ids.push(id); raccogli(T.nodi[id].sx); raccogli(T.nodi[id].dx); })(g.id);
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    ids.forEach(function (i) { x0 = Math.min(x0, pos[i].x); x1 = Math.max(x1, pos[i].x); y0 = Math.min(y0, pos[i].y); y1 = Math.max(y1, pos[i].y); });
+    var pad = R + 9 + (g.pad || 0), c = STILE_NODO[g.col || "viola"];
+    s.push('<rect x="' + r1a(x0 - pad) + '" y="' + r1a(y0 - pad) + '" width="' + r1a(x1 - x0 + 2 * pad) + '" height="' + r1a(y1 - y0 + 2 * pad) + '" rx="' + r1a(pad) + '" class="' + c[0] + '" fill="' + c[1] + '" fill-opacity="0.55" stroke="' + c[2] + '" stroke-width="1.4" stroke-dasharray="5 4"/>');
+    if (g.testo) {
+      var colT = g.col === "arancio" ? ["t-arancio", "#b4500f"] : g.col === "inS" ? ["t-blu", "#2f52c4"] : ["t-viola", "#6d3fc0"];
+      String(g.testo).split("\n").forEach(function (riga, j) {
+        var tx = g.lato === "destra" ? x1 + pad + 6 : x0 - pad + 4, ty = g.lato === "destra" ? y1 - 4 + j * 15 : y1 + pad + 15 + j * 15;
+        s.push('<text x="' + r1a(tx) + '" y="' + r1a(ty) + '" font-size="12.5" font-weight="600" text-anchor="start" class="' + colT[0] + '" fill="' + colT[1] + '">' + riga + '</text>');
+      });
+    }
+  });
+  // livelli
+  if (opz.livelli) {
+    for (var d = 0; d <= L.h; d++) {
+      var yy = (opz.top || 30) + d * (opz.dy || 62);
+      s.push('<text x="' + (-extraSx + 6) + '" y="' + (yy + 4) + '" font-size="12" class="t-muted" fill="#5b6270">livello ' + d + '</text>');
+      s.push('<line x1="' + (-extraSx + 58) + '" y1="' + yy + '" x2="' + (L.W - 6) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/>');
+    }
+  }
+  // archi
+  for (k in pos) {
+    ["sx", "dx"].forEach(function (lato) {
+      var c = T.nodi[k][lato];
+      if (c !== null && pos[c]) {
+        var a = pos[k], b = pos[c], dx = b.x - a.x, dyy = b.y - a.y, l = Math.sqrt(dx * dx + dyy * dyy);
+        s.push('<line x1="' + r1a(a.x + dx / l * R) + '" y1="' + r1a(a.y + dyy / l * R) + '" x2="' + r1a(b.x - dx / l * R) + '" y2="' + r1a(b.y - dyy / l * R) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      } else if (opz.nulls) {
+        var a2 = pos[k], ox = lato === "sx" ? -1 : 1, nx = a2.x + ox * 16, ny = a2.y + 40;
+        var st = (opz.nullStato || {})[k + ":" + lato];
+        var cc = st ? STILE_NODO[st] : STILE_NODO.spento;
+        s.push('<line x1="' + r1a(a2.x + ox * R * 0.6) + '" y1="' + r1a(a2.y + R * 0.8) + '" x2="' + r1a(nx) + '" y2="' + r1a(ny - 7) + '" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="3 3"/>');
+        s.push('<rect x="' + r1a(nx - 13) + '" y="' + r1a(ny - 7) + '" width="26" height="14" rx="3" class="' + cc[0] + '" fill="' + cc[1] + '" stroke="' + cc[2] + '" stroke-width="1"/>');
+        s.push('<text x="' + r1a(nx) + '" y="' + r1a(ny + 3.5) + '" font-size="9.5" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      }
+    });
+  }
+  // giro intorno all'albero
+  if (opz.giro) {
+    var G = opz.giro, pts = G.punti, fino = G.fino === undefined ? pts.length - 1 : G.fino;
+    var dTutto = "M" + pts.map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+    s.push('<path d="' + dTutto + '" class="l-giro" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"/>');
+    if (fino > 0) {
+      var dFatto = "M" + pts.slice(0, fino + 1).map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+      s.push('<path d="' + dFatto + '" class="l-giro-fatto" fill="none" stroke="#6d3fc0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>');
+    }
+    (G.tacche || []).forEach(function (t) {
+      var col = t.tipo === "pre" ? ["t-blu", "#2f52c4"] : t.tipo === "in" ? ["t-verde", "#17803d"] : ["t-arancio", "#b4500f"];
+      s.push('<circle cx="' + r1a(t.x) + '" cy="' + r1a(t.y) + '" r="' + (t.fatta ? 4.2 : 3.2) + '" class="' + col[0] + '" fill="' + (t.fatta ? col[1] : "none") + '" stroke="' + col[1] + '" stroke-width="1.4"' + (t.fatta ? "" : ' fill-opacity="0"') + '/>');
+    });
+    if (G.punto) s.push('<circle cx="' + r1a(G.punto.x) + '" cy="' + r1a(G.punto.y) + '" r="6.5" class="t-viola" fill="#6d3fc0"/>');
+  }
+  // nodi
+  for (k in pos) {
+    var p = pos[k], st2 = STILE_NODO[(opz.stato || {})[k] || "normale"];
+    s.push('<circle cx="' + r1a(p.x) + '" cy="' + r1a(p.y) + '" r="' + R + '" class="' + st2[0] + '" fill="' + st2[1] + '" stroke="' + st2[2] + '" stroke-width="1.6"/>');
+    var et = T.nodi[k].v, fs = et.length > 2 ? 12.5 : 15;
+    s.push('<text x="' + r1a(p.x) + '" y="' + r1a(p.y + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="' + st2[3] + '" fill="' + st2[4] + '">' + escA(et) + '</text>');
+    if (opz.ordine && opz.ordine[k] !== undefined) {
+      s.push('<circle cx="' + r1a(p.x + R * 0.85) + '" cy="' + r1a(p.y - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1a(p.x + R * 0.85) + '" y="' + r1a(p.y - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.ordine[k] + '</text>');
+    }
+    if (opz.indici && T.nodi[k].pos !== undefined) {
+      s.push('<text x="' + r1a(p.x - R - 3) + '" y="' + r1a(p.y - R + 4) + '" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">' + T.nodi[k].pos + '</text>');
+    }
+  }
+  // etichette con freccia
+  (opz.etichette || []).forEach(function (e) {
+    var p = pos[e.id], col = e.col === "arancio" ? ["t-arancio", "#b4500f"] : e.col === "verde" ? ["t-verde", "#17803d"] : e.col === "rosso" ? ["t-rosso", "#b42318"] : e.col === "viola" ? ["t-viola", "#6d3fc0"] : ["t-blu", "#2f52c4"];
+    var lx, ly, ax, ay, anc;
+    if (e.lato === "sx") { lx = p.x - R - 44; ly = p.y + 4; ax = p.x - R - 3; ay = p.y; anc = "end"; }
+    else if (e.lato === "sopra") { lx = p.x + R + 14; ly = p.y - R - 6; ax = p.x + R * 0.6; ay = p.y - R * 0.8; anc = "start"; }
+    else if (e.lato === "sotto") { lx = p.x; ly = p.y + R + 30; ax = p.x; ay = p.y + R + 3; anc = "middle"; }
+    else { lx = p.x + R + 44; ly = p.y + 4; ax = p.x + R + 3; ay = p.y; anc = "start"; }
+    var righe = String(e.testo).split("\n");
+    righe.forEach(function (rg, j) { s.push('<text x="' + r1a(lx + (anc === "start" ? 4 : anc === "end" ? -4 : 0)) + '" y="' + r1a(ly + j * 14 + (e.lato === "sotto" ? 0 : -(righe.length - 1) * 7)) + '" font-size="12.5" font-weight="600" text-anchor="' + anc + '" class="' + col[0] + '" fill="' + col[1] + '">' + rg + '</text>'); });
+    var sx0 = e.lato === "sx" ? lx : e.lato === "sotto" ? lx : lx, sy0 = e.lato === "sotto" ? ly - 12 : e.lato === "sopra" ? ly - 4 : ly - 4;
+    if (e.lato === "sopra") sx0 = lx;
+    var ang = Math.atan2(ay - sy0, ax - sx0);
+    s.push('<line x1="' + r1a(sx0) + '" y1="' + r1a(sy0) + '" x2="' + r1a(ax - 4 * Math.cos(ang)) + '" y2="' + r1a(ay - 4 * Math.sin(ang)) + '" class="' + col[0].replace("t-", "l-") + '" stroke="' + col[1] + '" stroke-width="1.3"/>');
+    s.push('<path d="M' + r1a(ax) + ' ' + r1a(ay) + ' l' + r1a(-8 * Math.cos(ang - 0.42)) + ' ' + r1a(-8 * Math.sin(ang - 0.42)) + ' l' + r1a(8 * Math.cos(ang - 0.42) - 8 * Math.cos(ang + 0.42)) + ' ' + r1a(8 * Math.sin(ang - 0.42) - 8 * Math.sin(ang + 0.42)) + ' z" class="' + col[0] + '" fill="' + col[1] + '"/>');
+  });
+  s.push('</g></svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- visite
+function preordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; out.push(id); preordine(T, T.nodi[id].sx, out); preordine(T, T.nodi[id].dx, out); return out; }
+function inordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; inordine(T, T.nodi[id].sx, out); out.push(id); inordine(T, T.nodi[id].dx, out); return out; }
+function postordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; postordine(T, T.nodi[id].sx, out); postordine(T, T.nodi[id].dx, out); out.push(id); return out; }
+function ampiezza(T) { var out = [], C = T.radice === null ? [] : [T.radice]; while (C.length) { var n = C.shift(); out.push(n); if (T.nodi[n].sx !== null) C.push(T.nodi[n].sx); if (T.nodi[n].dx !== null) C.push(T.nodi[n].dx); } return out; }
+function valori(T, ids) { return ids.map(function (id) { return T.nodi[id].v; }); }
+
+// Il giro intorno all'albero: un percorso che parte a sinistra della radice e gira in senso antiorario,
+// con una tacca a sinistra (pre), sotto (in) e a destra (post) di ogni nodo.
+function giroAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, d = (opz.r || 17) + 9, pts = [], tacche = [];
+  function punto(x, y, tipo, id) { pts.push({ x: x, y: y }); if (tipo) tacche.push({ x: x, y: y, tipo: tipo, id: id, i: pts.length - 1 }); }
+  function giro(id) {
+    var p = pos[id], n = T.nodi[id];
+    punto(p.x - d, p.y, "pre", id);
+    if (n.sx !== null) giro(n.sx);
+    else punto(p.x - d * 0.75, p.y + d * 0.75);
+    punto(p.x, p.y + d, "in", id);
+    if (n.dx !== null) giro(n.dx);
+    else punto(p.x + d * 0.75, p.y + d * 0.75);
+    punto(p.x + d, p.y, "post", id);
+  }
+  if (T.radice !== null) {
+    var r = pos[T.radice];
+    punto(r.x - d * 0.6, r.y - d * 1.25);
+    giro(T.radice);
+    punto(r.x + d * 0.6, r.y - d * 1.25);
+  }
+  return { punti: pts, tacche: tacche };
+}
+
+// Eventi delle visite iterative (con la coda o con la pila), come nel codice della lavagna dell'anno scorso.
+// Ogni evento: { riga, testo, S: [id|null...], corrente, visitati: [id...], nullStato }
+var CODICE_VISITE = {
+  coda: ["<b>ALGORITMO</b> visitaInAmpiezza(AlberoBinario r)", "  C ← coda vuota", "  C.enqueue(r)", "  <b>WHILE NOT</b> (C.isEmpty()) <b>DO</b>", "    n ← C.dequeue()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      C.enqueue(n.sx)", "      C.enqueue(n.dx)"],
+  pila: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  P ← pila vuota", "  P.push(r)", "  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>", "    n ← P.pop()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      P.push(n.dx)", "      P.push(n.sx)"]
+};
+function eventiVisita(T, tipo) {
+  var ev = [], S = [], vis = [], cor = null, X = tipo === "coda" ? "C" : "P";
+  var ins = tipo === "coda" ? "C.enqueue" : "P.push", est = tipo === "coda" ? "C.dequeue()" : "P.pop()";
+  function nome(id) { return id === null ? "null" : "il nodo " + escA(T.nodi[id].v); }
+  function scatta(riga, testo) { ev.push({ riga: riga, testo: testo, S: S.slice(), corrente: cor, visitati: vis.slice() }); }
+  scatta(0, "Chiamata della visita sulla radice, " + nome(T.radice) + ".");
+  scatta(1, (tipo === "coda" ? "Si crea una coda vuota C." : "Si crea una pila vuota P."));
+  S.push(T.radice); scatta(2, ins + "(r): " + (tipo === "coda" ? "la radice entra nella coda." : "la radice entra nella pila."));
+  var giri = 0;
+  while (giri++ < 200) {
+    if (!S.length) { cor = null; scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " è vuota: il ciclo finisce. Ordine di visita: <b>" + valori(T, vis).join(" ") + "</b>."); break; }
+    scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " non è vuota: si entra nel ciclo.");
+    var n = tipo === "coda" ? S.shift() : S.pop();
+    cor = n;
+    scatta(4, "n ← " + est + ": si toglie " + nome(n) + (tipo === "coda" ? ", il primo della coda." : ", quello in cima alla pila."));
+    if (n === null) { scatta(5, "n = null: non c'è nessun nodo da visitare, si torna al WHILE."); continue; }
+    scatta(5, "n ≠ null: è un nodo vero.");
+    vis.push(n); scatta(6, "Si visita il nodo " + escA(T.nodi[n].v) + ": è il " + vis.length + "° visitato.");
+    var a = tipo === "coda" ? T.nodi[n].sx : T.nodi[n].dx, b = tipo === "coda" ? T.nodi[n].dx : T.nodi[n].sx;
+    S.push(a); scatta(7, ins + "(n." + (tipo === "coda" ? "sx" : "dx") + "): entra " + (a === null ? "null (il figlio " + (tipo === "coda" ? "sinistro" : "destro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "sinistro, " : "destro, ") + escA(T.nodi[a].v)) + ".");
+    S.push(b); scatta(8, ins + "(n." + (tipo === "coda" ? "dx" : "sx") + "): entra " + (b === null ? "null (il figlio " + (tipo === "coda" ? "destro" : "sinistro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "destro, " : "sinistro, ") + escA(T.nodi[b].v)) + "." + (tipo === "pila" && b !== null ? " È in cima: sarà il prossimo a uscire." : ""));
+  }
+  return ev;
+}
+
+// Eventi della visita ricorsiva: ordine "pre" | "in" | "post".
+var CODICE_RIC = {
+  pre: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visita la radice", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)"],
+  "in": ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visita la radice", "    visitaInProfondità(r.dx)"],
+  post: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)", "    visita la radice"]
+};
+function eventiRicorsiva(T, ordine) {
+  var ev = [], pila = [], out = [];
+  var righe = ordine === "pre" ? { vis: 2, sx: 3, dx: 4 } : ordine === "in" ? { sx: 2, vis: 3, dx: 4 } : { sx: 2, dx: 3, vis: 4 };
+  function nome(id) { return id === null ? "null" : escA(T.nodi[id].v); }
+  function scatta(riga, testo, extra) {
+    var e = { riga: riga, testo: testo, pila: pila.map(function (r) { return { id: r.id, lato: r.lato }; }), out: out.slice(), corrente: pila.length ? pila[pila.length - 1].id : null };
+    if (extra) for (var q in extra) e[q] = extra[q];
+    ev.push(e);
+  }
+  function chiama(id, lato) {
+    pila.push({ id: id, lato: lato });
+    scatta(0, "Chiamata visitaInProfondità(" + nome(id) + ")" + (lato ? ", sul sottoalbero " + (lato === "sx" ? "sinistro" : "destro") + " del nodo " + nome(pila[pila.length - 2].id) : ", sulla radice") + ". Nella pila delle chiamate entra un record.");
+    if (id === null) {
+      scatta(1, "r = null: l'albero è vuoto, non c'è niente da fare. La chiamata finisce subito.");
+      pila.pop();
+      return;
+    }
+    scatta(1, "r ≠ null: si esegue il corpo dell'IF.");
+    var passi = [["vis", righe.vis], ["sx", righe.sx], ["dx", righe.dx]].sort(function (a, b) { return a[1] - b[1]; });
+    passi.forEach(function (ps) {
+      if (ps[0] === "vis") { out.push(id); scatta(ps[1], "Si visita la radice di questo sottoalbero: " + nome(id) + ". Ordine finora: <b>" + valori(T, out).join(" ") + "</b>.", { visitaOra: id }); }
+      else {
+        scatta(ps[1], "Chiamata ricorsiva sul figlio " + (ps[0] === "sx" ? "sinistro" : "destro") + " di " + nome(id) + ": " + nome(T.nodi[id][ps[0]]) + ".");
+        chiama(T.nodi[id][ps[0]], ps[0]);
+        scatta(ps[1], "Torniamo alla chiamata su " + nome(id) + ": il sottoalbero " + (ps[0] === "sx" ? "sinistro" : "destro") + " è finito.");
+      }
+    });
+    pila.pop();
+  }
+  chiama(T.radice, null);
+  ev.push({ riga: 0, testo: "La prima chiamata è finita: la pila delle chiamate è vuota. Ordine di visita: <b>" + valori(T, out).join(" ") + "</b>.", pila: [], out: out.slice(), corrente: null, fine: true });
+  return ev;
+}
+
+// Notazione polacca inversa: valuta con una pila. Restituisce i passi.
+function passiRPN(tokens) {
+  var P = [], passi = [{ j: -1, pila: [], testo: "Si leggono i simboli da sinistra a destra, con una pila vuota." }], err = null;
+  for (var j = 0; j < tokens.length && !err; j++) {
+    var t = tokens[j];
+    if (/^-?\d+(\.\d+)?$/.test(t)) { P.push(Number(t)); passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un numero: push(" + t + ")." }); }
+    else if ("+-−*×/:".indexOf(t) >= 0 && t.length === 1) {
+      if (P.length < 2) { err = "«" + t + "» è un operatore, ma nella pila ci sono meno di due numeri: l'espressione è sbagliata."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); break; }
+      var b = P.pop(), a = P.pop(), v;
+      if (t === "+") v = a + b; else if (t === "-" || t === "−") v = a - b; else if (t === "*" || t === "×") v = a * b; else v = b === 0 ? NaN : a / b;
+      v = Math.round(v * 1e6) / 1e6;
+      P.push(v);
+      passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un operatore: pop() dà " + b + " (il secondo operando), pop() dà " + a + " (il primo). Si calcola " + a + " " + t + " " + b + " = " + v + " e si fa push(" + v + ").", tolti: [a, b] });
+    } else { err = "Simbolo non riconosciuto: «" + escA(t) + "»."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); }
+  }
+  if (!err) {
+    if (P.length === 1) passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli: nella pila resta un solo numero, <b>" + P[0] + "</b>. È il valore dell'espressione.", fine: true });
+    else passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli, ma nella pila restano " + P.length + " numeri: l'espressione è sbagliata (mancano operatori).", errore: true, fine: true });
+  }
+  return passi;
+}
+// HTML di una pila verticale di "chip" (cima in alto) e di una coda orizzontale
+function htmlPilaChip(els, fmt, opz) {
+  opz = opz || {};
+  var h = '<div class="pilachip">';
+  if (!els.length) h += '<div class="chip zero">vuota</div>';
+  els.forEach(function (e, j) { h += '<div class="chip' + (e === null ? " zero" : "") + (j === els.length - 1 ? " cima" : "") + '">' + fmt(e) + (j === els.length - 1 ? ' <span class="lab-cima">← cima</span>' : '') + '</div>'; });
+  return h + '</div>';
+}
+function htmlCodaChip(els, fmt) {
+  var h = '<div class="codachip"><span class="lab-coda">primo →</span>';
+  if (!els.length) h += '<span class="chip zero">vuota</span>';
+  els.forEach(function (e) { h += '<span class="chip' + (e === null ? " zero" : "") + '">' + fmt(e) + '</span>'; });
+  return h + '<span class="lab-coda">← ultimo</span></div>';
+}
+
+// ---- w12.js
+// Riquadri interattivi del pacco 12.
+function $(id) { return document.getElementById(id); }
+var ALBERI = [
+  ["L'albero della lavagna", "8(14(22,12(1,3)),11(,5))"],
+  ["L'espressione della lavagna", "*(+(3,4),*(+(2,3),5))"],
+  ["Esercizio 4.1 del foglio", "24(6(55(12,3),33),19(17(,16(27,4)),14))"],
+  ["Esercizio 4.2 del foglio", "*(+(*(2,3),2),−(16,+(5,4)))"]
+];
+function menuAlberi(id) {
+  return '<select id="' + id + '" style="width:auto">' + ALBERI.map(function (a, k) { return '<option value="' + k + '">' + a[0] + '</option>'; }).join("") + '</select>';
+}
+function codiceHL(righe, riga) { return righe.map(function (r, j) { return '<span class="riga' + (j === riga ? " ora" : "") + '">' + r + '</span>'; }).join(""); }
+function seqSemplice(tit, T, ids, ultimoNuovo) {
+  return '<div class="sequenza"><span class="tit">' + tit + '</span>' + (ids.length ? ids.map(function (id, j) { return '<span class="el' + (ultimoNuovo && j === ids.length - 1 ? " nuovo" : "") + '">' + escA(T.nodi[id].v) + '</span>'; }).join("") : '<span class="piccolo">ancora nessuno</span>') + '</div>';
+}
+
+// ---------------------------------------------------------------- 1. visite iterative con coda e pila
+(function () {
+  if (!$("vi-corpo")) return;
+  $("vi-corpo").innerHTML = '<div class="controlli"><label>Albero ' + menuAlberi("vi-albero") + '</label>' +
+    '<label>S è <select id="vi-tipo" style="width:auto"><option value="coda">una coda: visita in ampiezza</option><option value="pila">una pila: visita in profondità</option></select></label></div>' +
+    '<div class="controlli"><button class="primario" id="vi-passo">Passo →</button><button id="vi-giro">Fino al prossimo nodo visitato</button><button id="vi-fine">Fino alla fine</button><button id="vi-reset">Ricomincia</button></div>' +
+    '<pre class="pseudo" id="vi-cod"></pre><div class="figura" id="vi-fig" style="margin:6px 0"></div>' +
+    '<div id="vi-S"></div><div id="vi-out"></div><div class="narrazione" id="vi-txt"></div>';
+  var V = { T: null, ev: [], k: 0, tipo: "coda" };
+  function prepara() {
+    V.T = alberoDa(ALBERI[Number($("vi-albero").value)][1]);
+    V.tipo = $("vi-tipo").value;
+    V.ev = eventiVisita(V.T, V.tipo); V.k = 0; mostra();
+  }
+  function mostra() {
+    var e = V.ev[V.k], T = V.T, stato = {}, ord = {};
+    e.S.forEach(function (id) { if (id !== null) stato[id] = "inS"; });
+    e.visitati.forEach(function (id, j) { stato[id] = "visitato"; ord[id] = j + 1; });
+    if (e.corrente !== null && e.corrente !== undefined) stato[e.corrente] = "corrente";
+    $("vi-cod").innerHTML = codiceHL(CODICE_VISITE[V.tipo], e.riga);
+    $("vi-fig").innerHTML = svgAlbero(T, { stato: stato, ordine: ord, aria: "L'albero durante la visita" });
+    var fmt = function (id) { return id === null ? "null" : escA(T.nodi[id].v); };
+    $("vi-S").innerHTML = '<div class="lato-tit">' + (V.tipo === "coda" ? "La coda C" : "La pila P") + '</div>' + (V.tipo === "coda" ? htmlCodaChip(e.S, fmt) : htmlPilaChip(e.S, fmt));
+    $("vi-out").innerHTML = seqSemplice("visitati", T, e.visitati, e.riga === 6);
+    $("vi-txt").innerHTML = "<b>Passo " + (V.k + 1) + " di " + V.ev.length + ".</b> " + e.testo + '<br><span class="piccolo">Colori: giallo il nodo appena tolto, azzurro i nodi che aspettano in ' + (V.tipo === "coda" ? "coda" : "pila") + ', verde quelli già visitati (con il numero d\'ordine).</span>';
+    var fine = V.k >= V.ev.length - 1;
+    $("vi-passo").disabled = fine; $("vi-fine").disabled = fine; $("vi-giro").disabled = fine;
+  }
+  $("vi-passo").onclick = function () { if (V.k < V.ev.length - 1) { V.k++; mostra(); } };
+  $("vi-giro").onclick = function () {
+    // avanza fino alla fine del prossimo giro in cui si visita un nodo (dopo i due inserimenti)
+    var k = V.k + 1;
+    while (k < V.ev.length - 1 && V.ev[k].riga !== 8) k++;
+    V.k = k; mostra();
+  };
+  $("vi-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("vi-reset").onclick = function () { V.k = 0; mostra(); };
+  $("vi-albero").onchange = prepara; $("vi-tipo").onchange = prepara;
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 2. la visita ricorsiva, con la pila delle chiamate
+(function () {
+  if (!$("ri-corpo")) return;
+  $("ri-corpo").innerHTML = '<div class="controlli"><label>Albero ' + menuAlberi("ri-albero") + '</label>' +
+    '<label>Ordine <select id="ri-ord" style="width:auto"><option value="pre">anticipato (radice, sx, dx)</option><option value="in">simmetrico (sx, radice, dx)</option><option value="post">posticipato (sx, dx, radice)</option></select></label></div>' +
+    '<div class="controlli"><button class="primario" id="ri-passo">Passo →</button><button id="ri-vis">Fino alla prossima «visita»</button><button id="ri-fine">Fino alla fine</button><button id="ri-reset">Ricomincia</button></div>' +
+    '<pre class="pseudo" id="ri-cod"></pre>' +
+    '<div class="coppia"><div><div class="figura" id="ri-fig" style="margin:4px 0"></div></div><div style="flex:0 1 230px"><div class="lato-tit">Pila delle chiamate (cima in alto)</div><div class="pila mini" id="ri-pila"></div></div></div>' +
+    '<div id="ri-out"></div><div class="narrazione" id="ri-txt"></div>';
+  var V = { T: null, ev: [], k: 0, ord: "pre" };
+  function prepara() {
+    V.T = alberoDa(ALBERI[Number($("ri-albero").value)][1]); V.ord = $("ri-ord").value;
+    V.ev = eventiRicorsiva(V.T, V.ord); V.k = 0; mostra();
+  }
+  function mostra() {
+    var e = V.ev[V.k], T = V.T, stato = {}, ord = {};
+    e.pila.forEach(function (r) { if (r.id !== null) stato[r.id] = "inS"; });
+    e.out.forEach(function (id, j) { stato[id] = "visitato"; ord[id] = j + 1; });
+    if (e.corrente !== null && e.corrente !== undefined) stato[e.corrente] = e.visitaOra ? "visitato" : "corrente";
+    $("ri-cod").innerHTML = codiceHL(CODICE_RIC[V.ord], e.riga);
+    $("ri-fig").innerHTML = svgAlbero(T, { stato: stato, ordine: ord, aria: "L'albero durante la visita ricorsiva" });
+    var h = "";
+    e.pila.forEach(function (r, j) {
+      h += '<div class="record mini' + (j === e.pila.length - 1 ? " attivo" : "") + '"><span class="tit">visita</span>(r = ' + (r.id === null ? "null" : escA(T.nodi[r.id].v)) + ')' + (r.lato ? ' <span class="piccolo">figlio ' + r.lato + '</span>' : '') + '</div>';
+    });
+    $("ri-pila").innerHTML = h || '<div class="piccolo">vuota</div>';
+    var nomi = { pre: "anticipato", "in": "simmetrico", post: "posticipato" };
+    $("ri-out").innerHTML = seqSemplice(nomi[V.ord], T, e.out, !!e.visitaOra);
+    $("ri-txt").innerHTML = "<b>Passo " + (V.k + 1) + " di " + V.ev.length + ".</b> " + e.testo + '<br><span class="piccolo">Colori: giallo il nodo della chiamata in corso, azzurro i nodi con una chiamata ancora aperta, verde i nodi già visitati.</span>';
+    var fine = V.k >= V.ev.length - 1;
+    $("ri-passo").disabled = fine; $("ri-fine").disabled = fine; $("ri-vis").disabled = fine;
+  }
+  $("ri-passo").onclick = function () { if (V.k < V.ev.length - 1) { V.k++; mostra(); } };
+  $("ri-vis").onclick = function () { var k = V.k + 1; while (k < V.ev.length - 1 && !V.ev[k].visitaOra) k++; V.k = k; mostra(); };
+  $("ri-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("ri-reset").onclick = function () { V.k = 0; mostra(); };
+  $("ri-albero").onchange = prepara; $("ri-ord").onchange = prepara;
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 3. il giro intorno all'albero
+(function () {
+  if (!$("gi-corpo")) return;
+  $("gi-corpo").innerHTML = '<div class="controlli"><label>Albero ' + menuAlberi("gi-albero") + '</label></div>' +
+    '<div class="controlli"><button class="primario" id="gi-passo">Passo →</button><button id="gi-play">▶ Gira da solo</button><button id="gi-fine">Fino alla fine</button><button id="gi-reset">Ricomincia</button></div>' +
+    '<div class="figura" id="gi-fig" style="margin:6px 0"></div>' +
+    '<div class="legenda-giro"><span><span class="pall pre"></span>tacca a sinistra: anticipato</span><span><span class="pall in"></span>tacca sotto: simmetrico</span><span><span class="pall post"></span>tacca a destra: posticipato</span></div>' +
+    '<div id="gi-out"></div><div class="narrazione" id="gi-txt"></div>';
+  var V = { T: null, g: null, k: -1, timer: null };
+  function prepara() {
+    V.T = alberoDa(ALBERI[Number($("gi-albero").value)][1]); V.g = giroAlbero(V.T, { top: 46 }); V.k = -1; ferma(); mostra();
+  }
+  function mostra() {
+    var T = V.T, g = V.g, fatte = { pre: [], "in": [], post: [] }, ult = null;
+    g.tacche.forEach(function (t, j) { t.fatta = j <= V.k; if (t.fatta) { fatte[t.tipo].push(t.id); ult = t; } });
+    var fino = ult ? ult.i : 0, punto = ult ? g.punti[ult.i] : g.punti[0];
+    var stato = {};
+    if (ult) stato[ult.id] = "corrente";
+    $("gi-fig").innerHTML = svgAlbero(T, { top: 46, stato: stato, giro: { punti: g.punti, tacche: g.tacche, fino: fino, punto: punto }, extraBasso: 10, aria: "Il giro intorno all'albero" });
+    $("gi-out").innerHTML = seqSemplice("anticipato", T, fatte.pre, ult && ult.tipo === "pre") + seqSemplice("simmetrico", T, fatte["in"], ult && ult.tipo === "in") + seqSemplice("posticipato", T, fatte.post, ult && ult.tipo === "post");
+    var nomi = { pre: "a sinistra di", "in": "sotto", post: "a destra di" }, liste = { pre: "anticipato", "in": "simmetrico", post: "posticipato" };
+    $("gi-txt").innerHTML = ult ? "Il punto viola passa " + nomi[ult.tipo] + " <b>" + escA(T.nodi[ult.id].v) + "</b>: il nodo si scrive nell'elenco <b>" + liste[ult.tipo] + "</b>." + (V.k === g.tacche.length - 1 ? " Il giro è finito: i tre elenchi sono le tre visite in profondità." : "")
+      : "Il punto parte in alto a sinistra della radice e fa il giro dell'albero rasentandolo, come una formica che cammina lungo il bordo del disegno: scende lungo il lato sinistro, passa sotto ogni nodo e risale lungo il lato destro. Premi «Passo →».";
+    var fine = V.k >= g.tacche.length - 1;
+    $("gi-passo").disabled = fine; $("gi-fine").disabled = fine; $("gi-play").disabled = fine;
+  }
+  function ferma() { if (V.timer) { clearInterval(V.timer); V.timer = null; $("gi-play").textContent = "▶ Gira da solo"; } }
+  $("gi-passo").onclick = function () { ferma(); if (V.k < V.g.tacche.length - 1) { V.k++; mostra(); } };
+  $("gi-fine").onclick = function () { ferma(); V.k = V.g.tacche.length - 1; mostra(); };
+  $("gi-reset").onclick = function () { ferma(); V.k = -1; mostra(); };
+  $("gi-play").onclick = function () {
+    if (V.timer) { ferma(); return; }
+    $("gi-play").textContent = "❚❚ Ferma";
+    V.timer = setInterval(function () { if (V.k < V.g.tacche.length - 1) { V.k++; mostra(); } else ferma(); }, 900);
+  };
+  $("gi-albero").onchange = prepara;
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 4. la notazione polacca inversa
+(function () {
+  if (!$("rp-corpo")) return;
+  var ES = [["La lavagna: 3 4 + 2 3 + 5 * *", "3 4 + 2 3 + 5 * *"], ["Esercizio 4.2: 2 3 * 2 + 16 5 4 + − *", "2 3 * 2 + 16 5 4 + − *"], ["Sbagliata: 3 + 4", "3 + 4"], ["Sbagliata: 3 4 5 +", "3 4 5 +"]];
+  $("rp-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="rp-es" style="width:auto">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label>' +
+    '<label>Espressione <input type="text" id="rp-in" style="width:220px;max-width:100%"></label></div>' +
+    '<div class="controlli"><button class="primario" id="rp-passo">Passo →</button><button id="rp-fine">Fino alla fine</button><button id="rp-reset">Ricomincia</button></div>' +
+    '<div class="figura" id="rp-tok" style="margin:6px 0"></div><div class="coppia"><div style="flex:0 1 160px"><div class="lato-tit">La pila</div><div id="rp-pila"></div></div><div><div class="narrazione" id="rp-txt"></div></div></div>';
+  var V = { tok: [], passi: [], k: 0 };
+  function prepara() {
+    V.tok = $("rp-in").value.trim().split(/\s+/).filter(function (t) { return t !== ""; }).slice(0, 30);
+    V.passi = passiRPN(V.tok); V.k = 0; mostra();
+  }
+  function mostra() {
+    var p = V.passi[V.k], h = '<div class="array qs">';
+    V.tok.forEach(function (t, j) { h += '<div class="cella' + (j === p.j ? " attiva" : j < p.j ? " zsx" : "") + '"><div class="f"></div><div class="v">' + escA(t) + '</div><div class="i">' + (j + 1) + '</div></div>'; });
+    $("rp-tok").innerHTML = h + '</div>';
+    $("rp-pila").innerHTML = htmlPilaChip(p.pila, function (x) { return escA(x); });
+    $("rp-txt").innerHTML = (p.errore ? "<span class='errore'>" + p.testo + "</span>" : p.testo);
+    var fine = V.k >= V.passi.length - 1;
+    $("rp-passo").disabled = fine; $("rp-fine").disabled = fine;
+  }
+  $("rp-es").onchange = function () { $("rp-in").value = ES[Number($("rp-es").value)][1]; prepara(); };
+  $("rp-in").onchange = prepara;
+  $("rp-passo").onclick = function () { if (V.k < V.passi.length - 1) { V.k++; mostra(); } };
+  $("rp-fine").onclick = function () { V.k = V.passi.length - 1; mostra(); };
+  $("rp-reset").onclick = function () { V.k = 0; mostra(); };
+  $("rp-in").value = ES[0][1];
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 5. dal vettore posizionale all'albero (temi d'esame)
+(function () {
+  if (!$("vp-corpo")) return;
+  var ES = [["14 febbraio 2025 (simmetrico)", "23 11 10 13 46 22 48 44", "in"], ["18 luglio 2025 (posticipato)", "25 16 4 13 12 56 20 26", "post"],
+    ["19 giugno 2026 (anticipato)", "15 11 44 18 42 12 33 24", "pre"], ["18 settembre 2026 (anticipato)", "20 22 24 48 33 35 19 28 34", "pre"], ["Scrivi tu", null, "in"]];
+  $("vp-corpo").innerHTML = '<div class="controlli"><label>Tema d\'esame <select id="vp-es" style="width:auto">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label>Array <input type="text" id="vp-in" style="width:260px;max-width:100%"></label>' +
+    '<label>Visita <select id="vp-vis" style="width:auto"><option value="pre">anticipato</option><option value="in">simmetrico</option><option value="post">posticipato</option><option value="amp">in ampiezza</option></select></label></div>' +
+    '<div id="vp-arr"></div><div class="figura" id="vp-fig" style="margin:6px 0"></div>' +
+    '<div class="controlli"><button class="primario" id="vp-sol">Mostra la soluzione</button><button id="vp-num">Mostra l\'ordine sui nodi</button></div>' +
+    '<div id="vp-out"></div><div class="narrazione" id="vp-txt"></div>';
+  var V = { T: null, A: [], sol: false, num: false };
+  function prepara() {
+    var A = $("vp-in").value.trim().split(/[\s,;]+/).filter(function (t) { return t !== ""; });
+    if (A.length > 15 || A.some(function (x) { return x.length > 4; })) { $("vp-txt").innerHTML = "Scrivi al massimo 15 valori brevi, separati da spazi."; return; }
+    V.A = A; V.T = alberoDaVettore(A); V.sol = false; V.num = false; mostra();
+  }
+  function mostra() {
+    var T = V.T, tipo = $("vp-vis").value, h = '<div class="array qs">';
+    V.A.forEach(function (x, i) { h += '<div class="cella"><div class="f"></div><div class="v">' + escA(x) + '</div><div class="i">' + i + '</div></div>'; });
+    $("vp-arr").innerHTML = '<div class="etich-array">Il vettore posizionale (sotto, le posizioni)</div>' + h + '</div>';
+    var ids = !T.radice ? [] : tipo === "pre" ? preordine(T) : tipo === "in" ? inordine(T) : tipo === "post" ? postordine(T) : ampiezza(T);
+    var ord = {};
+    if (V.num) ids.forEach(function (id, j) { ord[id] = j + 1; });
+    $("vp-fig").innerHTML = T.radice ? svgAlbero(T, { indici: true, ordine: ord, aria: "L'albero del vettore posizionale" }) : "";
+    var nomi = { pre: "anticipato", "in": "simmetrico", post: "posticipato", amp: "in ampiezza" };
+    $("vp-out").innerHTML = '<div class="sequenza"><span class="tit">' + nomi[tipo] + '</span>' + ids.map(function (id) { return '<span class="el' + (V.sol ? "" : " nascosto") + '">' + escA(T.nodi[id].v) + '</span>'; }).join("") + '</div>';
+    $("vp-txt").innerHTML = "Ogni nodo ha accanto, in verde, la sua posizione nel vettore: la radice è in posizione 0 e i figli del nodo in posizione i sono nelle posizioni 2i + 1 (sinistro) e 2i + 2 (destro). Scrivi la visita su un foglio, poi premi «Mostra la soluzione» per controllare.";
+    $("vp-sol").textContent = V.sol ? "Nascondi la soluzione" : "Mostra la soluzione";
+    $("vp-num").textContent = V.num ? "Togli l'ordine dai nodi" : "Mostra l'ordine sui nodi";
+  }
+  $("vp-es").onchange = function () { var e = ES[Number($("vp-es").value)]; if (e[1] !== null) { $("vp-in").value = e[1]; $("vp-vis").value = e[2]; } prepara(); };
+  $("vp-in").onchange = function () { $("vp-es").value = String(ES.length - 1); prepara(); };
+  $("vp-vis").onchange = function () { V.sol = false; V.num = false; mostra(); };
+  $("vp-sol").onclick = function () { V.sol = !V.sol; mostra(); };
+  $("vp-num").onclick = function () { V.num = !V.num; mostra(); };
+  $("vp-in").value = ES[0][1]; $("vp-vis").value = ES[0][2];
+  prepara();
+})();
+})();
+</script>
+</body>
+</html>

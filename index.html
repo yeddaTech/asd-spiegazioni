@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ASD spiegato bene</title>
-<link rel="stylesheet" href="stile.css?v=4">
+<link rel="stylesheet" href="stile.css?v=6">
 </head>
 <body>
 <div class="pagina">
 
 <div class="testata">
   <span>Algoritmi e Strutture Dati · A.A. 2026–27</span>
-  <span>aggiornato il 14 ottobre 2026</span>
+  <span>aggiornato il 26 ottobre 2026</span>
 </div>
 
 <h1>ASD spiegato bene</h1>
@@ -71,6 +71,30 @@
     <div class="t">QuickSort: ordinare intorno a un perno</div>
     <div class="d">L'idea del perno, la procedura partiziona con i due indici che si vengono incontro (Codice 4.2) seguita passo per passo anche in ordine decrescente, quickSort completo con l'albero delle chiamate. Poi i confronti: caso peggiore n(n + 1)/2 − 1, caso migliore n log<sub>2</sub> n, caso medio C(n) ≤ 2n ln n ≈ 1,39 n log<sub>2</sub> n con la somma maggiorata da un integrale e la dimostrazione per induzione. In fondo, cinque partizioni dai temi d'esame risolte e un esperimento con il codice vero.</div>
     <div class="l">Lezione 11 (16 ottobre 2026) · Lavagna11 · slide 4-OrdQuickSort · temi d'esame</div>
+  </a>
+  <a class="pacco" href="09-quicksort-spazio.html">
+    <div class="n">PACCO 9</div>
+    <div class="t">Quanto spazio usa quickSort</div>
+    <div class="d">Il ripasso di quickSort con la partizione della lavagna rifatta giro per giro, poi la memoria nascosta: la pila delle chiamate e il disegno «altezza della pila nel tempo». Perché nel caso peggiore la pila arriva a n record (array già ordinato, massimo in testa), come si toglie la ricorsione in coda (Codice 4.4), la variante simmetrica e il Codice 4.5, che con la ricorsione fa solo la parte più piccola e tiene la pila sotto log<sub>2</sub> n + 1.</div>
+    <div class="l">Lezione 12 (23 ottobre 2026), prima parte · Lavagna12 · slide 4-OrdQuickSort</div>
+  </a>
+  <a class="pacco" href="10-liste.html">
+    <div class="n">PACCO 10</div>
+    <div class="t">Le liste concatenate</div>
+    <div class="d">Tipo di dato (cosa) e struttura dati (come), strutture indicizzate e collegate, nodi e riferimenti. Le cinque procedure del prof seguite riga per riga: cercare per posizione e per chiave, cercare in una lista ordinata (e perché la versione cancellata alla lavagna è sbagliata), inserire e cancellare. Poi la lista dentro un array, il codice vero in C e in Go, e i costi a confronto con l'array. Con il foglio di esercizi 3 risolto.</div>
+    <div class="l">Lezioni 12–14 (23 e 26 ottobre 2026) · Lavagne 12 e 13-14 · slide 5-ListeLineari · esercizi 3</div>
+  </a>
+  <a class="pacco" href="11-pile-code.html">
+    <div class="n">PACCO 11</div>
+    <div class="t">Pile e code</div>
+    <div class="d">LIFO e FIFO, le operazioni (push, pop, top; enqueue, dequeue, first). La pila con un array e con una lista, la coda con l'array circolare e con una lista: il codice della lavagna riga per riga, disegnato passo per passo, con i casi particolari (pila vuota, array pieno, coda che si svuota). Perché tutto costa O(1), due laboratori per provare le operazioni, le parentesi bilanciate e il codice in C e in Go.</div>
+    <div class="l">Lezioni 13–14 (26 ottobre 2026) · Lavagna13-14 · lavagna 2025 della stessa lezione</div>
+  </a>
+  <a class="pacco" href="12-alberi-binari.html">
+    <div class="n">PACCO 12</div>
+    <div class="t">Alberi binari e visite</div>
+    <div class="d">Radice, foglie, livelli, altezza, e com'è fatto un albero in memoria. Le visite: in ampiezza con una coda, in profondità con una pila e con la ricorsione, nei tre ordini anticipato, simmetrico e posticipato, con il trucco del giro intorno all'albero. Gli alberi delle espressioni e la notazione polacca inversa calcolata con una pila. In fondo, il foglio di esercizi 4 e le visite dei temi d'esame (vettore posizionale), con un riquadro per allenarsi.</div>
+    <div class="l">Lezioni 13–14 (26 ottobre 2026) · Lavagna13-14 · lavagna 2025 della lezione 14 · esercizi 4 · temi d'esame</div>
   </a>
 </div>
 
