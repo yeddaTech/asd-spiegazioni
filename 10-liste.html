@@ -1,0 +1,1744 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Le liste concatenate</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 10 · lezioni 12 e 13–14 (23 e 26 ottobre 2026)</span>
+</div>
+
+<h1>Le liste: nodi collegati da riferimenti</h1>
+<p class="sottotitolo">Un array tiene gli elementi uno dopo l'altro in memoria; una lista li tiene sparsi, e ognuno sa dov'è il successivo. In questa pagina: la differenza tra tipo di dato e struttura dati, come è fatta una lista concatenata, le cinque procedure del prof (cercare per posizione, cercare per chiave, cercare in una lista ordinata, inserire, cancellare) seguite passo per passo, la lista dentro un array, il codice vero in C e in Go, e quando conviene una lista invece di un array.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di programmazione o di matematica che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>«Lavagna, pagina N» indica la pagina del PDF della lavagna delle lezioni 13 e 14, fatte insieme il 26 ottobre 2026. Le slide su tipi di dati e strutture dati (sezioni 1 e 2) il prof le aveva già mostrate alla fine della lezione 12 (23 ottobre 2026, pagine 17–21 di quella lavagna) e le ha riprese all'inizio della lezione 13. «Le slide» sono le dispense del capitolo 5, «Liste lineari». «Il foglio 3» è il foglio di esercizi 3, «Liste lineari».</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+  <p><b>Come sono disegnate le liste</b>, uguali in tutte le figure e in tutti i riquadri interattivi, come alla lavagna:</p>
+  <ul>
+    <li>ogni <b>nodo</b> è un rettangolo con uno scomparto piccolo in alto (il campo <code>pros</code>) e uno grande in basso (la chiave);</li>
+    <li>le <span class="verde"><b>frecce verdi</b></span> partono dal campo <code>pros</code> e arrivano al nodo successivo; scritto <span class="verde">null</span> nello scomparto vuol dire «nessun successivo»;</li>
+    <li>le <span class="blu"><b>frecce blu</b></span> sono le variabili (L, p, prec, r) e arrivano al nodo che indicano;</li>
+    <li>un collegamento <span class="rosso"><b>rosso tratteggiato e barrato</b></span> è quello che è appena stato sostituito;</li>
+    <li>colori dei nodi: <span class="blu">azzurro</span> il nodo indicato da p; <span class="verde">verde</span> un nodo nuovo; <span class="rosso">rosso</span> un nodo tolto dalla lista; <span class="viola">viola</span> il nodo restituito da una ricerca.</li>
+  </ul>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#tipi">Tipo di dato e struttura dati: cosa e come</a></li>
+    <li><a href="#collezioni">Due modi di tenere una collezione</a></li>
+    <li><a href="#lista">La lista concatenata</a></li>
+    <li><a href="#posizione">Cercare per posizione (Codice 5.1)</a></li>
+    <li><a href="#chiave">Cercare per chiave (Codice 5.2)</a></li>
+    <li><a href="#ordinata">Cercare in una lista ordinata (Codice 5.3)</a></li>
+    <li><a href="#inserire">Inserire in una lista ordinata (Codice 5.4)</a></li>
+    <li><a href="#cancellare">Cancellare da una lista ordinata (Codice 5.5)</a></li>
+    <li><a href="#array">Una lista dentro un array</a></li>
+    <li><a href="#puntatori">Una lista con i puntatori: C e Go</a></li>
+    <li><a href="#costi">Array o lista? I costi a confronto</a></li>
+    <li><a href="#riassunto">Riassunto e cosa serve per l'esame</a></li>
+    <li><a href="#esercizi">Esercizi risolti (anche il foglio 3)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="tipi"><span class="num">1</span>Tipo di dato e struttura dati: cosa e come</h2>
+<p class="in-questa"><b>In questa sezione:</b> le due parole con cui comincia la seconda parte del corso (lavagna, pagine 2–4): il <em>tipo di dato</em>, che dice <em>cosa</em> si può fare, e la <em>struttura dati</em>, che dice <em>come</em> lo si realizza. L'esempio del dizionario, realizzato con due strutture diverse.</p>
+
+<h3>Il tipo di una variabile</h3>
+<p>La lavagna, pagina 2, parte da una definizione:</p>
+<div class="box def">
+  <span class="etichetta">Definizione: tipo di una variabile</span>
+  <p>Attributo che specifica l'insieme di <strong>valori</strong> che la variabile può assumere e le relative <strong>operazioni</strong>.</p>
+</div>
+<p>Per esempio, in Go una variabile di tipo <code>int</code> può contenere i numeri interi (dentro un certo intervallo), e su di lei si possono fare somme, sottrazioni, confronti. Una variabile di tipo <code>bool</code> può contenere solo <code>true</code> e <code>false</code>, e su di lei si fanno AND, OR, NOT. Il tipo dice due cose insieme: <em>quali valori</em> e <em>quali operazioni</em>.</p>
+<p>Il prof fa il paragone con le classi di Java: una classe descrive dei <strong>dati</strong> (i campi degli oggetti) e delle <strong>operazioni</strong> (i metodi). Chi usa la classe chiama i metodi e non ha bisogno di sapere come sono scritti dentro.</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: tipo di dato astratto</span>
+  <p>Un <strong>tipo di dato astratto</strong> descrive una collezione di dati solo attraverso le operazioni che si possono fare, senza dire come è fatta dentro. È come il telecomando: conosci i pulsanti (le operazioni) e cosa fanno, ma non vedi i circuiti.</p>
+  <p>Il tipo di dato risponde alla domanda <strong>COSA</strong>: cosa contiene, cosa ci posso fare. (Alla lavagna, accanto al titolo, il prof scrive proprio «COSA».)</p>
+</div>
+
+<h3>Un esempio: il tipo Dizionario (lavagna, pagina 3)</h3>
+<div class="box def">
+  <span class="etichetta">Definizione: tipo Dizionario</span>
+  <p>Collezione di <strong>elementi</strong>, ciascuno dei quali è caratterizzato da una <strong>chiave</strong>. Le chiavi appartengono a un dominio <strong>totalmente ordinato</strong>.</p>
+  <p>Operazioni tipiche: <strong>inserimento</strong>, <strong>ricerca</strong>, <strong>cancellazione</strong>.</p>
+</div>
+<p>Esempi di dizionari: la rubrica del telefono (la chiave è il nome, gli altri dati sono il numero e l'indirizzo); l'elenco degli studenti di un corso (la chiave è la matricola); un vocabolario vero (la chiave è la parola, l'altro dato è la definizione). Si cerca per chiave e si ottiene tutto l'elemento.</p>
+<p><strong>«Totalmente ordinato»</strong> vuol dire che due chiavi qualsiasi a e b si possono sempre confrontare: vale sempre esattamente una tra a &lt; b, a = b, a &gt; b. I numeri interi sono totalmente ordinati; anche le parole, con l'ordine alfabetico. È quello che serve per poter tenere gli elementi in ordine e per cercarli con un confronto.</p>
+
+<h3>La struttura dati (lavagna, pagina 4)</h3>
+<div class="box def">
+  <span class="etichetta">Definizione: struttura dati</span>
+  <p>Specifica l'<strong>organizzazione delle informazioni</strong> che permette di realizzare e implementare un determinato tipo di dati.</p>
+</div>
+<p>La struttura dati risponde alla domanda <strong>COME</strong> (alla lavagna: «COME»): come metto gli elementi in memoria perché le operazioni del tipo si possano fare. E il prof sottolinea: <strong>stesso tipo ≠ stessa struttura</strong>. Lo stesso tipo di dato si può realizzare con strutture diverse, e le operazioni costano in modo diverso.</p>
+
+<h3>Il dizionario con due strutture diverse</h3>
+<p>Il prof fa l'esempio di un dizionario con n elementi, tenuto in un array in due modi.</p>
+<p><b>Primo modo: array ordinato per chiave.</b></p>
+<ul>
+  <li><strong>Ricerca: Θ(log n).</strong> Si usa la ricerca binaria: si guarda l'elemento in mezzo; se la chiave cercata è più piccola si continua nella metà sinistra, altrimenti nella metà destra. A ogni confronto la parte rimasta si dimezza, quindi bastano circa log<sub>2</sub> n confronti (per n = 1000, una decina).</li>
+  <li><strong>Inserimento: Θ(n).</strong> Il nuovo elemento va al suo posto, e tutti quelli più grandi devono spostarsi di una casella a destra per fargli spazio (Figura 1). Nel caso peggiore (il nuovo è il più piccolo) si spostano tutti e n.</li>
+</ul>
+<p><b>Secondo modo: array non ordinato.</b></p>
+<ul>
+  <li><strong>Ricerca: Θ(n).</strong> Non c'è un ordine da sfruttare: bisogna guardare gli elementi uno a uno, e nel caso peggiore (la chiave non c'è) tutti.</li>
+  <li><strong>Inserimento: O(1).</strong> Il nuovo elemento si mette nella prima casella libera, in fondo (se c'è posto), senza spostare niente.</li>
+</ul>
+
+<div class="figura">
+<div class="etich-array">Array ordinato: per inserire 18, il 20 e il 25 si spostano a destra</div>
+<div class="array"><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">1</div></div><div class="cella mossa"><div class="f">→</div><div class="v">20</div><div class="i">2</div></div><div class="cella mossa"><div class="f">→</div><div class="v">25</div><div class="i">3</div></div><div class="cella fuori"><div class="f"></div><div class="v"></div><div class="i">4</div></div></div>
+<div class="array"><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">1</div></div><div class="cella trovata"><div class="f">18</div><div class="v">18</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">20</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">4</div></div></div>
+<div class="etich-array">Array non ordinato: 18 va nella prima casella libera, senza spostare niente</div>
+<div class="array"><div class="cella"><div class="f"></div><div class="v">20</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">3</div></div><div class="cella trovata"><div class="f">18</div><div class="v">18</div><div class="i">4</div></div></div>
+<div class="didascalia"><b>Figura 1.</b> Inserire 18 nello stesso dizionario tenuto in due modi. In alto, nell'array ordinato, il 20 e il 25 devono spostarsi di una casella; in basso, nell'array non ordinato, basta scrivere 18 in fondo.</div>
+</div>
+
+<div class="tabella-wrap"><table>
+  <tr><th>dizionario realizzato con…</th><th>ricerca</th><th>inserimento</th></tr>
+  <tr><td>array ordinato per chiave</td><td>Θ(log n)</td><td>Θ(n)</td></tr>
+  <tr><td>array non ordinato</td><td>Θ(n)</td><td>O(1)</td></tr>
+</table></div>
+<p>Nessuna delle due è migliore in tutto: dipende da quali operazioni si fanno più spesso. È per questo che si studiano tante strutture dati diverse.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li><strong>Tipo di dato</strong> (COSA): l'insieme dei valori e le operazioni. Esempio: il Dizionario, con chiavi totalmente ordinate e le operazioni inserimento, ricerca, cancellazione.</li>
+    <li><strong>Struttura dati</strong> (COME): come si organizzano i dati in memoria per realizzare un tipo.</li>
+    <li>Stesso tipo, strutture diverse, costi diversi: array ordinato (ricerca Θ(log n), inserimento Θ(n)) contro array non ordinato (ricerca Θ(n), inserimento O(1)).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="collezioni"><span class="num">2</span>Due modi di tenere una collezione</h2>
+<p class="in-questa"><b>In questa sezione:</b> le strutture indicizzate (gli array) e le strutture collegate (liste, alberi), con i loro pregi e difetti (lavagna, pagine 5–6), e una figura che mostra come stanno davvero in memoria.</p>
+
+<h3>Strutture indicizzate: gli array (pagina 18)</h3>
+<ul>
+  <li>Sono allocate in una <strong>porzione contigua</strong> di memoria: le caselle stanno una dopo l'altra, senza buchi.</li>
+  <li>Si accede a un elemento mediante il suo <strong>indice</strong>, cioè la sua posizione.</li>
+  <li>Il <strong>tempo di accesso è indipendente</strong> dalla posizione del dato: leggere A[0] o A[999] costa uguale. Il computer calcola l'indirizzo con una formula: indirizzo di A[i] = indirizzo di A[0] + i × (grandezza di una casella). Una moltiplicazione e una somma, qualunque sia i.</li>
+</ul>
+<p>Il difetto, scritto in rosso alla lavagna: <strong>la capacità è fissata</strong>. Quando crei l'array decidi quante caselle ha; se poi servono più posti, bisogna creare un array più grande e copiarci tutto. Per questo il prof le chiama <strong>strutture statiche</strong>.</p>
+
+<h3>Strutture collegate (pagina 19)</h3>
+<ul>
+  <li><strong>Non è necessario</strong> allocare l'intera struttura in una porzione contigua di memoria.</li>
+  <li>Gli elementi sono <strong>collegati</strong> tra loro: da un elemento si passa ad altri tramite i collegamenti.</li>
+  <li>Ci sono varie tipologie di collegamento: le <strong>liste</strong> (ogni elemento ha un successivo), gli <strong>alberi</strong> (ogni elemento può averne più d'uno), e altre.</li>
+</ul>
+<p>Si possono aggiungere e togliere elementi uno alla volta, prendendo memoria solo quando serve: il prof le chiama <strong>strutture dinamiche</strong>.</p>
+
+<p>La Figura 2 mostra la differenza in memoria. La memoria è come una lunga fila di caselle numerate: il numero di una casella è il suo <strong>indirizzo</strong>.</p>
+
+<div class="figura">
+<svg viewBox="0 0 580 300" width="580" height="300" style="min-width:470px" role="img" aria-label="In alto un array in quattro caselle consecutive; in basso una lista con i nodi sparsi in memoria, collegati dagli indirizzi" font-family="system-ui, sans-serif">
+  <text x="44" y="22" font-size="13" font-weight="700" class="t-testo" fill="#1f2328">Un array A di 4 elementi: caselle consecutive</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="44" y="32" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="76" y="32" width="32" height="32" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="92" y="53" class="t-testo" fill="#1f2328">10</text>
+    <rect x="108" y="32" width="32" height="32" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="124" y="53" class="t-testo" fill="#1f2328">2</text>
+    <rect x="140" y="32" width="32" height="32" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="156" y="53" class="t-testo" fill="#1f2328">4</text>
+    <rect x="172" y="32" width="32" height="32" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="188" y="53" class="t-testo" fill="#1f2328">7</text>
+    <rect x="204" y="32" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <g font-size="10" class="t-muted" fill="#5b6270"><text x="60" y="78">200</text><text x="92" y="78">201</text><text x="124" y="78">202</text><text x="156" y="78">203</text><text x="188" y="78">204</text><text x="220" y="78">205</text></g>
+    <g font-size="11" class="t-blu" fill="#2f52c4"><text x="92" y="92">A[0]</text><text x="124" y="92">A[1]</text><text x="156" y="92">A[2]</text><text x="188" y="92">A[3]</text></g>
+  </g>
+  <text x="44" y="128" font-size="13" font-weight="700" class="t-testo" fill="#1f2328">Una lista con le stesse chiavi: nodi sparsi, ognuno con l'indirizzo del successivo</text>
+  <g font-size="12" text-anchor="middle">
+    <rect x="44" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="76" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="92" y="235" class="t-testo" fill="#1f2328">10</text>
+    <rect x="108" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="124" y="235" class="t-verde" fill="#17803d">309</text>
+    <rect x="140" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="172" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="204" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="220" y="235" class="t-testo" fill="#1f2328">4</text>
+    <rect x="236" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="252" y="235" class="t-verde" fill="#17803d">313</text>
+    <rect x="268" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="300" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="332" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="348" y="235" class="t-testo" fill="#1f2328">2</text>
+    <rect x="364" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="380" y="235" class="t-verde" fill="#17803d">305</text>
+    <rect x="396" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="428" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <rect x="460" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="476" y="235" class="t-testo" fill="#1f2328">7</text>
+    <rect x="492" y="214" width="32" height="32" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="508" y="235" class="t-verde" fill="#17803d" font-size="10.5">null</text>
+    <rect x="524" y="214" width="32" height="32" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.2"/>
+    <g font-size="10" class="t-muted" fill="#5b6270"><text x="60" y="260">300</text><text x="92" y="260">301</text><text x="124" y="260">302</text><text x="156" y="260">303</text><text x="188" y="260">304</text><text x="220" y="260">305</text><text x="252" y="260">306</text><text x="284" y="260">307</text><text x="316" y="260">308</text><text x="348" y="260">309</text><text x="380" y="260">310</text><text x="412" y="260">311</text><text x="444" y="260">312</text><text x="476" y="260">313</text><text x="508" y="260">314</text><text x="540" y="260">315</text></g>
+  </g>
+  <path d="M124 212 C 130 160, 340 160, 347 210" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M347 212 l-5 -8 l8 0 z" class="t-verde" fill="#17803d"/>
+  <path d="M380 212 C 374 172, 226 172, 220 208" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M220 212 l-4 -8 l8 0 z" class="t-verde" fill="#17803d"/>
+  <path d="M252 212 C 262 184, 466 184, 475 208" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M476 212 l-4 -8 l8 0 z" class="t-verde" fill="#17803d"/>
+  <text x="44" y="158" font-size="13" font-weight="700" class="t-blu" fill="#2f52c4">L = 301</text>
+  <path d="M70 164 C 76 186, 90 190, 92 208" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M92 212 l-4 -8 l8 0 z" class="t-blu" fill="#2f52c4"/>
+  <text x="44" y="288" font-size="11.5" class="t-muted" fill="#5b6270">Ogni nodo occupa due caselle: la chiave e, accanto, l'indirizzo del nodo successivo (il campo pros).</text>
+</svg>
+<div class="didascalia"><b>Figura 2.</b> In alto, l'array 10 2 4 7 occupa le caselle da 200 a 203, una dopo l'altra: A[i] è nella casella 200 + i. In basso, la lista con le stesse chiavi: i nodi sono dove capita (301, 309, 305, 313), e ognuno contiene l'indirizzo del successivo. L contiene l'indirizzo del primo nodo.</div>
+</div>
+<p>Segui la lista della Figura 2 a partire da L: L contiene 301, e nella casella 301 c'è la chiave 10. Accanto, nella casella 302, c'è 309: il nodo successivo è in 309, con la chiave 2. Accanto c'è 305: il successivo ha la chiave 4. Poi 313: la chiave 7, e accanto null, cioè «non c'è un successivo». L'ordine della lista è 10, 2, 4, 7, anche se in memoria i nodi sono in un altro ordine.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li><strong>Strutture indicizzate</strong> (array): memoria contigua, accesso per indice in tempo costante, capacità fissata. Statiche.</li>
+    <li><strong>Strutture collegate</strong> (liste, alberi…): elementi sparsi, collegati tra loro; si passa da uno all'altro seguendo i collegamenti. Dinamiche.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="lista"><span class="num">3</span>La lista concatenata</h2>
+<p class="in-questa"><b>In questa sezione:</b> come è fatto un nodo, cosa sono un riferimento e null, la notazione x.chiave e x.pros (lavagna, pagine 7–9), e un primo esercizio di lettura della lavagna.</p>
+
+<div class="box def">
+  <span class="etichetta">Definizione: lista lineare (lavagna, pagina 7)</span>
+  <p>Insieme ordinato di <strong>nodi</strong> collegati linearmente uno dopo l'altro. Ogni nodo contiene:</p>
+  <ul>
+    <li>un <strong>dato</strong> della collezione (in genere formato da un certo insieme di campi, tra cui uno funge da campo <strong>chiave</strong>);</li>
+    <li>l'informazione per accedere al <strong>nodo successivo</strong>.</li>
+  </ul>
+</div>
+<p>«Ordinato» qui vuol dire solo che c'è un primo, un secondo, un terzo nodo, e così via: <em>non</em> vuol dire che le chiavi siano in ordine crescente. Le liste con le chiavi in ordine crescente si chiamano <strong>liste ordinate</strong>, e le vedrai dalla sezione 6.</p>
+
+<div class="figura">
+<svg viewBox="0 0 520 190" width="520" height="190" role="img" aria-label="Un nodo: lo scomparto pros in alto, sotto la chiave e gli altri campi" font-family="system-ui, sans-serif">
+  <rect x="200" y="20" width="130" height="150" rx="4" class="r-box" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/>
+  <line x1="200" y1="52" x2="330" y2="52" class="l-muted" stroke="#5b6270" stroke-width="1.2"/>
+  <line x1="200" y1="86" x2="330" y2="86" class="l-muted" stroke="#5b6270" stroke-width="1.2"/>
+  <text x="265" y="42" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">pros</text>
+  <text x="265" y="75" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">chiave</text>
+  <text x="265" y="122" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">altri campi</text>
+  <text x="265" y="145" font-size="15" text-anchor="middle" class="t-muted" fill="#5b6270">…</text>
+  <path d="M330 36 L 420 36" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.8"/><path d="M426 36 l-9 -4.5 v9 z" class="t-verde" fill="#17803d"/>
+  <text x="432" y="40" font-size="13" class="t-verde" fill="#17803d">nodo successivo</text>
+  <path d="M190 22 Q182 22 182 30 L182 50" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.5"/>
+  <text x="174" y="34" font-size="13" text-anchor="end" class="t-rosso" fill="#b42318">accesso al</text>
+  <text x="174" y="50" font-size="13" text-anchor="end" class="t-rosso" fill="#b42318">nodo successivo</text>
+  <path d="M190 56 Q182 56 182 66 L182 104 Q182 112 174 112 Q182 112 182 120 L182 158 Q182 168 190 168" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.5"/>
+  <text x="166" y="117" font-size="15" font-weight="700" text-anchor="end" class="t-rosso" fill="#b42318">dato</text>
+</svg>
+<div class="didascalia"><b>Figura 3.</b> Un nodo, come alla lavagna, pagina 7. In alto il campo <code>pros</code> (da «prossimo»), con il riferimento al nodo successivo. Sotto, il dato: la chiave e gli altri campi.</div>
+</div>
+
+<h3>Riferimenti e null (lavagna, pagina 8)</h3>
+<p>Ai nodi si accede <strong>tramite riferimenti</strong>, detti anche <strong>puntatori</strong>.</p>
+<div class="box def">
+  <span class="etichetta">Attrezzo: riferimento (puntatore)</span>
+  <p>Un <strong>riferimento</strong> è un valore che dice <em>dove</em> si trova qualcosa in memoria: in pratica, l'indirizzo della sua prima casella. Nella Figura 2, L vale 301: è un riferimento al primo nodo. E il campo pros del primo nodo vale 309: è un riferimento al secondo.</p>
+  <p>Nei disegni un riferimento si disegna come una <strong>freccia</strong> verso la cosa indicata: l'indirizzo preciso non interessa, interessa a chi punta.</p>
+  <p>Nei linguaggi che conosci: in Go un riferimento a un nodo ha tipo <code>*Nodo</code>; in C ha tipo <code>Nodo *</code>; in Java ogni variabile di tipo classe è un riferimento.</p>
+</div>
+<p>Con una variabile x che è un riferimento a un nodo, la lavagna usa questa notazione:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>si scrive</th><th>vuol dire</th></tr>
+  <tr><td><code>x</code></td><td>il riferimento al nodo (la freccia)</td></tr>
+  <tr><td><code>x.chiave</code></td><td>il campo chiave del nodo indicato da x</td></tr>
+  <tr><td><code>x.pros</code></td><td>il riferimento al nodo successivo (la freccia che parte dal nodo di x)</td></tr>
+  <tr><td><code>null</code></td><td>il riferimento nullo: non indica nessun nodo</td></tr>
+</table></div>
+<p>null si usa in due posti: nel campo pros dell'<strong>ultimo</strong> nodo (dopo di lui non c'è nessuno), e in L quando la lista è <strong>vuota</strong> (non c'è nessun nodo). In Go si chiama <code>nil</code>, in C <code>NULL</code>.</p>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: x.chiave con x = null</span>
+  <p>Se x è null non indica nessun nodo, quindi <code>x.chiave</code> e <code>x.pros</code> non esistono: chiederli è un errore (in Go il programma si ferma con «nil pointer dereference», in C di solito con «Segmentation fault», in Java con NullPointerException). Tutte le procedure delle prossime sezioni controllano <code>p ≠ null</code> prima di leggere p.chiave o p.pros.</p>
+</div>
+
+<h3>La lista della lavagna (pagina 9)</h3>
+<p>Una lista si individua con un riferimento al suo primo nodo, che il prof chiama <strong>L</strong>. Dal primo nodo si arriva a tutti gli altri seguendo i pros.</p>
+<div class="figura">
+<svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="La lista L con le chiavi 10, 2, 4, 7" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 4.</b> La lista della lavagna, pagina 9: L indica il primo nodo (chiave 10); da lì si va al 2, al 4 e al 7, il cui pros è null.</div>
+</div>
+<p>Alla lavagna il prof scrive tre istruzioni e segue dove va x. Provale anche tu sulla Figura 4:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>istruzione</th><th>cosa succede</th><th>dopo l'istruzione</th></tr>
+  <tr><td><code>x ← L.pros</code></td><td>L.pros è il pros del primo nodo (10), che indica il nodo 2</td><td>x indica il nodo con chiave 2</td></tr>
+  <tr><td><code>x ← x.pros</code></td><td>x.pros è il pros del nodo 2, che indica il nodo 4</td><td>x indica il nodo con chiave 4</td></tr>
+  <tr><td><code>y ← x.chiave</code></td><td>si legge la chiave del nodo indicato da x</td><td>y = 4</td></tr>
+</table></div>
+<div class="figura">
+<svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="La stessa lista con x che indica il nodo 4" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="266" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">x</text><path d="M266 33 C266 40 266 48 266 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M266 56 L262.7 48.7 L269.3 48.7 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 5.</b> Dopo le prime due istruzioni x indica il terzo nodo, quello con chiave 4. Quindi y ← x.chiave dà y = 4.</div>
+</div>
+<p>L'istruzione <code>x ← x.pros</code> è il modo di <strong>avanzare di un nodo</strong>: la userai in tutte le procedure delle prossime sezioni.</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: Lista e Nodo nello pseudocodice</span>
+  <p>Le slide spiegano che nello pseudocodice <code>Lista</code> e <code>Nodo</code> sono tutti e due tipi riferimento: in pratica sono lo stesso puntatore a un nodo. Il prof usa due nomi per far capire l'intenzione: <code>Lista</code> quando il riferimento rappresenta tutta la lista (a partire da quel nodo), <code>Nodo</code> quando interessa un nodo solo. <code>ListaOrdinata</code> è una Lista con le chiavi in ordine crescente.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Un <strong>nodo</strong> contiene un dato (chiave e altri campi) e il campo <strong>pros</strong>, il riferimento al nodo successivo.</li>
+    <li>Un <strong>riferimento</strong> (puntatore) è l'indirizzo di un nodo; si disegna come una freccia. <strong>null</strong> non indica nessun nodo.</li>
+    <li>La lista è individuata da <strong>L</strong>, il riferimento al primo nodo. L'ultimo nodo ha pros = null; la lista vuota ha L = null.</li>
+    <li><code>x ← x.pros</code> fa avanzare x di un nodo. Prima di leggere x.chiave o x.pros bisogna essere sicuri che x ≠ null.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="posizione"><span class="num">4</span>Cercare per posizione (Codice 5.1)</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si trova l'i-esimo nodo di una lista (lavagna, pagina 10), riga per riga, e perché costa molto più che in un array.</p>
+
+<p>In un array, per leggere l'elemento in posizione i basta scrivere A[i]: il computer calcola l'indirizzo e ci va direttamente. In una lista non ci sono indici: l'unico modo per arrivare al nodo in posizione i è partire dal primo e seguire i pros, un nodo alla volta. Come contare le persone in una fila tenendo la mano sulla spalla di quella davanti.</p>
+
+<p class="titolo-codice">Lavagna, pagina 10 (Codice 5.1)</p>
+<pre class="pseudo"><b>FUNZIONE</b> elemento(Lista L, intero i) → Nodo
+  <span class="com">// restituisce il riferimento all'i-esimo nodo (contando da 0),</span>
+  <span class="com">// o null se la lista è più corta</span>
+  p ← L
+  <b>WHILE</b> p ≠ null <b>AND</b> i &gt; 0 <b>DO</b>
+    p ← p.pros
+    i ← i − 1
+  <b>RETURN</b> p</pre>
+<p>Riga per riga:</p>
+<ul>
+  <li><code>p ← L</code>: p parte dal primo nodo, che è in posizione 0.</li>
+  <li><code>WHILE p ≠ null AND i &gt; 0</code>: si continua finché ci sono ancora nodi (p ≠ null) e ci sono ancora passi da fare (i &gt; 0). i conta i passi che mancano.</li>
+  <li><code>p ← p.pros</code> e <code>i ← i − 1</code>: un passo avanti, un passo in meno da fare.</li>
+  <li><code>RETURN p</code>: se il ciclo è finito perché i = 0, p è sul nodo cercato. Se è finito perché p = null, la lista aveva meno di i + 1 nodi, e il risultato è null.</li>
+</ul>
+
+<p>Esempio sulla lista della Figura 4 (10, 2, 4, 7), con i = 2:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>momento</th><th>p indica</th><th>i</th><th>condizione del WHILE</th></tr>
+  <tr><td>dopo p ← L</td><td>10</td><td>2</td><td>p ≠ null e 2 &gt; 0: vera</td></tr>
+  <tr><td>dopo il 1° giro</td><td>2</td><td>1</td><td>p ≠ null e 1 &gt; 0: vera</td></tr>
+  <tr><td>dopo il 2° giro</td><td>4</td><td>0</td><td>0 &gt; 0 è falso: si esce</td></tr>
+</table></div>
+<p>Risultato: il nodo con chiave 4, che è in posizione 2 (posizioni 0, 1, 2). Con i = 5, invece, dopo 4 giri p diventa null (il pros del 7) e il ciclo si ferma: il risultato è null, perché la lista ha solo 4 nodi.</p>
+
+<div class="figura">
+<svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="elemento(L, 2) restituisce il nodo 4" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-viola" fill="#f1eafc" stroke="#6d3fc0" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="266" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">p</text><path d="M266 33 C266 40 266 48 266 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M266 56 L262.7 48.7 L269.3 48.7 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 6.</b> elemento(L, 2) alla fine: p indica il nodo in posizione 2, quello con chiave 4 (in viola, il nodo restituito).</div>
+</div>
+
+<h3>Quanto costa</h3>
+<p>Il ciclo fa al massimo i giri, e ogni giro costa una quantità costante di operazioni: il tempo è <strong>O(i)</strong>, e nel caso peggiore (l'ultimo nodo, o una posizione che non c'è) <strong>O(n)</strong>, con n il numero di nodi. Nell'array lo stesso lavoro costa O(1). È il prezzo da pagare per non avere le caselle contigue.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>elemento(L, i): p parte da L e avanza i volte (p ← p.pros, i ← i − 1), fermandosi prima se p diventa null.</li>
+    <li>Restituisce il nodo in posizione i (contando da 0), o null se la lista è più corta.</li>
+    <li>Costo O(i), nel caso peggiore O(n). In un array, O(1).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="chiave"><span class="num">5</span>Cercare per chiave (Codice 5.2)</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si trova il primo nodo con una certa chiave (lavagna, pagina 11), perché l'ordine delle due condizioni nel WHILE è importantissimo, e quanto costa.</p>
+
+<p class="titolo-codice">Lavagna, pagina 11 (Codice 5.2)</p>
+<pre class="pseudo"><b>FUNZIONE</b> trova(Lista L, tipoChiave k) → Nodo
+  <span class="com">// restituisce il riferimento al primo nodo con chiave k, o null se non c'è</span>
+  p ← L
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave ≠ k <b>DO</b>
+    p ← p.pros
+  <b>RETURN</b> p</pre>
+<p><code>tipoChiave</code> è il tipo delle chiavi (nelle figure, numeri interi). L'idea: p guarda i nodi uno alla volta, dal primo, e si ferma sul primo che ha la chiave giusta; se arriva in fondo senza trovarla, diventa null.</p>
+<p>Il ciclo si ferma in due casi:</p>
+<ul>
+  <li><b>p.chiave = k</b>: trovato. Il risultato è p.</li>
+  <li><b>p = null</b>: sono finiti i nodi. Il risultato è null, cioè «non c'è».</li>
+</ul>
+<p>Esempio sulla lista della lavagna, 10, 2, 4, 7, con k = 2: p parte dal 10 (10 ≠ 2, avanti), arriva al 2 (2 = 2, stop). Risultato: il secondo nodo. Con k = 9, invece, p passa per 10, 2, 4, 7 e poi diventa null: risultato null.</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: AND «pigro» (valutazione cortocircuitata)</span>
+  <p>Nello pseudocodice, come in Go, C e Java, la condizione <code>A AND B</code> si valuta da sinistra: prima A; <strong>se A è falsa, B non viene neanche guardata</strong>, perché il risultato è comunque falso. Allo stesso modo, in <code>A OR B</code>, se A è vera B non si guarda.</p>
+  <p>Nel Codice 5.2 questo è fondamentale. Quando p diventa null, la prima condizione <code>p ≠ null</code> è falsa, e <code>p.chiave ≠ k</code> non viene valutata. Se venisse valutata sarebbe un errore: con p = null, p.chiave non esiste (sezione 3).</p>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: l'ordine delle condizioni conta</span>
+  <p>Scrivere <code>WHILE p.chiave ≠ k AND p ≠ null</code> sembra la stessa cosa, ma non lo è. Quando la chiave non c'è, p arriva a null, e il computer valuta <em>per prima</em> p.chiave: errore. Il controllo <code>p ≠ null</code> va sempre <strong>prima</strong> di qualunque uso di p.chiave o p.pros.</p>
+</div>
+
+<h3>Quanto costa</h3>
+<p>Se la chiave è nel primo nodo, un solo confronto. Se è nell'ultimo nodo, o non c'è, si guardano tutti gli n nodi: caso peggiore <strong>O(n)</strong>. È lo stesso costo della ricerca in un array non ordinato.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>trova(L, k): p avanza dal primo nodo finché p ≠ null e p.chiave ≠ k. Restituisce il primo nodo con chiave k, o null.</li>
+    <li>L'AND è pigro: con p = null, p.chiave non viene valutato. Per questo <code>p ≠ null</code> va scritto per primo.</li>
+    <li>Costo O(n) nel caso peggiore.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="ordinata"><span class="num">6</span>Cercare in una lista ordinata (Codice 5.3)</h2>
+<p class="in-questa"><b>In questa sezione:</b> la ricerca in una lista con le chiavi in ordine crescente (lavagna, pagina 12), che può fermarsi prima; perché non si può fare la ricerca binaria; e il primo riquadro interattivo.</p>
+
+<p>Se le chiavi sono in ordine crescente, la ricerca può fermarsi appena trova una chiave <strong>più grande o uguale</strong> a k. Se è uguale, trovato. Se è più grande, k non c'è: se ci fosse, sarebbe prima, e prima non c'era.</p>
+
+<p class="titolo-codice">Lavagna, pagina 12 (Codice 5.3)</p>
+<pre class="pseudo"><b>FUNZIONE</b> trova(ListaOrdinata L, tipoChiave k) → Nodo
+  p ← L
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>
+    p ← p.pros
+  <b>IF</b> p = null <b>OR</b> p.chiave &gt; k <b>THEN</b>
+    <b>RETURN</b> null
+  <b>ELSE RETURN</b> p</pre>
+<p>Dopo il WHILE, p è sul primo nodo con chiave ≥ k, oppure è null se tutte le chiavi sono &lt; k. L'IF distingue i tre casi:</p>
+<ul>
+  <li><b>p = null</b>: tutte le chiavi sono minori di k. Non c'è: null. (Grazie all'OR pigro, p.chiave &gt; k non viene valutato.)</li>
+  <li><b>p.chiave &gt; k</b>: ci siamo fermati su una chiave più grande. Non c'è: null.</li>
+  <li><b>altrimenti</b>: p.chiave non è &lt; k (lo dice il WHILE) e non è &gt; k (lo dice l'IF), quindi è uguale a k: trovato, si restituisce p.</li>
+</ul>
+<div class="box attenzione">
+  <span class="etichetta">La versione cancellata alla lavagna</span>
+  <p>Alla pagina 12, accanto al codice, il prof scrive in arancione un'altra fine, e poi la cancella con una croce:</p>
+<pre class="pseudo"><b>IF</b> p.chiave = k <b>THEN RETURN</b> p      <span class="com">// SBAGLIATA</span>
+<b>ELSE RETURN</b> null</pre>
+  <p>Sembra più semplice, ma ha un errore. Se tutte le chiavi sono minori di k (per esempio k = 30 nella lista 11 15 20 25), il WHILE finisce con p = null. Allora <code>p.chiave</code> vuol dire «la chiave del nodo indicato da p», ma p non indica nessun nodo: è un errore, e in un programma vero il programma si blocca. La versione giusta controlla <em>prima</em> p = null, e grazie all'OR pigro non guarda p.chiave quando p è null.</p>
+</div>
+
+<p>Tre esempi sulla lista della lavagna, 11 15 20 25:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>k</th><th>dove si ferma p</th><th>risultato</th></tr>
+  <tr><td>20</td><td>sul 20 (11 e 15 sono &lt; 20)</td><td>il nodo 20</td></tr>
+  <tr><td>18</td><td>sul 20, che è &gt; 18</td><td>null, dopo aver guardato solo 3 nodi</td></tr>
+  <tr><td>30</td><td>p diventa null (tutte le chiavi &lt; 30)</td><td>null</td></tr>
+</table></div>
+
+<h3>E la ricerca binaria?</h3>
+<p>In un array ordinato la ricerca binaria costa Θ(log n), perché salta subito all'elemento in mezzo. In una lista ordinata non si può: per arrivare al nodo in mezzo bisogna passare da tutti quelli prima, cioè n/2 passi, come nel Codice 5.1. Quindi anche il Codice 5.3, nel caso peggiore, costa <strong>O(n)</strong>. L'ordine aiuta solo a fermarsi prima quando la chiave non c'è.</p>
+
+<p>Nel riquadro seguente puoi eseguire le tre ricerche viste finora, una riga alla volta. La riga del codice evidenziata è quella appena eseguita. Prova per esempio elemento(L, 5) sulla lista 10 2 4 7, e trova(L, 18) sulla lista 11 15 20 25.</p>
+
+<div class="widget" id="w-la">
+  <h4>Il laboratorio delle liste: le ricerche</h4>
+  <div id="la-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>In una lista ordinata ci si ferma sul primo nodo con chiave ≥ k. Poi: null se p = null o p.chiave &gt; k, altrimenti p.</li>
+    <li>Niente ricerca binaria: arrivare a metà lista costa n/2 passi. Caso peggiore O(n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="inserire"><span class="num">7</span>Inserire in una lista ordinata (Codice 5.4)</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si aggiunge un nodo al posto giusto in una lista ordinata (lavagna, pagine 13 e 14): perché servono due riferimenti, p e prec; il codice riga per riga; i casi in testa, in fondo e con la lista vuota; perché la funzione restituisce L.</p>
+
+<h3>L'idea, con l'esempio della lavagna</h3>
+<p>Nella lista 11 15 20 25 vogliamo inserire 19. Il suo posto è tra il 15 e il 20. Servono tre cose:</p>
+<ol>
+  <li>trovare il posto: il nodo <em>prima</em> (15) e il nodo <em>dopo</em> (20);</li>
+  <li>creare un nodo nuovo con la chiave 19, e farlo puntare al 20;</li>
+  <li>cambiare il pros del 15, che adesso punta al 20, perché punti al nodo nuovo.</li>
+</ol>
+<p>Il punto 3 è il motivo per cui serve il nodo <em>prima</em>. In una lista si va solo avanti: arrivati al 20, non c'è modo di tornare indietro al 15. Allora, mentre si scorre la lista, si tengono <strong>due</strong> riferimenti: <strong>p</strong>, sul nodo che si sta guardando, e <strong>prec</strong>, sempre un passo indietro (sul nodo precedente).</p>
+
+<p class="titolo-codice">Lavagna, pagina 14 (Codice 5.4)</p>
+<pre class="pseudo"><b>FUNZIONE</b> inserisci(ListaOrdinata L, elemento d) → ListaOrdinata
+  k ← d.chiave
+  p ← L                      <span class="com">// il nodo che sto guardando</span>
+  prec ← null                <span class="com">// il nodo prima di p</span>
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>
+    prec ← p
+    p ← p.pros
+  r ← riferimento a nuovo nodo
+  r.chiave ← k
+  r.altri campi ← d.altri campi
+  r.pros ← p
+  <b>IF</b> prec = null <b>THEN</b>
+    L ← r
+  <b>ELSE</b>
+    prec.pros ← r
+  <b>RETURN</b> L</pre>
+<div class="box def">
+  <span class="etichetta">Attrezzo: il parametro d</span>
+  <p><code>elemento</code> è il tipo dei dati da mettere nella lista: un dato di tipo elemento contiene la chiave e gli altri campi (come nella Figura 3, senza il pros). Quindi <code>d.chiave</code> è la chiave da inserire e <code>d.altri campi</code> sono i suoi dati. Nelle figure conta solo la chiave.</p>
+</div>
+<p>Riga per riga:</p>
+<ol>
+  <li><code>k ← d.chiave</code>: la chiave da inserire.</li>
+  <li><code>p ← L</code>, <code>prec ← null</code>: p parte dal primo nodo; prima del primo non c'è nessuno, quindi prec è null.</li>
+  <li><b>Il WHILE</b> è come quello del Codice 5.3: p avanza finché trova una chiave ≥ k (o finisce la lista). A ogni passo prec prende il posto di p e p va avanti: prec resta sempre un passo indietro. Alla fine il nuovo nodo va <strong>tra prec e p</strong>.</li>
+  <li><code>r ← riferimento a nuovo nodo</code>: si crea un nodo nuovo (si chiede memoria), e r lo indica. Poi si riempiono chiave e altri campi.</li>
+  <li><code>r.pros ← p</code>: dopo il nuovo nodo viene p.</li>
+  <li><b>L'IF</b>: se prec = null, il nuovo nodo va in testa, e non c'è un nodo prima da modificare: si cambia L. Altrimenti si cambia il pros del nodo prima: <code>prec.pros ← r</code>.</li>
+  <li><code>RETURN L</code>: si restituisce la lista (vedi più avanti in questa sezione, «Perché la funzione restituisce L»).</li>
+</ol>
+
+<p>La Figura 7 mostra tre momenti dell'inserimento di 19, come alle pagine 13 e 14 della lavagna (alla lavagna il nodo nuovo è scritto una volta 18 e una volta 19: il procedimento è lo stesso, perché 18 e 19 vanno tutti e due tra il 15 e il 20).</p>
+<div class="figura">
+<div class="etich-array">(a) Fine del WHILE: prec è sul 15, p sul 20 (20 non è &lt; 19)</div>
+<svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="prec sul 15, p sul 20" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="180" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">prec</text><path d="M180 33 C180 40 180 48 180 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M180 56 L176.7 48.7 L183.3 48.7 z" class="t-blu" fill="#2f52c4"/><text x="266" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">p</text><path d="M266 33 C266 40 266 48 266 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M266 56 L262.7 48.7 L269.3 48.7 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="etich-array">(b) Creato il nodo 19 e fatto r.pros ← p: il 19 punta al 20</div>
+<svg viewBox="0 0 394 244" width="394" height="244" role="img" aria-label="il nuovo nodo 19 punta al 20" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="199" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="199" y1="158" x2="247" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="223" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><circle cx="223" cy="150" r="2.6" class="t-verde" fill="#17803d"/><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M223 150 C261 150 266 134 266 105" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M266 105 L269.3 112.3 L262.7 112.3 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="180" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">prec</text><path d="M180 33 C180 40 180 48 180 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M180 56 L176.7 48.7 L183.3 48.7 z" class="t-blu" fill="#2f52c4"/><text x="266" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">p</text><path d="M266 33 C266 40 266 48 266 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M266 56 L262.7 48.7 L269.3 48.7 z" class="t-blu" fill="#2f52c4"/><text x="223" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M223 212 C223 204 223 196 223 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M223 190 L226.3 197.3 L219.7 197.3 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="etich-array">(c) prec.pros ← r: il 15 punta al 19; il vecchio collegamento dal 15 al 20 non c'è più</div>
+<svg viewBox="0 0 394 244" width="394" height="244" role="img" aria-label="il 15 punta al 19" font-family="system-ui, sans-serif"><path d="M180 66 C200 66 222 66 241 66" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M205.9 72 L211.9 60 M212.9 72 L218.9 60" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="199" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="199" y1="158" x2="247" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="223" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><circle cx="223" cy="150" r="2.6" class="t-verde" fill="#17803d"/><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C212 70 223 102 223 141" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M223 141 L219.7 133.7 L226.3 133.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M223 150 C261 150 266 134 266 105" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M266 105 L269.3 112.3 L262.7 112.3 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="180" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">prec</text><path d="M180 33 C180 40 180 48 180 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M180 56 L176.7 48.7 L183.3 48.7 z" class="t-blu" fill="#2f52c4"/><text x="266" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">p</text><path d="M266 33 C266 40 266 48 266 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M266 56 L262.7 48.7 L269.3 48.7 z" class="t-blu" fill="#2f52c4"/><text x="223" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M223 212 C223 204 223 196 223 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M223 190 L226.3 197.3 L219.7 197.3 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 7.</b> Inserimento di 19 nella lista 11 15 20 25. Alla fine, seguendo i pros da L: 11, 15, 19, 20, 25.</div>
+</div>
+
+<h3>I casi particolari</h3>
+<ul>
+  <li><b>In testa</b> (k più piccolo di tutte le chiavi, per esempio 5): il WHILE non fa neanche un giro, perché già 11 non è &lt; 5. Quindi prec = null e p è il primo nodo. Il nuovo nodo punta al vecchio primo, e <code>L ← r</code>: la lista adesso comincia dal nuovo nodo (Figura 8).</li>
+  <li><b>In fondo</b> (k più grande di tutte, per esempio 30): il WHILE arriva fino a p = null, con prec sull'ultimo nodo. Il nuovo nodo ha pros = null (diventa l'ultimo) e <code>prec.pros ← r</code>.</li>
+  <li><b>Lista vuota</b> (L = null): p = null subito, prec = null. Il nuovo nodo ha pros = null e <code>L ← r</code>: la lista ha un nodo solo.</li>
+</ul>
+<div class="figura">
+<svg viewBox="0 0 394 244" width="394" height="244" role="img" aria-label="inserimento in testa: L indica il nuovo nodo 5" font-family="system-ui, sans-serif"><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M37.3 72 L43.3 60 M44.3 72 L50.3 60" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="48.5" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="48.5" y1="158" x2="96.5" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="72.5" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="72.5" cy="150" r="2.6" class="t-verde" fill="#17803d"/><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M72.5 150 C110.5 150 94 134 94 105" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M94 105 L97.3 112.3 L90.7 112.3 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M10.2 74 C10.2 150 26.5 150 47.5 150" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M47.5 150 L40.2 153.3 L40.2 146.7 z" class="t-blu" fill="#2f52c4"/><text x="94" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">p</text><path d="M94 33 C94 40 94 48 94 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M94 56 L90.7 48.7 L97.3 48.7 z" class="t-blu" fill="#2f52c4"/><text x="72.5" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M72.5 212 C72.5 204 72.5 196 72.5 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M72.5 190 L75.8 197.3 L69.2 197.3 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 8.</b> Inserimento di 5, in testa: prec è null, quindi si cambia L (la freccia blu barrata è il vecchio valore di L). Il nuovo nodo punta all'11.</div>
+</div>
+
+<h3>Perché la funzione restituisce L</h3>
+<p>Nel caso in testa la funzione cambia L. Ma L è un parametro: è una <em>copia</em> della variabile del chiamante (passaggio per valore). Se la funzione non la restituisse, il chiamante avrebbe ancora il vecchio L, che indica l'11: il nodo 5 sarebbe creato, ma nessuno lo potrebbe raggiungere. Per questo si usa così:</p>
+<pre class="pseudo">L ← inserisci(L, d)</pre>
+<p>Le slide indicano anche un'altra strada: una <strong>procedura</strong> che riceve il primo argomento <strong>per riferimento</strong>, cioè l'indirizzo della variabile del chiamante che contiene L. Così la procedura può cambiare direttamente quella variabile. In C si fa con un parametro <code>Lista *</code> (sezione 10).</p>
+
+<h3>Due dettagli</h3>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: l'ordine dei collegamenti</span>
+  <p>Nel Codice 5.4 si fa prima <code>r.pros ← p</code> e poi <code>prec.pros ← r</code>. Qui l'ordine si potrebbe anche invertire, perché il nodo dopo è salvato in p. Ma se qualcuno, senza usare p, scrivesse:</p>
+<pre class="pseudo">prec.pros ← r
+r.pros ← prec.pros       <span class="com">// SBAGLIATO</span></pre>
+  <p>la seconda riga leggerebbe il pros di prec <em>già cambiato</em>, cioè r: il nuovo nodo punterebbe a sé stesso, e il resto della lista (20, 25) andrebbe perso. Regola pratica: <strong>prima si collega il nodo nuovo al resto, poi si collega il resto al nodo nuovo</strong>.</p>
+</div>
+<p><b>Le chiavi uguali.</b> Il WHILE si ferma sulla prima chiave ≥ k. Se nella lista c'è già un nodo con chiave k, ci si ferma lì, e il nuovo nodo va <em>prima</em> di lui. Le slide lo dicono esplicitamente, e aggiungono che «con una semplice modifica si può fare in modo che avvenga dopo»: è l'esercizio 3.1 del foglio 3, risolto nella sezione 13.</p>
+
+<h3>Quanto costa</h3>
+<p>Il WHILE, nel caso peggiore (inserimento in fondo), guarda tutti i nodi: <strong>O(n)</strong>. Il collegamento, invece, sono poche assegnazioni: <strong>O(1)</strong>. Questa è la grande differenza con l'array ordinato della sezione 1: lì, trovato il posto, bisognava spostare tutti gli elementi dopo; qui basta cambiare due riferimenti, e nessun nodo si sposta.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Due riferimenti: <strong>p</strong> (il nodo che sto guardando) e <strong>prec</strong> (un passo indietro). Il WHILE si ferma sulla prima chiave ≥ k: il nuovo nodo va tra prec e p.</li>
+    <li>Nuovo nodo r: r.pros ← p; poi, se prec = null (in testa), L ← r; altrimenti prec.pros ← r.</li>
+    <li>La funzione restituisce L, perché L cambia nel caso in testa: si usa L ← inserisci(L, d).</li>
+    <li>Costo: O(n) per trovare il posto, O(1) per collegare. Con chiavi uguali il nuovo nodo va prima.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="cancellare"><span class="num">8</span>Cancellare da una lista ordinata (Codice 5.5)</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si toglie un nodo (lavagna, pagina 15): si fa saltare, e si libera la sua memoria; il caso particolare del primo nodo; il secondo riquadro interattivo, per inserire e cancellare.</p>
+
+<p>Per togliere il nodo 15 dalla lista 11 15 20 25 basta che il nodo prima (11) punti al nodo dopo (20): il 15 viene <strong>saltato</strong>, e seguendo i pros da L non lo si incontra più. Alla lavagna: <code>prec.pros ← p.pros</code>. Anche qui serve prec, per lo stesso motivo dell'inserimento.</p>
+
+<p class="titolo-codice">Codice 5.5 (slide)</p>
+<pre class="pseudo"><b>FUNZIONE</b> cancella(ListaOrdinata L, tipoChiave k) → ListaOrdinata
+  <span class="com">// cancella il primo nodo con chiave k</span>
+  p ← L
+  prec ← null
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>
+    prec ← p
+    p ← p.pros
+  <b>IF</b> p ≠ null <b>AND</b> p.chiave = k <b>THEN</b>
+    <b>IF</b> prec = null <b>THEN</b>
+      L ← L.pros
+    <b>ELSE</b>
+      prec.pros ← p.pros
+  <b>RETURN</b> L</pre>
+<ul>
+  <li><b>Il WHILE</b> è identico a quello del Codice 5.4: p si ferma sulla prima chiave ≥ k, prec sul nodo prima.</li>
+  <li><code>IF p ≠ null AND p.chiave = k</code>: si cancella solo se p è davvero un nodo con chiave k. Altrimenti k non c'è, e la lista resta com'è.</li>
+  <li><code>prec.pros ← p.pros</code>: il nodo prima salta p (Figura 9).</li>
+  <li><b>Il caso particolare</b> (alla lavagna: «cancellazione all'inizio»): se il nodo da togliere è il primo, prec = null, e non c'è un nodo prima da modificare. Allora si sposta L: <code>L ← L.pros</code>, e la lista comincia dal secondo nodo (Figura 10).</li>
+</ul>
+<div class="figura">
+<svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="cancellazione del 15: l'11 punta al 20" font-family="system-ui, sans-serif"><path d="M94 66 C114 66 136 66 155 66" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M119.9 72 L125.9 60 M126.9 72 L132.9 60" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C106 16 238 16 250 57" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M250 57 L244.8 50.9 L251.1 49.1 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="94" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">prec</text><path d="M94 33 C94 40 94 48 94 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M94 56 L90.7 48.7 L97.3 48.7 z" class="t-blu" fill="#2f52c4"/><text x="180" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">p</text><path d="M180 33 C180 40 180 48 180 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M180 56 L176.7 48.7 L183.3 48.7 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 9.</b> Cancellazione di 15: prec.pros ← p.pros, e l'11 punta direttamente al 20. Il nodo 15 (in rosso) non è più raggiungibile da L.</div>
+</div>
+<div class="figura">
+<svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="cancellazione del primo nodo: L indica il 15" font-family="system-ui, sans-serif"><path d="M16.4 66 C28.4 66 56 66 69 66" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M37.3 72 L43.3 60 M44.3 72 L50.3 60" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">L</text><path d="M16.4 66 C46.4 12 150 12 162 57" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M162 57 L157 50.8 L163.3 49.1 z" class="t-blu" fill="#2f52c4"/><text x="94" y="28" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">p</text><path d="M94 33 C94 40 94 48 94 56" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M94 56 L90.7 48.7 L97.3 48.7 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 10.</b> Cancellazione di 11, il primo nodo: L ← L.pros, e la lista comincia dal 15.</div>
+</div>
+
+<h3>Rilasciare la memoria</h3>
+<p>Il nodo saltato è ancora in memoria, ma nessuno lo può più raggiungere: è spazio sprecato. Accanto a <code>prec.pros ← p.pros</code> il prof scrive: «rilasciare la memoria». Le slide: «implementando la cancellazione è opportuno rilasciare l'area di memoria utilizzata dal nodo cancellato».</p>
+<ul>
+  <li>In <strong>C</strong> lo fa il programmatore, con <code>free(p)</code>, <em>dopo</em> aver collegato prec al nodo successivo (sezione 10).</li>
+  <li>In <strong>Go</strong> e in <strong>Java</strong> lo fa da solo il <em>garbage collector</em>: un meccanismo che ogni tanto trova la memoria che nessuno può più raggiungere e la libera.</li>
+</ul>
+<p>Come la funzione inserisci, anche cancella restituisce L, perché L cambia quando si toglie il primo nodo: si usa <code>L ← cancella(L, k)</code>. Il costo è <strong>O(n)</strong> per la ricerca più <strong>O(1)</strong> per il collegamento.</p>
+
+<p>Nel riquadro seguente puoi inserire e cancellare, una riga alla volta. Quando un'operazione è finita, «Usa il risultato come nuova lista» ti permette di continuare sulla lista cambiata. Prova i casi particolari: inserire 5 e 30, cancellare 11 e 18, inserire 15 quando c'è già un 15.</p>
+
+<div class="widget" id="w-lb">
+  <h4>Il laboratorio delle liste: inserire e cancellare</h4>
+  <div id="lb-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Si trova il nodo con prec e p come nell'inserimento; se p.chiave = k lo si salta: <strong>prec.pros ← p.pros</strong>.</li>
+    <li>Caso particolare, il primo nodo: <strong>L ← L.pros</strong>.</li>
+    <li>Il nodo tolto va liberato: free in C, garbage collector in Go e Java.</li>
+    <li>Costo O(n) per trovare, O(1) per togliere. Si usa L ← cancella(L, k).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="array"><span class="num">9</span>Una lista dentro un array</h2>
+<p class="in-questa"><b>In questa sezione:</b> la lista della lavagna, pagina 16, realizzata senza puntatori: le chiavi in un array, i «riferimenti» in un altro array, come indici. Come si segue, e come si inserisce un nodo.</p>
+
+<p>Un riferimento dice dove si trova il nodo successivo. Se i nodi stanno nelle caselle di un array, per dire «dove» basta l'<strong>indice</strong> della casella. Il prof usa tre array con le stesse posizioni: <code>chiave</code>, <code>pros</code> e gli altri campi. Il nodo che sta nella posizione j ha la chiave in chiave[j], e in pros[j] l'indice della posizione del nodo successivo. Al posto di null si usa <strong>−1</strong>, che non è un indice valido. E L contiene l'indice del primo nodo.</p>
+
+<div class="figura">
+<div class="tabella-wrap"><table class="arr-lista">
+  <tr><th>indice</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+  <tr><th>chiave</th><td>1</td><td>15</td><td>25</td><td>11</td><td>3</td><td>20</td></tr>
+  <tr><th>pros</th><td>7</td><td>5</td><td>−1</td><td>1</td><td>−1</td><td>2</td></tr>
+  <tr><th>altri campi</th><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td><td>…</td></tr>
+</table></div>
+<p class="formula" style="margin-top:6px">L = 3</p>
+<div class="didascalia"><b>Figura 11.</b> La lavagna, pagina 16. Le caselle sono in un ordine qualsiasi; l'ordine della lista lo danno i numeri in pros.</div>
+</div>
+<p>Segui la lista partendo da L = 3:</p>
+<ol>
+  <li>posizione 3: chiave 11; pros[3] = 1, quindi il successivo è in posizione 1;</li>
+  <li>posizione 1: chiave 15; pros[1] = 5;</li>
+  <li>posizione 5: chiave 20; pros[5] = 2;</li>
+  <li>posizione 2: chiave 25; pros[2] = −1: è l'ultimo.</li>
+</ol>
+<p>La lista è <strong>11 → 15 → 20 → 25</strong>, la stessa che il prof ridisegna in rosso con le frecce. Le posizioni 0 e 4 non si incontrano mai partendo da L: contengono dati vecchi, che non fanno parte della lista. (Il loro pros, 7 e −1, non conta.)</p>
+
+<div class="widget" id="w-ar">
+  <h4>Segui la lista nell'array</h4>
+  <div class="controlli"><button class="primario" id="ar-passo">Passo →</button><button id="ar-reset">Ricomincia</button></div>
+  <div class="tabella-wrap" id="ar-tab"></div>
+  <div class="narrazione" id="ar-txt"></div>
+</div>
+
+<h3>Lo pseudocodice, tradotto</h3>
+<p>Tutte le procedure delle sezioni 4–8 funzionano anche qui, cambiando la scrittura:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>con i riferimenti</th><th>con gli array</th></tr>
+  <tr><td><code>p.chiave</code></td><td><code>chiave[p]</code></td></tr>
+  <tr><td><code>p.pros</code></td><td><code>pros[p]</code></td></tr>
+  <tr><td><code>null</code></td><td><code>−1</code></td></tr>
+  <tr><td><code>p ← p.pros</code></td><td><code>p ← pros[p]</code></td></tr>
+</table></div>
+<p>Per esempio, per inserire 18 tra il 15 (posizione 1) e il 20 (posizione 5) si usa una posizione libera, diciamo la 4:</p>
+<ol>
+  <li><code>chiave[4] ← 18</code> (il nuovo nodo);</li>
+  <li><code>pros[4] ← 5</code> (dopo il 18 viene il 20: è <code>r.pros ← p</code>);</li>
+  <li><code>pros[1] ← 4</code> (dopo il 15 viene il 18: è <code>prec.pros ← r</code>).</li>
+</ol>
+<p>Nessun elemento si sposta: cambiano solo due numeri in pros. E per cancellare il 15 basterebbe <code>pros[3] ← pros[1]</code>, cioè far puntare l'11 direttamente al successivo del 15.</p>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: il limite resta</span>
+  <p>Questa realizzazione serve nei linguaggi senza puntatori, o quando si vogliono tenere i nodi tutti insieme. Ma la capacità torna a essere fissata, quella degli array; e bisogna sapere quali posizioni sono libere (per esempio tenendo le posizioni libere in una seconda lista, dentro gli stessi array: questo dettaglio non viene dalla lezione).</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Lista dentro un array: chiave[j] e pros[j]; pros contiene l'indice del successivo, −1 al posto di null; L è l'indice del primo.</li>
+    <li>p.chiave diventa chiave[p], p.pros diventa pros[p]: le procedure restano le stesse.</li>
+    <li>Inserire e cancellare cambiano solo dei pros, senza spostare elementi; ma la capacità è fissata.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="puntatori"><span class="num">10</span>Una lista con i puntatori: C e Go</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'implementazione «vera» delle liste con i puntatori (alla lavagna, pagina 17, c'è solo il titolo; le slide consigliano di studiarla, per esempio in C): i Codici 5.1–5.5 tradotti riga per riga in C e in Go, e la versione con il parametro per riferimento.</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: struct, puntatori e memoria in C e in Go</span>
+  <ul>
+    <li><b>Il nodo</b> è una <code>struct</code> con la chiave e il campo pros, che è un puntatore a un'altra struct dello stesso tipo.</li>
+    <li><b>In C</b> un puntatore a nodo si scrive <code>Nodo *</code>; il nodo indicato da p ha i campi <code>p-&gt;chiave</code> e <code>p-&gt;pros</code> (la freccia <code>-&gt;</code> è il punto dello pseudocodice). null si scrive <code>NULL</code>. Un nodo nuovo si crea con <code>malloc(sizeof(Nodo))</code>, che chiede la memoria e ne restituisce l'indirizzo; si libera con <code>free(p)</code>.</li>
+    <li><b>In Go</b> il puntatore si scrive <code>*Nodo</code>, e i campi si leggono con il punto, <code>p.chiave</code>, come nello pseudocodice. null si scrive <code>nil</code>. Un nodo nuovo si crea con <code>&amp;Nodo{...}</code>, e la memoria la libera il garbage collector.</li>
+  </ul>
+</div>
+
+<p class="titolo-codice">In C (liste.c)</p>
+<pre class="go">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct nodo {
+    int chiave;
+    /* qui andrebbero gli altri campi */
+    struct nodo *pros;
+} Nodo;
+
+typedef Nodo *Lista;    /* una lista è il riferimento al suo primo nodo */
+
+/* Codice 5.1: ricerca in base alla posizione */
+Nodo *elemento(Lista L, int i) {
+    Nodo *p = L;
+    while (p != NULL &amp;&amp; i &gt; 0) {
+        p = p-&gt;pros;
+        i = i - 1;
+    }
+    return p;
+}
+
+/* Codice 5.2: ricerca in base alla chiave */
+Nodo *trova(Lista L, int k) {
+    Nodo *p = L;
+    while (p != NULL &amp;&amp; p-&gt;chiave != k)
+        p = p-&gt;pros;
+    return p;
+}
+
+/* Codice 5.3: ricerca in una lista ordinata */
+Nodo *trovaOrdinata(Lista L, int k) {
+    Nodo *p = L;
+    while (p != NULL &amp;&amp; p-&gt;chiave &lt; k)
+        p = p-&gt;pros;
+    if (p == NULL || p-&gt;chiave &gt; k)
+        return NULL;
+    else
+        return p;
+}
+
+/* Codice 5.4: inserimento in una lista ordinata */
+Lista inserisci(Lista L, int k) {
+    Nodo *p = L;
+    Nodo *prec = NULL;
+    while (p != NULL &amp;&amp; p-&gt;chiave &lt; k) {
+        prec = p;
+        p = p-&gt;pros;
+    }
+    Nodo *r = malloc(sizeof(Nodo));    /* r ← riferimento a nuovo nodo */
+    if (r == NULL) {
+        fprintf(stderr, "memoria esaurita\n");
+        exit(1);
+    }
+    r-&gt;chiave = k;
+    r-&gt;pros = p;
+    if (prec == NULL)
+        L = r;
+    else
+        prec-&gt;pros = r;
+    return L;
+}
+
+/* Codice 5.5: cancellazione da una lista ordinata */
+Lista cancella(Lista L, int k) {
+    Nodo *p = L;
+    Nodo *prec = NULL;
+    while (p != NULL &amp;&amp; p-&gt;chiave &lt; k) {
+        prec = p;
+        p = p-&gt;pros;
+    }
+    if (p != NULL &amp;&amp; p-&gt;chiave == k) {
+        if (prec == NULL)
+            L = L-&gt;pros;
+        else
+            prec-&gt;pros = p-&gt;pros;
+        free(p);                       /* si rilascia la memoria del nodo */
+    }
+    return L;
+}
+
+void stampa(Lista L) {
+    for (Nodo *p = L; p != NULL; p = p-&gt;pros)
+        printf("%d ", p-&gt;chiave);
+    printf("\n");
+}
+
+int main(void) {
+    Lista L = NULL;                    /* lista vuota */
+    L = inserisci(L, 20);
+    L = inserisci(L, 11);
+    L = inserisci(L, 25);
+    L = inserisci(L, 15);
+    stampa(L);                         /* 11 15 20 25 */
+    L = inserisci(L, 19);
+    stampa(L);                         /* 11 15 19 20 25 */
+    L = cancella(L, 15);
+    stampa(L);                         /* 11 19 20 25 */
+    printf("%d\n", elemento(L, 2)-&gt;chiave);                      /* 20 */
+    printf("%s\n", trovaOrdinata(L, 18) == NULL ? "null" : "c'è");  /* null */
+    printf("%s\n", trova(L, 25) == NULL ? "null" : "c'è");          /* c'è */
+    while (L != NULL)                  /* alla fine si libera tutto */
+        L = cancella(L, L-&gt;chiave);
+    return 0;
+}</pre>
+<p>Il programma è stato compilato con <code>gcc -Wall -Wextra -fsanitize=address,undefined</code>, che controlla anche gli errori di memoria: stampa le righe scritte nei commenti, senza errori e senza memoria dimenticata. Nota due cose:</p>
+<ul>
+  <li><code>&amp;&amp;</code> e <code>||</code> in C sono pigri come AND e OR nello pseudocodice: <code>p != NULL &amp;&amp; p-&gt;chiave &lt; k</code> non legge mai p-&gt;chiave quando p è NULL.</li>
+  <li>In <code>cancella</code>, <code>free(p)</code> viene <em>dopo</em> <code>prec-&gt;pros = p-&gt;pros</code>: se si liberasse p prima, p-&gt;pros non si potrebbe più leggere.</li>
+</ul>
+
+<p class="titolo-codice">In Go (liste.go)</p>
+<pre class="go">package main
+
+import "fmt"
+
+type Nodo struct {
+	chiave int
+	// qui andrebbero gli altri campi
+	pros *Nodo
+}
+
+// Codice 5.1: ricerca in base alla posizione
+func elemento(L *Nodo, i int) *Nodo {
+	p := L
+	for p != nil &amp;&amp; i &gt; 0 {
+		p = p.pros
+		i--
+	}
+	return p
+}
+
+// Codice 5.2: ricerca in base alla chiave
+func trova(L *Nodo, k int) *Nodo {
+	p := L
+	for p != nil &amp;&amp; p.chiave != k {
+		p = p.pros
+	}
+	return p
+}
+
+// Codice 5.3: ricerca in una lista ordinata
+func trovaOrdinata(L *Nodo, k int) *Nodo {
+	p := L
+	for p != nil &amp;&amp; p.chiave &lt; k {
+		p = p.pros
+	}
+	if p == nil || p.chiave &gt; k {
+		return nil
+	}
+	return p
+}
+
+// Codice 5.4: inserimento in una lista ordinata
+func inserisci(L *Nodo, k int) *Nodo {
+	p := L
+	var prec *Nodo // nil
+	for p != nil &amp;&amp; p.chiave &lt; k {
+		prec = p
+		p = p.pros
+	}
+	r := &amp;Nodo{chiave: k, pros: p} // nuovo nodo, già con r.pros ← p
+	if prec == nil {
+		L = r
+	} else {
+		prec.pros = r
+	}
+	return L
+}
+
+// Codice 5.5: cancellazione da una lista ordinata
+func cancella(L *Nodo, k int) *Nodo {
+	p := L
+	var prec *Nodo
+	for p != nil &amp;&amp; p.chiave &lt; k {
+		prec = p
+		p = p.pros
+	}
+	if p != nil &amp;&amp; p.chiave == k {
+		if prec == nil {
+			L = L.pros
+		} else {
+			prec.pros = p.pros
+		}
+		// niente free: il nodo non è più raggiungibile e lo libera il garbage collector
+	}
+	return L
+}
+
+func stampa(L *Nodo) {
+	for p := L; p != nil; p = p.pros {
+		fmt.Print(p.chiave, " ")
+	}
+	fmt.Println()
+}
+
+func main() {
+	var L *Nodo // lista vuota
+	for _, k := range []int{20, 11, 25, 15} {
+		L = inserisci(L, k)
+	}
+	stampa(L) // 11 15 20 25
+	L = inserisci(L, 19)
+	stampa(L) // 11 15 19 20 25
+	L = cancella(L, 15)
+	stampa(L)                                // 11 19 20 25
+	fmt.Println(elemento(L, 2).chiave)       // 20
+	fmt.Println(trovaOrdinata(L, 18) == nil) // true
+	fmt.Println(trova(L, 25) != nil)         // true
+}</pre>
+<p>In Go non si può scrivere <code>p.pros</code> se p è nil: il programma si fermerebbe con «nil pointer dereference». Anche qui <code>&amp;&amp;</code> è pigro, quindi i controlli <code>p != nil</code> scritti per primi lo evitano.</p>
+
+<h3>La versione «procedura», con L per riferimento</h3>
+<p>Le slide dicono che inserisci e cancella si possono scrivere come procedure, se si passa «il riferimento alla variabile che contiene il riferimento iniziale alla lista». In C questo vuol dire passare l'<strong>indirizzo</strong> della variabile L del chiamante, di tipo <code>Lista *</code> (un puntatore a un puntatore a nodo):</p>
+<pre class="go">/* Codice 5.4 come procedura: riceve l'indirizzo della variabile L del chiamante */
+void inserisciP(Lista *pL, int k) {
+    Nodo *p = *pL;
+    Nodo *prec = NULL;
+    while (p != NULL &amp;&amp; p-&gt;chiave &lt; k) {
+        prec = p;
+        p = p-&gt;pros;
+    }
+    Nodo *r = malloc(sizeof(Nodo));
+    if (r == NULL) {
+        fprintf(stderr, "memoria esaurita\n");
+        exit(1);
+    }
+    r-&gt;chiave = k;
+    r-&gt;pros = p;
+    if (prec == NULL)
+        *pL = r;          /* cambia proprio la L del chiamante */
+    else
+        prec-&gt;pros = r;
+}
+/* uso: inserisciP(&amp;L, 19);   senza «L = ...» */</pre>
+<p><code>*pL</code> è la variabile L del chiamante: assegnarle r cambia davvero la sua lista. In Go si farebbe allo stesso modo con un parametro di tipo <code>**Nodo</code>.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Il nodo è una struct con chiave e un puntatore pros. Il punto dello pseudocodice è <code>-&gt;</code> in C e <code>.</code> in Go; null è NULL in C e nil in Go.</li>
+    <li>Nuovo nodo: malloc in C, &amp;Nodo{…} in Go. Memoria liberata: free in C (dopo aver ricollegato), garbage collector in Go.</li>
+    <li>Le funzioni restituiscono la lista (L = inserisci(L, k)); in alternativa una procedura con <code>Lista *</code>.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="costi"><span class="num">11</span>Array o lista? I costi a confronto</h2>
+<p class="in-questa"><b>In questa sezione:</b> una tabella con il costo delle operazioni in un array e in una lista, e il caso in cui serve all'esame.</p>
+
+<div class="tabella-wrap"><table>
+  <tr><th>operazione</th><th>array</th><th>lista</th></tr>
+  <tr><td>leggere l'elemento in posizione i</td><td><strong>O(1)</strong></td><td>O(i), fino a O(n) (sezione 4)</td></tr>
+  <tr><td>cercare una chiave, elementi non in ordine</td><td>O(n)</td><td>O(n) (sezione 5)</td></tr>
+  <tr><td>cercare una chiave, elementi in ordine</td><td><strong>O(log n)</strong> (ricerca binaria)</td><td>O(n) (sezione 6)</td></tr>
+  <tr><td>inserire in testa</td><td>Θ(n): bisogna spostare tutti</td><td><strong>O(1)</strong>: nuovo nodo e L ← r</td></tr>
+  <tr><td>inserire al posto giusto, elementi in ordine</td><td>O(n): ricerca e poi spostamenti</td><td>O(n): ricerca e poi O(1) per collegare</td></tr>
+  <tr><td>togliere un elemento di cui si conosce il precedente</td><td>Θ(n) nel caso peggiore: spostamenti</td><td><strong>O(1)</strong>: prec.pros ← p.pros</td></tr>
+  <tr><td>quanti elementi può contenere</td><td>fissato alla creazione</td><td>cresce un nodo alla volta</td></tr>
+  <tr><td>memoria in più per elemento</td><td>nessuna</td><td>un riferimento (pros)</td></tr>
+</table></div>
+<p>In breve: l'array vince quando serve <strong>saltare</strong> a una posizione (indice, ricerca binaria); la lista vince quando serve <strong>aggiungere e togliere</strong> elementi senza spostare gli altri, e quando non si sa in anticipo quanti saranno.</p>
+
+<div class="box esame">
+  <span class="etichetta">Per l'esame: inserire in testa costa O(1)</span>
+  <p>Nei problemi sui grafi capita di dover raccogliere dei risultati in un elenco (per esempio tutte le coppie di vertici con una certa proprietà) e poi dire quanto costa. Nella soluzione di un tema d'esame (31 gennaio 2025) il prof scrive che se le posizioni trovate si inseriscono «in una struttura dove il costo dell'inserimento è O(1) (esempio a inizio lista oppure in un array, riempito a partire dalla posizione 0, ricordando man mano l'indice della prima posizione libera)», il costo di quella parte non aumenta; «se si utilizzano strutture con inserimenti più costosi, il costo totale sarà più elevato». Quindi: per raccogliere elementi senza un ordine, si inserisce <strong>in testa</strong> alla lista, non in fondo e non in ordine.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Array: accesso per posizione O(1), ricerca binaria O(log n), ma inserimenti e cancellazioni spostano elementi (Θ(n)) e la capacità è fissata.</li>
+    <li>Lista: accesso per posizione O(n), niente ricerca binaria, ma inserire in testa o dopo un nodo noto costa O(1), e cresce quanto serve.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="riassunto"><span class="num">12</span>Riassunto e cosa serve per l'esame</h2>
+<p class="in-questa"><b>In questa sezione:</b> le liste in pochi punti, cosa può chiederti il prof e gli errori da evitare.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ol>
+    <li><strong>Tipo di dato</strong> = valori + operazioni (COSA). <strong>Struttura dati</strong> = organizzazione in memoria (COME). Stesso tipo, strutture diverse, costi diversi (esempio: il Dizionario con l'array ordinato o non ordinato).</li>
+    <li><strong>Strutture indicizzate</strong> (array: contigue, accesso O(1), capacità fissata) e <strong>collegate</strong> (liste, alberi: elementi sparsi collegati da riferimenti, dinamiche).</li>
+    <li><strong>Nodo</strong> = dato (chiave e altri campi) + pros. L = riferimento al primo nodo; null alla fine e nella lista vuota.</li>
+    <li><strong>Codice 5.1</strong> elemento(L, i): avanza i volte; O(i). <strong>Codice 5.2</strong> trova(L, k): avanza finché p ≠ null AND p.chiave ≠ k; O(n). <strong>Codice 5.3</strong>: in una lista ordinata ci si ferma alla prima chiave ≥ k; O(n), niente ricerca binaria.</li>
+    <li><strong>Codice 5.4</strong> inserisci: p e prec; il nuovo nodo va tra prec e p; r.pros ← p, poi L ← r se prec = null, altrimenti prec.pros ← r. Con chiavi uguali va prima.</li>
+    <li><strong>Codice 5.5</strong> cancella: stesso WHILE; se p.chiave = k, L ← L.pros (primo nodo) oppure prec.pros ← p.pros; poi si libera la memoria.</li>
+    <li>inserisci e cancella <strong>restituiscono L</strong>, perché L può cambiare; oppure procedure con L per riferimento.</li>
+    <li><strong>Lista in un array</strong>: chiave[j], pros[j] con indici, −1 per null.</li>
+    <li>Il controllo <strong>p ≠ null va prima</strong> di p.chiave: l'AND è pigro.</li>
+  </ol>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Cosa serve per l'esame</span>
+  <ul>
+    <li><strong>Scritto:</strong> nei temi d'esame dal 2024 al 2026 non c'è un esercizio dedicato alle liste, ma le liste compaiono dentro i problemi sui grafi (liste di adiacenza, elenchi di risultati) e bisogna sapere quanto costano le operazioni: per esempio l'inserimento in testa O(1) (sezione 11). E bisogna saper scrivere pseudocodice che scorre una lista con p ← p.pros senza dimenticare p ≠ null.</li>
+    <li><strong>Orale:</strong> tipo di dato e struttura dati con un esempio; strutture indicizzate e collegate; i Codici 5.1–5.5 scritti e spiegati con il disegno, compresi i casi particolari (lista vuota, in testa, in fondo, chiave assente); perché inserisci e cancella restituiscono L; la lista realizzata con gli array; i costi a confronto con gli array.</li>
+  </ul>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Errori tipici</span>
+  <ul>
+    <li>Scrivere <code>p.chiave ≠ k AND p ≠ null</code>, con il controllo su null per secondo.</li>
+    <li>Dimenticare il caso in testa (prec = null) nell'inserimento o nella cancellazione.</li>
+    <li>Cambiare prec.pros prima di aver salvato il nodo successivo, perdendo il resto della lista.</li>
+    <li>Chiamare inserisci(L, d) senza scrivere L ← davanti: se il nodo va in testa, si perde.</li>
+    <li>Dire che in una lista ordinata si può fare la ricerca binaria.</li>
+    <li>In C, liberare il nodo con free prima di aver letto il suo pros.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="esercizi"><span class="num">13</span>Esercizi risolti (anche il foglio 3)</h2>
+<p class="in-questa"><b>In questa sezione:</b> quattro esercizi brevi per controllare di aver capito, poi i sei esercizi del foglio 3 («Liste lineari») con le soluzioni in pseudocodice. Prova a farli da solo prima di aprire la soluzione. Per i primi puoi usare i due riquadri «Il laboratorio delle liste».</p>
+
+<details class="esercizio">
+  <summary>1. Sulla lista 10 2 4 7, cosa restituiscono elemento(L, 3), elemento(L, 4) e elemento(L, 0)?</summary>
+  <div class="soluzione">
+    <ul>
+      <li>elemento(L, 3): tre passi da 10: 2, 4, 7. Il nodo <strong>7</strong>.</li>
+      <li>elemento(L, 4): quattro passi; al quarto p diventa null (il pros del 7). Risultato <strong>null</strong>.</li>
+      <li>elemento(L, 0): il WHILE non fa giri (i &gt; 0 è falso). Risultato il primo nodo, <strong>10</strong>.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. Nella lista ordinata 11 15 20 25, quanti nodi guarda trova(L, k) (Codice 5.3) per k = 11, 16, 25, 40?</summary>
+  <div class="soluzione">
+    <ul>
+      <li>k = 11: si ferma subito sull'11 (non è &lt; 11). <strong>1 nodo</strong>, trovato.</li>
+      <li>k = 16: 11 e 15 sono &lt; 16, si ferma sul 20. <strong>3 nodi</strong>, null.</li>
+      <li>k = 25: 11, 15, 20 sono &lt; 25, si ferma sul 25. <strong>4 nodi</strong>, trovato.</li>
+      <li>k = 40: tutti e 4 sono &lt; 40, p diventa null. <strong>4 nodi</strong>, null.</li>
+    </ul>
+    <p>Con il Codice 5.2 (che non sfrutta l'ordine) k = 16 avrebbe guardato tutti e 4 i nodi.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. Nella lista dell'array della Figura 11, cosa bisogna cambiare per cancellare il 20? E per inserire 5 in testa, usando la posizione 0?</summary>
+  <div class="soluzione">
+    <p><b>Cancellare 20</b> (posizione 5; il nodo prima è il 15, in posizione 1): <code>pros[1] ← pros[5]</code>, cioè pros[1] = 2. Ora dopo il 15 viene il 25.</p>
+    <p><b>Inserire 5 in testa</b> nella posizione 0: <code>chiave[0] ← 5</code>, <code>pros[0] ← L</code> (cioè 3, il vecchio primo), <code>L ← 0</code>. È il caso «prec = null» del Codice 5.4.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. Scrivi una funzione lunghezza(Lista L) → intero che conta i nodi. Quanto costa?</summary>
+  <div class="soluzione">
+<pre class="pseudo"><b>FUNZIONE</b> lunghezza(Lista L) → intero
+  n ← 0
+  p ← L
+  <b>WHILE</b> p ≠ null <b>DO</b>
+    n ← n + 1
+    p ← p.pros
+  <b>RETURN</b> n</pre>
+    <p>Visita tutti i nodi una volta: Θ(n). In un array la lunghezza si conosce senza contare; in una lista, se serve spesso, conviene tenerla in una variabile e aggiornarla a ogni inserimento e cancellazione.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Foglio 3, esercizio 3.1. Nel Codice 5.4, se ci sono già nodi con la stessa chiave, il nuovo nodo va prima di loro. Come si modifica perché vada dopo?</summary>
+  <div class="soluzione">
+    <p>Basta cambiare il confronto nel WHILE da &lt; a ≤:</p>
+<pre class="pseudo">  <b>WHILE</b> p ≠ null <b>AND</b> <span class="riga-hl">p.chiave ≤ k</span> <b>DO</b>
+    prec ← p
+    p ← p.pros</pre>
+    <p>Così il ciclo salta anche i nodi con chiave uguale a k, e si ferma sul primo con chiave <em>strettamente</em> maggiore (o a null). prec è l'ultimo nodo con chiave ≤ k, che può essere l'ultimo degli uguali: il nuovo nodo va subito dopo di lui. Il resto del codice non cambia.</p>
+    <p>Esempio: inserendo 15 in 11 15 20, con &lt; il nuovo 15 va prima del vecchio; con ≤ il ciclo supera il vecchio 15 e si ferma sul 20, e il nuovo 15 va tra il vecchio 15 e il 20. Inserire dopo gli uguali fa sì che gli elementi con la stessa chiave restino nell'ordine in cui sono arrivati (come un ordinamento stabile).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Foglio 3, esercizio 3.2. Scrivi due varianti del Codice 5.5: una che cancella tutti i nodi con chiave k, una che cancella l'ultimo nodo con chiave k.</summary>
+  <div class="soluzione">
+    <p><b>Cancellare tutti i nodi con chiave k.</b> In una lista ordinata i nodi con chiave k sono tutti di fila. Si trova il primo come nel Codice 5.5; poi si fa avanzare p oltre tutti quelli con chiave k (liberandoli); infine si collega prec al primo nodo dopo di loro.</p>
+<pre class="pseudo"><b>FUNZIONE</b> cancellaTutti(ListaOrdinata L, tipoChiave k) → ListaOrdinata
+  p ← L
+  prec ← null
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>
+    prec ← p
+    p ← p.pros
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave = k <b>DO</b>     <span class="com">// salto tutti i nodi con chiave k</span>
+    q ← p
+    p ← p.pros
+    rilascia la memoria di q
+  <b>IF</b> prec = null <b>THEN</b>                       <span class="com">// p è il primo nodo dopo quelli tolti</span>
+    L ← p
+  <b>ELSE</b>
+    prec.pros ← p
+  <b>RETURN</b> L</pre>
+    <p>Se k non c'è, il secondo WHILE non fa giri, p è ancora il successivo di prec, e le ultime assegnazioni non cambiano niente.</p>
+    <p><b>Cancellare l'ultimo nodo con chiave k.</b> Si arriva al primo nodo con chiave ≥ k; poi si avanza finché il nodo <em>successivo</em> ha ancora chiave k. Così p si ferma sull'ultimo dei nodi con chiave k, con prec subito prima.</p>
+<pre class="pseudo"><b>FUNZIONE</b> cancellaUltimo(ListaOrdinata L, tipoChiave k) → ListaOrdinata
+  p ← L
+  prec ← null
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>
+    prec ← p
+    p ← p.pros
+  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave = k <b>AND</b> p.pros ≠ null <b>AND</b> p.pros.chiave = k <b>DO</b>
+    prec ← p
+    p ← p.pros
+  <b>IF</b> p ≠ null <b>AND</b> p.chiave = k <b>THEN</b>         <span class="com">// come nel Codice 5.5</span>
+    <b>IF</b> prec = null <b>THEN</b>
+      L ← L.pros
+    <b>ELSE</b>
+      prec.pros ← p.pros
+  <b>RETURN</b> L</pre>
+    <p>Nel secondo WHILE l'AND pigro è essenziale: <code>p.pros.chiave</code> si legge solo dopo aver controllato <code>p.pros ≠ null</code>. Entrambe le funzioni costano O(n). (Le due soluzioni sono state provate su migliaia di liste generate a caso.)</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Foglio 3, esercizio 3.3. selectionSort, insertionSort e bubbleSort si possono adattare a ordinare una lista in loco, con gli stessi confronti e lo stesso tempo che sugli array?</summary>
+  <div class="soluzione">
+    <p>L'idea comune: invece di scambiare caselle si scambiano i <strong>dati</strong> di due nodi (chiave e altri campi), oppure si spostano i nodi cambiando i pros. E gli indici diventano riferimenti a nodi.</p>
+    <p><b>selectionSort: sì.</b> Va solo in avanti: per ogni nodo k, cerca il minimo tra k e la fine, poi lo scambia con k. Stessi confronti dell'array, n(n − 1)/2, e tempo Θ(n²).</p>
+<pre class="pseudo"><b>PROCEDURA</b> selectionSortLista(Lista L)
+  k ← L
+  <b>WHILE</b> k ≠ null <b>AND</b> k.pros ≠ null <b>DO</b>        <span class="com">// come «for k ← 0 to n − 2»</span>
+    m ← k                                     <span class="com">// il nodo con la chiave minima finora</span>
+    j ← k.pros
+    <b>WHILE</b> j ≠ null <b>DO</b>                         <span class="com">// come «for j ← k + 1 to n − 1»</span>
+      <b>IF</b> j.chiave &lt; m.chiave <b>THEN</b> m ← j
+      j ← j.pros
+    scambia i dati dei nodi m e k
+    k ← k.pros</pre>
+    <p><b>bubbleSort: sì.</b> Confronta sempre un nodo con il successivo, quindi va solo in avanti. La versione migliorata (Codice 2.4) si ferma prima della parte già sistemata: qui la parte sistemata comincia da un nodo, che chiamiamo <code>fine</code>.</p>
+<pre class="pseudo"><b>PROCEDURA</b> bubbleSortLista(Lista L)
+  <b>IF</b> L = null <b>THEN RETURN</b>
+  fine ← null                         <span class="com">// i nodi da fine in poi sono già al loro posto</span>
+  <b>DO</b>
+    scambiato ← false
+    p ← L
+    <b>WHILE</b> p.pros ≠ fine <b>DO</b>             <span class="com">// confronta p con il successivo</span>
+      <b>IF</b> p.pros.chiave &lt; p.chiave <b>THEN</b>
+        scambia i dati dei nodi p e p.pros
+        scambiato ← true
+      p ← p.pros
+    fine ← p                          <span class="com">// l'ultimo nodo guardato è al suo posto</span>
+  <b>WHILE</b> scambiato <b>AND</b> L.pros ≠ fine</pre>
+    <p>La condizione <code>L.pros ≠ fine</code> corrisponde a «i &lt; n» del Codice 2.4: prima di fine devono restare almeno due nodi. I confronti sono esattamente quelli della versione con l'array.</p>
+    <p><b>insertionSort: non in modo naturale.</b> Nell'array, l'elemento x = A[k] viene confrontato con A[k − 1], A[k − 2], … cioè si va <em>all'indietro</em>, e ci si ferma al primo elemento ≤ x. In una lista si va solo avanti: il nodo prima non si raggiunge. Se si cerca il posto partendo dalla testa, in avanti, l'algoritmo è corretto ma i confronti cambiano: su un array già ordinato l'insertionSort normale fa n − 1 confronti, quello «dalla testa» ne fa n(n − 1)/2 (con n = 8: 7 contro 28); su un array decrescente è il contrario. Quindi non è lo stesso algoritmo dal punto di vista dei costi.</p>
+    <p class="piccolo">Un trucco (non viene dalla lezione): si costruisce la parte ordinata in una lista a parte, in ordine <em>decrescente</em>, staccando i nodi dalla lista di partenza. Scorrerla dalla testa vuol dire andare dal più grande al più piccolo, proprio come l'insertionSort va all'indietro: i confronti tornano identici. Alla fine si inverte la lista in Θ(n), senza confronti.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Foglio 3, esercizio 3.4. Adatta quickSort a una lista, usando liste ausiliarie in cui spostare temporaneamente i nodi (senza creare nodi nuovi).</summary>
+  <div class="soluzione">
+    <p>Idea: il perno è il primo nodo. Si scorrono gli altri nodi e si <em>spostano</em> in due liste ausiliarie, «minori» (chiave ≤ perno) e «maggiori» (chiave &gt; perno), inserendoli in testa (O(1) ciascuno). Si ordinano le due liste ricorsivamente e si concatenano: minori, perno, maggiori.</p>
+<pre class="pseudo"><b>FUNZIONE</b> quickSortLista(Lista L) → Lista
+  <b>IF</b> L = null <b>OR</b> L.pros = null <b>THEN RETURN</b> L        <span class="com">// 0 o 1 nodi</span>
+  perno ← L
+  p ← L.pros
+  minori ← null
+  maggiori ← null
+  <b>WHILE</b> p ≠ null <b>DO</b>                     <span class="com">// la partizione: n − 1 confronti</span>
+    q ← p.pros                            <span class="com">// ricordo il resto prima di spostare p</span>
+    <b>IF</b> p.chiave ≤ perno.chiave <b>THEN</b>
+      p.pros ← minori
+      minori ← p                          <span class="com">// p in testa a minori</span>
+    <b>ELSE</b>
+      p.pros ← maggiori
+      maggiori ← p                        <span class="com">// p in testa a maggiori</span>
+    p ← q
+  minori ← quickSortLista(minori)
+  maggiori ← quickSortLista(maggiori)
+  perno.pros ← maggiori                   <span class="com">// perno, poi i maggiori</span>
+  <b>IF</b> minori = null <b>THEN RETURN</b> perno
+  u ← minori                              <span class="com">// cerco l'ultimo dei minori</span>
+  <b>WHILE</b> u.pros ≠ null <b>DO</b> u ← u.pros
+  u.pros ← perno
+  <b>RETURN</b> minori</pre>
+    <p>I puntatori ausiliari sono pochi (perno, p, q, minori, maggiori, u) e non si crea nessun nodo. La partizione fa n − 1 confronti, come quella dell'array; la ricerca dell'ultimo dei minori costa al massimo quanto la partizione stessa, quindi non cambia l'ordine di grandezza: caso peggiore Θ(n²) (per esempio lista già ordinata), caso medio Θ(n log n). Inserendo in testa, l'ordine dei nodi uguali si inverte: come quello con l'array, non è stabile.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Foglio 3, esercizio 3.5. Scrivi il merge di due liste ordinate, spostando i nodi (non copiandoli) in una nuova lista ordinata.</summary>
+  <div class="soluzione">
+    <p>Si tiene un riferimento alla testa della nuova lista e uno al suo ultimo nodo (coda), così ogni nodo si aggiunge in fondo in O(1). A ogni passo si stacca il primo nodo della lista con la chiave più piccola.</p>
+<pre class="pseudo"><b>FUNZIONE</b> merge(Lista A, Lista B) → Lista
+  testa ← null
+  coda ← null
+  <b>WHILE</b> A ≠ null <b>AND</b> B ≠ null <b>DO</b>
+    <b>IF</b> A.chiave ≤ B.chiave <b>THEN</b>          <span class="com">// ≤: a pari chiave prima quello di A (stabile)</span>
+      x ← A
+      A ← A.pros
+    <b>ELSE</b>
+      x ← B
+      B ← B.pros
+    <b>IF</b> coda = null <b>THEN</b> testa ← x <b>ELSE</b> coda.pros ← x    <span class="com">// x in fondo</span>
+    coda ← x
+  <b>IF</b> A ≠ null <b>THEN</b> resto ← A <b>ELSE</b> resto ← B     <span class="com">// una delle due è finita</span>
+  <b>IF</b> coda = null <b>THEN</b> testa ← resto <b>ELSE</b> coda.pros ← resto
+  <b>RETURN</b> testa</pre>
+    <p>Il resto della lista non finita si attacca in un colpo solo, senza scorrerlo. Confronti: al massimo (lunghezza di A) + (lunghezza di B) − 1, come il merge con gli array, e nessuna memoria in più.</p>
+    <p>La nota dell'esercizio chiede che alla fine le due liste date siano vuote. Dentro la funzione A e B diventano null o vengono attaccate, ma sono copie: le variabili del chiamante indicano ancora i vecchi primi nodi. Per svuotarle davvero il chiamante deve assegnare null alle sue variabili dopo la chiamata, oppure si scrive una procedura che riceve A e B per riferimento (in C, <code>Lista *pA, Lista *pB</code>) e alla fine fa <code>*pA = NULL; *pB = NULL;</code>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Foglio 3, esercizio 3.6. Adatta mergeSort a una lista. Riesci a evitare l'array di appoggio?</summary>
+  <div class="soluzione">
+    <p>Sì. Con una lista il merge dell'esercizio 3.5 sposta i nodi cambiando i pros: non serve nessuna memoria in più. Resta solo da dividere la lista in due metà.</p>
+<pre class="pseudo"><b>FUNZIONE</b> mergeSortLista(Lista L) → Lista
+  <b>IF</b> L = null <b>OR</b> L.pros = null <b>THEN RETURN</b> L     <span class="com">// 0 o 1 nodi</span>
+  n ← lunghezza(L)                               <span class="com">// esercizio 4</span>
+  p ← L
+  <b>FOR</b> j ← 1 <b>TO</b> ⌊n/2⌋ − 1 <b>DO</b> p ← p.pros         <span class="com">// p è l'ultimo nodo della prima metà</span>
+  B ← p.pros                                     <span class="com">// la seconda metà comincia qui</span>
+  p.pros ← null                                  <span class="com">// taglio: L è la prima metà</span>
+  <b>RETURN</b> merge(mergeSortLista(L), mergeSortLista(B))</pre>
+    <p>La prima metà ha ⌊n/2⌋ nodi, come la parte sinistra nel mergeSort con gli array, e i confronti sono esattamente gli stessi (provato su migliaia di liste a caso). Contare e tagliare costa Θ(n) per chiamata, come il merge: il tempo resta Θ(n log n). Lo spazio in più è solo la pila della ricorsione, Θ(log n): niente array di appoggio da n caselle.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 14 -->
+<h2 id="approfondimenti"><span class="num">14</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> un trucco che non viene dalla lezione e non serve per l'esame. Si apre con un clic.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: il nodo sentinella, per non avere più il caso «in testa»</summary>
+  <div class="soluzione">
+    <p>Nei Codici 5.4 e 5.5 c'è sempre un IF per il caso prec = null, perché il primo nodo non ha un nodo prima. Un trucco comune è mettere all'inizio della lista un nodo finto, la <strong>sentinella</strong>, che non contiene dati: L indica sempre la sentinella, e i nodi veri cominciano da L.pros.</p>
+    <p>Così ogni nodo vero ha un nodo prima (al primo fa da prec la sentinella), e l'inserimento diventa:</p>
+<pre class="pseudo">prec ← L                          <span class="com">// la sentinella</span>
+p ← L.pros
+<b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>
+  prec ← p
+  p ← p.pros
+r ← riferimento a nuovo nodo
+r.chiave ← k
+r.pros ← p
+prec.pros ← r                     <span class="com">// nessun caso particolare</span></pre>
+    <p>E L non cambia mai, quindi non serve restituirlo. Il prezzo è un nodo in più, sempre presente, anche nella lista vuota.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="09-quicksort-spazio.html">← Pacco 9: lo spazio di quickSort</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="11-pile-code.html">Pacco 11: pile e code →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// Disegno di nodi collegati, come alla lavagna: ogni nodo ha uno scomparto piccolo in alto (pros)
+// e uno grande in basso (la chiave, o il dato). Le frecce verdi sono i campi pros, quelle blu le variabili.
+// stato = {
+//   slots: [id, ...]                         nodi sulla riga, da sinistra a destra
+//   nodi: { id: { k: "11", pros: id|null } }
+//   gall: [ { id, tra: [idPrima|null, idDopo|null] } ]   nodi «galleggianti», disegnati sotto la riga
+//   vars: [ { nome, a: id|null, lato: "sx"|"sx2"|"sopra"|"sotto" } ]
+//   evid: { id: "attivo"|"nuovo"|"via"|"trovato" }
+//   tagli: [ { da: id|"var:nome", a: id } ]   collegamenti vecchi, disegnati barrati in rosso
+// }
+var LW = 48, LT = 16, LH = 46, LP = 86, LX0 = 70, LY0 = 58, LGY = 84;
+function svgMem(st, opz) {
+  opz = opz || {};
+  var pos = {}, s = [], k, nGall = (st.gall || []).length;
+  var haSotto = (st.vars || []).some(function (v) { return v.lato === "sx2" || v.lato === "sotto"; });
+  st.slots.forEach(function (id, j) { pos[id] = { x: LX0 + j * LP, y: LY0, riga: true, j: j }; });
+  var ultimoX = st.slots.length ? LX0 + (st.slots.length - 1) * LP : LX0 - LP;
+  (st.gall || []).forEach(function (g) {
+    var xb = g.tra[0] !== null && pos[g.tra[0]] ? pos[g.tra[0]].x : LX0 - LP * 0.5;
+    var xa = g.tra[1] !== null && pos[g.tra[1]] ? pos[g.tra[1]].x : ultimoX + LP;
+    var x = Math.max(34, (xb + xa) / 2);
+    pos[g.id] = { x: x, y: LY0 + LGY, riga: false };
+  });
+  var maxX = 0;
+  for (k in pos) maxX = Math.max(maxX, pos[k].x + LW);
+  if (!st.slots.length) maxX = Math.max(maxX, LX0 + 60);
+  var W = Math.max(opz.minW || 0, maxX + 18);
+  var galVar = (st.vars || []).some(function (v) { return (v.lato === "sopra" || v.lato === "sotto") && (st.gall || []).some(function (g) { return g.id === v.a; }); });
+  var H = LY0 + LH + (nGall ? LGY : 0) + (haSotto || galVar ? 44 : 0) + 12;
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "Una lista concatenata") + '" font-family="system-ui, sans-serif">');
+
+  function testa(x2, y2, x1, y1, cls, col) {
+    var a = Math.atan2(y2 - y1, x2 - x1), L = 8, b = 0.42;
+    var p1x = x2 - L * Math.cos(a - b), p1y = y2 - L * Math.sin(a - b), p2x = x2 - L * Math.cos(a + b), p2y = y2 - L * Math.sin(a + b);
+    return '<path d="M' + r1(x2) + ' ' + r1(y2) + ' L' + r1(p1x) + ' ' + r1(p1y) + ' L' + r1(p2x) + ' ' + r1(p2y) + ' z" class="' + cls + '" fill="' + col + '"/>';
+  }
+  function r1(v) { return Math.round(v * 10) / 10; }
+  // curva da (x1,y1) a (x2,y2) con punti di controllo c1, c2; tipo = "link" | "var" | "taglio"
+  function curva(x1, y1, c1x, c1y, c2x, c2y, x2, y2, tipo) {
+    var stile = tipo === "var" ? ['l-blu', '#2f52c4', 't-blu'] : tipo === "taglio" ? ['l-rosso', '#b42318', 't-rosso'] : ['l-verde', '#17803d', 't-verde'];
+    var d = 'M' + r1(x1) + ' ' + r1(y1) + ' C' + r1(c1x) + ' ' + r1(c1y) + ' ' + r1(c2x) + ' ' + r1(c2y) + ' ' + r1(x2) + ' ' + r1(y2);
+    var out = '<path d="' + d + '" class="' + stile[0] + '" fill="none" stroke="' + stile[1] + '" stroke-width="1.7"' + (tipo === "taglio" ? ' stroke-dasharray="4 3"' : '') + '/>';
+    if (tipo === "taglio") {
+      var mx = (x1 + 3 * c1x + 3 * c2x + x2) / 8, my = (y1 + 3 * c1y + 3 * c2y + y2) / 8;
+      out += '<path d="M' + r1(mx - 5) + ' ' + r1(my + 6) + ' L' + r1(mx + 1) + ' ' + r1(my - 6) + ' M' + r1(mx + 2) + ' ' + r1(my + 6) + ' L' + r1(mx + 8) + ' ' + r1(my - 6) + '" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/>';
+    } else out += testa(x2, y2, c2x, c2y, stile[2], stile[1]);
+    return out;
+  }
+  // il percorso di un collegamento dal nodo a al nodo b
+  function collega(a, b, tipo) {
+    var A = pos[a], B = pos[b];
+    if (!A || !B) return "";
+    var sx = A.x + LW / 2, sy = A.y + LT / 2;
+    if (A.riga && B.riga) {
+      if (B.j === A.j + 1) return curva(sx, sy, sx + 20, sy, B.x - 20, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo);
+      return curva(sx, sy, sx + 12, A.y - 42, B.x - 4, B.y - 42, B.x + 8, B.y - 1, tipo);
+    }
+    if (A.riga && !B.riga) return curva(sx, sy, sx + 32, sy + 4, B.x + LW / 2, B.y - 40, B.x + LW / 2, B.y - 1, tipo);
+    if (!A.riga && B.riga) return curva(sx, sy, sx + 38, sy, B.x + LW / 2, B.y + LH + 30, B.x + LW / 2, B.y + LH + 1, tipo);
+    return "";
+  }
+  // collegamenti barrati (vecchi valori)
+  (st.tagli || []).forEach(function (t) {
+    if (String(t.da).indexOf("var:") === 0) s.push(frecciaVar({ nome: t.da.slice(4), a: t.a, lato: "sx" }, "taglio"));
+    else s.push(collega(t.da, t.a, "taglio"));
+  });
+  // nodi
+  for (k in pos) {
+    var n = st.nodi[k], P = pos[k], ev = (st.evid || {})[k];
+    var cls = ev === "attivo" ? ["r-blu", "#e8edfc", "#2f52c4"] : ev === "nuovo" ? ["r-verde", "#e6f5ea", "#17803d"] : ev === "via" ? ["r-rosso", "#fdecea", "#b42318"] : ev === "trovato" ? ["r-viola", "#f1eafc", "#6d3fc0"] : ["r-nodo", "#ffffff", "#9aa3b2"];
+    s.push('<rect x="' + r1(P.x) + '" y="' + P.y + '" width="' + LW + '" height="' + LH + '" rx="3" class="' + cls[0] + '" fill="' + cls[1] + '" stroke="' + cls[2] + '" stroke-width="1.5"/>');
+    s.push('<line x1="' + r1(P.x) + '" y1="' + (P.y + LT) + '" x2="' + r1(P.x + LW) + '" y2="' + (P.y + LT) + '" class="l-muted" stroke="#5b6270" stroke-width="1"/>');
+    s.push('<text x="' + r1(P.x + LW / 2) + '" y="' + (P.y + LT + 20) + '" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">' + n.k + '</text>');
+    if (n.pros === null) s.push('<text x="' + r1(P.x + LW / 2) + '" y="' + (P.y + 12) + '" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text>');
+    else if (n.pros !== undefined) s.push('<circle cx="' + r1(P.x + LW / 2) + '" cy="' + (P.y + LT / 2) + '" r="2.6" class="t-verde" fill="#17803d"/>');
+  }
+  // campi pros
+  for (k in pos) {
+    var nn = st.nodi[k];
+    if (nn.pros !== null && nn.pros !== undefined && pos[nn.pros]) s.push(collega(k, nn.pros, "link"));
+  }
+  // variabili
+  function frecciaVar(v, tipo) {
+    var out = "";
+    var B = v.a !== null && v.a !== undefined ? pos[v.a] : null;
+    if (v.lato === "sx" || v.lato === "sx2") {
+      var ly = v.lato === "sx" ? LY0 + LT / 2 : LY0 + LH + 26;
+      if (tipo !== "taglio") out += '<text x="' + 6 + '" y="' + (ly + 5) + '" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">' + v.nome + '</text>';
+      var x0 = 8 + v.nome.length * 8.4;
+      if (!B) {
+        if (tipo !== "taglio") out += curva(x0, ly, x0 + 8, ly, LX0 - 18, ly, LX0 - 10, ly, "var") + '<text x="' + (LX0 - 6) + '" y="' + (ly + 4.5) + '" font-size="12.5" class="t-verde" fill="#17803d">null</text>';
+        return out;
+      }
+      if (v.lato === "sx") {
+        if (B.riga && B.j === 0) out += curva(x0, ly, x0 + 12, ly, B.x - 14, ly, B.x - 1, ly, tipo === "taglio" ? "taglio" : "var");
+        else if (B.riga) out += curva(x0, ly, x0 + 30, LY0 - 46, B.x - 6, LY0 - 46, B.x + 6, LY0 - 1, tipo === "taglio" ? "taglio" : "var");
+        else {
+          var cx = 6 + v.nome.length * 4.2;
+          out += curva(cx, ly + 8, cx, B.y + LT / 2, B.x - 22, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo === "taglio" ? "taglio" : "var");
+        }
+      } else if (B.riga) {
+        var bx = B.x + LW / 2, by = B.y + LH + 1;
+        out += curva(x0, ly - 4, x0 + 30, ly + 22, bx, ly + 26, bx, by, tipo === "taglio" ? "taglio" : "var");
+      } else {
+        out += curva(x0, ly - 4, x0 + 40, ly + 10, B.x - 40, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo === "taglio" ? "taglio" : "var");
+      }
+      return out;
+    }
+    return "";
+  }
+  var sopra = {}, sotto = {};
+  (st.vars || []).forEach(function (v) {
+    if (v.lato === "sx" || v.lato === "sx2") { s.push(frecciaVar(v, "var")); return; }
+    if (v.a === null || v.a === undefined || !pos[v.a]) return;
+    var tab = v.lato === "sotto" ? sotto : sopra;
+    (tab[v.a] = tab[v.a] || []).push(v.nome);
+  });
+  for (k in sopra) {
+    var Q = pos[k], nomi = sopra[k].join(", ");
+    if (Q.riga) {
+      s.push('<text x="' + r1(Q.x + LW / 2) + '" y="' + (Q.y - 30) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + nomi + '</text>');
+      s.push(curva(Q.x + LW / 2, Q.y - 25, Q.x + LW / 2, Q.y - 18, Q.x + LW / 2, Q.y - 10, Q.x + LW / 2, Q.y - 2, "var"));
+    } else {
+      s.push('<text x="' + r1(Q.x + LW / 2) + '" y="' + (Q.y + LH + 38) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + nomi + '</text>');
+      s.push(curva(Q.x + LW / 2, Q.y + LH + 24, Q.x + LW / 2, Q.y + LH + 16, Q.x + LW / 2, Q.y + LH + 8, Q.x + LW / 2, Q.y + LH + 2, "var"));
+    }
+  }
+  for (k in sotto) {
+    var R = pos[k];
+    s.push('<text x="' + r1(R.x + LW / 2) + '" y="' + (R.y + LH + 38) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + sotto[k].join(", ") + '</text>');
+    s.push(curva(R.x + LW / 2, R.y + LH + 24, R.x + LW / 2, R.y + LH + 16, R.x + LW / 2, R.y + LH + 8, R.x + LW / 2, R.y + LH + 2, "var"));
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// lista semplice da un elenco di chiavi: nodi n0, n1, … collegati in ordine
+function statoLista(chiavi, vars, extra) {
+  var st = { slots: [], nodi: {}, gall: [], vars: vars || [], evid: {}, tagli: [] };
+  chiavi.forEach(function (c, j) {
+    st.slots.push("n" + j);
+    st.nodi["n" + j] = { k: String(c), pros: j + 1 < chiavi.length ? "n" + (j + 1) : null };
+  });
+  if (extra) for (var q in extra) st[q] = extra[q];
+  return st;
+}
+
+
+// I Codici 5.1–5.5 eseguiti riga per riga su una lista di chiavi.
+// Ogni evento: { riga, testo, st (stato per svgMem), vars: {nome: valore}, fine? }
+var CODICI = {
+  elemento: { titolo: "Codice 5.1: ricerca in base alla posizione", righe: [
+    "<b>FUNZIONE</b> elemento(Lista L, intero i) → Nodo",
+    "  p ← L",
+    "  <b>WHILE</b> p ≠ null <b>AND</b> i &gt; 0 <b>DO</b>",
+    "    p ← p.pros",
+    "    i ← i − 1",
+    "  <b>RETURN</b> p"] },
+  trova: { titolo: "Codice 5.2: ricerca in base alla chiave", righe: [
+    "<b>FUNZIONE</b> trova(Lista L, tipoChiave k) → Nodo",
+    "  p ← L",
+    "  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave ≠ k <b>DO</b>",
+    "    p ← p.pros",
+    "  <b>RETURN</b> p"] },
+  trovaOrd: { titolo: "Codice 5.3: ricerca in una lista ordinata", righe: [
+    "<b>FUNZIONE</b> trova(ListaOrdinata L, tipoChiave k) → Nodo",
+    "  p ← L",
+    "  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>",
+    "    p ← p.pros",
+    "  <b>IF</b> p = null <b>OR</b> p.chiave &gt; k <b>THEN</b>",
+    "    <b>RETURN</b> null",
+    "  <b>ELSE RETURN</b> p"] },
+  inserisci: { titolo: "Codice 5.4: inserimento in una lista ordinata", righe: [
+    "<b>FUNZIONE</b> inserisci(ListaOrdinata L, elemento d) → ListaOrdinata",
+    "  k ← d.chiave",
+    "  p ← L",
+    "  prec ← null",
+    "  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>",
+    "    prec ← p",
+    "    p ← p.pros",
+    "  r ← riferimento a nuovo nodo",
+    "  r.chiave ← k",
+    "  r.altri campi ← d.altri campi",
+    "  r.pros ← p",
+    "  <b>IF</b> prec = null <b>THEN</b>",
+    "    L ← r",
+    "  <b>ELSE</b>",
+    "    prec.pros ← r",
+    "  <b>RETURN</b> L"] },
+  cancella: { titolo: "Codice 5.5: cancellazione da una lista ordinata", righe: [
+    "<b>FUNZIONE</b> cancella(ListaOrdinata L, tipoChiave k) → ListaOrdinata",
+    "  p ← L",
+    "  prec ← null",
+    "  <b>WHILE</b> p ≠ null <b>AND</b> p.chiave &lt; k <b>DO</b>",
+    "    prec ← p",
+    "    p ← p.pros",
+    "  <b>IF</b> p ≠ null <b>AND</b> p.chiave = k <b>THEN</b>",
+    "    <b>IF</b> prec = null <b>THEN</b>",
+    "      L ← L.pros",
+    "    <b>ELSE</b>",
+    "      prec.pros ← p.pros",
+    "  <b>RETURN</b> L"] }
+};
+
+function eseguiLista(op, chiavi, val) {
+  var nodi = {}, slots = [], L = null, ev = [], j;
+  for (j = 0; j < chiavi.length; j++) {
+    slots.push("n" + j);
+    nodi["n" + j] = { k: String(chiavi[j]), pros: j + 1 < chiavi.length ? "n" + (j + 1) : null };
+  }
+  if (chiavi.length) L = "n0";
+  var V = { p: undefined, prec: undefined, r: undefined }, gall = [], evid = {}, tagli = [], num = {};
+  function nome(id) { return id === null ? "null" : "il nodo " + nodi[id].k; }
+  function chiave(id) { return Number(nodi[id].k); }
+  function scatta(riga, testo, extra) {
+    var st = { slots: slots.slice(), nodi: {}, gall: gall.slice(), vars: [{ nome: "L", a: L, lato: "sx" }], evid: {}, tagli: tagli.slice() };
+    for (var q in nodi) st.nodi[q] = { k: nodi[q].k, pros: nodi[q].pros };
+    ["prec", "p", "r"].forEach(function (n) { if (V[n] !== undefined && V[n] !== null) st.vars.push({ nome: n, a: V[n], lato: "sopra" }); });
+    for (var e in evid) st.evid[e] = evid[e];
+    if (V.p) st.evid[V.p] = st.evid[V.p] || "attivo";
+    var vv = {};
+    ["p", "prec", "r"].forEach(function (n) { if (V[n] !== undefined) vv[n] = V[n] === null ? "null" : "→ " + nodi[V[n]].k; });
+    for (var w in num) vv[w] = num[w];
+    ev.push({ riga: riga, testo: testo, st: st, vars: vv, fine: extra && extra.fine, risultato: extra && extra.risultato });
+    tagli = [];
+  }
+  // a fine operazione la lista si ridisegna in ordine, senza nodi galleggianti
+  function finale(riga, testo, risultato, stile) {
+    var ord = [], q = L, giri = 0;
+    while (q !== null && giri++ < 50) { ord.push(q); q = nodi[q].pros; }
+    var tieni = {};
+    ord.forEach(function (id) { tieni[id] = nodi[id]; });
+    var vecchi = nodi;
+    nodi = tieni;
+    slots = ord; gall = []; evid = {};
+    if (risultato && vecchi[risultato] && tieni[risultato]) evid[risultato] = stile || "trovato";
+    var salvaV = V; V = { p: undefined, prec: undefined, r: undefined };
+    if (op === "elemento" || op === "trova" || op === "trovaOrd") V.p = salvaV.p;
+    scatta(riga, testo, { fine: true, risultato: risultato });
+    nodi = vecchi;
+  }
+
+  if (op === "elemento") {
+    var i = val;
+    num.i = i;
+    scatta(0, "Chiamata elemento(L, " + val + "): cerca il nodo in posizione " + val + ", contando da 0.");
+    V.p = L; scatta(1, "p ← L: p parte dal primo nodo" + (L === null ? ", ma la lista è vuota: p = null." : ", " + nome(L) + "."));
+    while (true) {
+      var c1 = V.p !== null, c2 = i > 0;
+      if (!c1) { scatta(2, "p = null: la prima condizione è falsa, quindi tutta la condizione è falsa e la seconda <b>non viene neanche guardata</b>. Si esce dal ciclo."); break; }
+      if (!c2) { scatta(2, "p ≠ null è vero, ma i &gt; 0 è falso (i = 0): si esce dal ciclo. p è sul nodo cercato."); break; }
+      scatta(2, "p ≠ null è vero e i &gt; 0 è vero (i = " + i + "): si entra nel ciclo.");
+      V.p = nodi[V.p].pros; scatta(3, "p ← p.pros: p passa al nodo successivo" + (V.p === null ? ". Ma non c'era: adesso p = null." : ", " + nome(V.p) + "."));
+      i--; num.i = i; scatta(4, "i ← i − 1: adesso i = " + i + ". Mancano " + i + " passi.");
+    }
+    finale(5, "RETURN p: il risultato è " + (V.p === null ? "<b>null</b>: la lista ha meno di " + (val + 1) + " nodi." : "<b>" + nome(V.p) + "</b>, in posizione " + val + "."), V.p);
+  }
+  else if (op === "trova") {
+    num.k = val;
+    scatta(0, "Chiamata trova(L, " + val + "): cerca il primo nodo con chiave " + val + ".");
+    V.p = L; scatta(1, "p ← L: p parte dal primo nodo" + (L === null ? ", ma la lista è vuota: p = null." : ", " + nome(L) + "."));
+    while (true) {
+      if (V.p === null) { scatta(2, "p = null: la condizione è falsa e p.chiave <b>non viene guardato</b> (p non punta a nessun nodo). Si esce dal ciclo."); break; }
+      if (chiave(V.p) === val) { scatta(2, "p.chiave = " + nodi[V.p].k + ", che è uguale a k: la condizione p.chiave ≠ k è falsa. Si esce dal ciclo."); break; }
+      scatta(2, "p ≠ null e p.chiave = " + nodi[V.p].k + " ≠ " + val + ": si entra nel ciclo.");
+      V.p = nodi[V.p].pros; scatta(3, "p ← p.pros: " + (V.p === null ? "era l'ultimo nodo, adesso p = null." : "p passa a " + nome(V.p) + "."));
+    }
+    finale(4, "RETURN p: il risultato è " + (V.p === null ? "<b>null</b>: nessun nodo ha chiave " + val + "." : "<b>" + nome(V.p) + "</b>."), V.p);
+  }
+  else if (op === "trovaOrd") {
+    num.k = val;
+    scatta(0, "Chiamata trova(L, " + val + ") su una lista ordinata.");
+    V.p = L; scatta(1, "p ← L: p parte dal primo nodo" + (L === null ? ", ma la lista è vuota: p = null." : ", " + nome(L) + "."));
+    while (true) {
+      if (V.p === null) { scatta(2, "p = null: la condizione è falsa (e p.chiave non viene guardato). Si esce dal ciclo."); break; }
+      if (!(chiave(V.p) < val)) { scatta(2, "p.chiave = " + nodi[V.p].k + " non è &lt; " + val + ": ci si ferma qui. Da questo nodo in poi le chiavi sono tutte ≥ " + nodi[V.p].k + "."); break; }
+      scatta(2, "p.chiave = " + nodi[V.p].k + " &lt; " + val + ": la chiave cercata, se c'è, è più avanti. Si entra nel ciclo.");
+      V.p = nodi[V.p].pros; scatta(3, "p ← p.pros: " + (V.p === null ? "era l'ultimo nodo, adesso p = null." : "p passa a " + nome(V.p) + "."));
+    }
+    if (V.p === null) { scatta(4, "p = null: la condizione dell'IF è vera (la seconda parte, p.chiave &gt; k, non viene guardata)."); finale(5, "RETURN null: tutte le chiavi erano minori di " + val + ", quindi " + val + " non c'è.", null); }
+    else if (chiave(V.p) > val) { scatta(4, "p.chiave = " + nodi[V.p].k + " &gt; " + val + ": la condizione dell'IF è vera."); finale(5, "RETURN null: " + val + " non c'è. Se ci fosse, sarebbe prima di " + nodi[V.p].k + ", perché la lista è ordinata; e lì non c'era.", null); }
+    else { scatta(4, "p.chiave = " + nodi[V.p].k + ", uguale a k: la condizione dell'IF è falsa."); finale(6, "RETURN p: trovato, <b>" + nome(V.p) + "</b>.", V.p); }
+  }
+  else if (op === "inserisci") {
+    var k = val;
+    scatta(0, "Chiamata inserisci(L, d) con d.chiave = " + val + ".");
+    num.k = k; scatta(1, "k ← d.chiave: k = " + k + ".");
+    V.p = L; scatta(2, "p ← L: p parte dal primo nodo" + (L === null ? ", ma la lista è vuota: p = null." : ", " + nome(L) + "."));
+    V.prec = null; scatta(3, "prec ← null: prec sarà sempre il nodo <em>prima</em> di p. Adesso p è il primo nodo, e prima del primo non c'è nessuno.");
+    while (true) {
+      if (V.p === null) { scatta(4, "p = null: siamo arrivati in fondo. Si esce dal ciclo: il nuovo nodo andrà dopo l'ultimo."); break; }
+      if (!(chiave(V.p) < k)) { scatta(4, "p.chiave = " + nodi[V.p].k + " non è &lt; " + k + ": si esce dal ciclo. Il nuovo nodo andrà tra prec e p."); break; }
+      scatta(4, "p.chiave = " + nodi[V.p].k + " &lt; " + k + ": il posto giusto è più avanti. Si entra nel ciclo.");
+      V.prec = V.p; scatta(5, "prec ← p: prec si sposta su " + nome(V.prec) + ".");
+      V.p = nodi[V.p].pros; scatta(6, "p ← p.pros: " + (V.p === null ? "p diventa null (prec è l'ultimo nodo)." : "p si sposta su " + nome(V.p) + "."));
+    }
+    nodi.r = { k: "?", pros: undefined };
+    gall = [{ id: "r", tra: [V.prec, V.p] }]; evid.r = "nuovo";
+    V.r = "r"; scatta(7, "r ← riferimento a nuovo nodo: si crea un nodo nuovo, ancora vuoto e non collegato a niente. r lo indica.");
+    nodi.r.k = String(k); scatta(8, "r.chiave ← k: nel nuovo nodo si scrive la chiave " + k + ".");
+    scatta(9, "r.altri campi ← d.altri campi: si copiano gli altri dati dell'elemento d (nel disegno non si vedono).");
+    nodi.r.pros = V.p; scatta(10, "r.pros ← p: il nuovo nodo punta a " + (V.p === null ? "null, perché va in fondo." : nome(V.p) + ", che verrà dopo di lui."));
+    if (V.prec === null) {
+      scatta(11, "prec = null: vero. Il nuovo nodo va <b>in testa</b>, e non c'è un nodo prima di lui da modificare.");
+      tagli = L !== null ? [{ da: "var:L", a: L }] : [];
+      L = "r"; scatta(12, "L ← r: adesso la lista comincia dal nuovo nodo. Il vecchio collegamento di L (barrato) non c'è più.");
+    } else {
+      scatta(11, "prec = null: falso. C'è un nodo prima, " + nome(V.prec) + ".");
+      tagli = nodi[V.prec].pros !== null ? [{ da: V.prec, a: nodi[V.prec].pros }] : [];
+      nodi[V.prec].pros = "r"; scatta(14, "prec.pros ← r: il nodo " + nodi[V.prec].k + " adesso punta al nuovo nodo. Il suo vecchio collegamento (barrato) non c'è più.");
+    }
+    var tutte = []; var q2 = L, gg = 0; while (q2 !== null && gg++ < 50) { tutte.push(nodi[q2].k); q2 = nodi[q2].pros; }
+    finale(15, "RETURN L. La lista adesso è: <b>" + tutte.join(" → ") + "</b>.", "r", "nuovo");
+  }
+  else if (op === "cancella") {
+    num.k = val;
+    scatta(0, "Chiamata cancella(L, " + val + "): toglie il primo nodo con chiave " + val + ", se c'è.");
+    V.p = L; scatta(1, "p ← L: p parte dal primo nodo" + (L === null ? ", ma la lista è vuota: p = null." : ", " + nome(L) + "."));
+    V.prec = null; scatta(2, "prec ← null: prima del primo nodo non c'è nessuno.");
+    while (true) {
+      if (V.p === null) { scatta(3, "p = null: siamo in fondo, si esce dal ciclo."); break; }
+      if (!(chiave(V.p) < val)) { scatta(3, "p.chiave = " + nodi[V.p].k + " non è &lt; " + val + ": si esce dal ciclo."); break; }
+      scatta(3, "p.chiave = " + nodi[V.p].k + " &lt; " + val + ": si entra nel ciclo.");
+      V.prec = V.p; scatta(4, "prec ← p: prec si sposta su " + nome(V.prec) + ".");
+      V.p = nodi[V.p].pros; scatta(5, "p ← p.pros: " + (V.p === null ? "p diventa null." : "p si sposta su " + nome(V.p) + "."));
+    }
+    if (V.p !== null && chiave(V.p) === val) {
+      scatta(6, "p ≠ null e p.chiave = " + val + ": trovato il nodo da togliere.");
+      evid[V.p] = "via";
+      if (V.prec === null) {
+        scatta(7, "prec = null: il nodo da togliere è il <b>primo</b>. Caso particolare: non c'è un nodo prima da modificare.");
+        tagli = [{ da: "var:L", a: L }];
+        L = nodi[L].pros; scatta(8, "L ← L.pros: la lista adesso comincia dal secondo nodo. Il primo resta fuori.");
+      } else {
+        scatta(7, "prec = null: falso, il nodo da togliere ha un nodo prima, " + nome(V.prec) + ".");
+        tagli = [{ da: V.prec, a: V.p }];
+        nodi[V.prec].pros = nodi[V.p].pros; scatta(10, "prec.pros ← p.pros: il nodo " + nodi[V.prec].k + " adesso salta il nodo " + nodi[V.p].k + " e punta " + (nodi[V.prec].pros === null ? "a null." : "al nodo " + nodi[nodi[V.prec].pros].k + ".") + " Il nodo " + nodi[V.p].k + " non è più raggiungibile da L.");
+      }
+      var rest = []; var q3 = L, g3 = 0; while (q3 !== null && g3++ < 50) { rest.push(nodi[q3].k); q3 = nodi[q3].pros; }
+      finale(11, "RETURN L. La lista adesso è: <b>" + (rest.length ? rest.join(" → ") : "vuota") + "</b>. (Nell'implementazione vera, qui si libera la memoria del nodo tolto.)", null);
+    } else {
+      scatta(6, (V.p === null ? "p = null" : "p.chiave = " + nodi[V.p].k + " ≠ " + val) + ": la condizione dell'IF è falsa. Il valore " + val + " non c'è, e non si tocca niente.");
+      finale(11, "RETURN L: la lista è rimasta uguale.", null);
+    }
+  }
+  return ev;
+}
+
+
+// Figure fisse della pagina, disegnate con le stesse funzioni dei riquadri interattivi
+var FIG = {
+  lista: function (o) {
+    var vars = o.vars || [{ nome: "L", a: o.chiavi.length ? "n0" : null, lato: "sx" }];
+    var st = statoLista(o.chiavi, vars, o.evid ? { evid: o.evid } : null);
+    return svgMem(st, { aria: o.aria });
+  },
+  passo: function (o) {
+    var ev = eseguiLista(o.op, o.chiavi, o.val);
+    var scelti = ev.filter(function (e) { return e.riga === o.riga; });
+    var e = o.volta === "ultima" ? scelti[scelti.length - 1] : scelti[(o.volta || 1) - 1];
+    if (!e) throw new Error("nessun evento alla riga " + o.riga);
+    return svgMem(e.st, { aria: o.aria });
+  }
+};
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  function riempiMenu(sel, voci) {
+    sel.innerHTML = "";
+    voci.forEach(function (v, k) {
+      var o = el("option", "", v[0]);
+      o.value = String(k);
+      sel.appendChild(o);
+    });
+  }
+  function leggiChiavi(txt, max) {
+    var parti = String(txt).split(/[\s,;→]+/).filter(function (s) { return s !== ""; });
+    if (parti.length > max) return null;
+    var A = parti.map(Number);
+    for (var k = 0; k < A.length; k++) if (!isFinite(A[k]) || A[k] !== Math.floor(A[k]) || A[k] < 0 || A[k] > 999) return null;
+    return A;
+  }
+
+  // ---------------------------------------------------------- il laboratorio delle liste
+  var LISTE = [
+    ["Lavagna: 10 2 4 7 (non ordinata)", "10, 2, 4, 7"],
+    ["Lavagna: 11 15 20 25 (ordinata)", "11, 15, 20, 25"],
+    ["Lista vuota", ""],
+    ["Scrivi tu: modifica L", null]
+  ];
+  var OPS = {
+    elemento: ["elemento(L, i) · Codice 5.1", "i"],
+    trova: ["trova(L, k) · Codice 5.2", "k"],
+    trovaOrd: ["trova(L, k) in una lista ordinata · Codice 5.3", "k"],
+    inserisci: ["inserisci(L, d), con d.chiave = k · Codice 5.4", "k"],
+    cancella: ["cancella(L, k) · Codice 5.5", "k"]
+  };
+  function creaLab(p, opz) {
+    var W = { ev: [], k: 0 };
+    $(p + "-corpo").innerHTML =
+      '<div class="controlli"><label>Lista <select id="' + p + '-lista" style="width:auto"></select></label>' +
+      '<label>L = <input type="text" id="' + p + '-in" style="width:150px"></label></div>' +
+      '<div class="controlli"><label>Operazione <select id="' + p + '-op" style="width:auto"></select></label>' +
+      '<label><span id="' + p + '-vlab">k</span> = <input type="number" id="' + p + '-val" style="width:70px" min="0" max="999"></label></div>' +
+      '<div class="controlli"><button class="primario" id="' + p + '-passo">Passo →</button><button id="' + p + '-fine">Fino alla fine</button>' +
+      '<button id="' + p + '-reset">Ricomincia</button>' + (opz.usa ? '<button id="' + p + '-usa">Usa il risultato come nuova lista</button>' : '') + '</div>' +
+      '<pre class="pseudo" id="' + p + '-cod"></pre>' +
+      '<div class="figura" id="' + p + '-fig" style="margin:8px 0"></div>' +
+      '<div class="contatori" id="' + p + '-var"></div>' +
+      '<div class="narrazione" id="' + p + '-txt"></div>';
+    riempiMenu($(p + "-lista"), LISTE);
+    riempiMenu($(p + "-op"), opz.ops.map(function (o) { return OPS[o]; }));
+    $(p + "-lista").value = String(opz.lista);
+    $(p + "-in").value = LISTE[opz.lista][1];
+    $(p + "-op").value = String(opz.ops.indexOf(opz.op));
+    $(p + "-val").value = String(opz.val);
+    function op() { return opz.ops[Number($(p + "-op").value)] || opz.op; }
+    function init() {
+      var o = op();
+      $(p + "-vlab").textContent = OPS[o][1];
+      var ch = leggiChiavi($(p + "-in").value, 6);
+      var v = Number($(p + "-val").value);
+      var msg = "";
+      if (!ch) msg = "Scrivi da 0 a 6 numeri interi tra 0 e 999, separati da virgole o spazi.";
+      else if (!isFinite(v) || v < 0 || v > 999 || v !== Math.floor(v)) msg = "Scrivi in " + OPS[o][1] + " un numero intero tra 0 e 999.";
+      else if ((o === "trovaOrd" || o === "inserisci" || o === "cancella") && ch.some(function (x, j) { return j > 0 && ch[j - 1] > x; }))
+        msg = "Questa operazione vuole una <b>lista ordinata</b>: scegli «Lavagna: 11 15 20 25 (ordinata)» oppure scrivi i numeri in ordine crescente.";
+      if (msg) {
+        W.ev = [];
+        $(p + "-cod").innerHTML = CODICI[o].righe.join("\n");
+        $(p + "-fig").innerHTML = ""; $(p + "-var").innerHTML = "";
+        $(p + "-txt").innerHTML = msg;
+        $(p + "-passo").disabled = true; $(p + "-fine").disabled = true;
+        if (opz.usa) $(p + "-usa").disabled = true;
+        return;
+      }
+      W.ev = eseguiLista(o, ch, v);
+      W.k = 0;
+      mostra();
+    }
+    function mostra() {
+      var o = op(), e = W.ev[W.k];
+      $(p + "-cod").innerHTML = CODICI[o].righe.map(function (r, j) {
+        return '<span class="riga' + (j === e.riga ? " ora" : "") + '">' + r + '</span>';
+      }).join("");
+      $(p + "-fig").innerHTML = svgMem(e.st, { aria: "La lista al passo attuale" });
+      var vv = [];
+      for (var n in e.vars) {
+        var x = String(e.vars[n]);
+        vv.push("<span>" + n + " " + (x.charAt(0) === "→" ? x : "= " + x) + "</span>");
+      }
+      $(p + "-var").innerHTML = vv.length ? vv.join("") : "<span>nessuna variabile ancora</span>";
+      $(p + "-txt").innerHTML = "<b>Passo " + (W.k + 1) + " di " + W.ev.length + ".</b> " + e.testo;
+      var fine = W.k >= W.ev.length - 1;
+      $(p + "-passo").disabled = fine; $(p + "-fine").disabled = fine;
+      if (opz.usa) $(p + "-usa").disabled = !(fine && (o === "inserisci" || o === "cancella"));
+    }
+    $(p + "-lista").onchange = function () {
+      var x = LISTE[Number($(p + "-lista").value)];
+      if (x && x[1] !== null) $(p + "-in").value = x[1];
+      init();
+    };
+    $(p + "-in").onchange = function () { $(p + "-lista").value = String(LISTE.length - 1); init(); };
+    $(p + "-op").onchange = init;
+    $(p + "-val").onchange = init;
+    $(p + "-passo").onclick = function () { if (W.k < W.ev.length - 1) { W.k++; mostra(); } };
+    $(p + "-fine").onclick = function () { if (W.ev.length) { W.k = W.ev.length - 1; mostra(); } };
+    $(p + "-reset").onclick = function () { if (W.ev.length) { W.k = 0; mostra(); } else init(); };
+    if (opz.usa) $(p + "-usa").onclick = function () {
+      var st = W.ev[W.ev.length - 1].st;
+      $(p + "-in").value = st.slots.map(function (id) { return st.nodi[id].k; }).join(", ");
+      $(p + "-lista").value = String(LISTE.length - 1);
+      init();
+    };
+    init();
+  }
+  creaLab("la", { ops: ["elemento", "trova", "trovaOrd"], op: "trova", lista: 0, val: 2 });
+  creaLab("lb", { ops: ["inserisci", "cancella", "trovaOrd"], op: "inserisci", lista: 1, val: 19, usa: true });
+
+  // ---------------------------------------------------------- la lista dentro un array
+  var AR = { chiave: [1, 15, 25, 11, 3, 20], pros: [7, 5, -1, 1, -1, 2], L: 3, passi: [], k: 0 };
+  function arPassi() {
+    var out = [{ p: null, testo: "La lista comincia dalla cella L = " + AR.L + ". Premi «Passo →» per seguirla." }], p = AR.L, vis = [];
+    while (p !== -1 && vis.length < 10) {
+      vis.push(AR.chiave[p]);
+      out.push({ p: p, testo: "p = " + p + ": la chiave è chiave[" + p + "] = <b>" + AR.chiave[p] + "</b>. Il nodo successivo è nella cella pros[" + p + "] = " + AR.pros[p] + (AR.pros[p] === -1 ? ", cioè nessuna: −1 fa da null." : ".") });
+      p = AR.pros[p];
+    }
+    out.push({ p: null, fine: true, testo: "Fine: p = −1. La lista è <b>" + vis.join(" → ") + "</b>. Le celle che non hai visitato non fanno parte della lista." });
+    return out;
+  }
+  function arMostra() {
+    var e = AR.passi[AR.k], vis = {};
+    for (var j = 1; j <= AR.k; j++) if (AR.passi[j].p !== null) vis[AR.passi[j].p] = true;
+    var h = "<table class='arr-lista'><tr><th>indice</th>";
+    for (var c = 0; c < AR.chiave.length; c++) h += "<th" + (c === e.p ? " class='ora'" : vis[c] ? " class='vista'" : "") + ">" + c + "</th>";
+    h += "</tr><tr><th>chiave</th>";
+    for (c = 0; c < AR.chiave.length; c++) h += "<td" + (c === e.p ? " class='ora'" : vis[c] ? " class='vista'" : "") + ">" + AR.chiave[c] + "</td>";
+    h += "</tr><tr><th>pros</th>";
+    for (c = 0; c < AR.chiave.length; c++) h += "<td" + (c === e.p ? " class='ora'" : vis[c] ? " class='vista'" : "") + ">" + (AR.pros[c] < 0 ? "−1" : AR.pros[c]) + "</td>";
+    h += "</tr></table>";
+    $("ar-tab").innerHTML = h;
+    $("ar-txt").innerHTML = e.testo;
+    $("ar-passo").disabled = AR.k >= AR.passi.length - 1;
+  }
+  AR.passi = arPassi();
+  $("ar-passo").onclick = function () { if (AR.k < AR.passi.length - 1) { AR.k++; arMostra(); } };
+  $("ar-reset").onclick = function () { AR.k = 0; arMostra(); };
+  arMostra();
+
+})();
+</script>
+</body>
+</html>

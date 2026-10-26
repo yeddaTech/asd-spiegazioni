@@ -1,0 +1,1602 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pile e code</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 11 · lezioni 13–14 (26 ottobre 2026)</span>
+</div>
+
+<h1>Pile e code: chi esce per primo?</h1>
+<p class="sottotitolo">Una pila è come una pila di piatti: l'ultimo che metti sopra è il primo che riprendi. Una coda è come la fila alla cassa: chi arriva per primo esce per primo. In questa pagina: le operazioni dei due tipi di dato, come si realizzano con un array e con una lista (il codice della lavagna, riga per riga), perché ogni operazione costa O(1), il trucco dell'array circolare e il codice vero in C e in Go.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di matematica o di programmazione che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>«Lavagna, pagina N» indica la pagina del PDF della lavagna delle lezioni 13 e 14, fatte insieme il 26 ottobre 2026. Due cose vengono dalla lavagna della stessa lezione dell'anno scorso, e lo trovi scritto ogni volta.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+  <p><b>Come sono disegnate le liste</b>, uguali in tutte le figure e nei riquadri interattivi, come alla lavagna: ogni <b>nodo</b> è un rettangolo con uno scomparto piccolo in alto (il campo <code>pros</code>, il riferimento al nodo successivo) e uno grande in basso (il dato). Le <span class="verde"><b>frecce verdi</b></span> sono i campi pros; le <span class="blu"><b>frecce blu</b></span> sono le variabili (top, primo, ultimo, r). Un collegamento <span class="rosso"><b>rosso tratteggiato e barrato</b></span> è quello appena sostituito. Nodi: <span class="blu">azzurro</span> quello che si sta guardando, <span class="verde">verde</span> quello nuovo, <span class="rosso">rosso</span> quello appena tolto.</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in sei domande</span>
+  <ol>
+    <li><b>Che differenza c'è tra pila e coda?</b> Nella pila esce per primo l'ultimo entrato (LIFO); nella coda esce per primo il primo entrato (FIFO).</li>
+    <li><b>Quali operazioni hanno?</b> Pila: isEmpty, push, pop, top. Coda: isEmpty, enqueue, dequeue, first.</li>
+    <li><b>Come si fa una pila con un array?</b> Gli elementi stanno in dati[0], dati[1], …, e un indice top dice dov'è la cima (top = −1: pila vuota).</li>
+    <li><b>E con una lista?</b> La cima è il primo nodo: push aggiunge un nodo in testa, pop toglie il nodo in testa.</li>
+    <li><b>E la coda?</b> Servono due riferimenti: primo (da dove si esce) e ultimo (dove si entra). Con l'array, l'array va usato «in cerchio».</li>
+    <li><b>Quanto costano le operazioni?</b> Tutte O(1), in tutte e quattro le realizzazioni.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#idea">Pila e coda: due modi di servire chi aspetta</a></li>
+    <li><a href="#pila">Il tipo Pila</a></li>
+    <li><a href="#pila-array">La pila in un array</a></li>
+    <li><a href="#pila-lista">La pila in una lista</a></li>
+    <li><a href="#coda">Il tipo Coda</a></li>
+    <li><a href="#coda-array">La coda in un array: l'array circolare</a></li>
+    <li><a href="#coda-lista">La coda in una lista</a></li>
+    <li><a href="#confronto">Array o lista?</a></li>
+    <li><a href="#codice">Il codice vero: C e Go</a></li>
+    <li><a href="#usi">A cosa servono</a></li>
+    <li><a href="#riassunto">Riassunto e cosa serve per l'esame</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="idea"><span class="num">1</span>Pila e coda: due modi di servire chi aspetta</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'idea di pila e di coda con due esempi di tutti i giorni, le sigle LIFO e FIFO, e perché pila e coda sono <em>tipi di dato</em>.</p>
+
+<p>Pensa a una <strong>pila di piatti</strong> appena lavati. Ogni piatto pulito lo appoggi <em>sopra</em> gli altri. Quando ti serve un piatto, lo prendi <em>da sopra</em>. Il piatto che prendi è sempre l'ultimo che hai appoggiato. Il primo piatto lavato, quello in fondo, lo riprenderai per ultimo.</p>
+<p>Pensa ora alla <strong>fila alla cassa</strong> del supermercato. Chi arriva si mette <em>in fondo</em>. La cassiera serve chi è <em>in testa</em>. Chi è arrivato per primo è servito per primo.</p>
+<p>Sono due regole opposte, e in informatica hanno un nome e una sigla:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>struttura</th><th>regola</th><th>sigla</th><th>esempio</th></tr>
+  <tr><td><strong>pila</strong> (in inglese <em>stack</em>)</td><td>esce per primo l'ultimo entrato</td><td><strong>LIFO</strong>: Last In, First Out</td><td>la pila di piatti</td></tr>
+  <tr><td><strong>coda</strong> (in inglese <em>queue</em>)</td><td>esce per primo il primo entrato</td><td><strong>FIFO</strong>: First In, First Out</td><td>la fila alla cassa</td></tr>
+</table></div>
+
+<p>Nella lezione sulle liste il prof ha distinto il <strong>tipo di dato</strong>, che dice <em>cosa</em> si può fare (i valori e le operazioni), dalla <strong>struttura dati</strong>, che dice <em>come</em> lo si fa in memoria. Pila e coda sono due tipi di dato: le slide le definiscono elencando le operazioni, senza dire come sono fatte dentro. Poi, alla lavagna, il prof mostra due modi di realizzarle: con un <strong>array</strong> e con una <strong>lista</strong> (lavagna, pagina 18: «Implementazione: array, liste lineari»). Questa pagina segue lo stesso ordine.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Pila = LIFO: l'ultimo entrato è il primo a uscire (i piatti).</li>
+    <li>Coda = FIFO: il primo entrato è il primo a uscire (la fila).</li>
+    <li>Sono tipi di dato (cosa si fa); array e liste sono due modi di realizzarli (come lo si fa).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="pila"><span class="num">2</span>Il tipo Pila</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione delle slide (lavagna, pagina 18), le quattro operazioni una per una, un esempio di operazioni in fila e cosa succede se si prova a togliere un elemento da una pila vuota.</p>
+
+<div class="box def">
+  <span class="etichetta">Definizione: il tipo Pila (lavagna, pagina 18)</span>
+  <p>Collezione di dati con organizzazione <em>Last-In-First-Out</em> (LIFO). Operazioni:</p>
+  <ul>
+    <li><code>isEmpty() → boolean</code></li>
+    <li><code>push(elemento)</code></li>
+    <li><code>pop() → elemento</code></li>
+    <li><code>top() → elemento</code></li>
+  </ul>
+</div>
+
+<p>Cosa fa ogni operazione. La freccia → indica cosa restituisce: isEmpty restituisce un valore vero/falso (boolean), pop e top restituiscono un elemento, push non restituisce niente.</p>
+<ul>
+  <li><strong>isEmpty()</strong> («è vuota?») risponde <em>true</em> se la pila non contiene elementi, <em>false</em> altrimenti.</li>
+  <li><strong>push(x)</strong> («spingi») mette l'elemento x in cima alla pila.</li>
+  <li><strong>pop()</strong> («fai saltare fuori») <em>toglie</em> l'elemento in cima e lo restituisce.</li>
+  <li><strong>top()</strong> («cima») restituisce l'elemento in cima <em>senza toglierlo</em>: è come guardare il piatto di sopra senza prenderlo.</li>
+</ul>
+<p>Nessuna operazione permette di guardare o togliere un elemento che sta più in basso: per arrivarci bisogna prima togliere, con pop, tutti quelli sopra. È questo che fa di una pila una pila.</p>
+
+<p>Alla lavagna la pila è disegnata in verticale: 8 in fondo, poi 12, 5, e 7 in cima. La Figura 1 mostra la stessa pila e due operazioni.</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 176 180" width="176" height="180" role="img" aria-label="Pila con 8 in fondo e 7 in cima" font-family="system-ui, sans-serif"><path d="M16 22 V160 H86 V22" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.5"/><rect x="22" y="122" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="143.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="22" y="90" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="111.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><rect x="22" y="58" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="79.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="22" y="26" width="58" height="32" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="51" y="47.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="120" y="47" font-size="14" font-weight="700" text-anchor="start" class="t-blu" fill="#2f52c4">cima</text><line x1="116" y1="42" x2="87" y2="42" class="l-blu" stroke="#2f52c4" stroke-width="1.7"/><path d="M84 42 L91.3 38.7 L91.3 45.3 z" class="t-blu" fill="#2f52c4"/><text x="51" y="174" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">fondo</text></svg><div class="nome-mat">(a) la pila della lavagna</div></div><div><svg viewBox="0 0 176 212" width="176" height="212" role="img" aria-label="Dopo push(10): 10 in cima" font-family="system-ui, sans-serif"><path d="M16 22 V192 H86 V22" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.5"/><rect x="22" y="154" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="175.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="22" y="122" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="143.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><rect x="22" y="90" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="111.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="22" y="58" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="79.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="22" y="26" width="58" height="32" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="51" y="47.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><text x="120" y="47" font-size="14" font-weight="700" text-anchor="start" class="t-blu" fill="#2f52c4">cima</text><line x1="116" y1="42" x2="87" y2="42" class="l-blu" stroke="#2f52c4" stroke-width="1.7"/><path d="M84 42 L91.3 38.7 L91.3 45.3 z" class="t-blu" fill="#2f52c4"/><text x="51" y="206" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">fondo</text></svg><div class="nome-mat">(b) dopo push(10)</div></div><div><svg viewBox="0 0 176 222" width="176" height="222" role="img" aria-label="Dopo pop(): esce 10, in cima torna 7" font-family="system-ui, sans-serif"><path d="M16 32 V202 H86 V32" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.5"/><rect x="22" y="164" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="185.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="22" y="132" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="153.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><rect x="22" y="100" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="121.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="22" y="68" width="58" height="32" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="51" y="89.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="120" y="89" font-size="14" font-weight="700" text-anchor="start" class="t-blu" fill="#2f52c4">cima</text><line x1="116" y1="84" x2="87" y2="84" class="l-blu" stroke="#2f52c4" stroke-width="1.7"/><path d="M84 84 L91.3 80.7 L91.3 87.3 z" class="t-blu" fill="#2f52c4"/><rect x="22" y="26" width="58" height="32" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3"/><text x="51" y="47.5" font-size="15.5" text-anchor="middle" class="t-rosso" fill="#b42318">10</text><line x1="84" y1="42" x2="111.2" y2="32.9" class="l-rosso" stroke="#b42318" stroke-width="1.7"/><path d="M114 32 L108.1 37.4 L106 31.2 z" class="t-rosso" fill="#b42318"/><text x="118" y="34" font-size="13" text-anchor="start" class="t-rosso" fill="#b42318">esce</text><text x="51" y="216" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">fondo</text></svg><div class="nome-mat">(c) dopo pop(), che restituisce 10</div></div></div>
+<div class="didascalia"><b>Figura 1.</b> La pila della lavagna, pagina 18. (a) Il 7 è in cima perché è entrato per ultimo. (b) push(10) mette il 10 sopra il 7 (in verde, l'elemento appena entrato). (c) pop() toglie l'elemento in cima, il 10, e lo restituisce: in cima torna il 7.</div>
+</div>
+
+<p>Un esempio di operazioni in fila, partendo dalla pila vuota. Leggi la tabella riga per riga: la colonna «pila dopo» è scritta dal fondo alla cima, cioè la cima è l'ultimo numero a destra.</p>
+<div class="tabella-wrap"><table>
+  <tr><th>operazione</th><th>restituisce</th><th>pila dopo (fondo → cima)</th></tr>
+  <tr><td>push(8)</td><td>—</td><td>8</td></tr>
+  <tr><td>push(12)</td><td>—</td><td>8 12</td></tr>
+  <tr><td>push(5)</td><td>—</td><td>8 12 5</td></tr>
+  <tr><td>top()</td><td>5</td><td>8 12 5 (non cambia)</td></tr>
+  <tr><td>push(7)</td><td>—</td><td>8 12 5 7</td></tr>
+  <tr><td>pop()</td><td>7</td><td>8 12 5</td></tr>
+  <tr><td>pop()</td><td>5</td><td>8 12</td></tr>
+  <tr><td>isEmpty()</td><td>false</td><td>8 12</td></tr>
+</table></div>
+
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: pop e top su una pila vuota</span>
+  <p>Se la pila è vuota, pop() e top() non hanno niente da restituire: è un <strong>errore</strong>. Alla lavagna (pagina 20) il prof lo scrive accanto al codice: «errore se la pila è vuota!». Chi usa una pila deve quindi controllare con isEmpty() prima di chiamare pop() o top(), se non è sicuro che ci sia almeno un elemento.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Operazioni della pila: isEmpty() → boolean, push(x), pop() → elemento (lo toglie), top() → elemento (non lo toglie).</li>
+    <li>Si lavora solo sulla cima. pop e top su una pila vuota sono un errore.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="pila-array"><span class="num">3</span>La pila in un array</h2>
+<p class="in-questa"><b>In questa sezione:</b> la prima realizzazione della lavagna (pagine 19 e 20): gli elementi in un array e un indice che segna la cima; il codice delle quattro operazioni riga per riga; i due errori possibili; perché tutto costa O(1).</p>
+
+<h3>L'idea</h3>
+<p>Mettiamo gli elementi in un array, che chiamiamo <code>dati</code>, uno dopo l'altro a partire dalla casella 0: l'elemento in fondo alla pila in dati[0], quello sopra in dati[1], e così via. Basta poi ricordarsi in quale casella è la cima: lo dice una variabile intera, <code>top</code>. La Figura 2 è il disegno della lavagna, pagina 19.</p>
+<div class="figura">
+<div class="etich-array">L'array dati e l'indice top: la pila è dati[0..top]</div><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">5</div><div class="i">2</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">top</span></div><div class="v">7</div><div class="i">3</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">4</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">5</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">6</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">7</div></div></div><div class="affianco"><div><svg viewBox="0 0 176 180" width="176" height="180" role="img" aria-label="La pila 8 12 5 7" font-family="system-ui, sans-serif"><path d="M16 22 V160 H86 V22" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.5"/><rect x="22" y="122" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="143.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="22" y="90" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="111.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><rect x="22" y="58" width="58" height="32" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="51" y="79.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="22" y="26" width="58" height="32" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="51" y="47.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="120" y="47" font-size="14" font-weight="700" text-anchor="start" class="t-blu" fill="#2f52c4">cima</text><line x1="116" y1="42" x2="87" y2="42" class="l-blu" stroke="#2f52c4" stroke-width="1.7"/><path d="M84 42 L91.3 38.7 L91.3 45.3 z" class="t-blu" fill="#2f52c4"/><text x="51" y="174" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">fondo</text></svg><div class="nome-mat">la stessa pila vista da fuori</div></div></div>
+<div class="didascalia"><b>Figura 2.</b> La pila 8 12 5 7 nell'array dati, come alla lavagna, pagina 19. top = 3: la cima è dati[3] = 7. Le caselle da 4 in poi, tratteggiate, non fanno parte della pila. Sotto, la stessa pila vista da fuori.</div>
+</div>
+<p>Due conseguenze:</p>
+<ul>
+  <li>gli elementi della pila sono dati[0], dati[1], …, dati[top]: in tutto <strong>top + 1</strong> elementi;</li>
+  <li>la pila vuota ha 0 elementi, quindi top + 1 = 0, cioè <strong>top = −1</strong>. Non è una casella vera: è il modo di dire «non c'è nessuna cima».</li>
+</ul>
+
+<h3>Il codice (lavagna, pagine 19 e 20)</h3>
+<p class="titolo-codice">Lavagna, pagine 19 e 20</p>
+<pre class="pseudo"><b>FUNZIONE</b> isEmpty() → boolean
+  <b>IF</b> top = −1 <b>THEN RETURN</b> true
+             <b>ELSE RETURN</b> false
+
+<b>PROCEDURA</b> push(elemento x)          <span class="com">// errore se l'array è pieno!</span>
+  top ← top + 1
+  dati[top] ← x
+
+<b>FUNZIONE</b> top() → elemento           <span class="com">// errore se la pila è vuota!</span>
+  <b>RETURN</b> dati[top]
+
+<b>FUNZIONE</b> pop() → elemento           <span class="com">// errore se la pila è vuota!</span>
+  x ← dati[top]
+  top ← top − 1
+  <b>RETURN</b> x</pre>
+<p>Riga per riga:</p>
+<ul>
+  <li><strong>isEmpty</strong>: la pila è vuota esattamente quando top = −1.</li>
+  <li><strong>push(x)</strong>: <code>top ← top + 1</code> sposta la cima sulla prima casella libera; <code>dati[top] ← x</code> ci scrive x. L'ordine conta: se scrivessimo prima dati[top] ← x, cancelleremmo l'elemento che è in cima.</li>
+  <li><strong>top()</strong>: restituisce l'elemento nella casella della cima, senza cambiare niente.</li>
+  <li><strong>pop()</strong>: <code>x ← dati[top]</code> si ricorda l'elemento in cima; <code>top ← top − 1</code> abbassa la cima di una casella; poi restituisce x. Anche qui l'ordine conta: se abbassassimo prima top, dati[top] sarebbe l'elemento sotto la cima.</li>
+</ul>
+<p>La Figura 3 mostra push(10) e poi pop() sulla pila della Figura 2, come alla lavagna, pagina 20.</p>
+<div class="figura">
+<div class="etich-array">(a) Prima: top = 3</div><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">5</div><div class="i">2</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">top</span></div><div class="v">7</div><div class="i">3</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">4</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">5</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">6</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">7</div></div></div><div class="etich-array">(b) Dopo push(10): top ← top + 1 = 4, poi dati[4] ← 10</div><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">5</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">7</div><div class="i">3</div></div><div class="cella mossa"><div class="f"><span class="lab-dx">top</span></div><div class="v">10</div><div class="i">4</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">5</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">6</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">7</div></div></div><div class="etich-array">(c) Dopo pop(): x ← dati[4] = 10, top ← top − 1 = 3. Il 10 resta scritto, ma è oltre top</div><div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">5</div><div class="i">2</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">top</span></div><div class="v">7</div><div class="i">3</div></div><div class="cella oltre"><div class="f"></div><div class="v">10</div><div class="i">4</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">5</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">6</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">7</div></div></div>
+<div class="didascalia"><b>Figura 3.</b> (a) La pila della Figura 2. (b) push(10): top sale a 4 e nella casella 4 si scrive 10 (in viola). (c) pop(): restituisce 10 e top scende a 3. Il 10 resta scritto nella casella 4, ma la casella è tratteggiata: è oltre top, quindi non fa più parte della pila. Il prossimo push lo sovrascriverà.</div>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: lo stesso nome per due cose</span>
+  <p>Alla lavagna <code>top</code> è sia la <em>variabile</em> (l'indice della cima, un numero) sia la <em>funzione</em> top() (che restituisce l'elemento in cima). Si distinguono dalle parentesi: <code>top</code> da solo è il numero, <code>top()</code> è l'operazione. In un programma vero si usano due nomi diversi, per esempio la variabile si chiama <code>cima</code>.</p>
+</div>
+
+<h3>I due errori</h3>
+<p>Accanto al codice il prof scrive due avvisi in rosso e in verde:</p>
+<ul>
+  <li><strong>«Errore array pieno!»</strong>, accanto a push. L'array ha un numero fisso di caselle, deciso quando lo si crea (alla lavagna sono 7 o poco più: il disegno finisce con «…»). Se top è già sull'ultima casella, top ← top + 1 andrebbe fuori dall'array. È il difetto delle strutture <em>statiche</em>, già visto nella lezione sulle liste: la capacità è fissata.</li>
+  <li><strong>«Errore se la pila è vuota!»</strong>, accanto a top() e pop(). Con top = −1, dati[top] sarebbe dati[−1], una casella che non esiste.</li>
+</ul>
+<p>Il codice della lavagna non controlla questi casi: li lascia a chi usa la pila. Se si vuole il controllo dentro le operazioni, basta un IF all'inizio (lo trovi negli esercizi, alla fine della pagina).</p>
+
+<h3>Quanto costa</h3>
+<p>Ogni operazione esegue due o tre istruzioni semplici, senza cicli, e il numero di istruzioni non dipende da quanti elementi ci sono nella pila. Quindi ogni operazione costa <strong>O(1)</strong>: tempo costante.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Gli elementi stanno in dati[0..top]; top = −1 vuol dire pila vuota.</li>
+    <li>push: top ← top + 1, poi dati[top] ← x. pop: x ← dati[top], poi top ← top − 1, RETURN x.</li>
+    <li>Errori: push con l'array pieno, pop e top con la pila vuota. Ogni operazione costa O(1).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="pila-lista"><span class="num">4</span>La pila in una lista</h2>
+<p class="in-questa"><b>In questa sezione:</b> la seconda realizzazione della lavagna (pagine 21–23): la cima è il primo nodo di una lista; push e pop come spostamenti di riferimenti, disegnati passo per passo; perché la cima sta in testa e non in fondo; il laboratorio della pila.</p>
+
+<h3>L'idea</h3>
+<p>Con una lista non c'è il problema dell'array pieno: ogni volta che arriva un elemento si crea un nodo nuovo. Il riferimento al primo nodo, che nelle liste si chiamava L, qui si chiama <code>top</code>: il primo nodo della lista è la cima della pila. La Figura 4 è il disegno della lavagna, pagina 21.</p>
+<div class="figura">
+<div class="etich-array">(a) La pila 8 12 5 7: top indica il nodo in cima, il 7</div><svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="top indica 7, poi 5, 12, 8" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">top</text><path d="M33.2 66 C45.2 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(b) La pila vuota: top = null</div><svg viewBox="0 0 200 116" width="200" height="116" role="img" aria-label="top = null" font-family="system-ui, sans-serif"><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">top</text><path d="M33.2 66 C41.2 66 52 66 60 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M60 66 L52.7 69.3 L52.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="64" y="70.5" font-size="12.5" class="t-verde" fill="#17803d">null</text></svg>
+<div class="didascalia"><b>Figura 4.</b> (a) La pila 8 12 5 7 come lista, alla lavagna, pagina 21: top indica il 7, che è in cima; seguendo i pros si scende fino all'8, il cui pros è null. (b) La pila vuota: top = null (alla lavagna: «pila vuota: top = null»).</div>
+</div>
+<p>Attenzione all'ordine: <em>da fuori</em> la pila si legge dal fondo alla cima (8 12 5 7), mentre la lista si legge dalla cima al fondo (7 5 12 8). È la stessa pila: la lista parte dalla cima perché la cima è l'unico posto dove si lavora.</p>
+
+<h3>Il codice (lavagna, pagine 21–23)</h3>
+<p class="titolo-codice">Lavagna, pagine 21–23</p>
+<pre class="pseudo"><b>FUNZIONE</b> isEmpty() → boolean
+  <b>IF</b> top = null <b>THEN RETURN</b> true
+               <b>ELSE RETURN</b> false
+
+<b>PROCEDURA</b> push(elemento x)
+  r ← riferimento a un nuovo nodo
+  r.dato ← x
+  r.pros ← top
+  top ← r
+
+<b>FUNZIONE</b> top() → elemento
+  <b>RETURN</b> top.dato
+
+<b>FUNZIONE</b> pop() → elemento
+  x ← top.dato
+  top ← top.pros        <span class="com">// rilasciare la memoria del nodo tolto</span>
+  <b>RETURN</b> x</pre>
+<p>Il campo del nodo che contiene l'elemento qui si chiama <code>dato</code> (nelle liste si chiamava chiave): una pila non cerca per chiave, conserva e basta.</p>
+
+<h3>push(10), passo per passo</h3>
+<p>La Figura 5 mostra push(10) sulla pila della Figura 4, come alla lavagna, pagina 22. Il nodo nuovo va messo <em>prima</em> del 7, cioè in testa alla lista.</p>
+<div class="figura">
+<div class="etich-array">(a) Dopo r ← nuovo nodo e r.dato ← x: il nodo 10 esiste, ma non è collegato a niente</div><svg viewBox="0 0 394 244" width="394" height="244" role="img" aria-label="nodo nuovo 10 non collegato" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="48.5" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="48.5" y1="158" x2="96.5" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="72.5" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">top</text><path d="M33.2 66 C45.2 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="72.5" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M72.5 212 C72.5 204 72.5 196 72.5 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M72.5 190 L75.8 197.3 L69.2 197.3 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(b) Dopo r.pros ← top: il 10 punta al 7, ma top indica ancora il 7</div><svg viewBox="0 0 394 244" width="394" height="244" role="img" aria-label="il 10 punta al 7" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="48.5" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="48.5" y1="158" x2="96.5" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="72.5" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="72.5" cy="150" r="2.6" class="t-verde" fill="#17803d"/><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M72.5 150 C110.5 150 94 134 94 105" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M94 105 L97.3 112.3 L90.7 112.3 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">top</text><path d="M33.2 66 C45.2 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="72.5" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M72.5 212 C72.5 204 72.5 196 72.5 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M72.5 190 L75.8 197.3 L69.2 197.3 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(c) Dopo top ← r: top indica il 10 (la vecchia freccia di top è barrata)</div><svg viewBox="0 0 394 244" width="394" height="244" role="img" aria-label="top indica il 10" font-family="system-ui, sans-serif"><path d="M33.2 66 C45.2 66 56 66 69 66" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M45.7 72 L51.7 60 M52.7 72 L58.7 60" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="48.5" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="48.5" y1="158" x2="96.5" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="72.5" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="72.5" cy="150" r="2.6" class="t-verde" fill="#17803d"/><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M72.5 150 C110.5 150 94 134 94 105" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M94 105 L97.3 112.3 L90.7 112.3 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">top</text><path d="M18.6 74 C18.6 150 26.5 150 47.5 150" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M47.5 150 L40.2 153.3 L40.2 146.7 z" class="t-blu" fill="#2f52c4"/><text x="72.5" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M72.5 212 C72.5 204 72.5 196 72.5 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M72.5 190 L75.8 197.3 L69.2 197.3 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 5.</b> push(10) con la lista. (a) Si crea il nodo nuovo, r lo indica, e ci si scrive 10. (b) r.pros ← top: il nodo nuovo punta al nodo che è in cima, il 7. (c) top ← r: top indica il nodo nuovo; la sua vecchia freccia (barrata) non c'è più. Leggendo da top: 10, 7, 5, 12, 8.</div>
+</div>
+<p>Perché proprio in quest'ordine? Le ultime due righe non si possono scambiare. Se facessimo prima top ← r, top indicherebbe il nodo nuovo e nessuna variabile indicherebbe più il 7: con r.pros ← top faremmo puntare il nodo nuovo a sé stesso, e il resto della pila sarebbe perso per sempre.</p>
+<p>Funziona anche con la pila vuota: top = null, quindi r.pros ← top mette null nel pros del nodo nuovo (sarà l'unico nodo, e dopo di lui non c'è niente), e top ← r lo fa diventare la cima.</p>
+
+<h3>pop(), passo per passo</h3>
+<div class="figura">
+<div class="etich-array">(a) x ← top.dato: x = 7</div><svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="x vale 7" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">top</text><path d="M33.2 66 C45.2 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(b) top ← top.pros: top salta al 5; il nodo 7 è fuori dalla pila</div><svg viewBox="0 0 394 116" width="394" height="116" role="img" aria-label="top indica il 5, il 7 è fuori" font-family="system-ui, sans-serif"><path d="M33.2 66 C45.2 66 56 66 69 66" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M45.7 72 L51.7 60 M52.7 72 L58.7 60" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">top</text><path d="M33.2 66 C63.2 12 150 12 162 57" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M162 57 L157 50.8 L163.3 49.1 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 6.</b> pop() sulla pila 8 12 5 7, come alla lavagna, pagina 23. (a) x ← top.dato: x = 7. (b) top ← top.pros: top salta al 5. Il nodo 7 (in rosso) non si raggiunge più partendo da top, quindi non fa più parte della pila. Poi si restituisce x = 7.</div>
+</div>
+<p>Il nodo tolto occupa ancora memoria. Accanto a top ← top.pros il prof scrive «rilasciare la memoria»: in un linguaggio come il C bisogna liberarla esplicitamente (lo vedi nel codice della sezione 9); in Go e in Java ci pensa il sistema da solo, quando nessuna variabile indica più quel nodo.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Domanda: perché la cima è il primo nodo e non l'ultimo?</span>
+  <p>Si potrebbe mettere la cima in fondo alla lista, ma pop diventerebbe lento. Per togliere l'ultimo nodo bisogna cambiare il pros del <em>penultimo</em> (che deve diventare null), e per trovare il penultimo bisogna scorrere tutta la lista dall'inizio: n passi, tempo O(n). In testa, invece, sia aggiungere sia togliere costa poche istruzioni. La lavagna, pagina 23, chiude così: «Tempo di queste operazioni: <strong>O(1)</strong>».</p>
+</div>
+
+<h3>Prova tu</h3>
+<p>Nel riquadro seguente puoi fare le operazioni che vuoi sulla pila, una riga di codice alla volta, sia con l'array sia con la lista. A sinistra vedi la pila in memoria, a destra come la vede chi la usa. Prova anche pop() fino a svuotare la pila, e poi un pop() in più; e con l'array, push fino a riempirlo.</p>
+<div class="widget" id="w-pl">
+  <h4>Il laboratorio della pila</h4>
+  <div id="pl-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Con la lista, top indica il primo nodo, che è la cima. Pila vuota: top = null.</li>
+    <li>push(x): nodo nuovo r, r.dato ← x, r.pros ← top, top ← r (in quest'ordine). pop(): x ← top.dato, top ← top.pros, RETURN x.</li>
+    <li>Nessun limite di capacità. Tutte le operazioni costano O(1), perché si lavora sempre in testa.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="coda"><span class="num">5</span>Il tipo Coda</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione delle slide (lavagna, pagina 24) e le quattro operazioni della coda, con un esempio.</p>
+
+<div class="box def">
+  <span class="etichetta">Definizione: il tipo Coda (lavagna, pagina 24)</span>
+  <p>Collezione di dati con organizzazione <em>First-In-First-Out</em> (FIFO). Operazioni:</p>
+  <ul>
+    <li><code>isEmpty() → boolean</code></li>
+    <li><code>enqueue(elemento)</code></li>
+    <li><code>dequeue() → elemento</code></li>
+    <li><code>first() → elemento</code></li>
+  </ul>
+</div>
+<ul>
+  <li><strong>isEmpty()</strong>: true se la coda non contiene elementi.</li>
+  <li><strong>enqueue(x)</strong> («metti in coda»): x si mette in fondo.</li>
+  <li><strong>dequeue()</strong> («togli dalla coda»): toglie il primo elemento, quello entrato da più tempo, e lo restituisce.</li>
+  <li><strong>first()</strong> («primo»): restituisce il primo elemento senza toglierlo.</li>
+</ul>
+<p>Le operazioni sono le stesse della pila, con un'unica differenza: da quale parte si esce. Nella pila si entra e si esce dalla stessa parte (la cima); nella coda si entra da una parte (in fondo) e si esce dall'altra (in testa). Alla lavagna il prof scrive come esempio 14 7 2 16: la Figura 7 parte da lì.</p>
+<div class="figura">
+<div class="etich-array">(a) La coda 14 7 2 16: il primo arrivato è il 14</div><svg viewBox="0 0 290 104" width="290" height="104" role="img" aria-label="coda 14 7 2 16" font-family="system-ui, sans-serif"><line x1="26" y1="29" x2="218" y2="29" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="26" y1="75" x2="218" y2="75" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><rect x="32" y="34" width="42" height="36" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="53" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><rect x="78" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="99" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="124" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="145" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="170" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="191" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><text x="53" y="20" font-size="13" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">primo</text><text x="191" y="94" font-size="13" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">ultimo</text><line x1="274" y1="52" x2="225" y2="52" class="l-verde" stroke="#17803d" stroke-width="1.7"/><path d="M222 52 L229.3 48.7 L229.3 55.3 z" class="t-verde" fill="#17803d"/><text x="248" y="44" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">entra</text><line x1="24" y1="52" x2="7" y2="52" class="l-rosso" stroke="#b42318" stroke-width="1.7"/><path d="M4 52 L11.3 48.7 L11.3 55.3 z" class="t-rosso" fill="#b42318"/><text x="13" y="44" font-size="12.5" text-anchor="middle" class="t-rosso" fill="#b42318">esce</text></svg><div class="etich-array">(b) Dopo enqueue(9): il 9 si mette in fondo</div><svg viewBox="0 0 336 104" width="336" height="104" role="img" aria-label="coda 14 7 2 16 9" font-family="system-ui, sans-serif"><line x1="26" y1="29" x2="264" y2="29" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="26" y1="75" x2="264" y2="75" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><rect x="32" y="34" width="42" height="36" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="53" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><rect x="78" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="99" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="124" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="145" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="170" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="191" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><rect x="216" y="34" width="42" height="36" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><text x="237" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><text x="53" y="20" font-size="13" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">primo</text><text x="237" y="94" font-size="13" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">ultimo</text><line x1="320" y1="52" x2="271" y2="52" class="l-verde" stroke="#17803d" stroke-width="1.7"/><path d="M268 52 L275.3 48.7 L275.3 55.3 z" class="t-verde" fill="#17803d"/><text x="294" y="44" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">entra</text><line x1="24" y1="52" x2="7" y2="52" class="l-rosso" stroke="#b42318" stroke-width="1.7"/><path d="M4 52 L11.3 48.7 L11.3 55.3 z" class="t-rosso" fill="#b42318"/><text x="13" y="44" font-size="12.5" text-anchor="middle" class="t-rosso" fill="#b42318">esce</text></svg><div class="etich-array">(c) Dopo dequeue(), che restituisce 14: esce il primo</div><svg viewBox="0 0 352 104" width="352" height="104" role="img" aria-label="esce 14" font-family="system-ui, sans-serif"><line x1="88" y1="29" x2="280" y2="29" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="88" y1="75" x2="280" y2="75" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><rect x="94" y="34" width="42" height="36" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="115" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="140" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="161" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="186" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="207" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><rect x="232" y="34" width="42" height="36" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><text x="253" y="57.5" font-size="15.5" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><text x="115" y="20" font-size="13" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">primo</text><text x="253" y="94" font-size="13" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">ultimo</text><line x1="336" y1="52" x2="287" y2="52" class="l-verde" stroke="#17803d" stroke-width="1.7"/><path d="M284 52 L291.3 48.7 L291.3 55.3 z" class="t-verde" fill="#17803d"/><text x="310" y="44" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">entra</text><rect x="14" y="34" width="42" height="36" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5" stroke-dasharray="4 3"/><text x="35" y="57.5" font-size="15.5" text-anchor="middle" class="t-rosso" fill="#b42318">14</text><line x1="84" y1="52" x2="61" y2="52" class="l-rosso" stroke="#b42318" stroke-width="1.7"/><path d="M58 52 L65.3 48.7 L65.3 55.3 z" class="t-rosso" fill="#b42318"/><text x="74" y="44" font-size="12.5" text-anchor="middle" class="t-rosso" fill="#b42318">esce</text></svg>
+<div class="didascalia"><b>Figura 7.</b> (a) La coda 14 7 2 16: il 14 è il primo, cioè quello entrato da più tempo, e il 16 l'ultimo. (b) enqueue(9): il 9 si mette dopo il 16. (c) dequeue() toglie il 14, il primo, e lo restituisce.</div>
+</div>
+<p>Anche qui dequeue() e first() su una coda vuota sono un errore.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Operazioni della coda: isEmpty() → boolean, enqueue(x) (in fondo), dequeue() → elemento (toglie il primo), first() → elemento (lo guarda soltanto).</li>
+    <li>Si entra da una parte e si esce dall'altra. dequeue e first su una coda vuota sono un errore.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="coda-array"><span class="num">6</span>La coda in un array: l'array circolare</h2>
+<p class="in-questa"><b>In questa sezione:</b> la coda nell'array della lavagna, pagina 25, con i due indici primo e ultimo; perché non si spostano gli elementi; il problema della coda che «cammina» verso destra; la soluzione, l'array circolare, con l'operazione mod; il codice completo.</p>
+
+<h3>Due indici: primo e ultimo</h3>
+<p>Nella pila si lavorava sempre sulla stessa casella, la cima. Nella coda si lavora su due caselle diverse: si entra in fondo e si esce in testa. Servono quindi due indici: <code>primo</code>, la casella del primo elemento (da dove si esce), e <code>ultimo</code>, la casella dell'ultimo (dopo la quale si entra). La Figura 8 segue la lavagna, pagina 25.</p>
+<div class="figura">
+<div class="etich-array">(a) La coda 2 8 1 10: primo = 0, ultimo = 3</div><div class="array qs"><div class="cella zsx"><div class="f"><span class="lab-sx">primo</span></div><div class="v">2</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">ultimo</span></div><div class="v">10</div><div class="i">3</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">4</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">5</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">6</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">7</div></div></div><div class="etich-array">(b) Dopo enqueue(20) ed enqueue(15): ultimo avanza fino a 5</div><div class="array qs"><div class="cella zsx"><div class="f"><span class="lab-sx">primo</span></div><div class="v">2</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella zsx"><div class="f"></div><div class="v">20</div><div class="i">4</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">ultimo</span></div><div class="v">15</div><div class="i">5</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">6</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">7</div></div></div><div class="etich-array">(c) Dopo dequeue(), che restituisce 2: primo avanza a 1</div><div class="array qs"><div class="cella oltre"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella zsx"><div class="f"><span class="lab-sx">primo</span></div><div class="v">8</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella zsx"><div class="f"></div><div class="v">20</div><div class="i">4</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">ultimo</span></div><div class="v">15</div><div class="i">5</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">6</div></div><div class="cella oltre"><div class="f"></div><div class="v"></div><div class="i">7</div></div></div>
+<div class="didascalia"><b>Figura 8.</b> La coda nell'array, alla lavagna, pagina 25. (a) La coda 2 8 1 10 nelle caselle 0–3. (b) enqueue(20) ed enqueue(15): ogni volta ultimo avanza di una casella e il nuovo elemento si scrive lì. (c) dequeue() restituisce il 2 e primo avanza di una casella: la casella 0 non fa più parte della coda (il 2 resta scritto, ma non conta più).</div>
+</div>
+<p>Perché, dopo dequeue(), non spostiamo tutti gli elementi di una casella a sinistra, in modo che il primo sia sempre in dati[0]? Si potrebbe, ma spostare n elementi costa O(n). Spostare l'indice primo costa O(1).</p>
+
+<h3>Il problema: la coda cammina</h3>
+<p>Con enqueue l'indice ultimo avanza; con dequeue l'indice primo avanza. Tutti e due vanno solo verso destra. Dopo molte operazioni la coda si trova in fondo all'array, anche se contiene pochi elementi, come nella Figura 9 (a): le caselle 0–4 sono libere, ma ultimo è sull'ultima casella, e un nuovo enqueue non saprebbe dove andare.</p>
+<p>Nella stessa lezione dell'anno scorso, a questo punto, il prof scriveva alla lavagna due parole: <strong>array «circolare»</strong>. L'idea: quando un indice arriva all'ultima casella, il passo successivo lo riporta alla casella 0, come se l'array fosse piegato ad anello e l'ultima casella toccasse la prima.</p>
+<div class="figura">
+<div class="etich-array">(a) Dopo altri dequeue ed enqueue: la coda è 15 4 9, nelle caselle 5, 6, 7. Le caselle 0–4 sono libere, ma ultimo è arrivato in fondo</div><div class="array qs"><div class="cella oltre"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella oltre"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella oltre"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="cella oltre"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella oltre"><div class="f"></div><div class="v">20</div><div class="i">4</div></div><div class="cella zsx"><div class="f"><span class="lab-sx">primo</span></div><div class="v">15</div><div class="i">5</div></div><div class="cella zsx"><div class="f"></div><div class="v">4</div><div class="i">6</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">ultimo</span></div><div class="v">9</div><div class="i">7</div></div></div><div class="etich-array">(b) enqueue(3) con l'array circolare: dopo la casella 7 si riparte dalla 0</div><div class="array qs"><div class="cella mossa"><div class="f"><span class="lab-dx">ultimo</span></div><div class="v">3</div><div class="i">0</div></div><div class="cella oltre"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella oltre"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="cella oltre"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella oltre"><div class="f"></div><div class="v">20</div><div class="i">4</div></div><div class="cella zsx"><div class="f"><span class="lab-sx">primo</span></div><div class="v">15</div><div class="i">5</div></div><div class="cella zsx"><div class="f"></div><div class="v">4</div><div class="i">6</div></div><div class="cella zsx"><div class="f"></div><div class="v">9</div><div class="i">7</div></div></div><div class="affianco"><div><svg viewBox="0 0 300 268" width="300" height="268" role="img" aria-label="anello di 8 caselle: la coda va da 5 a 0" font-family="system-ui, sans-serif"><path d="M114.8 49 A92 92 0 0 1 185.2 49 L170.7 84.1 A54 54 0 0 0 129.3 84.1 z" class="r-viola" fill="#f1eafc" stroke="#6d3fc0" stroke-width="1.5"/><text x="150" y="66.5" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><text x="150" y="97" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">0</text><text x="150" y="24" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">ultimo</text><path d="M185.2 49 A92 92 0 0 1 235 98.8 L199.9 113.3 A54 54 0 0 0 170.7 84.1 z" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5" stroke-dasharray="4 3"/><text x="201.6" y="87.9" font-size="15" text-anchor="middle" class="t-muted" fill="#5b6270">8</text><text x="179" y="109" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">1</text><path d="M235 98.8 A92 92 0 0 1 235 169.2 L199.9 154.7 A54 54 0 0 0 199.9 113.3 z" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5" stroke-dasharray="4 3"/><text x="223" y="139.5" font-size="15" text-anchor="middle" class="t-muted" fill="#5b6270">1</text><text x="191" y="138" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">2</text><path d="M235 169.2 A92 92 0 0 1 185.2 219 L170.7 183.9 A54 54 0 0 0 199.9 154.7 z" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5" stroke-dasharray="4 3"/><text x="201.6" y="191.1" font-size="15" text-anchor="middle" class="t-muted" fill="#5b6270">10</text><text x="179" y="167" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">3</text><path d="M185.2 219 A92 92 0 0 1 114.8 219 L129.3 183.9 A54 54 0 0 0 170.7 183.9 z" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5" stroke-dasharray="4 3"/><text x="150" y="212.5" font-size="15" text-anchor="middle" class="t-muted" fill="#5b6270">20</text><text x="150" y="179" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">4</text><path d="M114.8 219 A92 92 0 0 1 65 169.2 L100.1 154.7 A54 54 0 0 0 129.3 183.9 z" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="98.4" y="191.1" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><text x="121" y="167" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">5</text><text x="69.4" y="218.6" font-size="12.5" font-weight="700" text-anchor="end" class="t-arancio" fill="#b4500f">primo</text><path d="M65 169.2 A92 92 0 0 1 65 98.8 L100.1 113.3 A54 54 0 0 0 100.1 154.7 z" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="77" y="139.5" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><text x="109" y="138" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">6</text><path d="M65 98.8 A92 92 0 0 1 114.8 49 L129.3 84.1 A54 54 0 0 0 100.1 113.3 z" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/><text x="98.4" y="87.9" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><text x="121" y="109" font-size="11.5" text-anchor="middle" class="t-verde" fill="#17803d">7</text><path d="M139.5 114.7 A22 22 0 0 1 160.5 114.7" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.4"/><path d="M165.8 117.6 l-8.1 0.2 l3.8 -7 z" class="punta" fill="#5b6270"/><text x="150" y="139" font-size="12.5" text-anchor="middle" class="t-muted" fill="#5b6270">n = 4</text></svg><div class="nome-mat">(c) la situazione (b) disegnata ad anello</div></div></div>
+<div class="didascalia"><b>Figura 9.</b> (a) La coda 15 4 9 è arrivata in fondo: ultimo = 7, l'ultima casella. (b) Con l'array circolare, enqueue(3) va nella casella 0 (in viola): ultimo passa da 7 a 0. La coda adesso è 15 4 9 3 e occupa le caselle 5, 6, 7, 0. (c) La stessa situazione disegnata ad anello: dopo la casella 7 viene la 0. La freccia al centro indica il verso in cui avanzano primo e ultimo; n è il numero di elementi.</div>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: il resto della divisione, mod</span>
+  <p><code>a mod N</code> è il <strong>resto</strong> della divisione intera di a per N. Per esempio 7 mod 8 = 7 (7 diviso 8 fa 0 con resto 7) e 8 mod 8 = 0 (8 diviso 8 fa 1 con resto 0).</p>
+  <p>Serve a «girare in tondo»: se un indice i va da 0 a N − 1, allora <code>(i + 1) mod N</code> è la casella dopo i, e dopo la casella N − 1 dà 0. Con N = 8: (5 + 1) mod 8 = 6, (6 + 1) mod 8 = 7, (7 + 1) mod 8 = 0. È come l'orologio: dopo le 12 vengono le 1, non le 13.</p>
+</div>
+
+<h3>Il codice con l'array circolare</h3>
+<p>Alla lavagna questo codice non c'è (nemmeno in quella dell'anno scorso, dove c'era solo l'idea): lo scriviamo qui per completare il disegno, con gli stessi nomi della lavagna. Oltre a primo e ultimo usiamo un contatore <code>n</code> degli elementi presenti, e chiamiamo <code>N</code> il numero di caselle dell'array. All'inizio la coda è vuota: primo = 0, ultimo = N − 1 (così il primo enqueue va nella casella (N − 1 + 1) mod N = 0) e n = 0.</p>
+<p class="titolo-codice">La coda con l'array circolare (non viene dalla lavagna)</p>
+<pre class="pseudo"><b>FUNZIONE</b> isEmpty() → boolean
+  <b>IF</b> n = 0 <b>THEN RETURN</b> true
+          <b>ELSE RETURN</b> false
+
+<b>PROCEDURA</b> enqueue(elemento x)
+  <b>IF</b> n = N <b>THEN</b> errore: coda piena
+  ultimo ← (ultimo + 1) mod N
+  dati[ultimo] ← x
+  n ← n + 1
+
+<b>FUNZIONE</b> first() → elemento
+  <b>IF</b> n = 0 <b>THEN</b> errore: coda vuota
+  <b>RETURN</b> dati[primo]
+
+<b>FUNZIONE</b> dequeue() → elemento
+  <b>IF</b> n = 0 <b>THEN</b> errore: coda vuota
+  x ← dati[primo]
+  primo ← (primo + 1) mod N
+  n ← n − 1
+  <b>RETURN</b> x</pre>
+
+<div class="box domanda">
+  <span class="etichetta">Domanda: a cosa serve n, se ci sono già primo e ultimo?</span>
+  <p>Senza n, una coda piena e una coda vuota avrebbero lo stesso aspetto. Prova con N = 4. Coda piena con le caselle 0, 1, 2, 3: primo = 0 e ultimo = 3. Togli i quattro elementi con dequeue: primo avanza quattro volte e torna a 0, ultimo resta 3. Coda vuota: primo = 0 e ultimo = 3, esattamente come prima! Il contatore n toglie il dubbio: 4 nel primo caso, 0 nel secondo.</p>
+</div>
+<p>Anche qui ogni operazione esegue poche istruzioni senza cicli: <strong>O(1)</strong>. Rimane il limite della capacità: con N caselle la coda non può avere più di N elementi.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Due indici: primo (si esce) e ultimo (si entra). Si spostano gli indici, non gli elementi.</li>
+    <li>Gli indici avanzano solo verso destra: per riusare le caselle libere all'inizio, l'array si usa «in cerchio», con (i + 1) mod N.</li>
+    <li>Un contatore n distingue la coda piena (n = N) da quella vuota (n = 0). Tutto O(1).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="coda-lista"><span class="num">7</span>La coda in una lista</h2>
+<p class="in-questa"><b>In questa sezione:</b> la realizzazione della lavagna, pagine 26–29: una lista con due riferimenti, primo e ultimo; dequeue toglie in testa, enqueue aggiunge in fondo; i due casi particolari (coda che diventa vuota, coda che era vuota); il laboratorio della coda.</p>
+
+<h3>L'idea</h3>
+<p>Si esce dalla testa della lista, come nella pila. Si entra in fondo: per aggiungere in fondo senza scorrere tutta la lista, si tiene un secondo riferimento, <code>ultimo</code>, che indica sempre l'ultimo nodo. Alla lavagna, pagina 26, il primo nodo è annotato «1° in coda» e l'ultimo «ultimo in coda» (Figura 10).</p>
+<div class="figura">
+<div class="etich-array">(a) La coda 2 8 1 10: primo indica il primo nodo, ultimo l'ultimo</div><svg viewBox="0 0 394 160" width="394" height="160" role="img" aria-label="primo indica 2, ultimo indica 10" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C62 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 126 C88.4 152 352 156 352 105" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M352 105 L355.3 112.3 L348.7 112.3 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(b) La coda vuota: primo = null e ultimo = null</div><svg viewBox="0 0 220 160" width="220" height="160" role="img" aria-label="coda vuota" font-family="system-ui, sans-serif"><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C58 66 52 66 60 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M60 66 L52.7 69.3 L52.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="64" y="70.5" font-size="12.5" class="t-verde" fill="#17803d">null</text><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 130 C66.4 130 52 130 60 130" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M60 130 L52.7 133.3 L52.7 126.7 z" class="t-blu" fill="#2f52c4"/><text x="64" y="134.5" font-size="12.5" class="t-verde" fill="#17803d">null</text></svg>
+<div class="didascalia"><b>Figura 10.</b> (a) La coda 2 8 1 10 come lista, alla lavagna, pagina 26: primo indica il 2, ultimo indica il 10. (b) La coda vuota: primo = null e ultimo = null (alla lavagna: «coda vuota: primo null, ultimo null»).</div>
+</div>
+
+<h3>Il codice (lavagna, pagine 27–29)</h3>
+<p class="titolo-codice">Lavagna, pagine 27–29</p>
+<pre class="pseudo"><b>FUNZIONE</b> isEmpty() → boolean
+  <b>IF</b> primo = null <b>THEN RETURN</b> true
+                 <b>ELSE RETURN</b> false
+
+<b>FUNZIONE</b> first() → elemento
+  <b>RETURN</b> primo.dato
+
+<b>FUNZIONE</b> dequeue() → elemento
+  x ← primo.dato
+  primo ← primo.pros
+  <b>IF</b> primo = null <b>THEN</b>
+    ultimo ← null
+  <b>RETURN</b> x
+
+<b>PROCEDURA</b> enqueue(elemento x)
+  r ← riferimento a un nuovo nodo
+  r.dato ← x
+  r.pros ← null
+  <b>IF</b> primo = null <b>THEN</b>          <span class="com">// inserimento in coda vuota</span>
+    primo ← r
+    ultimo ← r
+  <b>ELSE</b>
+    ultimo.pros ← r
+    ultimo ← r</pre>
+
+<h3>dequeue(), passo per passo</h3>
+<p>dequeue() è uguale a pop() della pila: si ricorda il dato del primo nodo e primo salta al nodo successivo. C'è una riga in più, l'IF, per un caso particolare: se la coda aveva <em>un solo</em> elemento, dopo primo ← primo.pros si ha primo = null, ma ultimo indica ancora il nodo appena tolto. La riga ultimo ← null rimette le cose a posto: coda vuota vuol dire primo e ultimo tutti e due null. La Figura 11 mostra il caso normale e quello particolare (lavagna, pagina 28).</p>
+<div class="figura">
+<div class="etich-array">(a) dequeue() su 2 8 1 10, dopo primo ← primo.pros: primo indica l'8, il 2 è fuori</div><svg viewBox="0 0 394 160" width="394" height="160" role="img" aria-label="primo indica 8" font-family="system-ui, sans-serif"><path d="M50 66 C62 66 56 66 69 66" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M54.1 72 L60.1 60 M61.1 72 L67.1 60" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C80 12 150 12 162 57" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M162 57 L157 50.8 L163.3 49.1 z" class="t-blu" fill="#2f52c4"/><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 126 C88.4 152 352 156 352 105" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M352 105 L355.3 112.3 L348.7 112.3 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(b) dequeue() su una coda con il solo 2, dopo primo ← primo.pros: primo = null, ma ultimo indica ancora il 2</div><svg viewBox="0 0 206 244" width="206" height="244" role="img" aria-label="primo null, ultimo sul 2" font-family="system-ui, sans-serif"><rect x="140" y="142" width="48" height="46" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><line x1="140" y1="158" x2="188" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="164" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><text x="164" y="154" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C58 66 52 66 60 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M60 66 L52.7 69.3 L52.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="64" y="70.5" font-size="12.5" class="t-verde" fill="#17803d">null</text><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 126 C98.4 140 100 150 139 150" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M139 150 L131.7 153.3 L131.7 146.7 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(c) …e dopo ultimo ← null: la coda è vuota, e lo dicono tutti e due</div><svg viewBox="0 0 206 244" width="206" height="244" role="img" aria-label="primo e ultimo null" font-family="system-ui, sans-serif"><rect x="140" y="142" width="48" height="46" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/><line x1="140" y1="158" x2="188" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="164" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><text x="164" y="154" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C58 66 52 66 60 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M60 66 L52.7 69.3 L52.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="64" y="70.5" font-size="12.5" class="t-verde" fill="#17803d">null</text><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 130 C66.4 130 52 130 60 130" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M60 130 L52.7 133.3 L52.7 126.7 z" class="t-blu" fill="#2f52c4"/><text x="64" y="134.5" font-size="12.5" class="t-verde" fill="#17803d">null</text></svg>
+<div class="didascalia"><b>Figura 11.</b> (a) dequeue() sulla coda 2 8 1 10: primo salta all'8, il 2 (in rosso) è fuori. ultimo non cambia. (b) dequeue() su una coda con il solo 2: dopo primo ← primo.pros, primo = null ma ultimo indica ancora il 2. (c) La riga ultimo ← null sistema anche ultimo. Alla lavagna, pagina 28, il prof disegna proprio questo caso, con un unico nodo (il 10) indicato sia da primo sia da ultimo.</div>
+</div>
+
+<h3>enqueue(x), passo per passo</h3>
+<p>Si crea il nodo nuovo, con pros = null perché sarà l'ultimo. Poi due casi:</p>
+<ul>
+  <li><strong>coda vuota</strong> (primo = null): il nodo nuovo è insieme il primo e l'ultimo, quindi primo ← r e ultimo ← r (alla lavagna: «inserimento in coda vuota»);</li>
+  <li><strong>altrimenti</strong>: l'ultimo nodo attuale deve puntare al nodo nuovo (ultimo.pros ← r), e poi ultimo si sposta sul nodo nuovo (ultimo ← r).</li>
+</ul>
+<p>La Figura 12 mostra enqueue(7) sulla coda 2 8 1 10, come alla lavagna, pagina 29.</p>
+<div class="figura">
+<div class="etich-array">(a) Dopo r ← nuovo nodo, r.dato ← 7, r.pros ← null</div><svg viewBox="0 0 437 244" width="437" height="244" role="img" aria-label="nodo 7 fuori dalla coda" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><text x="352" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><rect x="371" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="371" y1="158" x2="419" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="395" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="395" y="154" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C62 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 126 C88.4 152 352 156 352 105" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M352 105 L355.3 112.3 L348.7 112.3 z" class="t-blu" fill="#2f52c4"/><text x="395" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M395 212 C395 204 395 196 395 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M395 190 L398.3 197.3 L391.7 197.3 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(b) Dopo ultimo.pros ← r: il 10 punta al 7</div><svg viewBox="0 0 437 244" width="437" height="244" role="img" aria-label="il 10 punta al 7" font-family="system-ui, sans-serif"><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="352" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="371" y="142" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="371" y1="158" x2="419" y2="158" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="395" y="178" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="395" y="154" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M352 66 C384 70 395 102 395 141" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M395 141 L391.7 133.7 L398.3 133.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C62 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 126 C88.4 152 352 156 352 105" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M352 105 L355.3 112.3 L348.7 112.3 z" class="t-blu" fill="#2f52c4"/><text x="395" y="226" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">r</text><path d="M395 212 C395 204 395 196 395 190" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M395 190 L398.3 197.3 L391.7 197.3 z" class="t-blu" fill="#2f52c4"/></svg><div class="etich-array">(c) Dopo ultimo ← r: ultimo indica il 7</div><svg viewBox="0 0 480 160" width="480" height="160" role="img" aria-label="ultimo indica 7" font-family="system-ui, sans-serif"><path d="M58.4 126 C88.4 152 352 156 352 105" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.7" stroke-dasharray="4 3"/><path d="M211.5 150.4 L217.5 138.4 M218.5 150.4 L224.5 138.4" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/><rect x="70" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="70" y1="74" x2="118" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="94" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="94" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="156" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="156" y1="74" x2="204" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="180" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="180" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="242" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="242" y1="74" x2="290" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="266" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="266" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="328" y="58" width="48" height="46" rx="3" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.5"/><line x1="328" y1="74" x2="376" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="352" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="352" cy="66" r="2.6" class="t-verde" fill="#17803d"/><rect x="414" y="58" width="48" height="46" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.5"/><line x1="414" y1="74" x2="462" y2="74" class="l-muted" stroke="#5b6270" stroke-width="1"/><text x="438" y="94" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="438" y="70" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text><path d="M94 66 C114 66 136 66 155 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M155 66 L147.7 69.3 L147.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M180 66 C200 66 222 66 241 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M241 66 L233.7 69.3 L233.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M266 66 C286 66 308 66 327 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M327 66 L319.7 69.3 L319.7 62.7 z" class="t-verde" fill="#17803d"/><path d="M352 66 C372 66 394 66 413 66" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.7"/><path d="M413 66 L405.7 69.3 L405.7 62.7 z" class="t-verde" fill="#17803d"/><text x="6" y="71" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">primo</text><path d="M50 66 C62 66 56 66 69 66" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M69 66 L61.7 69.3 L61.7 62.7 z" class="t-blu" fill="#2f52c4"/><text x="6" y="135" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">ultimo</text><path d="M58.4 126 C88.4 152 438 156 438 105" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.7"/><path d="M438 105 L441.3 112.3 L434.7 112.3 z" class="t-blu" fill="#2f52c4"/></svg>
+<div class="didascalia"><b>Figura 12.</b> enqueue(7). (a) Il nodo nuovo, con 7 e pros = null, ancora fuori dalla coda. (b) ultimo.pros ← r: il 10, che era l'ultimo, punta al 7. (c) ultimo ← r: ultimo indica il 7 (la vecchia freccia è barrata). Da primo si legge 2 8 1 10 7.</div>
+</div>
+<p>Anche qui l'ordine delle ultime due righe conta: se facessimo prima ultimo ← r, perderemmo il riferimento al 10, e il 10 non potrebbe più essere collegato al 7.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Domanda: perché si entra in fondo e si esce in testa, e non il contrario?</span>
+  <p>Proviamo il contrario: entrare in testa e uscire dal fondo. Entrare in testa è facile (è il push della pila). Ma uscire dal fondo vuol dire togliere l'ultimo nodo, e per farlo bisogna cambiare il pros del penultimo: anche avendo il riferimento ultimo, il penultimo non lo conosciamo, perché in una lista si va solo avanti. Bisognerebbe scorrere tutta la lista: O(n). Nel verso della lavagna, invece, togliere dalla testa e aggiungere dopo ultimo costano O(1). La lavagna, pagina 29: «Tempo di queste operazioni: <strong>O(1)</strong>».</p>
+</div>
+
+<h3>Prova tu</h3>
+<p>Nel riquadro puoi fare le operazioni sulla coda, riga per riga, con l'array circolare (6 caselle) e con la lista. Con l'array, prova a fare dequeue() un paio di volte e poi enqueue finché ultimo non torna alla casella 0; con la lista, prova a svuotare la coda e a fare enqueue sulla coda vuota.</p>
+<div class="widget" id="w-co">
+  <h4>Il laboratorio della coda</h4>
+  <div id="co-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Con la lista: primo indica il primo nodo (da lì si esce), ultimo l'ultimo nodo (dopo di lui si entra). Coda vuota: primo = ultimo = null.</li>
+    <li>dequeue: x ← primo.dato, primo ← primo.pros, e se la coda è rimasta vuota anche ultimo ← null.</li>
+    <li>enqueue: nodo nuovo con pros = null; se la coda è vuota primo ← r e ultimo ← r, altrimenti ultimo.pros ← r e ultimo ← r. Tutto O(1).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="confronto"><span class="num">8</span>Array o lista?</h2>
+<p class="in-questa"><b>In questa sezione:</b> le quattro realizzazioni a confronto: tempo, memoria, limiti.</p>
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>con un array</th><th>con una lista</th></tr>
+  <tr><td>tempo di ogni operazione</td><td>O(1)</td><td>O(1)</td></tr>
+  <tr><td>capacità</td><td>fissata quando si crea l'array: può diventare piena (errore)</td><td>nessun limite, a parte la memoria del computer</td></tr>
+  <tr><td>memoria per elemento</td><td>solo il dato</td><td>il dato più il campo pros (un riferimento)</td></tr>
+  <tr><td>memoria sprecata</td><td>le caselle vuote dell'array</td><td>nessuna casella vuota, ma un pros per nodo</td></tr>
+  <tr><td>cosa serve tenere</td><td>pila: dati e top; coda: dati, primo, ultimo, n</td><td>pila: top; coda: primo e ultimo</td></tr>
+</table></div>
+<p>Per il tempo le due scelte si equivalgono. Si sceglie l'array quando si conosce in anticipo il numero massimo di elementi, la lista quando non lo si conosce.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Tempo: O(1) per tutte le operazioni, sia con l'array sia con la lista.</li>
+    <li>Array: capacità fissa, nessun campo in più. Lista: capacità libera, un pros in più per ogni elemento.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="codice"><span class="num">9</span>Il codice vero: C e Go</h2>
+<p class="in-questa"><b>In questa sezione:</b> la pila e la coda con le liste scritte in C, come alla lavagna, e la stessa cosa in Go, dove per la pila basta una slice. Non è nella lezione, ma serve per il laboratorio e aiuta a capire cosa sono i riferimenti.</p>
+<p>In C un riferimento a un nodo è un <strong>puntatore</strong> (<code>Nodo *</code>), <code>null</code> si scrive <code>NULL</code>, e <code>p-&gt;dato</code> vuol dire «il campo dato del nodo indicato da p» (alla lavagna: p.dato). «Riferimento a un nuovo nodo» si scrive <code>malloc(sizeof(Nodo))</code>, e «rilasciare la memoria» si scrive <code>free</code>.</p>
+<p class="titolo-codice">C: pila e coda con le liste (compilato con gcc -Wall -Wextra -fsanitize=address,undefined: nessun errore e nessuna memoria persa)</p>
+<pre class="go">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+typedef struct nodo {
+    int dato;
+    struct nodo *pros;
+} Nodo;
+
+/* ---------- pila con una lista: top indica il nodo in cima ---------- */
+typedef struct {
+    Nodo *top;
+} Pila;
+
+int pilaVuota(Pila *P) { return P-&gt;top == NULL; }
+
+void push(Pila *P, int x) {
+    Nodo *r = malloc(sizeof(Nodo));   /* r &lt;- riferimento a un nuovo nodo */
+    r-&gt;dato = x;                       /* r.dato &lt;- x */
+    r-&gt;pros = P-&gt;top;                  /* r.pros &lt;- top */
+    P-&gt;top = r;                        /* top &lt;- r */
+}
+
+int pop(Pila *P) {                     /* da chiamare solo se la pila non è vuota */
+    Nodo *vecchio = P-&gt;top;
+    int x = vecchio-&gt;dato;             /* x &lt;- top.dato */
+    P-&gt;top = vecchio-&gt;pros;            /* top &lt;- top.pros */
+    free(vecchio);                     /* si rilascia la memoria */
+    return x;
+}
+
+/* ---------- coda con una lista: primo e ultimo ---------- */
+typedef struct {
+    Nodo *primo, *ultimo;
+} Coda;
+
+int codaVuota(Coda *C) { return C-&gt;primo == NULL; }
+
+void enqueue(Coda *C, int x) {
+    Nodo *r = malloc(sizeof(Nodo));
+    r-&gt;dato = x;
+    r-&gt;pros = NULL;
+    if (C-&gt;primo == NULL) {            /* inserimento in coda vuota */
+        C-&gt;primo = r;
+        C-&gt;ultimo = r;
+    } else {
+        C-&gt;ultimo-&gt;pros = r;
+        C-&gt;ultimo = r;
+    }
+}
+
+int dequeue(Coda *C) {                 /* da chiamare solo se la coda non è vuota */
+    Nodo *vecchio = C-&gt;primo;
+    int x = vecchio-&gt;dato;
+    C-&gt;primo = vecchio-&gt;pros;
+    if (C-&gt;primo == NULL)
+        C-&gt;ultimo = NULL;
+    free(vecchio);
+    return x;
+}
+
+int main(void) {
+    Pila P = { NULL };
+    push(&amp;P, 8); push(&amp;P, 12); push(&amp;P, 5); push(&amp;P, 7);
+    push(&amp;P, 10);
+    printf("pop: %d\n", pop(&amp;P));          /* 10 */
+    printf("cima: %d\n", P.top-&gt;dato);     /* 7 */
+    while (!pilaVuota(&amp;P))
+        printf("%d ", pop(&amp;P));             /* 7 5 12 8 */
+    printf("\n");
+
+    Coda C = { NULL, NULL };
+    enqueue(&amp;C, 2); enqueue(&amp;C, 8); enqueue(&amp;C, 1); enqueue(&amp;C, 10);
+    printf("dequeue: %d\n", dequeue(&amp;C));   /* 2 */
+    enqueue(&amp;C, 7);
+    while (!codaVuota(&amp;C))
+        printf("%d ", dequeue(&amp;C));         /* 8 1 10 7 */
+    printf("\n");
+    return 0;
+}</pre>
+<p>Il programma stampa:</p>
+<pre class="go">pop: 10
+cima: 7
+7 5 12 8
+dequeue: 2
+8 1 10 7</pre>
+<p>In Go la pila si fa comodamente con una <strong>slice</strong>: la cima è l'ultimo elemento, push è <code>append</code> e pop accorcia la slice di uno. È la versione «con l'array», ma senza il problema dell'array pieno: quando la slice è piena, append crea da solo un array più grande e ci copia gli elementi (vedi gli approfondimenti). Per la coda usiamo la lista della lavagna.</p>
+<p class="titolo-codice">Go: pila con una slice, coda con una lista (formattato con gofmt, controllato con go vet)</p>
+<pre class="go">package main
+
+import "fmt"
+
+// Pila con una slice: la cima è l'ultimo elemento della slice.
+type Pila []int
+
+func (p *Pila) Push(x int) { *p = append(*p, x) }
+
+func (p *Pila) Pop() int { // da chiamare solo se la pila non è vuota
+	s := *p
+	x := s[len(s)-1]
+	*p = s[:len(s)-1]
+	return x
+}
+
+func (p Pila) Top() int      { return p[len(p)-1] }
+func (p Pila) IsEmpty() bool { return len(p) == 0 }
+
+// Coda con una lista: primo e ultimo, come alla lavagna.
+type nodo struct {
+	dato int
+	pros *nodo
+}
+
+type Coda struct {
+	primo, ultimo *nodo
+}
+
+func (c *Coda) IsEmpty() bool { return c.primo == nil }
+
+func (c *Coda) Enqueue(x int) {
+	r := &amp;nodo{dato: x} // r.pros è già nil
+	if c.primo == nil { // inserimento in coda vuota
+		c.primo = r
+		c.ultimo = r
+	} else {
+		c.ultimo.pros = r
+		c.ultimo = r
+	}
+}
+
+func (c *Coda) Dequeue() int { // da chiamare solo se la coda non è vuota
+	x := c.primo.dato
+	c.primo = c.primo.pros
+	if c.primo == nil {
+		c.ultimo = nil
+	}
+	return x
+}
+
+func main() {
+	var p Pila
+	for _, x := range []int{8, 12, 5, 7, 10} {
+		p.Push(x)
+	}
+	fmt.Println("pop:", p.Pop(), "cima:", p.Top()) // pop: 10 cima: 7
+	for !p.IsEmpty() {
+		fmt.Print(p.Pop(), " ") // 7 5 12 8
+	}
+	fmt.Println()
+
+	var c Coda
+	for _, x := range []int{2, 8, 1, 10} {
+		c.Enqueue(x)
+	}
+	fmt.Println("dequeue:", c.Dequeue()) // dequeue: 2
+	c.Enqueue(7)
+	for !c.IsEmpty() {
+		fmt.Print(c.Dequeue(), " ") // 8 1 10 7
+	}
+	fmt.Println()
+}</pre>
+<p>Stampa le stesse righe del programma in C.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>In C: riferimento = puntatore, nuovo nodo = malloc, rilasciare la memoria = free.</li>
+    <li>In Go: pila = slice (append per push, s[:len(s)−1] per pop); coda = lista con primo e ultimo, come alla lavagna.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="usi"><span class="num">10</span>A cosa servono</h2>
+<p class="in-questa"><b>In questa sezione:</b> dove si incontrano pile e code, nel corso e fuori, con un riquadro per controllare le parentesi di un'espressione.</p>
+<ul>
+  <li><strong>La pila delle chiamate.</strong> Quando una procedura ne chiama un'altra, il record di attivazione della nuova chiamata va in cima a una pila, e quando la chiamata finisce si toglie dalla cima: è una pila vera e propria, con push e pop. È quella che misuravamo nella lezione sullo spazio di quickSort.</li>
+  <li><strong>Le visite degli alberi</strong>, nella seconda parte della stessa lezione: la visita in ampiezza usa una coda, quella in profondità una pila. Ed è con una pila che si calcola un'espressione scritta in notazione polacca inversa.</li>
+  <li><strong>Annulla (Ctrl+Z)</strong> in un programma: ogni modifica va su una pila, e «annulla» toglie l'ultima.</li>
+  <li><strong>Code di attesa</strong>: i documenti mandati a una stampante, le richieste a un server, i messaggi tra programmi. Chi arriva prima è servito prima.</li>
+  <li><strong>Le parentesi.</strong> Un'espressione come ( [ 3 + 4 ] * { 2 + ( 5 ) } ) è scritta bene se ogni parentesi chiusa chiude l'ultima parentesi aperta non ancora chiusa, della stessa forma. «L'ultima aperta» è proprio la cima di una pila: si fa push di ogni parentesi aperta, e a ogni parentesi chiusa si fa pop e si controlla che le forme corrispondano. Alla fine la pila deve essere vuota.</li>
+</ul>
+<div class="widget" id="w-pa">
+  <h4>Le parentesi sono bilanciate? Una pila lo sa</h4>
+  <div id="pa-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Pila: chiamate di procedure, annulla, parentesi, visita in profondità, notazione polacca inversa.</li>
+    <li>Coda: attese in cui vale «chi prima arriva», visita in ampiezza.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="riassunto"><span class="num">11</span>Riassunto e cosa serve per l'esame</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Pila</b> (LIFO): isEmpty, push(x), pop() (toglie e restituisce la cima), top() (restituisce la cima). <b>Coda</b> (FIFO): isEmpty, enqueue(x) (in fondo), dequeue() (toglie e restituisce il primo), first().</li>
+    <li><b>Pila con array</b>: dati[0..top], top = −1 se vuota; push: top ← top + 1, dati[top] ← x; pop: x ← dati[top], top ← top − 1. Errori: array pieno, pila vuota.</li>
+    <li><b>Pila con lista</b>: top indica il primo nodo; push: r.pros ← top, top ← r; pop: x ← top.dato, top ← top.pros.</li>
+    <li><b>Coda con array</b>: indici primo e ultimo che avanzano «in cerchio», (i + 1) mod N; un contatore n per distinguere piena e vuota.</li>
+    <li><b>Coda con lista</b>: primo e ultimo; dequeue in testa (e ultimo ← null se si svuota); enqueue in fondo (caso a parte per la coda vuota).</li>
+    <li>Tutte le operazioni costano <b>O(1)</b>.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Nei temi d'esame degli ultimi anni non c'è un esercizio dedicato solo a pile e code. Servono però dentro altri esercizi: le visite degli alberi (il prossimo argomento) e, più avanti nel corso, gli algoritmi sui grafi, l'argomento del problema finale dello scritto quasi ogni volta.</li>
+    <li>All'orale ti possono chiedere di scrivere le operazioni con l'array o con la lista e di dire quanto costano: il codice della lavagna, l'ordine delle righe (perché r.pros ← top va prima di top ← r) e i casi particolari (pila vuota, coda vuota, array pieno).</li>
+    <li>Sappi spiegare perché la cima della pila è in testa alla lista, e perché nella coda si toglie in testa e si aggiunge in fondo.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="esercizi"><span class="num">12</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> esercizi per allenarsi, con la soluzione nascosta. Prova prima da solo, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 1. Una sequenza di operazioni sulla pila</summary>
+  <p>Partendo da una pila vuota, esegui: push(4), push(9), pop(), push(6), push(1), top(), pop(), pop(), isEmpty(), pop(). Scrivi cosa restituisce ogni operazione e com'è la pila alla fine.</p>
+  <div class="soluzione">
+    <div class="tabella-wrap"><table>
+      <tr><th>operazione</th><th>restituisce</th><th>pila dopo (fondo → cima)</th></tr>
+      <tr><td>push(4)</td><td>—</td><td>4</td></tr>
+      <tr><td>push(9)</td><td>—</td><td>4 9</td></tr>
+      <tr><td>pop()</td><td>9</td><td>4</td></tr>
+      <tr><td>push(6)</td><td>—</td><td>4 6</td></tr>
+      <tr><td>push(1)</td><td>—</td><td>4 6 1</td></tr>
+      <tr><td>top()</td><td>1</td><td>4 6 1</td></tr>
+      <tr><td>pop()</td><td>1</td><td>4 6</td></tr>
+      <tr><td>pop()</td><td>6</td><td>4</td></tr>
+      <tr><td>isEmpty()</td><td>false</td><td>4</td></tr>
+      <tr><td>pop()</td><td>4</td><td>vuota</td></tr>
+    </table></div>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 2. La stessa sequenza con una coda</summary>
+  <p>Partendo da una coda vuota: enqueue(4), enqueue(9), dequeue(), enqueue(6), enqueue(1), first(), dequeue(), dequeue(), isEmpty(), dequeue().</p>
+  <div class="soluzione">
+    <div class="tabella-wrap"><table>
+      <tr><th>operazione</th><th>restituisce</th><th>coda dopo (primo → ultimo)</th></tr>
+      <tr><td>enqueue(4)</td><td>—</td><td>4</td></tr>
+      <tr><td>enqueue(9)</td><td>—</td><td>4 9</td></tr>
+      <tr><td>dequeue()</td><td>4</td><td>9</td></tr>
+      <tr><td>enqueue(6)</td><td>—</td><td>9 6</td></tr>
+      <tr><td>enqueue(1)</td><td>—</td><td>9 6 1</td></tr>
+      <tr><td>first()</td><td>9</td><td>9 6 1</td></tr>
+      <tr><td>dequeue()</td><td>9</td><td>6 1</td></tr>
+      <tr><td>dequeue()</td><td>6</td><td>1</td></tr>
+      <tr><td>isEmpty()</td><td>false</td><td>1</td></tr>
+      <tr><td>dequeue()</td><td>1</td><td>vuota</td></tr>
+    </table></div>
+    <p>Confronta con l'esercizio 1: gli stessi elementi escono in un ordine diverso (pila: 9, 1, 6, 4; coda: 4, 9, 6, 1).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 3. La pila nell'array, casella per casella</summary>
+  <p>Una pila è realizzata con un array di 4 caselle (da 0 a 3), all'inizio vuota (top = −1). Esegui push(3), push(7), push(2), pop(), push(5), push(8), push(6). Scrivi il contenuto dell'array e il valore di top dopo ogni operazione.</p>
+  <div class="soluzione">
+    <div class="tabella-wrap"><table>
+      <tr><th>operazione</th><th>dati[0..3]</th><th>top</th><th>nota</th></tr>
+      <tr><td>push(3)</td><td>3 · · ·</td><td>0</td><td></td></tr>
+      <tr><td>push(7)</td><td>3 7 · ·</td><td>1</td><td></td></tr>
+      <tr><td>push(2)</td><td>3 7 2 ·</td><td>2</td><td></td></tr>
+      <tr><td>pop()</td><td>3 7 2 ·</td><td>1</td><td>restituisce 2; il 2 resta scritto ma è oltre top</td></tr>
+      <tr><td>push(5)</td><td>3 7 5 ·</td><td>2</td><td>il 5 sovrascrive il 2</td></tr>
+      <tr><td>push(8)</td><td>3 7 5 8</td><td>3</td><td>l'array è pieno</td></tr>
+      <tr><td>push(6)</td><td>3 7 5 8</td><td>3</td><td><span class="errore">errore: array pieno</span> (top + 1 = 4 non è una casella)</td></tr>
+    </table></div>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4. La coda nell'array circolare</summary>
+  <p>Una coda è realizzata con l'array circolare della sezione 6, con N = 5 caselle. All'inizio è vuota: primo = 0, ultimo = 4, n = 0. Esegui enqueue(1), enqueue(2), enqueue(3), dequeue(), dequeue(), enqueue(4), enqueue(5), enqueue(6), enqueue(7). Scrivi primo, ultimo, n e il contenuto dell'array alla fine. Cosa succede con un altro enqueue?</p>
+  <div class="soluzione">
+    <div class="tabella-wrap"><table>
+      <tr><th>operazione</th><th>primo</th><th>ultimo</th><th>n</th><th>dati[0..4]</th></tr>
+      <tr><td>enqueue(1)</td><td>0</td><td>(4 + 1) mod 5 = 0</td><td>1</td><td>1 · · · ·</td></tr>
+      <tr><td>enqueue(2)</td><td>0</td><td>1</td><td>2</td><td>1 2 · · ·</td></tr>
+      <tr><td>enqueue(3)</td><td>0</td><td>2</td><td>3</td><td>1 2 3 · ·</td></tr>
+      <tr><td>dequeue() → 1</td><td>1</td><td>2</td><td>2</td><td>1 2 3 · ·</td></tr>
+      <tr><td>dequeue() → 2</td><td>2</td><td>2</td><td>1</td><td>1 2 3 · ·</td></tr>
+      <tr><td>enqueue(4)</td><td>2</td><td>3</td><td>2</td><td>1 2 3 4 ·</td></tr>
+      <tr><td>enqueue(5)</td><td>2</td><td>4</td><td>3</td><td>1 2 3 4 5</td></tr>
+      <tr><td>enqueue(6)</td><td>2</td><td>(4 + 1) mod 5 = 0</td><td>4</td><td>6 2 3 4 5</td></tr>
+      <tr><td>enqueue(7)</td><td>2</td><td>1</td><td>5</td><td>6 7 3 4 5</td></tr>
+    </table></div>
+    <p>Alla fine la coda, dal primo all'ultimo, è 3 4 5 6 7: parte dalla casella primo = 2, arriva alla 4 e riprende dalla 0 fino alla 1. n = 5 = N: la coda è piena, e un altro enqueue dà <span class="errore">errore: coda piena</span>. (Gli 1 e 2 nelle caselle 0 e 1 sono stati sovrascritti da 6 e 7.)</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5. pop e top con il controllo della pila vuota</summary>
+  <p>Riscrivi pop() e top() della pila con l'array in modo che, se la pila è vuota, segnalino l'errore invece di leggere dati[−1]. Fai lo stesso per push con l'array pieno, sapendo che l'array ha N caselle.</p>
+  <div class="soluzione">
+<pre class="pseudo"><b>FUNZIONE</b> top() → elemento
+  <b>IF</b> top = −1 <b>THEN</b> errore: pila vuota
+  <b>RETURN</b> dati[top]
+
+<b>FUNZIONE</b> pop() → elemento
+  <b>IF</b> top = −1 <b>THEN</b> errore: pila vuota
+  x ← dati[top]
+  top ← top − 1
+  <b>RETURN</b> x
+
+<b>PROCEDURA</b> push(elemento x)
+  <b>IF</b> top = N − 1 <b>THEN</b> errore: array pieno
+  top ← top + 1
+  dati[top] ← x</pre>
+    <p>«errore» vuol dire: l'operazione si ferma e avvisa chi l'ha chiamata (in Go, per esempio, restituendo un valore di tipo error, oppure con panic). La pila è piena quando la cima è sull'ultima casella, la N − 1.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 6. Cosa succede se in dequeue manca «IF primo = null THEN ultimo ← null»?</summary>
+  <p>Togli dalla dequeue della lista le righe IF primo = null THEN ultimo ← null. Parti dalla coda con il solo elemento 2 ed esegui dequeue() e poi enqueue(5). Il risultato è giusto? Perché la riga serve lo stesso?</p>
+  <div class="soluzione">
+    <p>dequeue(): x = 2, primo ← primo.pros = null. Senza la riga, ultimo indica ancora il nodo 2, che non fa più parte della coda (e la cui memoria magari è già stata liberata).</p>
+    <p>enqueue(5): il nodo nuovo ha pros = null; il controllo della lavagna è <em>IF primo = null</em>, che è vero, quindi primo ← r e ultimo ← r. Il risultato è giusto: la coda contiene solo il 5, e ultimo è stato sistemato.</p>
+    <p>Allora perché la riga serve? Perché tra la dequeue e la enqueue la coda è vuota ma ultimo indica un nodo che non c'è più: non vale più la regola «coda vuota = primo e ultimo null», su cui chi scrive le altre operazioni conta. Basta un enqueue scritto con <em>IF ultimo = null</em> (che sembra equivalente) per avere un errore: ultimo non è null, si va all'ELSE, e ultimo.pros ← r attacca il 5 al nodo tolto, mentre primo resta null. La coda risulterebbe vuota anche se contiene il 5. In C, poi, ultimo.pros scriverebbe in una memoria già liberata.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 7. Pila e coda con la lista: cosa costerebbe fare al contrario?</summary>
+  <p>(a) Se nella pila con la lista la cima fosse l'<em>ultimo</em> nodo, quanto costerebbero push e pop? (b) Se nella coda con la lista si entrasse in testa e si uscisse dal fondo, quanto costerebbero enqueue e dequeue, anche tenendo il riferimento ultimo?</p>
+  <div class="soluzione">
+    <p>(a) push: con un riferimento all'ultimo nodo costerebbe O(1); senza, bisognerebbe scorrere la lista: O(n). pop: in ogni caso O(n), perché per togliere l'ultimo nodo serve il penultimo, e per trovarlo bisogna partire dalla testa.</p>
+    <p>(b) enqueue in testa: O(1), è il push della pila. dequeue dal fondo: O(n), per lo stesso motivo del punto (a): serve il penultimo nodo. Con il verso della lavagna, invece, tutto costa O(1).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8. Rovesciare una sequenza con una pila</summary>
+  <p>Scrivi un algoritmo che riceve n numeri, uno alla volta, e li stampa in ordine inverso, usando una pila. Quanto costa?</p>
+  <div class="soluzione">
+<pre class="pseudo">P ← pila vuota
+<b>FOR</b> i ← 1 <b>TO</b> n <b>DO</b>
+  leggi un numero y
+  P.push(y)
+<b>WHILE NOT</b> P.isEmpty() <b>DO</b>
+  stampa P.pop()</pre>
+    <p>L'ultimo numero letto è in cima, quindi esce per primo: l'ordine si rovescia. Si fanno n push e n pop, ognuno O(1): in tutto Θ(n). Lo spazio usato dalla pila è Θ(n). (P.push(y) vuol dire «push(y) sulla pila P»: quando ci sono più pile o code si scrive il nome davanti, come nella lavagna dell'anno scorso per le visite degli alberi.)</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 9. Le parentesi</summary>
+  <p>Usa l'idea della sezione 10 per dire se queste espressioni hanno le parentesi bilanciate: (a) { ( [ ] ) [ ] }; (b) ( [ ) ]; (c) ( ( ) ; (d) ) (. Per ognuna, scrivi la pila dopo ogni parentesi.</p>
+  <div class="soluzione">
+    <p>(a) { → pila {. ( → { (. [ → { ( [. ] chiude e pop dà [: va bene, pila { (. ) chiude, pop dà (: va bene, pila {. [ → { [. ] chiude, pop dà [: va bene, pila {. } chiude, pop dà {: va bene, pila vuota. Fine con pila vuota: <b>bilanciata</b>.</p>
+    <p>(b) ( → (. [ → ( [. ) chiude, ma pop dà [: forme diverse, <b>non bilanciata</b>.</p>
+    <p>(c) ( → (. ( → ( (. ) chiude, pop dà (: va bene, pila (. Fine, ma nella pila resta una ( aperta: <b>non bilanciata</b>.</p>
+    <p>(d) ) chiude con la pila vuota: <b>non bilanciata</b> subito.</p>
+    <p>Puoi controllare le risposte con il riquadro della sezione 10.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 13 -->
+<h2 id="approfondimenti"><span class="num">13</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> due cose che non vengono dalla lezione e non servono per l'esame. Si aprono con un clic.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: una coda fatta con due pile</summary>
+  <div class="soluzione">
+    <p>Si può realizzare una coda usando soltanto due pile, A e B. enqueue(x) fa A.push(x). dequeue(): se B è vuota, si travasano tutti gli elementi di A in B (pop da A e push su B, finché A non è vuota), e il travaso rovescia l'ordine; poi si fa B.pop().</p>
+<pre class="pseudo"><b>PROCEDURA</b> enqueue(elemento x)
+  A.push(x)
+
+<b>FUNZIONE</b> dequeue() → elemento
+  <b>IF</b> B.isEmpty() <b>THEN</b>
+    <b>WHILE NOT</b> A.isEmpty() <b>DO</b>
+      B.push(A.pop())
+  <b>RETURN</b> B.pop()</pre>
+    <p>Esempio: enqueue(1), enqueue(2), enqueue(3) → A = 1 2 3 (3 in cima). dequeue(): B è vuota, si travasa: B = 3 2 1 (1 in cima), e B.pop() dà 1, il primo entrato. Un dequeue può costare O(n) (il travaso), ma ogni elemento viene travasato una volta sola: su una sequenza di m operazioni il costo totale è O(m), cioè in media O(1) per operazione.</p>
+  </div>
+</details>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: come fa append di Go a non riempirsi mai</summary>
+  <div class="soluzione">
+    <p>Una slice di Go usa un array sotto. Quando l'array è pieno, append ne crea uno nuovo più grande (circa il doppio, per slice piccole) e ci copia tutti gli elementi: quella singola append costa O(n). Ma raddoppiando, le copie sono rare: per arrivare a n elementi si copiano in tutto meno di 1 + 2 + 4 + … + n &lt; 2n elementi. Quindi n append costano O(n) in tutto, cioè in media O(1) ciascuna. È il modo in cui si toglie il limite della capacità alla pila con l'array.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="10-liste.html">← Pacco 10: le liste</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="12-alberi-binari.html">Pacco 12: alberi binari e visite →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- liste.js
+// Disegno di nodi collegati, come alla lavagna: ogni nodo ha uno scomparto piccolo in alto (pros)
+// e uno grande in basso (la chiave, o il dato). Le frecce verdi sono i campi pros, quelle blu le variabili.
+// stato = {
+//   slots: [id, ...]                         nodi sulla riga, da sinistra a destra
+//   nodi: { id: { k: "11", pros: id|null } }
+//   gall: [ { id, tra: [idPrima|null, idDopo|null] } ]   nodi «galleggianti», disegnati sotto la riga
+//   vars: [ { nome, a: id|null, lato: "sx"|"sx2"|"sopra"|"sotto" } ]
+//   evid: { id: "attivo"|"nuovo"|"via"|"trovato" }
+//   tagli: [ { da: id|"var:nome", a: id } ]   collegamenti vecchi, disegnati barrati in rosso
+// }
+var LW = 48, LT = 16, LH = 46, LP = 86, LX0 = 70, LY0 = 58, LGY = 84;
+function svgMem(st, opz) {
+  opz = opz || {};
+  var pos = {}, s = [], k, nGall = (st.gall || []).length;
+  var haSotto = (st.vars || []).some(function (v) { return v.lato === "sx2" || v.lato === "sotto"; });
+  st.slots.forEach(function (id, j) { pos[id] = { x: LX0 + j * LP, y: LY0, riga: true, j: j }; });
+  var ultimoX = st.slots.length ? LX0 + (st.slots.length - 1) * LP : LX0 - LP;
+  (st.gall || []).forEach(function (g) {
+    var xb = g.tra[0] !== null && pos[g.tra[0]] ? pos[g.tra[0]].x : LX0 - LP * 0.5;
+    var xa = g.tra[1] !== null && pos[g.tra[1]] ? pos[g.tra[1]].x : ultimoX + LP;
+    var x = g.x !== undefined ? g.x : Math.max(34, (xb + xa) / 2);
+    pos[g.id] = { x: x, y: LY0 + LGY, riga: false };
+  });
+  var maxX = 0;
+  for (k in pos) maxX = Math.max(maxX, pos[k].x + LW);
+  if (!st.slots.length) maxX = Math.max(maxX, LX0 + 60);
+  var W = Math.max(opz.minW || 0, maxX + 18);
+  var galVar = (st.vars || []).some(function (v) { return (v.lato === "sopra" || v.lato === "sotto") && (st.gall || []).some(function (g) { return g.id === v.a; }); });
+  var H = LY0 + LH + (nGall ? LGY : 0) + (haSotto || galVar ? 44 : 0) + 12;
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "Una lista concatenata") + '" font-family="system-ui, sans-serif">');
+
+  function testa(x2, y2, x1, y1, cls, col) {
+    var a = Math.atan2(y2 - y1, x2 - x1), L = 8, b = 0.42;
+    var p1x = x2 - L * Math.cos(a - b), p1y = y2 - L * Math.sin(a - b), p2x = x2 - L * Math.cos(a + b), p2y = y2 - L * Math.sin(a + b);
+    return '<path d="M' + r1(x2) + ' ' + r1(y2) + ' L' + r1(p1x) + ' ' + r1(p1y) + ' L' + r1(p2x) + ' ' + r1(p2y) + ' z" class="' + cls + '" fill="' + col + '"/>';
+  }
+  function r1(v) { return Math.round(v * 10) / 10; }
+  // curva da (x1,y1) a (x2,y2) con punti di controllo c1, c2; tipo = "link" | "var" | "taglio"
+  function curva(x1, y1, c1x, c1y, c2x, c2y, x2, y2, tipo) {
+    var stile = tipo === "var" ? ['l-blu', '#2f52c4', 't-blu'] : tipo === "taglio" ? ['l-rosso', '#b42318', 't-rosso'] : ['l-verde', '#17803d', 't-verde'];
+    var d = 'M' + r1(x1) + ' ' + r1(y1) + ' C' + r1(c1x) + ' ' + r1(c1y) + ' ' + r1(c2x) + ' ' + r1(c2y) + ' ' + r1(x2) + ' ' + r1(y2);
+    var out = '<path d="' + d + '" class="' + stile[0] + '" fill="none" stroke="' + stile[1] + '" stroke-width="1.7"' + (tipo === "taglio" ? ' stroke-dasharray="4 3"' : '') + '/>';
+    if (tipo === "taglio") {
+      var mx = (x1 + 3 * c1x + 3 * c2x + x2) / 8, my = (y1 + 3 * c1y + 3 * c2y + y2) / 8;
+      out += '<path d="M' + r1(mx - 5) + ' ' + r1(my + 6) + ' L' + r1(mx + 1) + ' ' + r1(my - 6) + ' M' + r1(mx + 2) + ' ' + r1(my + 6) + ' L' + r1(mx + 8) + ' ' + r1(my - 6) + '" class="l-rosso" stroke="#b42318" stroke-width="2" fill="none"/>';
+    } else out += testa(x2, y2, c2x, c2y, stile[2], stile[1]);
+    return out;
+  }
+  // il percorso di un collegamento dal nodo a al nodo b
+  function collega(a, b, tipo) {
+    var A = pos[a], B = pos[b];
+    if (!A || !B) return "";
+    var sx = A.x + LW / 2, sy = A.y + LT / 2;
+    if (A.riga && B.riga) {
+      if (B.j === A.j + 1) return curva(sx, sy, sx + 20, sy, B.x - 20, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo);
+      return curva(sx, sy, sx + 12, A.y - 42, B.x - 4, B.y - 42, B.x + 8, B.y - 1, tipo);
+    }
+    if (A.riga && !B.riga) return curva(sx, sy, sx + 32, sy + 4, B.x + LW / 2, B.y - 40, B.x + LW / 2, B.y - 1, tipo);
+    if (!A.riga && B.riga) return curva(sx, sy, sx + 38, sy, B.x + LW / 2, B.y + LH + 30, B.x + LW / 2, B.y + LH + 1, tipo);
+    return "";
+  }
+  // collegamenti barrati (vecchi valori)
+  (st.tagli || []).forEach(function (t) {
+    if (String(t.da).indexOf("var:") === 0) s.push(frecciaVar({ nome: t.da.slice(4), a: t.a, lato: t.lato || "sx" }, "taglio"));
+    else s.push(collega(t.da, t.a, "taglio"));
+  });
+  // nodi
+  for (k in pos) {
+    var n = st.nodi[k], P = pos[k], ev = (st.evid || {})[k];
+    var cls = ev === "attivo" ? ["r-blu", "#e8edfc", "#2f52c4"] : ev === "nuovo" ? ["r-verde", "#e6f5ea", "#17803d"] : ev === "via" ? ["r-rosso", "#fdecea", "#b42318"] : ev === "trovato" ? ["r-viola", "#f1eafc", "#6d3fc0"] : ["r-nodo", "#ffffff", "#9aa3b2"];
+    s.push('<rect x="' + r1(P.x) + '" y="' + P.y + '" width="' + LW + '" height="' + LH + '" rx="3" class="' + cls[0] + '" fill="' + cls[1] + '" stroke="' + cls[2] + '" stroke-width="1.5"/>');
+    s.push('<line x1="' + r1(P.x) + '" y1="' + (P.y + LT) + '" x2="' + r1(P.x + LW) + '" y2="' + (P.y + LT) + '" class="l-muted" stroke="#5b6270" stroke-width="1"/>');
+    s.push('<text x="' + r1(P.x + LW / 2) + '" y="' + (P.y + LT + 20) + '" font-size="15" text-anchor="middle" class="t-testo" fill="#1f2328">' + n.k + '</text>');
+    if (n.pros === null) s.push('<text x="' + r1(P.x + LW / 2) + '" y="' + (P.y + 12) + '" font-size="10.5" text-anchor="middle" class="t-verde" fill="#17803d">null</text>');
+    else if (n.pros !== undefined) s.push('<circle cx="' + r1(P.x + LW / 2) + '" cy="' + (P.y + LT / 2) + '" r="2.6" class="t-verde" fill="#17803d"/>');
+  }
+  // campi pros
+  for (k in pos) {
+    var nn = st.nodi[k];
+    if (nn.pros !== null && nn.pros !== undefined && pos[nn.pros]) s.push(collega(k, nn.pros, "link"));
+  }
+  // variabili
+  function frecciaVar(v, tipo) {
+    var out = "";
+    var B = v.a !== null && v.a !== undefined ? pos[v.a] : null;
+    if (v.lato === "sx" || v.lato === "sx2") {
+      var ly = v.lato === "sx" ? LY0 + LT / 2 : LY0 + LH + 26;
+      if (tipo !== "taglio") out += '<text x="' + 6 + '" y="' + (ly + 5) + '" font-size="14" font-weight="700" class="t-blu" fill="#2f52c4">' + v.nome + '</text>';
+      var x0 = 8 + v.nome.length * 8.4;
+      if (!B) {
+        if (tipo !== "taglio") out += curva(x0, ly, x0 + 8, ly, LX0 - 18, ly, LX0 - 10, ly, "var") + '<text x="' + (LX0 - 6) + '" y="' + (ly + 4.5) + '" font-size="12.5" class="t-verde" fill="#17803d">null</text>';
+        return out;
+      }
+      if (v.lato === "sx") {
+        if (B.riga && B.j === 0) out += curva(x0, ly, x0 + 12, ly, B.x - 14, ly, B.x - 1, ly, tipo === "taglio" ? "taglio" : "var");
+        else if (B.riga) out += curva(x0, ly, x0 + 30, LY0 - 46, B.x - 6, LY0 - 46, B.x + 6, LY0 - 1, tipo === "taglio" ? "taglio" : "var");
+        else {
+          var cx = 6 + v.nome.length * 4.2;
+          out += curva(cx, ly + 8, cx, B.y + LT / 2, B.x - 22, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo === "taglio" ? "taglio" : "var");
+        }
+      } else if (B.riga) {
+        var bx = B.x + LW / 2, by = B.y + LH + 1;
+        out += curva(x0, ly - 4, x0 + 30, ly + 22, bx, ly + 26, bx, by, tipo === "taglio" ? "taglio" : "var");
+      } else {
+        out += curva(x0, ly - 4, x0 + 40, ly + 10, B.x - 40, B.y + LT / 2, B.x - 1, B.y + LT / 2, tipo === "taglio" ? "taglio" : "var");
+      }
+      return out;
+    }
+    return "";
+  }
+  var sopra = {}, sotto = {};
+  (st.vars || []).forEach(function (v) {
+    if (v.lato === "sx" || v.lato === "sx2") { s.push(frecciaVar(v, "var")); return; }
+    if (v.a === null || v.a === undefined || !pos[v.a]) return;
+    var tab = v.lato === "sotto" ? sotto : sopra;
+    (tab[v.a] = tab[v.a] || []).push(v.nome);
+  });
+  for (k in sopra) {
+    var Q = pos[k], nomi = sopra[k].join(", ");
+    if (Q.riga) {
+      s.push('<text x="' + r1(Q.x + LW / 2) + '" y="' + (Q.y - 30) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + nomi + '</text>');
+      s.push(curva(Q.x + LW / 2, Q.y - 25, Q.x + LW / 2, Q.y - 18, Q.x + LW / 2, Q.y - 10, Q.x + LW / 2, Q.y - 2, "var"));
+    } else {
+      s.push('<text x="' + r1(Q.x + LW / 2) + '" y="' + (Q.y + LH + 38) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + nomi + '</text>');
+      s.push(curva(Q.x + LW / 2, Q.y + LH + 24, Q.x + LW / 2, Q.y + LH + 16, Q.x + LW / 2, Q.y + LH + 8, Q.x + LW / 2, Q.y + LH + 2, "var"));
+    }
+  }
+  for (k in sotto) {
+    var R = pos[k];
+    s.push('<text x="' + r1(R.x + LW / 2) + '" y="' + (R.y + LH + 38) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">' + sotto[k].join(", ") + '</text>');
+    s.push(curva(R.x + LW / 2, R.y + LH + 24, R.x + LW / 2, R.y + LH + 16, R.x + LW / 2, R.y + LH + 8, R.x + LW / 2, R.y + LH + 2, "var"));
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// lista semplice da un elenco di chiavi: nodi n0, n1, … collegati in ordine
+function statoLista(chiavi, vars, extra) {
+  var st = { slots: [], nodi: {}, gall: [], vars: vars || [], evid: {}, tagli: [] };
+  chiavi.forEach(function (c, j) {
+    st.slots.push("n" + j);
+    st.nodi["n" + j] = { k: String(c), pros: j + 1 < chiavi.length ? "n" + (j + 1) : null };
+  });
+  if (extra) for (var q in extra) st[q] = extra[q];
+  return st;
+}
+
+// ---- pilecode.js
+// Disegni e simulazioni per pile e code (pacco 11).
+function escH(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1p(v) { return Math.round(v * 10) / 10; }
+function frecciaDritta(x1, y1, x2, y2, cls, col) {
+  var a = Math.atan2(y2 - y1, x2 - x1), L = 8, b = 0.42;
+  return '<line x1="' + r1p(x1) + '" y1="' + r1p(y1) + '" x2="' + r1p(x2 - 3 * Math.cos(a)) + '" y2="' + r1p(y2 - 3 * Math.sin(a)) + '" class="' + cls.replace("t-", "l-") + '" stroke="' + col + '" stroke-width="1.7"/>' +
+    '<path d="M' + r1p(x2) + ' ' + r1p(y2) + ' L' + r1p(x2 - L * Math.cos(a - b)) + ' ' + r1p(y2 - L * Math.sin(a - b)) + ' L' + r1p(x2 - L * Math.cos(a + b)) + ' ' + r1p(y2 - L * Math.sin(a + b)) + ' z" class="' + cls + '" fill="' + col + '"/>';
+}
+var COL = { blu: ["t-blu", "#2f52c4"], verde: ["t-verde", "#17803d"], rosso: ["t-rosso", "#b42318"], muted: ["t-muted", "#5b6270"], arancio: ["t-arancio", "#b4500f"], viola: ["t-viola", "#6d3fc0"] };
+var RET = { nodo: ["r-nodo", "#ffffff", "#9aa3b2"], blu: ["r-blu", "#e8edfc", "#2f52c4"], verde: ["r-verde", "#e6f5ea", "#17803d"], rosso: ["r-rosso", "#fdecea", "#b42318"], viola: ["r-viola", "#f1eafc", "#6d3fc0"], arancio: ["r-arancio", "#fdf0e3", "#b4500f"] };
+function rett(x, y, w, h, tipo, extra) {
+  var c = RET[tipo] || RET.nodo;
+  return '<rect x="' + r1p(x) + '" y="' + r1p(y) + '" width="' + w + '" height="' + h + '" rx="3" class="' + c[0] + '" fill="' + c[1] + '" stroke="' + c[2] + '" stroke-width="1.5"' + (extra || "") + '/>';
+}
+function testo(x, y, t, opz) {
+  opz = opz || {};
+  var c = COL[opz.col || "testo"] || ["t-testo", "#1f2328"];
+  return '<text x="' + r1p(x) + '" y="' + r1p(y) + '" font-size="' + (opz.fs || 15) + '"' + (opz.bold ? ' font-weight="700"' : "") + ' text-anchor="' + (opz.anchor || "middle") + '" class="' + c[0] + '" fill="' + c[1] + '">' + t + '</text>';
+}
+
+// La pila disegnata in verticale, come alla lavagna: els[0] è in fondo, l'ultimo è in cima.
+// opz: { nuovo: true se l'elemento in cima è appena entrato, via: valore appena uscito (disegnato sopra, barrato), aria }
+function svgPilaVert(els, opz) {
+  opz = opz || {};
+  var BW = 58, BH = 32, X = 22, n = els.length, haVia = opz.via !== undefined && opz.via !== null;
+  var righe = Math.max(n, 1) + (haVia ? 1 : 0);
+  var H = 22 + righe * BH + (haVia ? 10 : 0) + 30, W = 176, yb = H - 26, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escH(opz.aria || "Una pila") + '" font-family="system-ui, sans-serif">');
+  s.push('<path d="M' + (X - 6) + ' ' + (yb - righe * BH - 4) + ' V' + (yb + 6) + ' H' + (X + BW + 6) + ' V' + (yb - righe * BH - 4) + '" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.5"/>');
+  if (n === 0) s.push(testo(X + BW / 2, yb - BH / 2 + 5, "vuota", { col: "muted", fs: 13 }));
+  for (var j = 0; j < n; j++) {
+    var y = yb - (j + 1) * BH, cima = j === n - 1;
+    s.push(rett(X, y, BW, BH, cima && opz.nuovo ? "verde" : cima ? "blu" : "nodo"));
+    s.push(testo(X + BW / 2, y + BH / 2 + 5.5, escH(els[j]), { fs: 15.5 }));
+  }
+  if (n > 0) {
+    var yc = yb - n * BH + BH / 2;
+    s.push(testo(X + BW + 40, yc + 5, "cima", { col: "blu", bold: true, fs: 14, anchor: "start" }));
+    s.push(frecciaDritta(X + BW + 36, yc, X + BW + 4, yc, COL.blu[0], COL.blu[1]));
+  }
+  if (haVia) {
+    var yv = yb - (n + 1) * BH - 10;
+    s.push(rett(X, yv, BW, BH, "rosso", ' stroke-dasharray="4 3"'));
+    s.push(testo(X + BW / 2, yv + BH / 2 + 5.5, escH(opz.via), { col: "rosso", fs: 15.5 }));
+    s.push(frecciaDritta(X + BW + 4, yv + BH / 2, X + BW + 34, yv + BH / 2 - 10, COL.rosso[0], COL.rosso[1]));
+    s.push(testo(X + BW + 38, yv + BH / 2 - 8, "esce", { col: "rosso", fs: 13, anchor: "start" }));
+  }
+  s.push(testo(X + BW / 2, yb + 20, "fondo", { col: "muted", fs: 12 }));
+  s.push('</svg>');
+  return s.join("");
+}
+
+// La coda disegnata in orizzontale: els[0] è il primo (esce a sinistra), l'ultimo entra a destra.
+// opz: { nuovo: true se l'ultimo è appena entrato, via: valore appena uscito (a sinistra, barrato), aria }
+function svgFila(els, opz) {
+  opz = opz || {};
+  var BW = 46, BH = 36, haVia = opz.via !== undefined && opz.via !== null, X0 = haVia ? 92 : 30, n = els.length, Y = 34, s = [];
+  var W = X0 + Math.max(n, 1) * BW + 76, H = Y + BH + 34;
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escH(opz.aria || "Una coda") + '" font-family="system-ui, sans-serif">');
+  s.push('<line x1="' + (X0 - 4) + '" y1="' + (Y - 5) + '" x2="' + (X0 + Math.max(n, 1) * BW + 4) + '" y2="' + (Y - 5) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+  s.push('<line x1="' + (X0 - 4) + '" y1="' + (Y + BH + 5) + '" x2="' + (X0 + Math.max(n, 1) * BW + 4) + '" y2="' + (Y + BH + 5) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+  if (n === 0) s.push(testo(X0 + BW / 2, Y + BH / 2 + 5, "vuota", { col: "muted", fs: 13 }));
+  for (var j = 0; j < n; j++) {
+    var x = X0 + j * BW, tipo = j === n - 1 && opz.nuovo ? "verde" : j === 0 ? "blu" : "nodo";
+    s.push(rett(x + 2, Y, BW - 4, BH, tipo));
+    s.push(testo(x + BW / 2, Y + BH / 2 + 5.5, escH(els[j]), { fs: 15.5 }));
+  }
+  if (n > 0) {
+    s.push(testo(X0 + BW / 2, Y - 14, "primo", { col: "blu", bold: true, fs: 13 }));
+    s.push(testo(X0 + (n - 1) * BW + BW / 2, Y + BH + 24, "ultimo", { col: "blu", bold: true, fs: 13 }));
+  }
+  var xe = X0 + Math.max(n, 1) * BW;
+  s.push(frecciaDritta(xe + 60, Y + BH / 2, xe + 8, Y + BH / 2, COL.verde[0], COL.verde[1]));
+  s.push(testo(xe + 34, Y + BH / 2 - 8, "entra", { col: "verde", fs: 12.5 }));
+  if (haVia) {
+    s.push(rett(14, Y, BW - 4, BH, "rosso", ' stroke-dasharray="4 3"'));
+    s.push(testo(14 + (BW - 4) / 2, Y + BH / 2 + 5.5, escH(opz.via), { col: "rosso", fs: 15.5 }));
+    s.push(frecciaDritta(X0 - 8, Y + BH / 2, 14 + BW - 2, Y + BH / 2, COL.rosso[0], COL.rosso[1]));
+    s.push(testo((14 + BW + X0) / 2 - 2, Y + BH / 2 - 8, "esce", { col: "rosso", fs: 12.5 }));
+  } else {
+    s.push(frecciaDritta(X0 - 6, Y + BH / 2, 4, Y + BH / 2, COL.rosso[0], COL.rosso[1]));
+    s.push(testo(X0 / 2 - 2, Y + BH / 2 - 8, "esce", { col: "rosso", fs: 12.5 }));
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+
+// Array disegnato con le caselle della pagina (HTML). opz: { cap, f: {i: html sopra}, cls: {i: classe}, vuoto: testo per le caselle senza valore }
+function htmlCelle(vals, opz) {
+  opz = opz || {};
+  var cap = opz.cap || vals.length, h = '<div class="array qs">';
+  for (var i = 0; i < cap; i++) {
+    var v = i < vals.length && vals[i] !== undefined && vals[i] !== null ? escH(vals[i]) : (opz.vuoto || "");
+    h += '<div class="cella' + (opz.cls && opz.cls[i] ? " " + opz.cls[i] : "") + '"><div class="f">' + (opz.f && opz.f[i] ? opz.f[i] : "") + '</div><div class="v">' + v + '</div><div class="i">' + i + '</div></div>';
+  }
+  return h + '</div>';
+}
+// la pila con l'array: dati[0..cap-1], top; le caselle oltre top sono tratteggiate (non fanno parte della pila)
+function htmlArrayPila(dati, top, cap, opz) {
+  opz = opz || {};
+  var f = {}, cls = {};
+  if (top >= 0) f[top] = '<span class="lab-dx">top</span>';
+  for (var i = 0; i < cap; i++) {
+    if (i > top) cls[i] = "oltre";
+    else if (i === top && opz.nuovo) cls[i] = "mossa";
+    else cls[i] = "zsx";
+  }
+  if (opz.evid !== undefined && opz.evid !== null) cls[opz.evid] = (cls[opz.evid] ? cls[opz.evid] + " " : "") + "attiva";
+  return htmlCelle(dati, { cap: cap, f: f, cls: cls });
+}
+// la coda con l'array circolare: caselle da primo per n posizioni (modulo N)
+function dentroCoda(i, primo, n, N) { return n > 0 && ((i - primo + N) % N) < n; }
+function htmlArrayCoda(dati, primo, ultimo, n, N, opz) {
+  opz = opz || {};
+  var f = {}, cls = {};
+  for (var i = 0; i < N; i++) {
+    var lab = [];
+    if (i === primo) lab.push('<span class="lab-sx">primo</span>');
+    if (i === ultimo) lab.push('<span class="lab-dx">ultimo</span>');
+    f[i] = lab.join(" ");
+    cls[i] = dentroCoda(i, primo, n, N) ? (opz.nuovo === i ? "mossa" : "zsx") : "oltre";
+  }
+  if (opz.evid !== undefined && opz.evid !== null) cls[opz.evid] += " attiva";
+  return htmlCelle(dati, { cap: N, f: f, cls: cls });
+}
+// l'array circolare disegnato ad anello: la casella N-1 è vicina alla casella 0
+function svgAnello(dati, primo, ultimo, n, N, opz) {
+  opz = opz || {};
+  var W = 300, H = 268, cx = 150, cy = 134, R2 = 92, R1 = 54, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escH(opz.aria || "Array circolare") + '" font-family="system-ui, sans-serif">');
+  function pt(r, a) { return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+  var passo = 2 * Math.PI / N, a0 = -Math.PI / 2 - passo / 2;
+  for (var i = 0; i < N; i++) {
+    var a = a0 + i * passo, b = a + passo, p1 = pt(R2, a), p2 = pt(R2, b), p3 = pt(R1, b), p4 = pt(R1, a);
+    var dentro = dentroCoda(i, primo, n, N), tipo = opz.nuovo === i ? "viola" : dentro ? "blu" : "nodo";
+    var c = RET[tipo];
+    s.push('<path d="M' + r1p(p1[0]) + ' ' + r1p(p1[1]) + ' A' + R2 + ' ' + R2 + ' 0 0 1 ' + r1p(p2[0]) + ' ' + r1p(p2[1]) + ' L' + r1p(p3[0]) + ' ' + r1p(p3[1]) + ' A' + R1 + ' ' + R1 + ' 0 0 0 ' + r1p(p4[0]) + ' ' + r1p(p4[1]) + ' z" class="' + c[0] + '" fill="' + c[1] + '" stroke="' + c[2] + '" stroke-width="1.5"' + (dentro ? "" : ' stroke-dasharray="4 3"') + '/>');
+    var m = pt((R1 + R2) / 2, a + passo / 2), v = dati[i];
+    if (v !== undefined && v !== null && v !== "") s.push(testo(m[0], m[1] + 5.5, escH(v), { fs: 15, col: dentro ? undefined : "muted" }));
+    var q = pt(R1 - 13, a + passo / 2);
+    s.push(testo(q[0], q[1] + 4, String(i), { fs: 11.5, col: "verde" }));
+    var lab = [];
+    if (i === primo) lab.push(["primo", "arancio"]);
+    if (i === ultimo) lab.push(["ultimo", "verde"]);
+    lab.forEach(function (l, k) {
+      var e = pt(R2 + 22 + k * 15, a + passo / 2), ang = a + passo / 2;
+      s.push(testo(e[0], e[1] + 4, l[0], { fs: 12.5, bold: true, col: l[1], anchor: Math.cos(ang) > 0.3 ? "start" : Math.cos(ang) < -0.3 ? "end" : "middle" }));
+    });
+  }
+  // il verso di percorrenza
+  var f1 = pt(R1 - 32, -Math.PI / 2 - 0.5), f2 = pt(R1 - 32, -Math.PI / 2 + 0.5);
+  s.push('<path d="M' + r1p(f1[0]) + ' ' + r1p(f1[1]) + ' A' + (R1 - 32) + ' ' + (R1 - 32) + ' 0 0 1 ' + r1p(f2[0]) + ' ' + r1p(f2[1]) + '" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.4"/>');
+  var ang2 = -Math.PI / 2 + 0.5, tx = -Math.sin(ang2), ty = Math.cos(ang2);
+  s.push('<path d="M' + r1p(f2[0] + 6 * tx) + ' ' + r1p(f2[1] + 6 * ty) + ' l' + r1p(-7 * tx - 4 * ty) + ' ' + r1p(-7 * ty + 4 * tx) + ' l' + r1p(8 * ty) + ' ' + r1p(-8 * tx) + ' z" class="punta" fill="#5b6270"/>');
+  s.push(testo(cx, cy + 5, "n = " + n, { fs: 12.5, col: "muted" }));
+  s.push('</svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- le operazioni, riga per riga
+var CODICE_PC = {
+  pilaArray: {
+    isEmpty: ["<b>FUNZIONE</b> isEmpty() → boolean", "  <b>IF</b> top = −1 <b>THEN RETURN</b> true", "             <b>ELSE RETURN</b> false"],
+    push: ["<b>PROCEDURA</b> push(elemento x)", "  top ← top + 1", "  dati[top] ← x"],
+    top: ["<b>FUNZIONE</b> top() → elemento", "  <b>RETURN</b> dati[top]"],
+    pop: ["<b>FUNZIONE</b> pop() → elemento", "  x ← dati[top]", "  top ← top − 1", "  <b>RETURN</b> x"]
+  },
+  pilaLista: {
+    isEmpty: ["<b>FUNZIONE</b> isEmpty() → boolean", "  <b>IF</b> top = null <b>THEN RETURN</b> true", "               <b>ELSE RETURN</b> false"],
+    push: ["<b>PROCEDURA</b> push(elemento x)", "  r ← riferimento a un nuovo nodo", "  r.dato ← x", "  r.pros ← top", "  top ← r"],
+    top: ["<b>FUNZIONE</b> top() → elemento", "  <b>RETURN</b> top.dato"],
+    pop: ["<b>FUNZIONE</b> pop() → elemento", "  x ← top.dato", "  top ← top.pros", "  <b>RETURN</b> x"]
+  },
+  codaArray: {
+    isEmpty: ["<b>FUNZIONE</b> isEmpty() → boolean", "  <b>IF</b> n = 0 <b>THEN RETURN</b> true", "          <b>ELSE RETURN</b> false"],
+    enqueue: ["<b>PROCEDURA</b> enqueue(elemento x)", "  <b>IF</b> n = N <b>THEN</b> errore: coda piena", "  ultimo ← (ultimo + 1) mod N", "  dati[ultimo] ← x", "  n ← n + 1"],
+    first: ["<b>FUNZIONE</b> first() → elemento", "  <b>IF</b> n = 0 <b>THEN</b> errore: coda vuota", "  <b>RETURN</b> dati[primo]"],
+    dequeue: ["<b>FUNZIONE</b> dequeue() → elemento", "  <b>IF</b> n = 0 <b>THEN</b> errore: coda vuota", "  x ← dati[primo]", "  primo ← (primo + 1) mod N", "  n ← n − 1", "  <b>RETURN</b> x"]
+  },
+  codaLista: {
+    isEmpty: ["<b>FUNZIONE</b> isEmpty() → boolean", "  <b>IF</b> primo = null <b>THEN RETURN</b> true", "                 <b>ELSE RETURN</b> false"],
+    first: ["<b>FUNZIONE</b> first() → elemento", "  <b>RETURN</b> primo.dato"],
+    dequeue: ["<b>FUNZIONE</b> dequeue() → elemento", "  x ← primo.dato", "  primo ← primo.pros", "  <b>IF</b> primo = null <b>THEN</b>", "    ultimo ← null", "  <b>RETURN</b> x"],
+    enqueue: ["<b>PROCEDURA</b> enqueue(elemento x)", "  r ← riferimento a un nuovo nodo", "  r.dato ← x", "  r.pros ← null", "  <b>IF</b> primo = null <b>THEN</b>", "    primo ← r", "    ultimo ← r", "  <b>ELSE</b>", "    ultimo.pros ← r", "    ultimo ← r"]
+  }
+};
+
+// Stato di una pila o di una coda fatta con una lista: nodi { id: {k, pros} }, più i riferimenti.
+function copiaNodi(nodi) { var c = {}; for (var q in nodi) c[q] = { k: nodi[q].k, pros: nodi[q].pros }; return c; }
+function ordineDa(nodi, testa) { var o = [], q = testa, g = 0; while (q !== null && q !== undefined && nodi[q] && g++ < 60) { o.push(q); q = nodi[q].pros; } return o; }
+
+// Esegue un'operazione e restituisce gli eventi { riga, testo, vista, vars, errore?, risultato? } e lo stato finale.
+// Pila con array: S = { dati: [], top, cap }.  Pila con lista: S = { nodi, top, id }.
+// Coda con array: S = { dati: [], primo, ultimo, n, N }.  Coda con lista: S = { nodi, primo, ultimo, id }.
+function eseguiPC(impl, S, op, x) {
+  var ev = [], T = JSON.parse(JSON.stringify(S));
+  function push(riga, testoE, extra) {
+    var e = { riga: riga, testo: testoE, S: JSON.parse(JSON.stringify(T)) };
+    if (extra) for (var q in extra) e[q] = extra[q];
+    ev.push(e);
+  }
+  var xx = escH(x);
+  if (impl === "pilaArray") {
+    if (op === "isEmpty") {
+      push(0, "Chiamata isEmpty(): la pila è vuota?");
+      push(1, "top = " + T.top + (T.top === -1 ? ": la condizione top = −1 è vera, si restituisce <b>true</b>. La pila è vuota." : ": la condizione top = −1 è falsa."), T.top === -1 ? { fine: true, risultato: "true" } : {});
+      if (T.top !== -1) push(2, "Si restituisce <b>false</b>: nella pila ci sono " + (T.top + 1) + " elementi.", { fine: true, risultato: "false" });
+    } else if (op === "push") {
+      push(0, "Chiamata push(" + xx + "): mettere " + xx + " in cima alla pila.");
+      if (T.top === T.cap - 1) {
+        push(1, "top dovrebbe diventare " + T.cap + ", ma l'array ha solo le caselle da 0 a " + (T.cap - 1) + ". <span class='errore'>Errore: l'array è pieno!</span> (Alla lavagna: «Errore array pieno!»). L'operazione non si può fare.", { fine: true, errore: true });
+      } else {
+        T.top++; push(1, "top ← top + 1: top passa a " + T.top + ", la prima casella libera.", { evid: T.top });
+        T.dati[T.top] = x; push(2, "dati[top] ← x: nella casella " + T.top + " si scrive " + xx + ". Fatto: " + xx + " è in cima. Sono servite 2 istruzioni, qualunque sia il numero di elementi: tempo O(1).", { fine: true, nuovo: true });
+      }
+    } else if (op === "top" || op === "pop") {
+      push(0, op === "top" ? "Chiamata top(): quale elemento c'è in cima? (Senza toglierlo.)" : "Chiamata pop(): togliere l'elemento in cima e restituirlo.");
+      if (T.top === -1) {
+        push(1, "top = −1: la pila è vuota, la casella dati[−1] non esiste. <span class='errore'>Errore: la pila è vuota!</span> (Alla lavagna: «errore se la pila è vuota!»)", { fine: true, errore: true });
+      } else if (op === "top") {
+        push(1, "Si restituisce dati[top] = dati[" + T.top + "] = <b>" + escH(T.dati[T.top]) + "</b>. La pila non cambia.", { fine: true, risultato: T.dati[T.top], evid: T.top });
+      } else {
+        var v = T.dati[T.top];
+        push(1, "x ← dati[top]: x = dati[" + T.top + "] = " + escH(v) + ".", { vx: v, evid: T.top });
+        T.top--; push(2, "top ← top − 1: top passa a " + T.top + ". Il valore " + escH(v) + " resta scritto nella casella " + (T.top + 1) + ", ma è oltre top: non fa più parte della pila (la casella è tratteggiata). Il prossimo push lo sovrascriverà.", { vx: v });
+        push(3, "Si restituisce x = <b>" + escH(v) + "</b>. Anche pop costa O(1).", { fine: true, risultato: v, vx: v, via: v });
+      }
+    }
+  } else if (impl === "pilaLista") {
+    if (op === "isEmpty") {
+      push(0, "Chiamata isEmpty(): la pila è vuota?");
+      push(1, T.top === null ? "top = null: la condizione è vera, si restituisce <b>true</b>." : "top non è null (indica il nodo " + escH(T.nodi[T.top].k) + "): la condizione è falsa.", T.top === null ? { fine: true, risultato: "true" } : {});
+      if (T.top !== null) push(2, "Si restituisce <b>false</b>.", { fine: true, risultato: "false" });
+    } else if (op === "push") {
+      push(0, "Chiamata push(" + xx + "): mettere " + xx + " in cima alla pila, cioè <b>in testa</b> alla lista.");
+      var id = "q" + (T.id++);
+      T.nodi[id] = { k: "", pros: undefined }; T.r = id;
+      push(1, "r ← riferimento a un nuovo nodo: si crea un nodo nuovo, ancora vuoto e fuori dalla lista; r lo indica.", { nuovoNodo: id });
+      T.nodi[id].k = String(x); push(2, "r.dato ← x: nel nodo nuovo si scrive " + xx + ".", { nuovoNodo: id });
+      T.nodi[id].pros = T.top; push(3, "r.pros ← top: il nodo nuovo punta a quello che adesso è in cima" + (T.top === null ? ": la pila era vuota, quindi r.pros = null." : " (" + escH(T.nodi[T.top].k) + "). Per ora la lista non è cambiata: da top si arriva ancora al " + escH(T.nodi[T.top].k) + "."), { nuovoNodo: id });
+      var vecchio = T.top; T.top = id;
+      push(4, "top ← r: adesso top indica il nodo nuovo. La vecchia freccia di top (barrata in rosso) non c'è più. Da top si legge " + xx + (vecchio === null ? "." : ", poi " + escH(T.nodi[vecchio].k) + " e il resto della pila."), { nuovoNodo: id, taglioTop: vecchio });
+      delete T.r;
+      push(4, "Fatto: " + xx + " è in cima. 4 istruzioni, nessun ciclo: tempo O(1).", { fine: true, nuovo: id });
+    } else if (op === "top" || op === "pop") {
+      push(0, op === "top" ? "Chiamata top(): quale elemento c'è in cima? (Senza toglierlo.)" : "Chiamata pop(): togliere l'elemento in cima e restituirlo.");
+      if (T.top === null) {
+        push(1, "top = null: non c'è nessun nodo, quindi top.dato non esiste. <span class='errore'>Errore: la pila è vuota!</span>", { fine: true, errore: true });
+      } else if (op === "top") {
+        push(1, "Si restituisce top.dato = <b>" + escH(T.nodi[T.top].k) + "</b>. La pila non cambia.", { fine: true, risultato: T.nodi[T.top].k, attivo: T.top });
+      } else {
+        var t0 = T.top, v2 = T.nodi[t0].k;
+        push(1, "x ← top.dato: x = " + escH(v2) + ".", { vx: v2, attivo: t0 });
+        T.top = T.nodi[t0].pros;
+        push(2, "top ← top.pros: top salta al nodo successivo" + (T.top === null ? ", cioè null: la pila adesso è vuota." : ", il " + escH(T.nodi[T.top].k) + ".") + " Il nodo " + escH(v2) + " (in rosso) non si raggiunge più da top: è fuori dalla pila. In un programma vero qui si libera la sua memoria (alla lavagna: «rilasciare la memoria»).", { vx: v2, via: t0, taglioTop: t0 });
+        delete T.nodi[t0];
+        push(3, "Si restituisce x = <b>" + escH(v2) + "</b>. Tempo O(1).", { fine: true, risultato: v2, vx: v2, uscito: v2 });
+      }
+    }
+  } else if (impl === "codaArray") {
+    var N = T.N;
+    if (op === "isEmpty") {
+      push(0, "Chiamata isEmpty(): la coda è vuota?");
+      push(1, "n = " + T.n + (T.n === 0 ? ": vero, si restituisce <b>true</b>." : ": la condizione n = 0 è falsa."), T.n === 0 ? { fine: true, risultato: "true" } : {});
+      if (T.n !== 0) push(2, "Si restituisce <b>false</b>: nella coda ci sono " + T.n + " elementi.", { fine: true, risultato: "false" });
+    } else if (op === "enqueue") {
+      push(0, "Chiamata enqueue(" + xx + "): mettere " + xx + " in fondo alla coda.");
+      if (T.n === N) {
+        push(1, "n = " + N + " = N: tutte le caselle sono occupate. <span class='errore'>Errore: la coda è piena!</span>", { fine: true, errore: true });
+      } else {
+        push(1, "n = " + T.n + " è diverso da N = " + N + ": c'è posto, si prosegue.");
+        var u0 = T.ultimo; T.ultimo = (T.ultimo + 1) % N;
+        push(2, "ultimo ← (ultimo + 1) mod N = (" + u0 + " + 1) mod " + N + " = " + T.ultimo + (u0 === N - 1 ? ". <b>Qui si vede l'array circolare</b>: dopo l'ultima casella, " + (N - 1) + ", si riparte dalla casella 0." : "."), { evid: T.ultimo });
+        T.dati[T.ultimo] = x;
+        push(3, "dati[ultimo] ← x: nella casella " + T.ultimo + " si scrive " + xx + ".", { evid: T.ultimo });
+        T.n++; push(4, "n ← n + 1: adesso nella coda ci sono " + T.n + " elementi. Tempo O(1).", { fine: true, nuovo: T.ultimo });
+      }
+    } else if (op === "first" || op === "dequeue") {
+      push(0, op === "first" ? "Chiamata first(): chi è il primo della coda? (Senza toglierlo.)" : "Chiamata dequeue(): togliere il primo della coda e restituirlo.");
+      if (T.n === 0) {
+        push(1, "n = 0: <span class='errore'>Errore: la coda è vuota!</span>", { fine: true, errore: true });
+      } else if (op === "first") {
+        push(1, "n = " + T.n + ": la coda non è vuota.");
+        push(2, "Si restituisce dati[primo] = dati[" + T.primo + "] = <b>" + escH(T.dati[T.primo]) + "</b>.", { fine: true, risultato: T.dati[T.primo], evid: T.primo });
+      } else {
+        push(1, "n = " + T.n + ": la coda non è vuota.");
+        var v3 = T.dati[T.primo], p0 = T.primo;
+        push(2, "x ← dati[primo]: x = dati[" + p0 + "] = " + escH(v3) + ".", { vx: v3, evid: p0 });
+        T.primo = (T.primo + 1) % N;
+        push(3, "primo ← (primo + 1) mod N = (" + p0 + " + 1) mod " + N + " = " + T.primo + (p0 === N - 1 ? ": dopo la casella " + (N - 1) + " si torna alla 0." : ".") + " La casella " + p0 + " adesso è fuori dalla coda (tratteggiata): il valore resta scritto, ma un enqueue futuro lo sovrascriverà.", { vx: v3 });
+        T.n--; push(4, "n ← n − 1: restano " + T.n + " elementi.", { vx: v3 });
+        push(5, "Si restituisce x = <b>" + escH(v3) + "</b>. Tempo O(1): nessun elemento si è spostato.", { fine: true, risultato: v3, vx: v3, via: v3 });
+      }
+    }
+  } else if (impl === "codaLista") {
+    if (op === "isEmpty") {
+      push(0, "Chiamata isEmpty(): la coda è vuota?");
+      push(1, T.primo === null ? "primo = null: vero, si restituisce <b>true</b>." : "primo non è null: la condizione è falsa.", T.primo === null ? { fine: true, risultato: "true" } : {});
+      if (T.primo !== null) push(2, "Si restituisce <b>false</b>.", { fine: true, risultato: "false" });
+    } else if (op === "first") {
+      push(0, "Chiamata first(): chi è il primo della coda?");
+      if (T.primo === null) push(1, "primo = null: primo.dato non esiste. <span class='errore'>Errore: la coda è vuota!</span>", { fine: true, errore: true });
+      else push(1, "Si restituisce primo.dato = <b>" + escH(T.nodi[T.primo].k) + "</b>.", { fine: true, risultato: T.nodi[T.primo].k, attivo: T.primo });
+    } else if (op === "dequeue") {
+      push(0, "Chiamata dequeue(): togliere il primo della coda e restituirlo.");
+      if (T.primo === null) {
+        push(1, "primo = null: primo.dato non esiste. <span class='errore'>Errore: la coda è vuota!</span>", { fine: true, errore: true });
+      } else {
+        var q0 = T.primo, v4 = T.nodi[q0].k;
+        push(1, "x ← primo.dato: x = " + escH(v4) + ".", { vx: v4, attivo: q0 });
+        T.primo = T.nodi[q0].pros;
+        push(2, "primo ← primo.pros: primo salta al nodo successivo" + (T.primo === null ? ", che non c'è: primo = null." : ", il " + escH(T.nodi[T.primo].k) + ". Il nodo " + escH(v4) + " (in rosso) è fuori dalla coda."), { vx: v4, via: q0, taglioPrimo: q0 });
+        if (T.primo === null) {
+          push(3, "primo = null: la coda è rimasta vuota. Ma ultimo indica ancora il nodo " + escH(v4) + ", che non fa più parte della coda!", { vx: v4, via: q0 });
+          T.ultimo = null;
+          push(4, "ultimo ← null: adesso anche ultimo dice «coda vuota», come vuole la regola della lavagna: coda vuota = primo e ultimo tutti e due null. Senza questa riga ultimo indicherebbe ancora un nodo che non è più nella coda (vedi gli esercizi).", { vx: v4, via: q0 });
+        } else {
+          push(3, "primo non è null: la coda non è vuota, ultimo resta dov'è.", { vx: v4, via: q0 });
+        }
+        delete T.nodi[q0];
+        push(5, "Si restituisce x = <b>" + escH(v4) + "</b>. Tempo O(1).", { fine: true, risultato: v4, vx: v4, uscito: v4 });
+      }
+    } else if (op === "enqueue") {
+      push(0, "Chiamata enqueue(" + xx + "): mettere " + xx + " in fondo alla coda, cioè <b>dopo l'ultimo nodo</b> della lista.");
+      var id2 = "q" + (T.id++);
+      T.nodi[id2] = { k: "", pros: undefined }; T.r = id2;
+      push(1, "r ← riferimento a un nuovo nodo: un nodo nuovo, ancora vuoto; r lo indica.", { nuovoNodo: id2 });
+      T.nodi[id2].k = String(x); push(2, "r.dato ← x: nel nodo si scrive " + xx + ".", { nuovoNodo: id2 });
+      T.nodi[id2].pros = null; push(3, "r.pros ← null: il nodo nuovo sarà l'ultimo, quindi dopo di lui non c'è niente.", { nuovoNodo: id2 });
+      if (T.primo === null) {
+        push(4, "primo = null: la coda è vuota (alla lavagna: «inserimento in coda vuota»). Il nodo nuovo sarà insieme il primo e l'ultimo.", { nuovoNodo: id2 });
+        T.primo = id2; push(5, "primo ← r.", { nuovoNodo: id2 });
+        T.ultimo = id2; delete T.r; push(6, "ultimo ← r. Fatto: la coda ha un solo elemento, " + xx + ". Tempo O(1).", { fine: true, nuovo: id2 });
+      } else {
+        push(4, "primo non è null: la coda non è vuota, si va all'ELSE.", { nuovoNodo: id2 });
+        var u = T.ultimo;
+        T.nodi[u].pros = id2;
+        push(8, "ultimo.pros ← r: il nodo " + escH(T.nodi[u].k) + ", che era l'ultimo, adesso punta al nodo nuovo (prima il suo pros era null). La coda è collegata: da primo si arriva fino a " + xx + ".", { nuovoNodo: id2 });
+        T.ultimo = id2; delete T.r;
+        push(9, "ultimo ← r: ultimo si sposta sul nodo nuovo (la freccia vecchia, barrata, non c'è più). Tempo O(1): grazie a ultimo non c'è bisogno di scorrere la lista per trovare la fine.", { fine: true, nuovo: id2, taglioUltimo: u });
+      }
+    }
+  }
+  return { ev: ev, S: T };
+}
+
+// Lo stato (per svgMem) di una pila o coda fatta con la lista, a un certo evento.
+function vistaListaPC(impl, e) {
+  var T = e.S, nodi = copiaNodi(T.nodi), testa = impl === "pilaLista" ? T.top : T.primo;
+  var nuovo = e.nuovoNodo, slots, gall = [], vars = [], evid = {}, tagli = [];
+  if (e.via && !nodi[e.via]) nodi[e.via] = { k: escH(e.vx), pros: null };
+  var vuotaConVia = e.via && (testa === null || testa === undefined);
+  if (impl === "pilaLista") {
+    slots = vuotaConVia ? [] : ordineDa(nodi, e.via ? e.via : testa);
+    if (vuotaConVia) gall.push({ id: e.via, tra: [null, null], x: LX0 + 70 });
+    if (nuovo) { slots = slots.filter(function (s) { return s !== nuovo; }); gall.push({ id: nuovo, tra: [null, slots.length ? slots[0] : null] }); }
+    if (e.taglioTop !== undefined && e.taglioTop !== null && nodi[e.taglioTop]) tagli.push({ da: "var:top", a: e.taglioTop });
+    vars.push({ nome: "top", a: testa, lato: "sx" });
+    if (T.r) vars.push({ nome: "r", a: T.r, lato: "sotto" });
+  } else {
+    var start = e.via ? e.via : testa;
+    slots = vuotaConVia ? [] : ordineDa(nodi, start);
+    if (vuotaConVia) gall.push({ id: e.via, tra: [null, null], x: LX0 + 70 });
+    if (nuovo && slots.indexOf(nuovo) >= 0 && !e.fine) slots = slots.filter(function (s) { return s !== nuovo; });
+    if (nuovo && slots.indexOf(nuovo) < 0) gall.push({ id: nuovo, tra: [slots.length ? slots[slots.length - 1] : null, null] });
+    if (e.taglioPrimo !== undefined && nodi[e.taglioPrimo]) tagli.push({ da: "var:primo", a: e.taglioPrimo });
+    if (e.taglioUltimo !== undefined && nodi[e.taglioUltimo]) tagli.push({ da: "var:ultimo", a: e.taglioUltimo, lato: "sx2" });
+    vars.push({ nome: "primo", a: testa, lato: "sx" });
+    vars.push({ nome: "ultimo", a: T.ultimo, lato: "sx2" });
+    if (T.r) vars.push({ nome: "r", a: T.r, lato: "sotto" });
+  }
+  if (nuovo) evid[nuovo] = "nuovo";
+  if (e.nuovo) evid[e.nuovo] = "nuovo";
+  if (e.via) evid[e.via] = "via";
+  if (e.attivo) evid[e.attivo] = "attivo";
+  return { slots: slots, nodi: nodi, gall: gall, vars: vars, evid: evid, tagli: tagli };
+}
+// gli elementi in ordine astratto (per la pila: dal fondo alla cima; per la coda: dal primo all'ultimo)
+function elementiPC(impl, T) {
+  var o = [], k;
+  if (impl === "pilaArray") { for (k = 0; k <= T.top; k++) o.push(T.dati[k]); }
+  else if (impl === "pilaLista") { o = ordineDa(T.nodi, T.top).map(function (id) { return T.nodi[id].k; }).filter(function (v) { return v !== ""; }).reverse(); }
+  else if (impl === "codaArray") { for (k = 0; k < T.n; k++) o.push(T.dati[(T.primo + k) % T.N]); }
+  else { o = ordineDa(T.nodi, T.primo).map(function (id) { return T.nodi[id].k; }); }
+  return o;
+}
+function statoInizialePC(impl, valori, cap) {
+  var T, k;
+  if (impl === "pilaArray") { T = { dati: [], top: valori.length - 1, cap: cap || 8 }; for (k = 0; k < valori.length; k++) T.dati[k] = valori[k]; }
+  else if (impl === "codaArray") { T = { dati: [], primo: 0, ultimo: (valori.length - 1 + (cap || 6)) % (cap || 6), n: valori.length, N: cap || 6 }; for (k = 0; k < valori.length; k++) T.dati[k] = valori[k]; }
+  else {
+    T = { nodi: {}, id: 0 };
+    var ids = valori.map(function () { return "q" + (T.id++); });
+    var seq = impl === "pilaLista" ? valori.slice().reverse() : valori.slice();
+    ids.forEach(function (id, j) { T.nodi[id] = { k: String(seq[j]), pros: j + 1 < ids.length ? ids[j + 1] : null }; });
+    if (impl === "pilaLista") T.top = ids.length ? ids[0] : null;
+    else { T.primo = ids.length ? ids[0] : null; T.ultimo = ids.length ? ids[ids.length - 1] : null; }
+  }
+  return T;
+}
+
+// ---- w11.js
+// Riquadri interattivi del pacco 11: il laboratorio della pila e quello della coda.
+function $(id) { return document.getElementById(id); }
+
+function creaLabPC(p, tipo) {
+  var IMPL = tipo === "pila" ? [["pilaArray", "con un array (8 caselle)"], ["pilaLista", "con una lista"]]
+    : [["codaArray", "con un array circolare (N = 6)"], ["codaLista", "con una lista"]];
+  var OPS = tipo === "pila" ? [["push", "push(x)"], ["pop", "pop()"], ["top", "top()"], ["isEmpty", "isEmpty()"]]
+    : [["enqueue", "enqueue(x)"], ["dequeue", "dequeue()"], ["first", "first()"], ["isEmpty", "isEmpty()"]];
+  var INIZ = tipo === "pila" ? [8, 12, 5, 7] : [2, 8, 1, 10];
+  var CAP = tipo === "pila" ? 8 : 6;
+  var W = { impl: IMPL[0][0], S: null, ev: [], k: 0, fin: null, op: null, x: null, n0: 0, storia: [], registrata: true };
+
+  var h = '<div class="controlli"><label>Realizzazione <select id="' + p + '-impl" style="width:auto">';
+  IMPL.forEach(function (v) { h += '<option value="' + v[0] + '">' + v[1] + '</option>'; });
+  h += '</select></label><label>x = <input type="number" id="' + p + '-x" value="' + (tipo === "pila" ? 10 : 7) + '" min="0" max="999" style="width:70px"></label></div>';
+  h += '<div class="controlli">';
+  OPS.forEach(function (o) { h += '<button id="' + p + '-op-' + o[0] + '">' + o[1] + '</button>'; });
+  h += '</div><div class="controlli"><button class="primario" id="' + p + '-passo">Passo →</button><button id="' + p + '-fine">Fino alla fine</button>' +
+    '<button id="' + p + '-reset">Ricomincia da ' + INIZ.join(" ") + '</button><button id="' + p + '-vuota">Svuota</button></div>' +
+    '<pre class="pseudo" id="' + p + '-cod"></pre>' +
+    '<div class="coppia"><div><div class="lato-tit">Com\'è fatta in memoria</div><div id="' + p + '-mem" class="figura" style="margin:4px 0"></div></div>' +
+    '<div style="flex:' + (tipo === "pila" ? '0 1 220px' : '1 1 100%') + '"><div class="lato-tit">Come la vede chi la usa</div><div id="' + p + '-astr" class="figura" style="margin:4px 0"></div></div></div>' +
+    '<div class="contatori" id="' + p + '-var"></div>' +
+    '<div class="narrazione" id="' + p + '-txt"></div>' +
+    '<div class="contatori" id="' + p + '-storia" style="margin-top:10px"></div>';
+  $(p + "-corpo").innerHTML = h;
+
+  function nuovoStato(valori) { return statoInizialePC(W.impl, valori, CAP); }
+  function chiudiOp() {
+    // completa l'operazione in corso (se c'è) e la scrive nella storia
+    if (!W.op) return;
+    if (W.fin) W.S = W.fin;
+    if (!W.registrata) {
+      var ult = W.ev[W.ev.length - 1], et = W.op + "(" + (W.x !== null ? W.x : "") + ")";
+      if (ult.errore) et += " → errore";
+      else if (ult.risultato !== undefined) et += " → " + ult.risultato;
+      W.storia.push(et); W.registrata = true;
+    }
+  }
+  function avvia(op) {
+    chiudiOp();
+    var x = null;
+    if (op === "push" || op === "enqueue") {
+      x = Number($(p + "-x").value);
+      if (!isFinite(x) || x < 0 || x > 999 || x !== Math.floor(x)) { $(p + "-txt").innerHTML = "Scrivi in x un numero intero tra 0 e 999."; return; }
+    }
+    var r = eseguiPC(W.impl, W.S, op, x);
+    W.op = op; W.x = x; W.ev = r.ev; W.fin = r.S; W.k = 0; W.registrata = false;
+    W.n0 = elementiPC(W.impl, W.S).length;
+    mostra();
+  }
+  function ricomincia(valori) {
+    W.S = nuovoStato(valori); W.ev = []; W.op = null; W.fin = null; W.storia = []; W.registrata = true;
+    mostra();
+  }
+  function vistaMem(e, S) {
+    var impl = W.impl;
+    if (impl === "pilaArray") return htmlArrayPila(S.dati, S.top, S.cap, { nuovo: e && e.nuovo, evid: e && e.evid });
+    if (impl === "codaArray") return svgAnello(S.dati, S.primo, S.ultimo, S.n, S.N, { nuovo: e && e.fine ? e.nuovo : undefined, aria: "La coda nell'array circolare" }) +
+      htmlArrayCoda(S.dati, S.primo, S.ultimo, S.n, S.N, { nuovo: e && e.fine ? e.nuovo : undefined, evid: e && e.evid });
+    var ee = e || { S: S };
+    return svgMem(vistaListaPC(impl, ee), { aria: "La struttura in memoria", minW: 240 });
+  }
+  function mostra() {
+    var e = W.ev.length ? W.ev[W.k] : null, S = e ? e.S : W.S, impl = W.impl;
+    var cod = CODICE_PC[impl];
+    if (e) {
+      $(p + "-cod").innerHTML = cod[W.op].map(function (r, j) { return '<span class="riga' + (j === e.riga ? " ora" : "") + '">' + r + '</span>'; }).join("");
+    } else {
+      var tutte = [];
+      OPS.forEach(function (o) { tutte.push(cod[o[0]].join("\n")); });
+      $(p + "-cod").innerHTML = tutte.join("\n\n");
+    }
+    $(p + "-mem").innerHTML = vistaMem(e, S);
+    var els = elementiPC(impl, S), opzA = {};
+    if (e && e.vx !== undefined && els.length < W.n0) opzA.via = e.vx;
+    if (e && e.fine && e.nuovo !== undefined) opzA.nuovo = true;
+    $(p + "-astr").innerHTML = tipo === "pila" ? svgPilaVert(els, opzA) : svgFila(els, opzA);
+    var vv = [];
+    if (impl === "pilaArray") vv.push("<span>top = <b>" + S.top + "</b></span>");
+    if (impl === "codaArray") vv.push("<span>primo = <b>" + S.primo + "</b></span><span>ultimo = <b>" + S.ultimo + "</b></span><span>n = <b>" + S.n + "</b></span>");
+    if (impl === "pilaLista") vv.push("<span>top " + (S.top === null ? "= <b>null</b>" : "→ <b>" + escH(S.nodi[S.top].k) + "</b>") + "</span>");
+    if (impl === "codaLista") vv.push("<span>primo " + (S.primo === null ? "= <b>null</b>" : "→ <b>" + escH(S.nodi[S.primo].k) + "</b>") + "</span><span>ultimo " + (S.ultimo === null ? "= <b>null</b>" : "→ <b>" + escH(S.nodi[S.ultimo] ? S.nodi[S.ultimo].k : (e && e.vx)) + "</b>") + "</span>");
+    if (e && e.vx !== undefined) vv.push("<span>x = <b>" + escH(e.vx) + "</b></span>");
+    vv.push("<span>elementi: <b>" + els.length + "</b></span>");
+    $(p + "-var").innerHTML = vv.join("");
+    if (e) $(p + "-txt").innerHTML = "<b>Passo " + (W.k + 1) + " di " + W.ev.length + ".</b> " + e.testo;
+    else $(p + "-txt").innerHTML = "Scegli un'operazione con i pulsanti in alto. Poi premi «Passo →» per eseguirla una riga alla volta: la riga evidenziata nel codice è quella appena eseguita.";
+    var fine = !e || W.k >= W.ev.length - 1;
+    $(p + "-passo").disabled = fine; $(p + "-fine").disabled = fine;
+    if (e && fine) chiudiOp();
+    $(p + "-storia").innerHTML = W.storia.length ? "<span>Operazioni fatte: " + W.storia.map(escH).join(" · ") + "</span>" : "";
+  }
+  OPS.forEach(function (o) { $(p + "-op-" + o[0]).onclick = function () { avvia(o[0]); }; });
+  $(p + "-passo").onclick = function () { if (W.k < W.ev.length - 1) { W.k++; mostra(); } };
+  $(p + "-fine").onclick = function () { if (W.ev.length) { W.k = W.ev.length - 1; mostra(); } };
+  $(p + "-reset").onclick = function () { ricomincia(INIZ); };
+  $(p + "-vuota").onclick = function () { ricomincia([]); };
+  $(p + "-impl").onchange = function () {
+    var els = W.S ? (chiudiOp(), elementiPC(W.impl, W.S)) : INIZ;
+    W.impl = $(p + "-impl").value;
+    var st = W.storia;
+    ricomincia(els.slice(-CAP));
+    W.storia = st; mostra();
+  };
+  ricomincia(INIZ);
+}
+creaLabPC("pl", "pila");
+creaLabPC("co", "coda");
+
+// ---------------------------------------------------------------- parentesi bilanciate (esercizio con la pila)
+(function () {
+  if (!$("pa-corpo")) return;
+  $("pa-corpo").innerHTML = '<div class="controlli"><label>Espressione <input type="text" id="pa-in" value="( [ 3 + 4 ] * { 2 + ( 5 ) } )" style="width:260px;max-width:100%"></label></div>' +
+    '<div class="controlli"><button class="primario" id="pa-passo">Passo →</button><button id="pa-fine">Fino alla fine</button><button id="pa-reset">Ricomincia</button>' +
+    '<button id="pa-es1">Prova ( [ ) ]</button><button id="pa-es2">Prova ( ( )</button></div>' +
+    '<div id="pa-fila" class="figura" style="margin:6px 0"></div><div class="coppia"><div style="flex:0 1 200px"><div class="lato-tit">La pila</div><div id="pa-pila" class="figura" style="margin:4px 0"></div></div>' +
+    '<div><div class="narrazione" id="pa-txt"></div></div></div>';
+  var A = { car: [], k: 0, pila: [], esito: null, passi: [] };
+  var APRE = "([{", CHIUDE = ")]}";
+  function prepara() {
+    var t = $("pa-in").value.replace(/[^()\[\]{}]/g, "").split("").slice(0, 24);
+    var pila = [], passi = [{ pila: [], j: -1, testo: "Si leggono le parentesi da sinistra a destra (gli altri simboli si ignorano). Premi «Passo →»." }], esito = null;
+    for (var j = 0; j < t.length && esito === null; j++) {
+      var c = t[j];
+      if (APRE.indexOf(c) >= 0) { pila.push(c); passi.push({ pila: pila.slice(), j: j, testo: "«" + c + "» è una parentesi aperta: push(" + c + ")." }); }
+      else {
+        var att = APRE[CHIUDE.indexOf(c)];
+        if (!pila.length) { esito = false; passi.push({ pila: [], j: j, testo: "«" + c + "» chiude, ma la pila è vuota: non c'è nessuna parentesi da chiudere. <span class='errore'>Non bilanciata.</span>", fine: true }); }
+        else {
+          var cima = pila.pop();
+          if (cima !== att) { esito = false; passi.push({ pila: pila.slice(), j: j, via: cima, testo: "«" + c + "» chiude, pop() restituisce «" + cima + "»: non sono della stessa forma. <span class='errore'>Non bilanciata.</span>", fine: true }); }
+          else passi.push({ pila: pila.slice(), j: j, via: cima, testo: "«" + c + "» chiude e pop() restituisce «" + cima + "»: la coppia va bene." });
+        }
+      }
+    }
+    if (esito === null) {
+      if (pila.length) passi.push({ pila: pila.slice(), j: t.length, testo: "Finite le parentesi, ma nella pila ne restano " + pila.length + " aperte. <span class='errore'>Non bilanciata.</span>", fine: true });
+      else passi.push({ pila: [], j: t.length, testo: "Finite le parentesi e la pila è vuota: <b class='ok'>bilanciata</b>.", fine: true });
+    }
+    A.car = t; A.passi = passi; A.k = 0; mostra();
+  }
+  function mostra() {
+    var e = A.passi[A.k], h = '<div class="array qs">';
+    A.car.forEach(function (c, j) { h += '<div class="cella' + (j === e.j ? " attiva" : j < e.j ? " zsx" : "") + '"><div class="f"></div><div class="v">' + escH(c) + '</div><div class="i">' + j + '</div></div>'; });
+    $("pa-fila").innerHTML = h + '</div>';
+    $("pa-pila").innerHTML = svgPilaVert(e.pila, { via: e.via, aria: "La pila delle parentesi aperte" });
+    $("pa-txt").innerHTML = e.testo;
+    var fine = A.k >= A.passi.length - 1;
+    $("pa-passo").disabled = fine; $("pa-fine").disabled = fine;
+  }
+  $("pa-passo").onclick = function () { if (A.k < A.passi.length - 1) { A.k++; mostra(); } };
+  $("pa-fine").onclick = function () { A.k = A.passi.length - 1; mostra(); };
+  $("pa-reset").onclick = function () { A.k = 0; mostra(); };
+  $("pa-es1").onclick = function () { $("pa-in").value = "( [ ) ]"; prepara(); };
+  $("pa-es2").onclick = function () { $("pa-in").value = "( ( )"; prepara(); };
+  $("pa-in").onchange = prepara;
+  prepara();
+})();
+})();
+</script>
+</body>
+</html>

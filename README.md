@@ -17,6 +17,10 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 6 · Quanto costa mergeSort | l'equazione C(n), il tempo T(n), l'altezza della pila, il Codice 3.3 | 9 |
 | 7 · Divide et impera e teorema fondamentale | minMax, Master theorem, prodotto di matrici, Strassen | 10 |
 | 8 · QuickSort | partizione con il perno, i tre casi (peggiore, migliore, medio), esercizi d'esame sulla partizione | 11 |
+| 9 · Quanto spazio usa quickSort | la pila delle chiamate, il caso peggiore, la ricorsione in coda, la parte più piccola per prima | 12 |
+| 10 · Le liste concatenate | tipi di dato e strutture dati, ricerca, inserimento e cancellazione, liste in C e in Go | 12–14 |
+| 11 · Pile e code | LIFO e FIFO, realizzazioni con array (anche circolare) e con liste, costi | 13–14 |
+| 12 · Alberi binari e visite | nomi, rappresentazione, visite in ampiezza e in profondità, tre ordini, notazione polacca inversa, visite dei temi d'esame | 13–14 |
 
 ## Come si usa
 

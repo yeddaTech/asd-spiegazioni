@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quanto spazio usa quickSort</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 9 · lezione 12 (23 ottobre 2026), prima parte</span>
+</div>
+
+<h1>Quanto spazio usa quickSort: la pila delle chiamate</h1>
+<p class="sottotitolo">quickSort non usa array di appoggio, ma la ricorsione occupa memoria: ogni chiamata ancora aperta tiene un piccolo record nella pila delle chiamate. In questa pagina vedi quanto può crescere questa pila (fino a n record) e due modifiche del codice che la tengono bassa: togliere la ricorsione in coda (Codice 4.4) e ordinare con la ricorsione solo la parte più piccola (Codice 4.5). Con l'ultima la pila non supera mai log<sub>2</sub> n + 1 record.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di matematica o di programmazione che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 3…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>«Lavagna, pagina N» indica la pagina del PDF della lavagna della lezione 12, quella del 23 ottobre 2026. «Le slide» sono le dispense del capitolo 4, su quickSort, nella parte «Spazio di lavoro».</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+  <p><b>I colori</b>, uguali in tutte le figure e in tutti i riquadri interattivi:</p>
+  <div class="legenda-celle">
+    <span><span class="q perno"></span>il perno</span>
+    <span><span class="q zsx"></span>≤ perno (parte sinistra)</span>
+    <span><span class="q zdx"></span>&gt; perno (parte destra)</span>
+    <span><span class="q posto"></span>al suo posto definitivo</span>
+  </div>
+  <p>Nei disegni della pila, un rettangolo arancione è un record già uscito dalla pila; un rettangolo azzurro (solo nei riquadri interattivi) è un record ancora dentro.</p>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in cinque domande</span>
+  <ol>
+    <li><b>quickSort usa memoria oltre all'array?</b> Sì: la pila delle chiamate, con un record per ogni chiamata non ancora finita.</li>
+    <li><b>Quanto è grande un record?</b> Sempre uguale, qualunque sia n: contiene i, f, m e poco altro.</li>
+    <li><b>Quanti record ci possono essere insieme?</b> Fino a n, per esempio con l'array già ordinato. Quindi lo spazio è Θ(n) nel caso peggiore.</li>
+    <li><b>Come si abbassa la pila?</b> Si sostituisce l'ultima chiamata ricorsiva con un ciclo (Codice 4.4) e si usa la chiamata ricorsiva solo per la parte più piccola (Codice 4.5).</li>
+    <li><b>Con quale risultato?</b> Al massimo log<sub>2</sub> n + 1 record, quindi spazio Θ(log n). I confronti restano gli stessi di prima.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#ripasso">Da dove ripartiamo: quickSort in breve</a></li>
+    <li><a href="#pila">In loco, ma non gratis: la pila delle chiamate</a></li>
+    <li><a href="#caso-a">Caso A: l'array già ordinato</a></li>
+    <li><a href="#caso-b">Caso B: il massimo in testa</a></li>
+    <li><a href="#coda">Togliere la ricorsione in coda (Codice 4.4)</a></li>
+    <li><a href="#simmetrica">La variante simmetrica: ogni versione ha il suo caso cattivo</a></li>
+    <li><a href="#piccola">Prima la parte più piccola (Codice 4.5)</a></li>
+    <li><a href="#altezza">Quanto è alta la pila del Codice 4.5</a></li>
+    <li><a href="#bilancio">Il bilancio dello spazio</a></li>
+    <li><a href="#riassunto">Riassunto e cosa serve per l'esame</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="ripasso"><span class="num">1</span>Da dove ripartiamo: quickSort in breve</h2>
+<p class="in-questa"><b>In questa sezione:</b> il ripasso di quickSort che il prof fa all'inizio della lezione (lavagna, pagine 2–7): l'idea con l'esempio della pagina 2, cosa fanno partiziona e quickSort, cosa sono i, f e m, la partizione della pagina 5 rifatta passo per passo, e i tre casi per il numero di confronti. Serve solo quello che userai nelle sezioni seguenti.</p>
+
+<h3>L'idea</h3>
+<p>quickSort ordina un array così: sceglie un elemento, il <strong>perno</strong>; sposta a sinistra gli elementi minori o uguali al perno e a destra quelli maggiori; poi ordina le due parti con lo stesso metodo, cioè chiamando sé stesso (ricorsione). Il perno, dopo lo spostamento, è già nella posizione che avrà nell'array ordinato, e non si tocca più.</p>
+<p>Lo spostamento si chiama <strong>partizione</strong> e lo fa la funzione <code>partiziona</code>. Nel codice del prof il perno è sempre il <strong>primo</strong> elemento della porzione da ordinare.</p>
+
+<p>L'esempio della lavagna, pagina 2, mostra l'idea senza codice. L'array è 25 44 77 32 21 12 14 18 39 e il prof sceglie come perno 21 (qui lo sceglie a mano, per far vedere l'idea; nel codice, invece, il perno sarà il primo elemento):</p>
+<ul>
+  <li>i minori di 21 sono 12, 18, 14: vanno a sinistra;</li>
+  <li>i maggiori di 21 sono 39, 25, 44, 32, 77: vanno a destra;</li>
+  <li>si ordinano le due parti, ognuna per conto suo: a sinistra 12 14 18, a destra 25 32 39 44 77;</li>
+  <li>messe in fila, 12 14 18 | 21 | 25 32 39 44 77, sono l'array ordinato. Il 21 non si è più mosso dal posto che aveva dopo la divisione.</li>
+</ul>
+<p>Alla pagina 3 il prof scrive la stessa idea come algoritmo «astratto», con due insiemi B e C al posto delle due parti dell'array:</p>
+<p class="titolo-codice">Lavagna, pagina 3 (versione astratta, non è il codice da usare)</p>
+<pre class="pseudo"><b>ALGORITMO</b> quickSort(array A)
+  <b>IF</b> lunghezza di A &gt; 1 <b>THEN</b>
+    scegli un elemento x in A
+    B ← { y ∈ A | y &lt; x }        <span class="com">// partizionamento: è il «divide»</span>
+    C ← { y ∈ A | y &gt; x }
+    quickSort(B)
+    quickSort(C)
+    A ← concatenazione di B, x, C  <span class="com">// è l'«impera»</span></pre>
+<p>Si legge così: se A ha almeno 2 elementi, scegli un elemento x; B è l'insieme degli elementi di A minori di x, C quello dei maggiori; ordina B, ordina C, e rimetti tutto in fila: prima B, poi x, poi C. Questa versione serve a capire l'idea, ma costruisce due insiemi nuovi a ogni chiamata (e, scritta così, non dice dove vanno gli elementi uguali a x). Il codice vero, quello che segue, fa la stessa cosa spostando gli elementi <em>dentro</em> l'array, senza B e C.</p>
+
+<h3>Il codice (lavagna, pagine 4 e 8)</h3>
+<p class="titolo-codice">Lavagna, pagine 4 e 8 (Codice 4.3 e Codice 4.2)</p>
+<pre class="pseudo"><b>ALGORITMO</b> quickSort(Array A[0..n − 1])
+  quickSort(A, 0, n)
+
+<b>PROCEDURA</b> quickSort(Array A, indice i, indice f)     <span class="com">// ordina A[i..f − 1]</span>
+  <b>IF</b> f − i &gt; 1 <b>THEN</b>
+    m ← partiziona(A, i, f)
+    quickSort(A, i, m)
+    quickSort(A, m + 1, f)
+
+<b>ALGORITMO</b> partiziona(Array A, indice i, indice f) → indice
+  perno ← A[i]
+  sx ← i, dx ← f
+  <b>WHILE</b> sx &lt; dx <b>DO</b>
+    <b>DO</b> dx ← dx − 1 <b>WHILE</b> A[dx] &gt; perno
+    <b>DO</b> sx ← sx + 1 <b>WHILE</b> sx &lt; dx <b>AND</b> A[sx] ≤ perno
+    <b>IF</b> sx &lt; dx <b>THEN</b>
+      scambia A[sx] con A[dx]
+  scambia A[i] con A[dx]
+  <b>RETURN</b> dx</pre>
+<p>Cosa vogliono dire le tre lettere:</p>
+<ul>
+  <li><strong>i</strong> è la prima posizione della porzione da ordinare.</li>
+  <li><strong>f</strong> è la posizione <em>subito dopo</em> l'ultima: la porzione è A[i], A[i + 1], …, A[f − 1], e contiene <strong>f − i</strong> elementi. Per questo la condizione <code>f − i &gt; 1</code> vuol dire «ci sono almeno 2 elementi»: con 0 o 1 elementi la porzione è già ordinata e la procedura non fa niente.</li>
+  <li><strong>m</strong> è la posizione in cui partiziona ha messo il perno. A sinistra, da i a m − 1, ci sono gli elementi ≤ perno; a destra, da m + 1 a f − 1, quelli &gt; perno.</li>
+</ul>
+<p>Come funziona partiziona dentro (i due indici sx e dx che si vengono incontro) qui non serve: ti basta sapere cosa restituisce. La Figura 1 mostra l'esempio della lavagna, pagina 4.</p>
+
+<div class="figura">
+<div class="etich-array">Dopo m ← partiziona(A, i, f): il perno 17 è in posizione m</div>
+<div class="array qs"><div class="cella fuori"><div class="f"></div><div class="v">…</div><div class="i"></div></div><div class="cella zsx"><div class="f">i</div><div class="v">12</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">8</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i"></div></div><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i"></div></div><div class="cella perno"><div class="f">m</div><div class="v">17</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">46</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">33</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">24</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">22</div><div class="i"></div></div><div class="cella zdx"><div class="f"></div><div class="v">45</div><div class="i"></div></div><div class="cella fuori"><div class="f">f</div><div class="v">…</div><div class="i"></div></div></div>
+<div class="etich-array">Dopo quickSort(A, i, m) e quickSort(A, m + 1, f): la porzione è ordinata</div>
+<div class="array qs"><div class="cella fuori"><div class="f"></div><div class="v">…</div><div class="i"></div></div><div class="cella posto"><div class="f">i</div><div class="v">1</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">2</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">8</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">12</div><div class="i"></div></div><div class="cella posto"><div class="f">m</div><div class="v">17</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">22</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">24</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">33</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">45</div><div class="i"></div></div><div class="cella posto"><div class="f"></div><div class="v">46</div><div class="i"></div></div><div class="cella fuori"><div class="f">f</div><div class="v">…</div><div class="i"></div></div></div>
+<div class="didascalia"><b>Figura 1.</b> L'esempio della lavagna, pagina 4. In alto, la porzione da i a f − 1 dopo la partizione: a sinistra del 17 gli elementi ≤ 17, a destra quelli &gt; 17. In basso, dopo le due chiamate ricorsive. La casella sopra la quale c'è scritto f è la prima <em>fuori</em> dalla porzione.</div>
+</div>
+
+<h3>La partizione della lavagna, pagina 5, passo per passo</h3>
+<p>A pagina 5 il prof ripete una partizione intera sull'array 25 12 37 42 27 29 1 2 12 (9 elementi, posizioni da 0 a 8). Il perno è il primo elemento, 25. Si parte con sx = 0 e dx = 9, cioè la posizione subito dopo l'ultima. A ogni giro del ciclo:</p>
+<ol>
+  <li>dx scende di una posizione alla volta e si ferma sul primo elemento ≤ 25 che trova (gli elementi &gt; 25 li lascia dove sono, perché stanno già bene a destra);</li>
+  <li>sx sale di una posizione alla volta e si ferma sul primo elemento &gt; 25 che trova, oppure quando raggiunge dx;</li>
+  <li>se sx è ancora a sinistra di dx, i due elementi su cui si sono fermati stanno dalla parte sbagliata: si scambiano.</li>
+</ol>
+<p>La Figura 2 mostra i quattro giri, uno per riga.</p>
+
+<div class="figura">
+<div class="etich-array">Prima di cominciare: il perno è 25, in posizione 0</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">37</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">42</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">27</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">29</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">12</div><div class="i">8</div></div></div>
+<div class="etich-array">Giro 1: dx si ferma sul 12 (posizione 8), sx sul 37 (posizione 2). 2 &lt; 8: si scambiano</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella mossa"><div class="f"><span class="lab-sx">sx</span></div><div class="v">12</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">42</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">27</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">29</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">7</div></div><div class="cella mossa"><div class="f"><span class="lab-dx">dx</span></div><div class="v">37</div><div class="i">8</div></div></div>
+<div class="etich-array">Giro 2: dx si ferma sul 2 (posizione 7), sx sul 42 (posizione 3). 3 &lt; 7: si scambiano</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">2</div></div><div class="cella mossa"><div class="f"><span class="lab-sx">sx</span></div><div class="v">2</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">27</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">29</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">6</div></div><div class="cella mossa"><div class="f"><span class="lab-dx">dx</span></div><div class="v">42</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">37</div><div class="i">8</div></div></div>
+<div class="etich-array">Giro 3: dx si ferma sull'1 (posizione 6), sx sul 27 (posizione 4). 4 &lt; 6: si scambiano</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">3</div></div><div class="cella mossa"><div class="f"><span class="lab-sx">sx</span></div><div class="v">1</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">29</div><div class="i">5</div></div><div class="cella mossa"><div class="f"><span class="lab-dx">dx</span></div><div class="v">27</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">42</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">37</div><div class="i">8</div></div></div>
+<div class="etich-array">Giro 4: dx salta il 29 e si ferma sull'1 (posizione 4); sx sale a 5 e si ferma subito, perché 5 &lt; 4 è falso. Si sono incrociati: niente scambio, il WHILE finisce</div>
+<div class="array qs"><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">3</div></div><div class="cella zsx"><div class="f"><span class="lab-dx">dx</span></div><div class="v">1</div><div class="i">4</div></div><div class="cella zdx"><div class="f"><span class="lab-sx">sx</span></div><div class="v">29</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">27</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">42</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">37</div><div class="i">8</div></div></div>
+<div class="etich-array">Fine: scambia A[0] (il perno) con A[dx] = A[4] e restituisce m = 4</div>
+<div class="array qs"><div class="cella zsx"><div class="f"></div><div class="v">1</div><div class="i">0</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">1</div></div><div class="cella zsx"><div class="f"></div><div class="v">12</div><div class="i">2</div></div><div class="cella zsx"><div class="f"></div><div class="v">2</div><div class="i">3</div></div><div class="cella perno"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="cella zdx"><div class="f"></div><div class="v">29</div><div class="i">5</div></div><div class="cella zdx"><div class="f"></div><div class="v">27</div><div class="i">6</div></div><div class="cella zdx"><div class="f"></div><div class="v">42</div><div class="i">7</div></div><div class="cella zdx"><div class="f"></div><div class="v">37</div><div class="i">8</div></div></div>
+<div class="didascalia"><b>Figura 2.</b> La partizione della lavagna, pagina 5, giro per giro. Sopra le caselle, <span class="lab-sx">sx</span> e <span class="lab-dx">dx</span> dove si sono fermati i due indici; sotto, le posizioni. In viola le due caselle appena scambiate; in azzurro la parte già sistemata a sinistra (≤ 25), in arancione quella già sistemata a destra (&gt; 25). Alla fine, a sinistra del 25 ci sono 1 12 12 2 e a destra 29 27 42 37: tutti dalla parte giusta, ma non ancora in ordine. Li ordineranno le due chiamate ricorsive.</div>
+</div>
+<p>Contiamo i confronti tra elementi e perno: 1 + 2 nel primo giro (dx guarda il 12; sx guarda il 12 e il 37), 1 + 1 nel secondo, 1 + 1 nel terzo, 2 nel quarto (dx guarda il 29 e l'1; sx non guarda niente, perché la condizione sx &lt; dx è già falsa). In tutto 9, cioè n: è il valore C<sub>part</sub>(n) = n che il prof usa nella pagina 6.</p>
+
+<h3>I confronti: l'equazione (lavagna, pagina 6)</h3>
+<p>Il prof chiama C(n) il numero di confronti che quickSort fa su n elementi e scrive:</p>
+<ul>
+  <li>se n = 0 oppure n = 1: C(n) = 0, perché non c'è niente da ordinare;</li>
+  <li>altrimenti: C(n) = C<sub>part</sub>(n) + C(k) + C(n − k − 1) = n + C(k) + C(n − k − 1).</li>
+</ul>
+<p>I tre pezzi sono: i confronti della partizione (n), quelli della chiamata sulla parte sinistra e quelli della chiamata sulla parte destra. Qui k è la posizione in cui finisce il perno, contando da 0: a sinistra restano k elementi, a destra n − k − 1 (tutti meno i k di sinistra e meno il perno).</p>
+
+<h3>I tre casi per i confronti (lavagna, pagina 7)</h3>
+<p>Il prof riassume così quanti confronti fa quickSort su n elementi:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>caso</th><th>confronti</th><th>quando succede</th></tr>
+  <tr><td>peggiore</td><td>≈ n²/2</td><td>il perno finisce sempre a un'estremità: una parte vuota e l'altra con tutti gli altri elementi. Per esempio con l'array già ordinato.</td></tr>
+  <tr><td>migliore</td><td>≈ n log<sub>2</sub> n</td><td>il perno finisce sempre a metà: le due parti hanno circa lo stesso numero di elementi</td></tr>
+  <tr><td>medio</td><td>≈ 1,39 n log<sub>2</sub> n</td><td>la media su tutti gli ordini possibili degli elementi</td></tr>
+</table></div>
+<p>Sempre a pagina 7 la lavagna fa il conto del caso peggiore. Il perno finisce a un'estremità, cioè k = 0 oppure k = n − 1, e una delle due parti ha tutti gli altri n − 1 elementi. Allora l'equazione diventa C(n) = n + C(n − 1), e srotolandola:</p>
+<p class="formula">C(n) = n + C(n − 1) = n + (n − 1) + C(n − 2) = … = n + (n − 1) + … + 2 = Θ(n²)</p>
+<p>Succede, per esempio, con l'array già ordinato: il perno è il più piccolo, dx scende fino alla posizione del perno, perché tutti gli altri sono maggiori, e la parte sinistra resta vuota. La parte destra è di nuovo ordinata, e alla chiamata successiva succede la stessa cosa.</p>
+<p>In fondo alla pagina 7 il prof scrive 1 3 5 7 11 15 18 e cerchia il 7, l'elemento di mezzo: è il perno ideale, perché lascia 3 elementi a sinistra e 3 a destra. Se a ogni chiamata il perno fosse l'elemento di mezzo, le parti si dimezzerebbero sempre: è il caso migliore.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>quickSort(A, i, f) ordina A[i..f − 1], che ha f − i elementi. Se ce ne sono almeno 2: m ← partiziona(A, i, f), poi quickSort(A, i, m) per la parte sinistra e quickSort(A, m + 1, f) per la parte destra.</li>
+    <li>Confronti: ≈ n²/2 nel caso peggiore (partizioni sbilanciate, per esempio array già ordinato), ≈ n log<sub>2</sub> n nel migliore, ≈ 1,39 n log<sub>2</sub> n in media.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="pila"><span class="num">2</span>In loco, ma non gratis: la pila delle chiamate</h2>
+<p class="in-questa"><b>In questa sezione:</b> cosa succede in memoria quando una procedura chiama un'altra procedura; il record di attivazione e la pila delle chiamate; perché quickSort, che lavora «in loco», usa comunque memoria in più; come si legge il disegno «altezza della pila nel tempo» della lavagna, pagina 9.</p>
+
+<h3>quickSort è «in loco»</h3>
+<p>Le slide dicono che quickSort è un algoritmo <strong>in loco</strong>: tutti gli spostamenti sono scambi dentro l'array A, e non serve un secondo array dove copiare i dati. mergeSort, invece, per fondere due parti ordinate ha bisogno di un array di appoggio grande quanto quello da ordinare.</p>
+<p>Ma le slide aggiungono subito: «quickSort utilizza memoria aggiuntiva per la ricorsione». Per capire quale, serve l'attrezzo seguente.</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: il record di attivazione e la pila delle chiamate</span>
+  <p>Quando una procedura chiama un'altra procedura (o sé stessa), il computer deve ricordarsi alcune cose finché la chiamata non finisce:</p>
+  <ul>
+    <li>i valori dei <strong>parametri</strong> della chiamata (per quickSort: A, i, f);</li>
+    <li>le sue <strong>variabili locali</strong> (per quickSort: m);</li>
+    <li>il <strong>punto di ritorno</strong>: da quale istruzione deve ripartire chi ha fatto la chiamata, quando la chiamata finisce.</li>
+  </ul>
+  <p>Queste informazioni stanno in un blocchetto di memoria che si chiama <strong>record di attivazione</strong>. Ogni chiamata ha il suo.</p>
+  <p>I record si impilano uno sopra l'altro, come i piatti in una pila:</p>
+  <ul>
+    <li>quando comincia una chiamata, il suo record si mette <strong>in cima</strong>;</li>
+    <li>quando la chiamata finisce, il suo record si toglie dalla cima, e riprende a lavorare la chiamata del record che adesso è in cima.</li>
+  </ul>
+  <p>Questa struttura si chiama <strong>pila delle chiamate</strong> (in inglese <em>stack</em>). Il numero di record presenti in un certo momento è l'<strong>altezza</strong> della pila in quel momento.</p>
+</div>
+
+<p>Un paragone. Stai leggendo un libro; una nota ti manda all'appendice; l'appendice ti manda a un'altra pagina. Tieni un dito in ogni punto da cui sei partito, per tornarci. Il numero di dita che ti servono insieme è l'altezza della pila. Quando finisci di leggere l'ultima pagina, togli l'ultimo dito e torni al punto precedente.</p>
+
+<h3>Cosa c'è nel record di una chiamata di quickSort</h3>
+<p>Le slide lo dicono così: «ogni record di attivazione deve contenere i parametri i e f che delimitano la parte di array da ordinare, oltre alla variabile m». Più il punto di ritorno e il riferimento all'array A.</p>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: l'array non viene copiato</span>
+  <p>Nel record non c'è una copia dell'array: c'è solo il <strong>riferimento</strong> ad A, cioè l'indirizzo di memoria dove l'array si trova. Tutte le chiamate lavorano sullo stesso array. Per questo un record ha sempre la stessa grandezza, che l'array abbia 10 elementi o un milione.</p>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: O(1), Θ(n), Θ(log n)</span>
+  <ul>
+    <li><strong>O(1)</strong> si legge «o grande di uno» e vuol dire: al massimo una costante, cioè un numero che non cresce con n.</li>
+    <li><strong>Θ(n)</strong> si legge «theta di n» e vuol dire: cresce come n, a meno di una costante. Se n raddoppia, raddoppia anche lui (più o meno).</li>
+    <li><strong>Θ(log n)</strong>: cresce come il logaritmo di n, cioè lentissimamente. Per n = 1000, log<sub>2</sub> n ≈ 10; per n = un milione, log<sub>2</sub> n ≈ 20.</li>
+  </ul>
+</div>
+
+<p>Quindi la grandezza di un record di quickSort è <strong>O(1)</strong>. La memoria usata dalla pila, in un certo momento, è:</p>
+<p class="formula">memoria della pila = (numero di record nella pila) × (grandezza di un record)</p>
+<p>e la memoria che serve davvero è quella del momento peggiore, cioè quando la pila è più alta. Le slide: «la quantità di memoria utilizzata sullo stack sarà proporzionale al numero massimo di record di attivazione che possono essere presenti contemporaneamente, cioè all'altezza massima raggiunta dallo stack».</p>
+
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: conta l'altezza massima, non il numero di chiamate</span>
+  <p>Quando una chiamata finisce, il suo record si toglie e quella memoria si può riusare per la chiamata successiva. Per esempio, nella sezione 3 vedrai che quickSort su 8 elementi già ordinati fa 15 chiamate in tutto, ma nella pila non ci sono mai più di 8 record insieme. Lo spazio dipende da 8, non da 15.</p>
+</div>
+
+<h3>Il disegno della lavagna: altezza della pila nel tempo (pagina 9)</h3>
+<p>Per vedere come cresce e cala la pila, il prof usa un disegno con due assi. In orizzontale c'è il <strong>tempo</strong>, che scorre verso destra. In verticale c'è l'<strong>altezza della pila</strong>. Ogni record è un rettangolo: comincia quando comincia la chiamata, finisce quando la chiamata finisce, e sta sopra il record della chiamata che l'ha fatta. La Figura 3 ricopia il disegno della lavagna, pagina 9.</p>
+
+<div class="figura">
+<svg viewBox="0 0 560 250" width="560" height="250" role="img" aria-label="Schema dell'altezza della pila nel tempo per una chiamata di quickSort" font-family="system-ui, sans-serif">
+  <line x1="40" y1="14" x2="40" y2="222" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>
+  <path d="M40 10 l-4 7 h8 z" class="punta" fill="#5b6270"/>
+  <line x1="40" y1="222" x2="552" y2="222" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>
+  <path d="M556 222 l-7 -4 v8 z" class="punta" fill="#5b6270"/>
+  <text x="48" y="16" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text>
+  <text x="552" y="240" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text>
+  <rect x="52" y="194" width="490" height="24" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="297" y="211" font-size="13" text-anchor="middle" class="t-testo" fill="#1f2328">quickSort(A, i, f)</text>
+  <rect x="62" y="166" width="250" height="24" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="187" y="183" font-size="13" text-anchor="middle" class="t-testo" fill="#1f2328">quickSort(A, i, m)</text>
+  <rect x="322" y="166" width="208" height="24" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="426" y="183" font-size="13" text-anchor="middle" class="t-testo" fill="#1f2328">quickSort(A, m + 1, f)</text>
+  <polyline points="72,164 90,150 104,152 118,128 132,134 146,96 160,104 172,62 186,72 198,40 212,58 226,46 240,88 254,80 268,118 282,110 296,140 304,164" class="l-arancio" fill="none" stroke="#b4500f" stroke-width="1.8"/>
+  <polyline points="332,164 346,146 360,150 374,112 388,118 402,80 416,92 430,58 444,74 458,96 472,90 486,124 500,118 514,146 522,164" class="l-arancio" fill="none" stroke="#b4500f" stroke-width="1.8"/>
+  <text x="188" y="122" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">le chiamate</text>
+  <text x="188" y="137" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">della parte sinistra</text>
+  <text x="430" y="126" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">le chiamate</text>
+  <text x="430" y="141" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">della parte destra</text>
+</svg>
+<div class="didascalia"><b>Figura 3.</b> La lavagna, pagina 9, ricopiata. In basso il record di quickSort(A, i, f), che resta nella pila per tutto il tempo. Sopra, prima il record della chiamata sulla parte sinistra e poi quello della chiamata sulla parte destra. Le «montagne» sono le chiamate fatte a loro volta da queste due, disegnate senza dettagli.</div>
+</div>
+<p>Due cose da notare nella Figura 3:</p>
+<ol>
+  <li>Il record in basso, quello di quickSort(A, i, f), resta nella pila finché <em>tutte</em> le chiamate sopra di lui non sono finite.</li>
+  <li>Le due chiamate quickSort(A, i, m) e quickSort(A, m + 1, f) non sono mai nella pila insieme: la seconda comincia quando la prima è finita, e il suo record prende il posto lasciato libero. Quindi l'altezza raggiunta da una chiamata è 1 (il suo record) più la più alta delle due montagne.</li>
+</ol>
+<p>La domanda delle prossime due sezioni è: <strong>quanto può diventare alta una montagna?</strong></p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Ogni chiamata non ancora finita ha un <strong>record di attivazione</strong> nella pila delle chiamate. Per quickSort il record contiene i, f, m, il riferimento ad A e il punto di ritorno: grandezza <strong>O(1)</strong>.</li>
+    <li>Memoria usata dalla ricorsione = altezza massima della pila × grandezza di un record. Conta l'altezza massima, non il numero totale di chiamate.</li>
+    <li>Le due chiamate ricorsive di una stessa chiamata non stanno mai nella pila insieme.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="caso-a"><span class="num">3</span>Caso A: l'array già ordinato</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'esempio della lavagna, pagina 10: quickSort sull'array 1 2 3 4 5 6 7 8, chiamata per chiamata, e perché la pila arriva a 8 record, cioè n.</p>
+
+<p>Prendi A = 1 2 3 4 5 6 7 8, con le posizioni da 0 a 7. L'ALGORITMO chiama quickSort(A, 0, 8). Ecco cosa succede.</p>
+<ol>
+  <li><b>quickSort(A, 0, 8)</b> entra nella pila: altezza 1. Ci sono 8 elementi, quindi chiama partiziona. Il perno è A[0] = 1, il più piccolo di tutti. Come nell'esempio della sezione 1, il perno resta in posizione 0: <b>m = 0</b>. Parte sinistra: posizioni da 0 a −1, cioè nessun elemento. Parte destra: posizioni da 1 a 7, cioè 7 elementi.</li>
+  <li><b>quickSort(A, 0, 0)</b>, la parte sinistra, entra nella pila: altezza 2. Ha 0 elementi (f − i = 0), quindi la condizione f − i &gt; 1 è falsa e la chiamata finisce subito. Il suo record esce: altezza di nuovo 1.</li>
+  <li><b>quickSort(A, 1, 8)</b>, la parte destra, entra nella pila: altezza 2. Ma il record di quickSort(A, 0, 8) è ancora sotto, perché quella chiamata non è finita: aspetta che finisca la sua seconda chiamata. La porzione 2 3 4 5 6 7 8 è di nuovo ordinata, quindi succede la stessa cosa: m = 1, sinistra vuota, destra con 6 elementi.</li>
+  <li>quickSort(A, 1, 1) entra ed esce subito; quickSort(A, 2, 8) entra: altezza 3. E così via.</li>
+</ol>
+<p>Ogni volta la parte destra ha un elemento in meno, e la sua chiamata si mette sopra quella precedente, che resta in attesa:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>altezza</th><th>record in cima</th><th>elementi da ordinare</th></tr>
+  <tr><td>1</td><td>quickSort(A, 0, 8)</td><td>8</td></tr>
+  <tr><td>2</td><td>quickSort(A, 1, 8)</td><td>7</td></tr>
+  <tr><td>3</td><td>quickSort(A, 2, 8)</td><td>6</td></tr>
+  <tr><td>…</td><td>…</td><td>…</td></tr>
+  <tr><td>7</td><td>quickSort(A, 6, 8)</td><td>2</td></tr>
+  <tr><td>8</td><td>quickSort(A, 7, 8) (e, un attimo prima, quickSort(A, 6, 6))</td><td>1</td></tr>
+</table></div>
+<p>Con 1 elemento la condizione f − i &gt; 1 è falsa e non ci sono altre chiamate. A questo punto tutte le chiamate finiscono, una dopo l'altra, dall'alto verso il basso. La Figura 4 è il disegno della lavagna, pagina 10, fatto con le chiamate vere.</p>
+
+<div class="figura">
+<svg viewBox="0 0 640 282" width="640" height="282" role="img" aria-label="Altezza della pila per quickSort base sull'array già ordinato di 8 elementi: arriva a 8" style="min-width:460px" font-family="system-ui, sans-serif"><line x1="30" y1="14" x2="30" y2="256" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="30" y1="256" x2="638" y2="256" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M638 256 l-7 -4 v8 z" class="punta" fill="#5b6270"/><path d="M30 12 l-4 7 h8 z" class="punta" fill="#5b6270"/><text x="34" y="13" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text><text x="636" y="274" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text><text x="24" y="247" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="24" y="221" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="24" y="195" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="24" y="169" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="24" y="143" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">5</text><text x="24" y="117" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">6</text><text x="24" y="91" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">7</text><text x="24" y="65" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="81.2" y="206" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="96.2" y="221.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,0</text><rect x="144.2" y="180" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="159.1" y="195.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">1,1</text><rect x="207.1" y="154" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="222.1" y="169.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,2</text><rect x="270.1" y="128" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="285.0" y="143.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,3</text><rect x="333.0" y="102" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="348.0" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,4</text><rect x="395.9" y="76" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="410.9" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,5</text><rect x="458.9" y="50" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="473.9" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,6</text><rect x="490.4" y="50" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="505.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">7,8</text><rect x="427.4" y="76" width="108.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="481.8" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,8</text><rect x="364.5" y="102" width="187.3" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="458.1" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,8</text><rect x="301.5" y="128" width="266.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="434.5" y="143.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,8</text><rect x="238.6" y="154" width="344.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="410.9" y="169.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,8</text><rect x="175.6" y="180" width="423.4" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="387.3" y="195.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,8</text><rect x="112.7" y="206" width="502.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="363.7" y="221.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">1,8</text><rect x="49.7" y="232" width="580.8" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="340.1" y="247.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,8</text><line x1="34" y1="48" x2="632" y2="48" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/><text x="632" y="43" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: 8</text></svg>
+<div class="didascalia"><b>Figura 4.</b> Caso A, array già ordinato 1 2 3 4 5 6 7 8, Codice 4.3. Ogni rettangolo è un record: «0,8» vuol dire quickSort(A, 0, 8). I rettangoli piccoli «0,0», «1,1», … sono le chiamate sulla parte sinistra vuota, che entrano ed escono subito. La pila arriva a 8 record.</div>
+</div>
+
+<p>Con n elementi già ordinati la scala ha n gradini: l'altezza massima della pila è <strong>n</strong>. Il prof scrive «altezza circa n». E per la sezione 1 è anche il caso peggiore per i confronti: n(n + 1)/2 − 1, cioè 35 per n = 8.</p>
+<p>Le chiamate in tutto sono 15: le 8 della scala più le 7 chiamate vuote a sinistra. Ma insieme nella pila non ce ne sono mai più di 8.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Array già ordinato: a ogni chiamata il perno resta in prima posizione, la parte sinistra è vuota e la destra ha un elemento in meno.</li>
+    <li>Ogni chiamata sulla parte destra si mette sopra la precedente, che aspetta: la pila arriva a <strong>n</strong> record.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="caso-b"><span class="num">4</span>Caso B: il massimo in testa</h2>
+<p class="in-questa"><b>In questa sezione:</b> il secondo esempio della lavagna, pagina 11, l'array 8 1 2 3 4 5 6 7, dove la pila arriva di nuovo a n, ma questa volta per colpa della parte sinistra. Poi il caso bilanciato, lo spazio della versione base e un riquadro interattivo.</p>
+
+<p>Adesso A = 8 1 2 3 4 5 6 7: il massimo in prima posizione, poi tutti gli altri in ordine crescente. Il prof lo chiama «array quasi ordinato».</p>
+<ol>
+  <li><b>partiziona(A, 0, 8)</b>. Il perno è 8. dx parte da 8, scende a 7: A[7] = 7 non è &gt; 8, quindi dx si ferma subito, in posizione 7. sx sale da 0: 1, 2, 3, 4, 5, 6 sono tutti ≤ 8, quindi continua fino a 7, dove sx &lt; dx diventa falso e si ferma. Gli indici si sono incontrati in posizione 7: nessuno scambio nel ciclo. Alla fine si scambia il perno A[0] = 8 con A[7] = 7.</li>
+  <li>Risultato: <code>7 1 2 3 4 5 6 8</code>, con <b>m = 7</b>. Parte sinistra: posizioni da 0 a 6, cioè 7 1 2 3 4 5 6, 7 elementi. Parte destra: posizioni da 8 a 7, cioè nessun elemento.</li>
+  <li>La parte sinistra, 7 1 2 3 4 5 6, ha di nuovo la stessa forma: il massimo in testa, poi gli altri in ordine. Quindi alla chiamata successiva succede la stessa cosa: m = 6, sinistra con 6 elementi, destra vuota.</li>
+</ol>
+<p>Questa volta la chiamata «lunga» è la <strong>prima</strong>, quickSort(A, i, m). Le chiamate vuote sulla parte destra arrivano dopo, quando la parte sinistra è finita. La Figura 5 è il disegno della lavagna, pagina 11.</p>
+
+<div class="figura">
+<svg viewBox="0 0 640 282" width="640" height="282" role="img" aria-label="Altezza della pila per quickSort base sull'array 8 1 2 3 4 5 6 7: arriva a 8" style="min-width:460px" font-family="system-ui, sans-serif"><line x1="30" y1="14" x2="30" y2="256" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="30" y1="256" x2="638" y2="256" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M638 256 l-7 -4 v8 z" class="punta" fill="#5b6270"/><path d="M30 12 l-4 7 h8 z" class="punta" fill="#5b6270"/><text x="34" y="13" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text><text x="636" y="274" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text><text x="24" y="247" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="24" y="221" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="24" y="195" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="24" y="169" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="24" y="143" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">5</text><text x="24" y="117" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">6</text><text x="24" y="91" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">7</text><text x="24" y="65" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="270.1" y="50" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="285.0" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,1</text><rect x="301.5" y="50" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="316.5" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,2</text><rect x="238.6" y="76" width="108.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="292.9" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,2</text><rect x="348.7" y="76" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="363.7" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,3</text><rect x="207.1" y="102" width="187.3" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="300.8" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,3</text><rect x="395.9" y="102" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="410.9" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,4</text><rect x="175.6" y="128" width="266.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="308.6" y="143.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,4</text><rect x="443.2" y="128" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="458.1" y="143.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,5</text><rect x="144.2" y="154" width="344.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="316.5" y="169.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,5</text><rect x="490.4" y="154" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="505.4" y="169.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,6</text><rect x="112.7" y="180" width="423.4" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="324.4" y="195.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,6</text><rect x="537.6" y="180" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="552.6" y="195.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">7,7</text><rect x="81.2" y="206" width="502.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="332.3" y="221.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,7</text><rect x="584.8" y="206" width="30.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="599.8" y="221.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">8,8</text><rect x="49.7" y="232" width="580.8" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="340.1" y="247.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,8</text><line x1="34" y1="48" x2="632" y2="48" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/><text x="632" y="43" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: 8</text></svg>
+<div class="didascalia"><b>Figura 5.</b> Caso B, A = 8 1 2 3 4 5 6 7, Codice 4.3. La torre è fatta dalle chiamate sulla parte sinistra (0,8 → 0,7 → 0,6 → …). I rettangoli piccoli «8,8», «7,7», … sono le chiamate sulla parte destra vuota: arrivano dopo. La pila arriva di nuovo a 8 record.</div>
+</div>
+
+<p>Anche qui l'altezza massima è <strong>n</strong>. E anche qui i confronti sono tanti: 7 + 6 + … + 1 = 28, cioè n(n − 1)/2. Le slide lo riassumono così: «quando l'array viene sempre diviso in maniera sbilanciata si ottiene sia il caso peggiore del numero di confronti, sia il caso peggiore per l'altezza dello stack».</p>
+
+<h3>E quando le partizioni sono bilanciate?</h3>
+<p>Se il perno finisce sempre più o meno a metà, ogni chiamata ricorsiva riceve circa metà degli elementi della chiamata che l'ha fatta. Da n si passa a n/2, poi a n/4, e così via fino a 1: la pila ha circa log<sub>2</sub> n + 1 record, come per mergeSort. Per esempio, con A = 4 1 3 2 6 5 7 (n = 7) le porzioni sono 7 elementi, poi 3, poi 1: altezza massima 3.</p>
+
+<h3>Lo spazio della versione base</h3>
+<p>Mettendo insieme: nel caso peggiore la pila arriva a n record, e ogni record è O(1). Quindi la memoria per la ricorsione, nel caso peggiore, è <strong>Θ(n)</strong>. Le slide: «anche lo spazio di lavoro, nel caso peggiore, sarà Θ(n)».</p>
+<p>Nel riquadro seguente puoi seguire la pila chiamata per chiamata, con il Codice 4.3. Prova i casi A e B e confronta con le Figure 4 e 5; poi prova l'esempio bilanciato e quello della lavagna, pagina 2.</p>
+
+<div class="widget" id="w-pa">
+  <h4>La pila di quickSort, passo per passo (versione base)</h4>
+  <div id="pa-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Massimo in testa e poi ordinato (8 1 2 3 4 5 6 7): parte destra sempre vuota, la torre la fanno le chiamate sulla parte sinistra. Altezza <strong>n</strong>.</li>
+    <li>Partizioni sbilanciate: caso peggiore sia per i confronti (≈ n²/2) sia per l'altezza della pila (n). Partizioni bilanciate: altezza ≈ log<sub>2</sub> n.</li>
+    <li>Versione base: spazio per la ricorsione <strong>Θ(n)</strong> nel caso peggiore.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="coda"><span class="num">5</span>Togliere la ricorsione in coda (Codice 4.4)</h2>
+<p class="in-questa"><b>In questa sezione:</b> cos'è la ricorsione in coda, come si sostituisce l'ultima chiamata con un ciclo (lavagna, pagine 12 e 13), perché il risultato non cambia, e cosa succede alla pila nei casi A e B.</p>
+
+<h3>Una chiamata che non ha più niente da fare dopo</h3>
+<p>Guarda di nuovo la procedura del Codice 4.3:</p>
+<pre class="pseudo"><b>PROCEDURA</b> quickSort(Array A, indice i, indice f)
+  <b>IF</b> f − i &gt; 1 <b>THEN</b>
+    m ← partiziona(A, i, f)
+    quickSort(A, i, m)
+    <span class="riga-hl">quickSort(A, m + 1, f)</span>       <span class="com">// l'ultima istruzione</span></pre>
+<p>La seconda chiamata, quickSort(A, m + 1, f), è <strong>l'ultima cosa</strong> che la procedura fa. Quando quella chiamata finisce, la procedura non ha più niente da fare: finisce anche lei.</p>
+<p>Eppure, per tutto il tempo in cui la seconda chiamata lavora, il record della procedura resta nella pila, ad aspettare. È proprio quello che nel caso A fa crescere la pila: ogni gradino della scala della Figura 4 è un record che aspetta solo di finire.</p>
+
+<div class="box def">
+  <span class="etichetta">Definizione: ricorsione in coda</span>
+  <p>Una chiamata ricorsiva è <strong>in coda</strong> quando è l'ultima istruzione eseguita dalla procedura: dopo di lei non c'è più niente da fare. Le slide: «nella procedura ricorsiva nel Codice 4.3 la seconda chiamata ricorsiva si trova in coda».</p>
+</div>
+
+<h3>L'idea: riusare lo stesso record</h3>
+<p>La chiamata quickSort(A, m + 1, f) creerebbe un record nuovo, con i = m + 1 e lo stesso f, e ricomincerebbe la procedura dall'inizio. Ma il record attuale non serve più a niente: allora tanto vale <strong>usare lui</strong>. Si cambia il suo i in m + 1 e si ricomincia la procedura dall'inizio, senza nessuna chiamata.</p>
+<p>«Ricominciare dall'inizio» vuol dire ripetere: l'IF diventa un WHILE. La Figura 6 è il disegno della lavagna, pagine 12 e 13: l'indice i salta da dove era a m + 1.</p>
+
+<div class="figura">
+<svg viewBox="0 0 560 150" width="560" height="150" role="img" aria-label="L'indice i salta in posizione m più 1, all'inizio della parte destra" font-family="system-ui, sans-serif">
+  <rect x="40" y="62" width="200" height="34" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.5"/>
+  <text x="140" y="84" font-size="13" text-anchor="middle" class="t-testo" fill="#1f2328">≤ perno: già ordinata</text>
+  <rect x="240" y="62" width="34" height="34" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.5"/>
+  <rect x="274" y="62" width="246" height="34" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="397" y="84" font-size="13" text-anchor="middle" class="t-testo" fill="#1f2328">&gt; perno: ancora da ordinare</text>
+  <text x="44" y="116" font-size="14" class="t-verde" fill="#17803d" font-weight="700">i</text>
+  <text x="257" y="116" font-size="14" text-anchor="middle" class="t-verde" fill="#17803d" font-weight="700">m</text>
+  <text x="278" y="116" font-size="14" class="t-verde" fill="#17803d" font-weight="700">m + 1</text>
+  <text x="520" y="116" font-size="14" text-anchor="end" class="t-verde" fill="#17803d" font-weight="700">f</text>
+  <path d="M48 58 C 60 6, 270 6, 286 54" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.8"/>
+  <path d="M286 58 l-6 -9 l9 1 z" fill="#2f52c4" class="t-blu"/>
+  <text x="166" y="26" font-size="14" text-anchor="middle" class="t-blu" fill="#2f52c4" font-weight="700">i ← m + 1</text>
+  <text x="44" y="138" font-size="12" class="t-muted" fill="#5b6270">dopo quickSort(A, i, m) la parte sinistra è ordinata: si riparte dalla destra</text>
+</svg>
+<div class="didascalia"><b>Figura 6.</b> La lavagna, pagine 12 e 13. Quando la chiamata sulla parte sinistra è finita, invece di chiamare quickSort(A, m + 1, f) si sposta i in m + 1: adesso la porzione da i a f − 1 è proprio la parte destra, e il ciclo ricomincia su di lei.</div>
+</div>
+
+<p>I due codici, uno accanto all'altro (la differenza è evidenziata):</p>
+<div class="affianco">
+<div>
+<p class="titolo-codice">Codice 4.3 (prima)</p>
+<pre class="pseudo"><b>PROCEDURA</b> quickSort(A, i, f)
+  <span class="riga-hl"><b>IF</b></span> f − i &gt; 1 <span class="riga-hl"><b>THEN</b></span>
+    m ← partiziona(A, i, f)
+    quickSort(A, i, m)
+    <span class="riga-hl">quickSort(A, m + 1, f)</span></pre>
+</div>
+<div>
+<p class="titolo-codice">Codice 4.4 (lavagna, pagina 12)</p>
+<pre class="pseudo"><b>PROCEDURA</b> quickSort(A, i, f)
+  <span class="riga-hl"><b>WHILE</b></span> f − i &gt; 1 <span class="riga-hl"><b>DO</b></span>
+    m ← partiziona(A, i, f)
+    quickSort(A, i, m)
+    <span class="riga-hl">i ← m + 1</span></pre>
+</div>
+</div>
+
+<h3>Perché il risultato è lo stesso</h3>
+<p>Segui un giro del WHILE:</p>
+<ol>
+  <li>partiziona la porzione da i a f − 1: il perno va in posizione m;</li>
+  <li>quickSort(A, i, m) ordina la parte sinistra, con una chiamata ricorsiva normale;</li>
+  <li>i ← m + 1: adesso la porzione «da i a f − 1» è la parte destra;</li>
+  <li>si torna alla condizione: se la parte destra ha almeno 2 elementi, il giro successivo fa su di lei esattamente quello che avrebbe fatto la chiamata quickSort(A, m + 1, f); se ne ha 0 o 1, è già ordinata e il ciclo finisce, come sarebbe finita subito quella chiamata.</li>
+</ol>
+<p>Il lavoro sull'array è identico: le stesse partizioni sugli stessi pezzi, nello stesso ordine. Cambia solo dove il computer tiene il conto: invece di un record nuovo, lo stesso record con un i diverso.</p>
+
+<h3>Caso A: la pila resta bassa</h3>
+<p>Nell'array già ordinato la parte sinistra è sempre vuota. La chiamata ricorsiva quickSort(A, i, m) riceve 0 elementi: entra nella pila ed esce subito. La parte destra, quella lunga, la fa il ciclo, nello stesso record. Quindi nella pila ci sono al massimo 2 record: quello di partenza e, per un attimo, la chiamata vuota. Le slide: «ogni chiamata ricorsiva per la parte sinistra (che contiene 0 elementi) termina immediatamente, senza effettuare ulteriori chiamate. Quindi l'altezza dello stack è costante.»</p>
+
+<div class="figura">
+<svg viewBox="0 0 640 126" width="640" height="126" role="img" aria-label="Altezza della pila per il Codice 4.4 sull'array già ordinato: resta 2" style="min-width:460px" font-family="system-ui, sans-serif"><line x1="30" y1="14" x2="30" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="30" y1="100" x2="638" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M638 100 l-7 -4 v8 z" class="punta" fill="#5b6270"/><path d="M30 12 l-4 7 h8 z" class="punta" fill="#5b6270"/><text x="34" y="13" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text><text x="636" y="118" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text><text x="24" y="91" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="24" y="65" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="91.9" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="110.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,0</text><rect x="169.0" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="187.6" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">1,1</text><rect x="246.2" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="264.7" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,2</text><rect x="323.4" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="341.9" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,3</text><rect x="400.5" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="419.1" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,4</text><rect x="477.7" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="496.2" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,5</text><rect x="554.8" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="573.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,6</text><rect x="53.3" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="91.1" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,8</text><rect x="130.5" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="168.3" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">1,8</text><rect x="207.6" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="245.4" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,8</text><rect x="284.8" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,8</text><rect x="361.9" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="399.8" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,8</text><rect x="439.1" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="476.9" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,8</text><rect x="516.3" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="554.1" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,8</text><rect x="593.4" y="76" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="612.0" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">7,8</text><line x1="34" y1="48" x2="632" y2="48" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/><text x="632" y="43" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: 2</text></svg>
+<div class="didascalia"><b>Figura 7.</b> Caso A con il Codice 4.4. Il record in basso è sempre lo stesso: i suoi pezzi «0,8», «1,8», «2,8», … sono i giri del ciclo, con i che cresce di uno ogni volta. Sopra ci sono solo le chiamate vuote. Altezza massima: 2.</div>
+</div>
+
+<h3>Caso B: la pila resta alta</h3>
+<p>Nell'array 8 1 2 3 4 5 6 7, invece, è la parte <em>destra</em> a essere vuota, e la parte sinistra ha tutti gli altri elementi. Ma il Codice 4.4 ha tolto la chiamata sulla parte destra, non quella sulla sinistra: la chiamata lunga quickSort(A, i, m) c'è ancora, e la torre di chiamate resta. Le slide: «nell'altro caso presentato, in cui la parte destra contiene 0 elementi, l'altezza dello stack resta n anche in questa versione».</p>
+
+<div class="figura">
+<svg viewBox="0 0 640 282" width="640" height="282" role="img" aria-label="Altezza della pila per il Codice 4.4 sull'array 8 1 2 3 4 5 6 7: arriva a 8" style="min-width:460px" font-family="system-ui, sans-serif"><line x1="30" y1="14" x2="30" y2="256" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="30" y1="256" x2="638" y2="256" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M638 256 l-7 -4 v8 z" class="punta" fill="#5b6270"/><path d="M30 12 l-4 7 h8 z" class="punta" fill="#5b6270"/><text x="34" y="13" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text><text x="636" y="274" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text><text x="24" y="247" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="24" y="221" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="24" y="195" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="24" y="169" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="24" y="143" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">5</text><text x="24" y="117" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">6</text><text x="24" y="91" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">7</text><text x="24" y="65" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="323.4" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="341.9" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,1</text><rect x="284.8" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,2</text><rect x="361.9" y="76" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="380.5" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,2</text><rect x="246.2" y="102" width="152.8" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,3</text><rect x="400.5" y="102" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="419.1" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,3</text><rect x="207.6" y="128" width="230.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="143.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,4</text><rect x="439.1" y="128" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="457.6" y="143.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,4</text><rect x="169.0" y="154" width="307.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="169.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,5</text><rect x="477.7" y="154" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="496.2" y="169.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,5</text><rect x="130.5" y="180" width="384.3" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="195.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,6</text><rect x="516.3" y="180" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="534.8" y="195.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,6</text><rect x="91.9" y="206" width="461.5" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="221.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,7</text><rect x="554.8" y="206" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="573.4" y="221.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">7,7</text><rect x="53.3" y="232" width="538.6" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="247.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,8</text><rect x="593.4" y="232" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="612.0" y="247.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">8,8</text><line x1="34" y1="48" x2="632" y2="48" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/><text x="632" y="43" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: 8</text></svg>
+<div class="didascalia"><b>Figura 8.</b> Caso B con il Codice 4.4. Le chiamate sulla parte sinistra (0,7 → 0,6 → …) si impilano come nella Figura 5. Spariscono solo i rettangoli delle chiamate vuote sulla destra. Altezza massima: ancora 8.</div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>La seconda chiamata del Codice 4.3 è <strong>in coda</strong>: dopo di lei non c'è niente da fare.</li>
+    <li>Codice 4.4: IF → WHILE, e al posto della seconda chiamata <strong>i ← m + 1</strong>. Stesso lavoro sull'array, un record in meno per ogni partizione.</li>
+    <li>Caso A (già ordinato): altezza costante. Caso B (massimo in testa): altezza ancora n.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="simmetrica"><span class="num">6</span>La variante simmetrica: ogni versione ha il suo caso cattivo</h2>
+<p class="in-questa"><b>In questa sezione:</b> perché le due chiamate ricorsive si possono scambiare di posto, la variante che toglie la chiamata sulla parte sinistra (lavagna, pagina 14) e cosa fa nei casi A e B.</p>
+
+<h3>L'ordine delle due chiamate non conta</h3>
+<p>Dopo la partizione, il perno è al suo posto definitivo, e le due parti sono separate: gli elementi della sinistra restano a sinistra, quelli della destra restano a destra. Ordinare la parte sinistra non tocca nessuna casella della destra, e viceversa. Quindi si può ordinare <em>prima la destra e poi la sinistra</em>: il risultato è lo stesso. Le slide: «se ordinassimo la parte destra prima di quella sinistra il risultato resterebbe corretto».</p>
+
+<h3>La variante (lavagna, pagina 14)</h3>
+<p>Il prof scambia le due chiamate. Adesso l'ultima chiamata, quella in coda, è quickSort(A, i, m) sulla parte sinistra; e si toglie lei. Per passare alla parte sinistra non si sposta i, si sposta f: <strong>f ← m</strong>, così la porzione da i a f − 1 diventa da i a m − 1.</p>
+<div class="affianco">
+<div>
+<p class="titolo-codice">Le chiamate scambiate</p>
+<pre class="pseudo"><b>PROCEDURA</b> quickSort(A, i, f)
+  <b>IF</b> f − i &gt; 1 <b>THEN</b>
+    m ← partiziona(A, i, f)
+    quickSort(A, m + 1, f)
+    <span class="riga-hl">quickSort(A, i, m)</span></pre>
+</div>
+<div>
+<p class="titolo-codice">Senza ricorsione in coda</p>
+<pre class="pseudo"><b>PROCEDURA</b> quickSort(A, i, f)
+  <b>WHILE</b> f − i &gt; 1 <b>DO</b>
+    m ← partiziona(A, i, f)
+    quickSort(A, m + 1, f)
+    <span class="riga-hl">f ← m</span></pre>
+</div>
+</div>
+
+<h3>Adesso i casi si scambiano</h3>
+<p>Nel caso B (8 1 2 3 4 5 6 7) la parte destra è sempre vuota: la chiamata ricorsiva quickSort(A, m + 1, f) entra ed esce subito, e la parte sinistra, quella lunga, la fa il ciclo. Altezza 2 (Figura 9). Nel caso A (già ordinato) è la parte destra quella lunga: la chiamata ricorsiva è lei, e la pila torna ad arrivare a n.</p>
+
+<div class="figura">
+<svg viewBox="0 0 640 126" width="640" height="126" role="img" aria-label="Altezza della pila per la variante simmetrica sull'array 8 1 2 3 4 5 6 7: resta 2" style="min-width:460px" font-family="system-ui, sans-serif"><line x1="30" y1="14" x2="30" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="30" y1="100" x2="638" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M638 100 l-7 -4 v8 z" class="punta" fill="#5b6270"/><path d="M30 12 l-4 7 h8 z" class="punta" fill="#5b6270"/><text x="34" y="13" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text><text x="636" y="118" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text><text x="24" y="91" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="24" y="65" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="91.9" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="110.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">8,8</text><rect x="169.0" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="187.6" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">7,7</text><rect x="246.2" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="264.7" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,6</text><rect x="323.4" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="341.9" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,5</text><rect x="400.5" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="419.1" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,4</text><rect x="477.7" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="496.2" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,3</text><rect x="554.8" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="573.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,2</text><rect x="53.3" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="91.1" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,8</text><rect x="130.5" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="168.3" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,7</text><rect x="207.6" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="245.4" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,6</text><rect x="284.8" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,5</text><rect x="361.9" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="399.8" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,4</text><rect x="439.1" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="476.9" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,3</text><rect x="516.3" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="554.1" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,2</text><rect x="593.4" y="76" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="612.0" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,1</text><line x1="34" y1="48" x2="632" y2="48" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/><text x="632" y="43" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: 2</text></svg>
+<div class="didascalia"><b>Figura 9.</b> Caso B con la variante simmetrica. Il record in basso è sempre lo stesso, con f che cala di uno a ogni giro: «0,8», «0,7», «0,6», … Sopra solo le chiamate vuote sulla destra. Altezza massima: 2.</div>
+</div>
+
+<p>Mettendo tutto in una tabella (altezza massima della pila con n = 8):</p>
+<div class="tabella-wrap"><table>
+  <tr><th>versione</th><th>caso A: 1 2 3 4 5 6 7 8</th><th>caso B: 8 1 2 3 4 5 6 7</th></tr>
+  <tr><td>Codice 4.3 (base)</td><td>8</td><td>8</td></tr>
+  <tr><td>Codice 4.4 (toglie la chiamata sulla destra)</td><td class="verde">2</td><td class="rosso">8</td></tr>
+  <tr><td>variante simmetrica (toglie la chiamata sulla sinistra)</td><td class="rosso">8</td><td class="verde">2</td></tr>
+</table></div>
+<p>Ogni versione ha il suo caso cattivo: quella che fa con il ciclo la parte destra soffre quando la parte grande è la sinistra, e viceversa. La parte che fa crescere la pila è sempre quella affidata alla chiamata ricorsiva. Allora viene un'idea: <strong>scegliere ogni volta</strong> quale parte affidare alla chiamata ricorsiva.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Le due chiamate ricorsive si possono scambiare: le due parti non si toccano.</li>
+    <li>Variante simmetrica: prima quickSort(A, m + 1, f), poi <strong>f ← m</strong> al posto della chiamata sulla sinistra.</li>
+    <li>La pila cresce per colpa della parte affidata alla chiamata ricorsiva: il Codice 4.4 soffre il caso B, la variante simmetrica il caso A.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="piccola"><span class="num">7</span>Prima la parte più piccola (Codice 4.5)</h2>
+<p class="in-questa"><b>In questa sezione:</b> il Codice 4.5 (lavagna, pagina 15), che ogni volta fa con la chiamata ricorsiva la parte più piccola e con il ciclo la più grande; la condizione m − i &lt; f − m spiegata con i numeri; e un riquadro interattivo per confrontare le quattro versioni.</p>
+
+<h3>L'idea</h3>
+<p>Dopo la partizione ci sono due parti. Il Codice 4.5 guarda quale delle due è più piccola:</p>
+<ul>
+  <li>la parte <strong>più piccola</strong> la ordina subito, con una chiamata ricorsiva;</li>
+  <li>la parte <strong>più grande</strong> la lascia «in sospeso»: la ordinerà il giro successivo del ciclo, nello stesso record, spostando i oppure f.</li>
+</ul>
+
+<p class="titolo-codice">Lavagna, pagina 15 (Codice 4.5)</p>
+<pre class="pseudo"><b>PROCEDURA</b> quickSort(Array A, indice i, indice f)
+  <b>WHILE</b> f − i &gt; 1 <b>DO</b>
+    m ← partiziona(A, i, f)
+    <b>IF</b> m − i &lt; f − m <b>THEN</b>       <span class="com">// la sinistra è la più piccola (o pari)</span>
+      quickSort(A, i, m)            <span class="com">// ricorsione sulla sinistra</span>
+      i ← m + 1                     <span class="com">// il ciclo continua sulla destra</span>
+    <b>ELSE</b>                             <span class="com">// la destra è la più piccola</span>
+      quickSort(A, m + 1, f)        <span class="com">// ricorsione sulla destra</span>
+      f ← m                         <span class="com">// il ciclo continua sulla sinistra</span></pre>
+<p>Il ramo THEN è il Codice 4.4; il ramo ELSE è la variante simmetrica della sezione 6. Il Codice 4.5 sceglie tra i due a ogni giro.</p>
+
+<h3>Cosa vuol dire m − i &lt; f − m</h3>
+<p>Conta gli elementi delle due parti. Il perno è in posizione m.</p>
+<ul>
+  <li>Parte sinistra: posizioni da i a m − 1. Sono <strong>m − i</strong> elementi.</li>
+  <li>Parte destra: posizioni da m + 1 a f − 1. Sono (f − 1) − (m + 1) + 1 = <strong>f − m − 1</strong> elementi.</li>
+</ul>
+<p>Quindi f − m è «gli elementi della destra, più uno». E la condizione dice:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">m − i &lt; f − m</span><span class="rel">⟺</span><span class="dx">m − i &lt; (f − m − 1) + 1</span><span class="perche">f − m = (elementi a destra) + 1</span><span class="sx"></span><span class="rel">⟺</span><span class="dx">m − i ≤ f − m − 1</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">⟺</span><span class="dx">elementi a sinistra ≤ elementi a destra</span><span class="perche"></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">Il passaggio spiegato</div>
+  <p><span class="rif">1</span>Per i numeri interi, «a &lt; b + 1» è lo stesso che «a ≤ b»: tra b e b + 1 non ci sono altri interi. Per esempio 3 &lt; 4 + 1 è vero, e anche 3 ≤ 4; 5 &lt; 4 + 1 è falso, e anche 5 ≤ 4.</p>
+</div>
+<p>Tre esempi con i = 0 e f = 8 (8 elementi), più uno con 7 elementi:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>m</th><th>elementi a sinistra (m − i)</th><th>elementi a destra (f − m − 1)</th><th>m − i &lt; f − m ?</th><th>chiamata ricorsiva su</th></tr>
+  <tr><td>3</td><td>3</td><td>4</td><td>3 &lt; 5: vero</td><td>sinistra (la più piccola)</td></tr>
+  <tr><td>4</td><td>4</td><td>3</td><td>4 &lt; 4: falso</td><td>destra (la più piccola)</td></tr>
+  <tr><td>7</td><td>7</td><td>0</td><td>7 &lt; 1: falso</td><td>destra (vuota)</td></tr>
+  <tr><td>3, con f = 7</td><td>3</td><td>3</td><td>3 &lt; 4: vero</td><td>sinistra (a pari merito)</td></tr>
+</table></div>
+
+<h3>I casi A e B, e uno più difficile</h3>
+<p>Nel caso A la parte più piccola è sempre la sinistra, vuota; nel caso B è sempre la destra, vuota. In tutti e due i casi la chiamata ricorsiva riceve 0 elementi e la pila resta a 2 record. Il Codice 4.5 non ha più un caso cattivo «di forma».</p>
+<p>Prendi anche l'array decrescente 8 7 6 5 4 3 2 1. Qui il perno finisce una volta in fondo e una volta in testa, alternando: la parte vuota è una volta la destra e una volta la sinistra. Il Codice 4.4 e la variante simmetrica sbagliano metà delle volte e arrivano a 5 record; il Codice 4.5 sceglie sempre la parte vuota e resta a 2 (Figura 10).</p>
+
+<div class="figura">
+<svg viewBox="0 0 640 126" width="640" height="126" role="img" aria-label="Altezza della pila per il Codice 4.5 sull'array decrescente: resta 2" style="min-width:460px" font-family="system-ui, sans-serif"><line x1="30" y1="14" x2="30" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="30" y1="100" x2="638" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M638 100 l-7 -4 v8 z" class="punta" fill="#5b6270"/><path d="M30 12 l-4 7 h8 z" class="punta" fill="#5b6270"/><text x="34" y="13" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text><text x="636" y="118" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text><text x="24" y="91" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="24" y="65" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="91.9" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="110.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">8,8</text><rect x="169.0" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="187.6" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,0</text><rect x="246.2" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="264.7" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">7,7</text><rect x="323.4" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="341.9" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">1,1</text><rect x="400.5" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="419.1" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,6</text><rect x="477.7" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="496.2" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,2</text><rect x="554.8" y="50" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="573.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">5,5</text><rect x="53.3" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="91.1" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,8</text><rect x="130.5" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="168.3" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,7</text><rect x="207.6" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="245.4" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">1,7</text><rect x="284.8" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="322.6" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">1,6</text><rect x="361.9" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="399.8" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,6</text><rect x="439.1" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="476.9" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,5</text><rect x="516.3" y="76" width="75.7" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="554.1" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,5</text><rect x="593.4" y="76" width="37.1" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="612.0" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">3,4</text><line x1="34" y1="48" x2="632" y2="48" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/><text x="632" y="43" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: 2</text></svg>
+<div class="didascalia"><b>Figura 10.</b> Array decrescente 8 7 6 5 4 3 2 1 con il Codice 4.5. Il record in basso cambia a volte f (0,8 → 0,7) e a volte i (0,7 → 1,7): segue sempre la parte più grande. Altezza massima: 2. Con il Codice 4.3 sarebbe 8, con il Codice 4.4 e con la variante simmetrica 5.</div>
+</div>
+
+<p>Nel riquadro seguente puoi scegliere la versione e l'array, e vedere la pila crescere e calare. Il record in cima alla pila ha il bordo più spesso. Nei Codici 4.4 e 4.5 osserva come il record in basso cambia i o f invece di fare una nuova chiamata.</p>
+
+<div class="widget" id="w-pb">
+  <h4>La pila di quickSort, passo per passo (tutte le versioni)</h4>
+  <div id="pb-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Codice 4.5: dopo la partizione, chiamata ricorsiva sulla parte <strong>più piccola</strong>; la più grande la fa il ciclo (i ← m + 1 oppure f ← m).</li>
+    <li>m − i &lt; f − m vuol dire «elementi a sinistra ≤ elementi a destra»; a pari merito si va a sinistra.</li>
+    <li>Nei casi A, B e decrescente la pila resta a 2 record.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="altezza"><span class="num">8</span>Quanto è alta la pila del Codice 4.5</h2>
+<p class="in-questa"><b>In questa sezione:</b> il ragionamento della lavagna, pagina 15: ogni record nella pila ha al massimo metà degli elementi del record sotto; l'equazione H(n) ≤ H(n/2) + 1 delle slide e come si risolve; perché il risultato è Θ(log n); e perché i confronti non cambiano.</p>
+
+<h3>Ogni record ha al massimo metà degli elementi di quello sotto</h3>
+<p>Prendi un record nella pila che deve ordinare n elementi. Che cosa può mettere sopra di sé?</p>
+<ol>
+  <li>Fa la partizione. Il perno va al suo posto, e restano n − 1 elementi divisi in due parti.</li>
+  <li>Chiama la ricorsione sulla parte più piccola. Due parti che insieme fanno n − 1 elementi: la più piccola ne ha al massimo la metà, cioè al massimo (n − 1)/2, che è meno di n/2.</li>
+  <li>Quando la chiamata finisce, il record continua con il ciclo sulla parte più grande, che ha meno di n elementi. Se fa un'altra partizione, la nuova chiamata ricorsiva riceve al massimo metà di quella parte, quindi ancora meno di n/2.</li>
+</ol>
+<p>Quindi <strong>ogni chiamata ricorsiva riceve al massimo metà degli elementi</strong> che il record del chiamante aveva all'inizio. Le slide: «ogni record di attivazione sullo stack rappresenta una chiamata per ordinare un array di lunghezza al più metà rispetto a quella dell'array del record del chiamante».</p>
+<p>La Figura 11 è il disegno della lavagna, pagina 15: salendo nella pila, gli elementi si dimezzano almeno a ogni record.</p>
+
+<div class="figura">
+<svg viewBox="0 0 560 230" width="560" height="230" role="img" aria-label="Pila di record con al massimo n, n mezzi, n quarti elementi, fino a 1: al massimo log in base 2 di n più 1 record" font-family="system-ui, sans-serif">
+  <rect x="60" y="186" width="360" height="30" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="240" y="206" font-size="13.5" text-anchor="middle" class="t-testo" fill="#1f2328">n elementi</text>
+  <rect x="90" y="152" width="270" height="30" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="225" y="172" font-size="13.5" text-anchor="middle" class="t-testo" fill="#1f2328">al massimo n/2 elementi</text>
+  <rect x="110" y="118" width="200" height="30" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="210" y="138" font-size="13.5" text-anchor="middle" class="t-testo" fill="#1f2328">al massimo n/4</text>
+  <rect x="125" y="84" width="150" height="30" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="200" y="104" font-size="13.5" text-anchor="middle" class="t-testo" fill="#1f2328">al massimo n/8</text>
+  <text x="200" y="68" font-size="18" text-anchor="middle" class="t-muted" fill="#5b6270">⋮</text>
+  <rect x="150" y="16" width="100" height="30" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/>
+  <text x="200" y="36" font-size="13.5" text-anchor="middle" class="t-testo" fill="#1f2328">1 elemento</text>
+  <path d="M432 16 Q442 16 442 30 L442 104 Q442 116 452 116 Q442 116 442 128 L442 202 Q442 216 432 216" class="l-muted" fill="none" stroke="#5b6270" stroke-width="1.5"/>
+  <text x="458" y="108" font-size="13.5" class="t-rosso" fill="#b42318">al massimo</text>
+  <text x="458" y="126" font-size="13.5" class="t-rosso" fill="#b42318">log<tspan font-size="10" dy="4">2</tspan><tspan dy="-4"> n + 1 record</tspan></text>
+</svg>
+<div class="didascalia"><b>Figura 11.</b> La lavagna, pagina 15. In basso il record della prima chiamata, con n elementi. Ogni record sopra ha al massimo metà degli elementi di quello sotto. Si arriva al massimo a 1 elemento, e i dimezzamenti possibili sono log<sub>2</sub> n.</div>
+</div>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: il logaritmo in base 2 conta i dimezzamenti</span>
+  <p>log<sub>2</sub> n è il numero x tale che 2<sup>x</sup> = n. Detto in un altro modo: <strong>quante volte devi dividere n per 2 per arrivare a 1</strong>.</p>
+  <ul>
+    <li>n = 8: 8 → 4 → 2 → 1, tre dimezzamenti, e infatti 2³ = 8, log<sub>2</sub> 8 = 3.</li>
+    <li>n = 1024: dieci dimezzamenti (1024 → 512 → … → 1), log<sub>2</sub> 1024 = 10.</li>
+    <li>n = 1000: log<sub>2</sub> 1000 ≈ 9,97, quasi 10.</li>
+  </ul>
+</div>
+
+<p>Nella pila della Figura 11: il primo record ha n elementi, e ogni dimezzamento aggiunge un record. Dopo log<sub>2</sub> n dimezzamenti si arriva a 1 elemento, e una chiamata con 1 elemento non chiama nessuno. Quindi i record sono al massimo log<sub>2</sub> n + 1: quello di partenza più uno per ogni dimezzamento.</p>
+
+<h3>Lo stesso ragionamento con un'equazione (slide)</h3>
+<p>Le slide scrivono il ragionamento come un'equazione. Chiamiamo <strong>H(n)</strong> l'altezza massima della pila durante una chiamata su n elementi, contando anche il record di quella chiamata. Allora:</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">H(n) ≤</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">H(n/2) + 1</span><span class="cond">se n &gt; 1</span><span class="val">1</span><span class="cond">altrimenti</span></span></span></div>
+<ul>
+  <li><b>Se n ≤ 1</b> c'è solo il record della chiamata, che non chiama nessuno: altezza 1.</li>
+  <li><b>Se n &gt; 1</b>: 1 per il record della chiamata, più l'altezza della chiamata ricorsiva sopra di lui, che ha al massimo n/2 elementi.</li>
+</ul>
+<p>Si risolve srotolando: si usa l'equazione su H(n/2), poi su H(n/4), e così via. Prima con un numero, n = 8:</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">H(8)</span><span class="rel">≤</span><span class="dx">H(4) + 1</span><span class="perche">l'equazione con n = 8</span><span class="sx"></span><span class="rel">≤</span><span class="dx">(H(2) + 1) + 1 = H(2) + 2</span><span class="perche">l'equazione con n = 4</span><span class="sx"></span><span class="rel">≤</span><span class="dx">(H(1) + 1) + 2 = H(1) + 3</span><span class="perche">l'equazione con n = 2</span><span class="sx"></span><span class="rel">=</span><span class="dx">1 + 3 = 4</span><span class="perche">H(1) = 1, e 3 = log<sub>2</sub> 8</span></span></div>
+<p>Poi con le lettere:</p>
+<div class="dim">
+  <div class="dim-tit">Srotolamento di H(n)</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">H(n)</span><span class="rel">≤</span><span class="dx">H(n/2) + 1</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">H(n/4) + 2</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">≤</span><span class="dx">H(n/8) + 3</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">…</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">H(n/2<sup>k</sup>) + k</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">H(1) + log<sub>2</sub> n</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">1 + log<sub>2</sub> n</span><span class="perche"></span></span></div>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>L'equazione usata su n/2: H(n/2) ≤ H(n/4) + 1. Sostituendo, H(n/2) + 1 ≤ H(n/4) + 1 + 1.</p>
+    <p><span class="rif">2</span>Dopo k usi dell'equazione, l'argomento è stato diviso k volte per 2, e si sono sommati k «+ 1».</p>
+    <p><span class="rif">3</span>Ci si ferma quando l'argomento arriva a 1: n/2<sup>k</sup> = 1 vuol dire 2<sup>k</sup> = n, cioè k = log<sub>2</sub> n (l'attrezzo «Il logaritmo in base 2 conta i dimezzamenti», all'inizio di questa sezione).</p>
+  </div>
+</div>
+<p>Quindi <strong>H(n) ≤ log<sub>2</sub> n + 1 = O(log n)</strong>. (Se n non è una potenza di 2 le metà non sono intere; il conto va bene lo stesso, arrotondando: le porzioni si dimezzano comunque.)</p>
+<p>In realtà la pila è ancora un po' più bassa, perché la parte più piccola ha al massimo (n − 1)/2 elementi, non n/2. Provando tutti gli ordini possibili degli elementi, per n piccoli, si trovano queste altezze massime:</p>
+<div class="tabella-wrap"><table>
+  <tr><th>n</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td></tr>
+  <tr><th>altezza massima vera (Codice 4.5)</th><td>1</td><td>2</td><td>2</td><td>2</td><td>3</td><td>3</td><td>3</td><td>3</td><td>3</td></tr>
+  <tr><th>limite log<sub>2</sub> n + 1, arrotondato in basso</th><td>1</td><td>2</td><td>2</td><td>3</td><td>3</td><td>3</td><td>3</td><td>4</td><td>4</td></tr>
+</table></div>
+<p>Il limite non viene mai superato.</p>
+
+<h3>Perché Θ(log n) e non solo O(log n)</h3>
+<p>O(log n) dice «al massimo dell'ordine di log n». Le slide aggiungono che questo limite viene <strong>raggiunto</strong>: quando a ogni livello le due parti hanno circa la stessa lunghezza, la parte più piccola ha davvero circa metà degli elementi, e la pila sale davvero di circa log<sub>2</sub> n record. Per esempio con 4 1 3 2 6 5 7 (n = 7) le porzioni sono 7, 3, 1 elementi: altezza 3 (Figura 12). Quindi, nel caso peggiore, l'altezza della pila del Codice 4.5 è <strong>Θ(log n)</strong>.</p>
+
+<div class="figura">
+<svg viewBox="0 0 640 152" width="640" height="152" role="img" aria-label="Altezza della pila per il Codice 4.5 su un array bilanciato di 7 elementi: arriva a 3" style="min-width:460px" font-family="system-ui, sans-serif"><line x1="30" y1="14" x2="30" y2="126" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="30" y1="126" x2="638" y2="126" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M638 126 l-7 -4 v8 z" class="punta" fill="#5b6270"/><path d="M30 12 l-4 7 h8 z" class="punta" fill="#5b6270"/><text x="34" y="13" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text><text x="636" y="144" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text><text x="24" y="117" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="24" y="91" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="24" y="65" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="233.3" y="50" width="78.2" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="272.4" y="65.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,1</text><rect x="153.6" y="76" width="158.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="232.6" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,3</text><rect x="313.1" y="76" width="78.2" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="352.2" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">2,3</text><rect x="472.5" y="76" width="78.2" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="511.7" y="91.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,5</text><rect x="73.9" y="102" width="317.4" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="232.6" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">0,7</text><rect x="392.8" y="102" width="158.0" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="471.8" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">4,7</text><rect x="552.3" y="102" width="78.2" height="22" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5"/><text x="591.4" y="117.5" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">6,7</text><line x1="34" y1="48" x2="632" y2="48" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/><text x="632" y="43" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: 3</text></svg>
+<div class="didascalia"><b>Figura 12.</b> Codice 4.5 sull'array bilanciato 4 1 3 2 6 5 7. La prima partizione mette il 4 a metà: la parte sinistra (0,3) ha 3 elementi, ed è lei la chiamata ricorsiva; poi il record in basso continua con la destra (4,7). Altezza massima: 3, cioè log<sub>2</sub> 7 + 1 arrotondato in basso.</div>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: i confronti non cambiano</span>
+  <p>I Codici 4.4 e 4.5 cambiano solo <em>come</em> il computer tiene il conto delle parti da ordinare: alcune con una chiamata, altre con il ciclo. Le partizioni fatte sono le stesse, sugli stessi pezzi di array, con gli stessi confronti. Quindi:</p>
+  <ul>
+    <li>il numero di confronti è identico a quello del Codice 4.3, in ogni caso;</li>
+    <li>il caso peggiore resta ≈ n²/2 confronti: l'array già ordinato con il Codice 4.5 fa ancora n(n + 1)/2 − 1 confronti, solo che adesso la pila resta a 2 record.</li>
+  </ul>
+  <p>Il Codice 4.5 migliora lo <strong>spazio</strong>, non il tempo.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Nel Codice 4.5 ogni chiamata ricorsiva riceve al massimo metà degli elementi del chiamante.</li>
+    <li>H(n) ≤ H(n/2) + 1, H(1) = 1; srotolando, <strong>H(n) ≤ log<sub>2</sub> n + 1</strong>.</li>
+    <li>Il limite si raggiunge con partizioni bilanciate: altezza Θ(log n) nel caso peggiore.</li>
+    <li>I confronti sono gli stessi del Codice 4.3.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="bilancio"><span class="num">9</span>Il bilancio dello spazio</h2>
+<p class="in-questa"><b>In questa sezione:</b> lo schema finale della lavagna, pagina 16, il confronto con mergeSort e un riquadro che fa gareggiare le quattro versioni su array grandi.</p>
+
+<p>La lavagna, pagina 16, chiude così:</p>
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>altezza della pila (caso peggiore)</th><th>grandezza di un record</th><th>spazio per la ricorsione</th></tr>
+  <tr><td><strong>versione base</strong> (Codice 4.3)</td><td>Θ(n)</td><td>O(1)</td><td><strong>Θ(n)</strong></td></tr>
+  <tr><td><strong>versione migliorata</strong> (Codice 4.5)</td><td>Θ(log n)</td><td>O(1)</td><td><strong>Θ(log n)</strong></td></tr>
+</table></div>
+<p>Lo spazio è sempre il prodotto delle prime due colonne: altezza per grandezza del record.</p>
+
+<h3>Il confronto con mergeSort</h3>
+<p>mergeSort ha anche lui una pila di altezza circa log<sub>2</sub> n, perché divide sempre a metà. Ma per fondere due parti usa un array di appoggio con n caselle: il suo spazio in più è Θ(n). quickSort con il Codice 4.5 usa solo la pila: Θ(log n). Per n = un milione, log<sub>2</sub> n + 1 ≈ 21 record contro un array di un milione di caselle.</p>
+
+<p>Nel riquadro seguente le quattro versioni ordinano lo stesso array. Scegli n e il tipo di array: la tabella mostra l'altezza massima della pila, quante chiamate ci sono state in tutto e quanti confronti.</p>
+
+<div class="widget" id="w-gh">
+  <h4>La gara delle altezze</h4>
+  <div class="controlli">
+    <label>n = <select id="gh-n" style="width:auto"><option value="10">10</option><option value="100">100</option><option value="1000" selected>1000</option><option value="2000">2000</option></select></label>
+    <label>Array <select id="gh-tipo" style="width:auto"><option value="ord">già ordinato (caso A)</option><option value="B">massimo in testa, poi ordinato (caso B)</option><option value="dec">decrescente</option><option value="caso">in ordine casuale</option></select></label>
+    <button id="gh-mescola">Rimescola</button>
+  </div>
+  <div class="tabella-wrap" id="gh-tab"></div>
+  <div class="narrazione" id="gh-txt"></div>
+</div>
+
+<p>Cose da notare nel riquadro «La gara delle altezze»:</p>
+<ul>
+  <li>Il Codice 4.5 non supera mai log<sub>2</sub> n + 1, qualunque array tu scelga.</li>
+  <li>Con l'ordine casuale anche la versione base ha una pila bassa (qualche decina di record per n = 1000): le partizioni molto sbilanciate sono rare, come i casi peggiori per i confronti.</li>
+  <li>I Codici 4.4 e 4.5 fanno meno chiamate della versione base, perché una delle due chiamate è sostituita dal ciclo. Ma i confronti sono sempre uguali.</li>
+</ul>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Spazio = altezza massima della pila × grandezza di un record.</li>
+    <li>Versione base: Θ(n) · O(1) = <strong>Θ(n)</strong>. Versione migliorata (Codice 4.5): Θ(log n) · O(1) = <strong>Θ(log n)</strong>.</li>
+    <li>mergeSort usa Θ(n) in più per l'array di appoggio; quickSort migliorato solo Θ(log n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="riassunto"><span class="num">10</span>Riassunto e cosa serve per l'esame</h2>
+<p class="in-questa"><b>In questa sezione:</b> tutta la prima parte della lezione 12 in pochi punti, cosa può chiederti il prof e gli errori da evitare.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ol>
+    <li><strong>In loco ma non gratis:</strong> quickSort non usa array di appoggio, ma ogni chiamata aperta ha un record di attivazione nella pila. Record di quickSort: i, f, m (più riferimento ad A e punto di ritorno), grandezza O(1).</li>
+    <li><strong>Spazio</strong> = altezza massima della pila × grandezza del record.</li>
+    <li><strong>Versione base (Codice 4.3):</strong> con partizioni sbilanciate l'altezza arriva a n. Esempi della lavagna: array già ordinato (la torre la fanno le chiamate sulla destra) e 8 1 2 3 4 5 6 7 (la fanno quelle sulla sinistra). Spazio Θ(n) nel caso peggiore. Con partizioni bilanciate, altezza ≈ log<sub>2</sub> n.</li>
+    <li><strong>Ricorsione in coda:</strong> la seconda chiamata è l'ultima istruzione. <strong>Codice 4.4:</strong> IF → WHILE, e i ← m + 1 al posto della seconda chiamata. Altezza costante sull'array ordinato, ancora n sul caso B.</li>
+    <li>L'ordine delle due chiamate non conta. Variante simmetrica: quickSort(A, m + 1, f) e poi f ← m. Altezza costante sul caso B, n sull'array ordinato.</li>
+    <li><strong>Codice 4.5:</strong> ricorsione sulla parte più piccola (m − i &lt; f − m: sinistra ≤ destra), ciclo sulla più grande. Ogni chiamata ricorsiva riceve al massimo metà degli elementi: H(n) ≤ H(n/2) + 1, quindi H(n) ≤ log<sub>2</sub> n + 1. Altezza Θ(log n) (raggiunta con partizioni bilanciate), spazio Θ(log n).</li>
+    <li>I confronti non cambiano in nessuna versione: il caso peggiore resta ≈ n²/2.</li>
+  </ol>
+</div>
+
+<div class="box esame">
+  <span class="etichetta">Cosa serve per l'esame</span>
+  <ul>
+    <li><strong>Scritto:</strong> nei temi d'esame dal 2024 al 2026 l'esercizio su quickSort chiede sempre la partizione di un array (pacco 8), non la pila. Quello che serve allo scritto da questa pagina è il ragionamento sullo spazio: «spazio = altezza della pila × grandezza del record» vale per ogni algoritmo ricorsivo, anche nei problemi sui grafi, dove a volte la domanda è «e in termini di spazio?».</li>
+    <li><strong>Orale:</strong> perché quickSort, pur essendo in loco, usa Θ(n) spazio nel caso peggiore, con un esempio (array ordinato o massimo in testa) e il disegno della pila nel tempo; cos'è la ricorsione in coda e come si toglie (Codice 4.4); perché il Codice 4.4 da solo non basta; il Codice 4.5 con il ragionamento «al massimo metà», l'equazione H(n) ≤ H(n/2) + 1 e la soluzione; il fatto che i confronti non cambiano.</li>
+  </ul>
+</div>
+
+<div class="box attenzione">
+  <span class="etichetta">Errori tipici</span>
+  <ul>
+    <li>Contare le chiamate in tutto invece dei record presenti <em>insieme</em>: 15 chiamate sull'array ordinato di 8 elementi, ma altezza 8.</li>
+    <li>Dire che il Codice 4.4 risolve il problema: risolve solo il caso in cui la parte grande è la destra.</li>
+    <li>Scrivere la condizione al contrario, facendo la ricorsione sulla parte più <em>grande</em>: la pila torna ad arrivare a n (esercizio 6 della sezione 11).</li>
+    <li>Dire che il Codice 4.5 rende quickSort più veloce: migliora solo lo spazio, i confronti sono gli stessi.</li>
+    <li>Dimenticare che lo spazio è altezza <em>per</em> grandezza del record: Θ(log n) vale perché il record è O(1).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="esercizi"><span class="num">11</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> esercizi per seguire la pila a mano con le diverse versioni, e domande da orale. Prova a farli da solo prima di aprire la soluzione; per controllare puoi usare il riquadro «La pila di quickSort, passo per passo (tutte le versioni)» della sezione 7, scrivendo l'array nella casella A.</p>
+
+<details class="esercizio">
+  <summary>1. Codice 4.3 (versione base) su A = 1 2 3 4 5. Elenca le chiamate nell'ordine in cui cominciano e trova l'altezza massima della pila.</summary>
+  <div class="soluzione">
+    <p>L'array è ordinato: a ogni partizione il perno resta in prima posizione, la sinistra è vuota e la destra ha un elemento in meno (sezione 3).</p>
+    <ol>
+      <li>quickSort(A, 0, 5): altezza 1. m = 0.</li>
+      <li>quickSort(A, 0, 0): altezza 2, finisce subito.</li>
+      <li>quickSort(A, 1, 5): altezza 2. m = 1.</li>
+      <li>quickSort(A, 1, 1): altezza 3, finisce subito.</li>
+      <li>quickSort(A, 2, 5): altezza 3. m = 2.</li>
+      <li>quickSort(A, 2, 2): altezza 4, finisce subito.</li>
+      <li>quickSort(A, 3, 5): altezza 4. m = 3.</li>
+      <li>quickSort(A, 3, 3): altezza 5, finisce subito.</li>
+      <li>quickSort(A, 4, 5): altezza 5. Un solo elemento: finisce subito.</li>
+    </ol>
+    <p><strong>Altezza massima: 5 = n.</strong> Chiamate in tutto: 9 = 2n − 1.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>2. Codice 4.4 su A = 1 2 3 4 5 e su A = 5 1 2 3 4. Quanto è alta la pila nei due casi?</summary>
+  <div class="soluzione">
+    <p><b>A = 1 2 3 4 5.</b> La parte sinistra è sempre vuota: la chiamata quickSort(A, i, m) riceve 0 elementi ed esce subito; poi i ← m + 1 e il ciclo continua nello stesso record. Il record di partenza fa i giri con i = 0, 1, 2, 3, poi con i = 4 la porzione ha 1 elemento e il ciclo finisce. <strong>Altezza massima: 2.</strong></p>
+    <p><b>A = 5 1 2 3 4.</b> partiziona(A, 0, 5): perno 5, dx si ferma subito in posizione 4 (4 ≤ 5), sx sale fino a 4; scambio finale: 4 1 2 3 5, m = 4. La parte sinistra ha 4 elementi e la chiamata ricorsiva va proprio lì: quickSort(A, 0, 4) su 4 1 2 3, altezza 2. Dentro succede lo stesso: 3 1 2 4, m = 3, chiamata quickSort(A, 0, 3), altezza 3. Poi quickSort(A, 0, 2) su 2 1 → 1 2, altezza 4, che chiama quickSort(A, 0, 1), altezza 5. <strong>Altezza massima: 5 = n.</strong></p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>3. Codice 4.5 su A = 5 1 2 3 4. Quanto è alta la pila?</summary>
+  <div class="soluzione">
+    <ol>
+      <li>quickSort(A, 0, 5), altezza 1. partiziona: 4 1 2 3 5, m = 4. m − i = 4, f − m = 1: 4 &lt; 1 è falso, quindi chiamata ricorsiva sulla destra.</li>
+      <li>quickSort(A, 5, 5): 0 elementi, altezza 2, finisce subito. Poi f ← 4.</li>
+      <li>Il ciclo continua su A[0..3] = 4 1 2 3: stessa forma, m = 3, ricorsione sulla destra vuota quickSort(A, 4, 4), poi f ← 3. E così via.</li>
+    </ol>
+    <p><strong>Altezza massima: 2.</strong> La parte più piccola è sempre quella vuota.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>4. Codice 4.5 su A = 4 1 3 2 6 5 7. Segui i giri del ciclo e le chiamate.</summary>
+  <div class="soluzione">
+    <ol>
+      <li>quickSort(A, 0, 7), altezza 1. partiziona con perno 4: dx scende 7, 5, 6 (tutti &gt; 4) e si ferma su 2 in posizione 3; sx sale su 1 e 3 (≤ 4) e si ferma in posizione 3 perché sx &lt; dx diventa falso. Scambio finale tra A[0] e A[3]: <code>2 1 3 4 6 5 7</code>, m = 3.</li>
+      <li>m − i = 3, f − m = 4: 3 &lt; 4 è vero, ricorsione sulla sinistra: quickSort(A, 0, 3) su 2 1 3, altezza 2.</li>
+      <li>Dentro: perno 2, risultato <code>1 2 3</code>, m = 1. m − i = 1, f − m = 2: vero, ricorsione sulla sinistra quickSort(A, 0, 1), 1 elemento, altezza 3. Poi i ← 2: la porzione A[2..2] ha 1 elemento, il ciclo finisce e la chiamata esce.</li>
+      <li>Di nuovo nel record di partenza: i ← 4. Porzione A[4..6] = 6 5 7: perno 6, risultato <code>5 6 7</code>, m = 5. Ricorsione su quickSort(A, 4, 5), altezza 2. Poi i ← 6, 1 elemento, fine.</li>
+    </ol>
+    <p><strong>Altezza massima: 3</strong>, come nella Figura 12. L'array è bilanciato: qui il limite log<sub>2</sub> n + 1 (arrotondato in basso: 3) viene raggiunto.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>5. (Orale) Perché nel Codice 4.5 una chiamata ricorsiva riceve al massimo metà degli elementi del chiamante?</summary>
+  <div class="soluzione">
+    <p>Il chiamante ha n elementi. Dopo la partizione il perno è al suo posto e restano n − 1 elementi, divisi in due parti. La chiamata ricorsiva va sulla parte più piccola: se avesse più di metà di n − 1 elementi, l'altra parte ne avrebbe meno di metà e sarebbe lei la più piccola. Quindi la chiamata riceve al massimo (n − 1)/2 &lt; n/2 elementi.</p>
+    <p>Nei giri successivi del ciclo il chiamante lavora sulla parte più grande, che ha meno di n elementi; le chiamate fatte in quei giri ricevono metà di qualcosa di più piccolo di n, quindi ancora meno di n/2.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>6. Nel Codice 4.5, cosa succede se per sbaglio si scrive la condizione al contrario, facendo la ricorsione sulla parte più grande?</summary>
+  <div class="soluzione">
+    <p>Si rovina tutto. Sull'array già ordinato 1 2 … n la parte più grande è sempre la destra, con n − 1, n − 2, … elementi: la chiamata ricorsiva va sempre lì, e ogni chiamata si mette sopra la precedente. La pila arriva a <strong>n</strong> record, come nella versione base. La garanzia «al massimo metà» vale solo per la parte più piccola.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>7. E se la condizione fosse m − i ≤ f − m invece di m − i &lt; f − m?</summary>
+  <div class="soluzione">
+    <p>Va bene lo stesso. m − i ≤ f − m vuol dire «elementi a sinistra ≤ elementi a destra + 1». L'unica differenza è quando la sinistra ha esattamente un elemento in più della destra: allora la ricorsione va sulla sinistra, che è la più grande di uno.</p>
+    <p>Ma in quel caso, con n elementi in tutto, sinistra + destra + 1 = n e sinistra = destra + 1, quindi sinistra = n/2. La chiamata riceve al massimo n/2 elementi: la condizione H(n) ≤ H(n/2) + 1 resta vera, e l'altezza resta O(log n).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>8. Quante chiamate fa in tutto il Codice 4.3 su un array già ordinato di n elementi? E il Codice 4.4?</summary>
+  <div class="soluzione">
+    <p><b>Codice 4.3.</b> Ci sono n − 1 partizioni (porzioni di n, n − 1, …, 2 elementi), e ogni chiamata che fa una partizione fa 2 chiamate ricorsive. Più la prima chiamata: 2(n − 1) + 1 = <strong>2n − 1</strong>. Per n = 8: 15, come nella sezione 3.</p>
+    <p><b>Codice 4.4.</b> Le partizioni sono le stesse, n − 1, ma ognuna fa una sola chiamata ricorsiva (l'altra parte la fa il ciclo). Più la prima: (n − 1) + 1 = <strong>n</strong>. Per n = 8: 8.</p>
+    <p>In generale, se le partizioni sono p, la versione base fa 2p + 1 chiamate e le versioni con il ciclo p + 1. Puoi controllare nel riquadro «La gara delle altezze».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>9. (Orale) Il Codice 4.5 riduce il numero di confronti di quickSort nel caso peggiore?</summary>
+  <div class="soluzione">
+    <p>No. Fa le stesse partizioni sugli stessi pezzi di array: cambia solo l'ordine in cui le parti vengono ordinate e il fatto che alcune sono ordinate dal ciclo invece che da una chiamata. Ogni partizione fa gli stessi confronti, quindi il totale è identico. Sull'array già ordinato restano n(n + 1)/2 − 1 confronti, Θ(n²). Il Codice 4.5 migliora solo lo spazio: da Θ(n) a Θ(log n).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>10. Usa l'equazione H(n) ≤ H(n/2) + 1 per dare un limite all'altezza della pila del Codice 4.5 con n = 1024 e con n = un milione.</summary>
+  <div class="soluzione">
+    <p>H(n) ≤ log<sub>2</sub> n + 1.</p>
+    <ul>
+      <li>n = 1024 = 2<sup>10</sup>: H ≤ 10 + 1 = <strong>11</strong> record.</li>
+      <li>n = 1&nbsp;000&nbsp;000: log<sub>2</sub> 1&nbsp;000&nbsp;000 ≈ 19,93, quindi H ≤ 20,93: al massimo <strong>20</strong> record (l'altezza è un numero intero).</li>
+    </ul>
+    <p>Con la versione base, sull'array ordinato, sarebbero 1024 e un milione di record.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 12 -->
+<h2 id="approfondimenti"><span class="num">12</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> due curiosità che non vengono dalla lezione e non servono per l'esame. Si aprono con un clic.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: cosa succede davvero con una pila di un milione di record</summary>
+  <div class="soluzione">
+    <p>La pila delle chiamate non è infinita. In un programma C su Linux, di solito, la pila del programma principale ha 8 MB. Un record di quickSort occupa qualche decina di byte: con la versione base su un array già ordinato di qualche milione di elementi, i record non ci stanno più, e il programma si ferma con un errore (in C, di solito, «Segmentation fault»). Per questo la riduzione dell'altezza della pila non è solo teoria.</p>
+    <p>Alcuni compilatori, con le ottimizzazioni attive (per esempio gcc e clang con l'opzione -O2), riconoscono da soli una chiamata in coda e la trasformano in un salto, come nel Codice 4.4. Ma non è garantito, e Go e Java, per esempio, non lo fanno: conviene scrivere il ciclo a mano.</p>
+  </div>
+</details>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: l'altezza esatta nel caso peggiore del Codice 4.5</summary>
+  <div class="soluzione">
+    <p>Usando che la parte più piccola ha al massimo ⌊(n − 1)/2⌋ elementi (⌊x⌋ è x arrotondato all'intero in basso), l'altezza massima vera soddisfa:</p>
+    <div class="mat-blocco"><span class="casi"><span class="casi-sx">H(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">1 + H(⌊(n − 1)/2⌋)</span><span class="cond">se n ≥ 2</span><span class="val">1</span><span class="cond">se n ≤ 1</span></span></span></div>
+    <p>Dà esattamente la riga «altezza massima vera» della tabella della sezione 8: per esempio H(9) = 1 + H(4) = 1 + 1 + H(1) = 3. Per n = 1024 dà 10, contro il limite 11 della formula delle slide. Per l'esame basta il limite log<sub>2</sub> n + 1.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="08-quicksort.html">← Pacco 8: quickSort</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="10-liste.html">Pacco 10: le liste →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// Simulazione delle versioni di quickSort, con la pila dei record
+function partiziona(A, i, f) {
+  var perno = A[i], sx = i, dx = f, cfr = 0, t;
+  while (sx < dx) {
+    do { dx--; cfr++; } while (A[dx] > perno);
+    do { sx++; if (!(sx < dx)) break; cfr++; } while (A[sx] <= perno);
+    if (sx < dx) { t = A[sx]; A[sx] = A[dx]; A[dx] = t; }
+  }
+  t = A[i]; A[i] = A[dx]; A[dx] = t;
+  return { m: dx, cfr: cfr };
+}
+// versione: "b" (4.3), "c" (4.4), "s" (simmetrica), "p" (4.5)
+function simula(ver, A0, leggero) {
+  var A = A0.slice(), pila = [], ev = [], cfr = 0, hmax = 0, chiamate = 0;
+  function snap(tipo, extra) {
+    if (leggero) return;
+    var e = { tipo: tipo, A: A.slice(), pila: pila.map(function (r) { return { i: r.i, f: r.f, i0: r.i0, f0: r.f0, id: r.id }; }), cfr: cfr, hmax: hmax };
+    for (var k in extra) e[k] = extra[k];
+    ev.push(e);
+  }
+  function qs(i, f) {
+    var r = { i: i, f: f, i0: i, f0: f, id: chiamate++ };
+    pila.push(r); if (pila.length > hmax) hmax = pila.length;
+    snap("push", { i: i, f: f });
+    if (ver === "b") {
+      if (f - i > 1) {
+        var p = partiziona(A, i, f); cfr += p.cfr;
+        snap("part", { i: i, f: f, m: p.m, c: p.cfr });
+        qs(i, p.m);
+        qs(p.m + 1, f);
+      }
+    } else {
+      while (r.f - r.i > 1) {
+        var p2 = partiziona(A, r.i, r.f); cfr += p2.cfr; var m = p2.m;
+        snap("part", { i: r.i, f: r.f, m: m, c: p2.cfr });
+        if (ver === "c" || (ver === "p" && m - r.i < r.f - m)) {
+          qs(r.i, m); var vi = r.i; r.i = m + 1; snap("agg", { campo: "i", da: vi, a: r.i, f: r.f });
+        } else {
+          qs(m + 1, r.f); var vf = r.f; r.f = m; snap("agg", { campo: "f", da: vf, a: r.f, i: r.i });
+        }
+      }
+    }
+    pila.pop();
+    snap("pop", { i: r.i0, f: r.f0 });
+  }
+  snap("inizio", {});
+  qs(0, A.length);
+  return { ev: ev, cfr: cfr, hmax: hmax, A: A, chiamate: chiamate };
+}
+
+// Disegno «altezza della pila nel tempo», come alla lavagna (pagine 9–11):
+// ogni record è un rettangolo che dura da quando entra a quando esce dalla pila.
+// k = ultimo evento da disegnare (per i riquadri interattivi); i record ancora aperti sono azzurri.
+function svgPila(ev, k, opz) {
+  opz = opz || {};
+  if (k === undefined || k === null) k = ev.length - 1;
+  var parz = ev.slice(0, k + 1), aperti = [], chiusi = [];
+  parz.forEach(function (e, t) {
+    if (e.tipo === "push") aperti.push({ liv: e.pila.length, segs: [{ t0: t, i: e.i, f: e.f }] });
+    else if (e.tipo === "agg") {
+      var b = aperti[aperti.length - 1];
+      b.segs[b.segs.length - 1].t1 = t - 1;
+      b.segs.push({ t0: t, i: e.campo === "i" ? e.a : e.i, f: e.campo === "f" ? e.a : e.f });
+    } else if (e.tipo === "pop") {
+      var c = aperti.pop();
+      c.segs[c.segs.length - 1].t1 = t;
+      chiusi.push(c);
+    }
+  });
+  aperti.forEach(function (b) { b.aperto = true; b.segs[b.segs.length - 1].t1 = k; });
+  var hTot = ev[ev.length - 1].hmax, hOra = parz[parz.length - 1].hmax;
+  var W = opz.w || 640, RH = opz.rh || 26, ML = 34, MR = 8, MT = 22, MB = 26;
+  var righe = hTot + 1, PH = righe * RH, H = MT + PH + MB;
+  var T = ev.length, sx = (W - ML - MR) / T;
+  var s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "Altezza della pila nel tempo") + '"' + (opz.minw ? ' style="min-width:' + opz.minw + 'px"' : '') + ' font-family="system-ui, sans-serif">');
+  var y0 = MT + PH;
+  // assi
+  s.push('<line x1="' + (ML - 4) + '" y1="' + (MT - 8) + '" x2="' + (ML - 4) + '" y2="' + y0 + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+  s.push('<line x1="' + (ML - 4) + '" y1="' + y0 + '" x2="' + (W - 2) + '" y2="' + y0 + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+  s.push('<path d="M' + (W - 2) + ' ' + y0 + ' l-7 -4 v8 z" class="punta" fill="#5b6270"/>');
+  s.push('<path d="M' + (ML - 4) + ' ' + (MT - 10) + ' l-4 7 h8 z" class="punta" fill="#5b6270"/>');
+  s.push('<text x="' + ML + '" y="' + (MT - 9) + '" font-size="12" class="t-muted" fill="#5b6270">altezza della pila</text>');
+  s.push('<text x="' + (W - 4) + '" y="' + (y0 + 18) + '" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">tempo</text>');
+  for (var L = 1; L <= righe - 1; L++) {
+    var yc = y0 - (L - 0.5) * RH;
+    s.push('<text x="' + (ML - 10) + '" y="' + (yc + 4) + '" font-size="12" text-anchor="end" class="t-muted" fill="#5b6270">' + L + '</text>');
+  }
+  function rett(b) {
+    var y = y0 - b.liv * RH + 2, h = RH - 4;
+    b.segs.forEach(function (g, j) {
+      var x = ML + g.t0 * sx, w = (g.t1 + 1 - g.t0) * sx - 1.5;
+      if (w < 2) w = 2;
+      var cls = b.aperto ? "r-blu" : "r-arancio", fill = b.aperto ? "#e8edfc" : "#fdf0e3", st = b.aperto ? "#2f52c4" : "#b4500f";
+      s.push('<rect x="' + x.toFixed(1) + '" y="' + y + '" width="' + w.toFixed(1) + '" height="' + h + '" rx="3" class="' + cls + '" fill="' + fill + '" stroke="' + st + '" stroke-width="1.5"/>');
+      var lab = g.i + "," + g.f;
+      if (w >= lab.length * 7 + 4) s.push('<text x="' + (x + w / 2).toFixed(1) + '" y="' + (y + h / 2 + 4.5) + '" font-size="12.5" text-anchor="middle" class="t-testo" fill="#1f2328">' + lab + '</text>');
+    });
+  }
+  chiusi.forEach(rett);
+  aperti.forEach(rett);
+  // altezza massima raggiunta finora
+  if (hOra > 0) {
+    var ym = y0 - hOra * RH;
+    s.push('<line x1="' + ML + '" y1="' + ym + '" x2="' + (W - MR) + '" y2="' + ym + '" stroke="#b42318" stroke-width="1.2" stroke-dasharray="5 4" class="l-rosso"/>');
+    s.push('<text x="' + (W - MR) + '" y="' + (ym - 5) + '" font-size="12.5" text-anchor="end" class="t-rosso" fill="#b42318">altezza massima: ' + hOra + '</text>');
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+  function fmt(v) { return Number(v).toLocaleString("it-IT"); }
+  function leggiArray(txt, max) {
+    var parti = String(txt).split(/[\s,;]+/).filter(function (s) { return s !== ""; });
+    if (parti.length < 1 || parti.length > max) return null;
+    var A = parti.map(Number);
+    for (var k = 0; k < A.length; k++) if (!isFinite(A[k])) return null;
+    return A;
+  }
+  function cella(v, cls, top, bot) {
+    var c = el("div", "cella" + (cls ? " " + cls : ""));
+    var f = el("div", "f");
+    f.innerHTML = top || "";
+    c.appendChild(f);
+    c.appendChild(el("div", "v", String(v)));
+    c.appendChild(el("div", "i", bot === undefined ? "" : String(bot)));
+    return c;
+  }
+  function riempiMenu(sel, voci) {
+    sel.innerHTML = "";
+    voci.forEach(function (v, k) {
+      var o = el("option", "", v[0]);
+      o.value = String(k);
+      sel.appendChild(o);
+    });
+  }
+
+  // ---------------------------------------------------------- le quattro versioni
+  var VER = {
+    b: { nome: "Codice 4.3: versione base", righe: [
+      "<b>PROCEDURA</b> quickSort(Array A, indice i, indice f)",
+      "  <b>IF</b> f − i &gt; 1 <b>THEN</b>",
+      "    m ← partiziona(A, i, f)",
+      "    quickSort(A, i, m)",
+      "    quickSort(A, m + 1, f)"] },
+    c: { nome: "Codice 4.4: senza ricorsione in coda", righe: [
+      "<b>PROCEDURA</b> quickSort(Array A, indice i, indice f)",
+      "  <b>WHILE</b> f − i &gt; 1 <b>DO</b>",
+      "    m ← partiziona(A, i, f)",
+      "    quickSort(A, i, m)",
+      "    i ← m + 1"] },
+    s: { nome: "Lavagna, pagina 14: la variante simmetrica", righe: [
+      "<b>PROCEDURA</b> quickSort(Array A, indice i, indice f)",
+      "  <b>WHILE</b> f − i &gt; 1 <b>DO</b>",
+      "    m ← partiziona(A, i, f)",
+      "    quickSort(A, m + 1, f)",
+      "    f ← m"] },
+    p: { nome: "Codice 4.5: prima la parte più piccola", righe: [
+      "<b>PROCEDURA</b> quickSort(Array A, indice i, indice f)",
+      "  <b>WHILE</b> f − i &gt; 1 <b>DO</b>",
+      "    m ← partiziona(A, i, f)",
+      "    <b>IF</b> m − i &lt; f − m <b>THEN</b>",
+      "      quickSort(A, i, m)",
+      "      i ← m + 1",
+      "    <b>ELSE</b>",
+      "      quickSort(A, m + 1, f)",
+      "      f ← m"] }
+  };
+  var ORDINE_VER = ["b", "c", "s", "p"];
+  var ESEMPI = [
+    ["Lavagna, pagina 10 (caso A): già ordinato", "1, 2, 3, 4, 5, 6, 7, 8"],
+    ["Lavagna, pagina 11 (caso B): il massimo in testa", "8, 1, 2, 3, 4, 5, 6, 7"],
+    ["Decrescente: 8 7 6 5 4 3 2 1", "8, 7, 6, 5, 4, 3, 2, 1"],
+    ["Bilanciato: 4 1 3 2 6 5 7", "4, 1, 3, 2, 6, 5, 7"],
+    ["Lavagna, pagina 2: 25 44 77 32 21 12 14 18 39", "25, 44, 77, 32, 21, 12, 14, 18, 39"],
+      ["Lavagna, pagina 5: 25 12 37 42 27 29 1 2 12", "25, 12, 37, 42, 27, 29, 1, 2, 12"],
+    ["Scrivi tu: modifica A", null]
+  ];
+
+  function rigaEvento(ver, e) {
+    if (e.tipo === "push") return [0];
+    if (e.tipo === "part") return ver === "p" ? [2, 3] : [2];
+    if (e.tipo === "agg") {
+      if (ver === "p") return e.campo === "i" ? [5] : [8];
+      return [4];
+    }
+    if (e.tipo === "pop") {
+      if (ver !== "b") return [1];
+      return e.f - e.i <= 1 ? [1] : [];
+    }
+    return [];
+  }
+
+  function racconta(ver, ev, k, n) {
+    var e = ev[k], h = e.pila.length;
+    if (e.tipo === "inizio") return "L'ALGORITMO chiama quickSort(A, 0, " + n + "). La pila delle chiamate di quickSort è ancora vuota. Premi «Passo →».";
+    if (e.tipo === "push") {
+      var t = "Comincia la chiamata <b>quickSort(A, " + e.i + ", " + e.f + ")</b>: entra nella pila un record nuovo, con i = " + e.i + " e f = " + e.f + ". Adesso la pila contiene <b>" + h + "</b> record.";
+      var q = e.f - e.i;
+      if (q <= 1) t += " La porzione ha " + (q === 0 ? "0 elementi" : "1 elemento") + ": la condizione f − i &gt; 1 è falsa, quindi la chiamata finirà subito.";
+      return t;
+    }
+    if (e.tipo === "part") {
+      var sin = e.m - e.i, des = e.f - e.m - 1;
+      var t2 = "partiziona(A, " + e.i + ", " + e.f + ") mette il perno <b>" + e.A[e.m] + "</b> in posizione m = " + e.m + " (" + e.c + " confronti). " +
+        "Parte sinistra: posizioni da " + e.i + " a " + (e.m - 1) + ", cioè <b>" + sin + "</b> element" + (sin === 1 ? "o" : "i") + ". " +
+        "Parte destra: posizioni da " + (e.m + 1) + " a " + (e.f - 1) + ", cioè <b>" + des + "</b> element" + (des === 1 ? "o" : "i") + ". ";
+      if (ver === "b") t2 += "Ora la procedura chiama sé stessa sulla parte sinistra; quando avrà finito, chiamerà sé stessa sulla parte destra.";
+      else if (ver === "c") t2 += "Ora chiama sé stessa sulla parte sinistra. La parte destra non avrà una chiamata: la ordinerà il ciclo WHILE, nello stesso record.";
+      else if (ver === "s") t2 += "Ora chiama sé stessa sulla parte destra. La parte sinistra non avrà una chiamata: la ordinerà il ciclo WHILE, nello stesso record.";
+      else {
+        var piccola = (e.m - e.i < e.f - e.m) ? "sinistra" : "destra";
+        t2 += "m − i = " + sin + " e f − m = " + (e.f - e.m) + ": la condizione m − i &lt; f − m è <b>" + (piccola === "sinistra" ? "vera" : "falsa") +
+          "</b>, quindi la chiamata ricorsiva va sulla parte <b>" + piccola + "</b>, la più piccola (a pari merito, la sinistra). La parte più grande la ordinerà il ciclo WHILE.";
+      }
+      return t2;
+    }
+    if (e.tipo === "agg") {
+      if (e.campo === "i") return "La chiamata sulla parte sinistra è finita. Al posto di una seconda chiamata, il record in cima cambia <b>i da " + e.da + " a " + e.a + "</b> (i ← m + 1) e il ciclo WHILE ricomincia sulla parte destra. La pila <b>non cresce</b>: resta di " + h + " record.";
+      return "La chiamata sulla parte destra è finita. Al posto di una seconda chiamata, il record in cima cambia <b>f da " + e.da + " a " + e.a + "</b> (f ← m) e il ciclo WHILE ricomincia sulla parte sinistra. La pila <b>non cresce</b>: resta di " + h + " record.";
+    }
+    if (e.tipo === "pop") {
+      var t3 = "La chiamata quickSort(A, " + e.i + ", " + e.f + ") è finita: il suo record esce dalla pila. ";
+      if (ver !== "b" && e.f - e.i > 1) t3 = "Nel record in cima ora f − i ≤ 1: il ciclo WHILE si ferma e la chiamata cominciata come quickSort(A, " + e.i + ", " + e.f + ") finisce. Il suo record esce dalla pila. ";
+      if (k === ev.length - 1) {
+        var ult = ev[ev.length - 1];
+        t3 += "<b>Fine: l'array è ordinato.</b> Altezza massima della pila: <b>" + ult.hmax + "</b> (con n = " + n + ").";
+      } else t3 += "Adesso la pila contiene " + h + " record.";
+      return t3;
+    }
+    return "";
+  }
+
+  function creaPila(p, opz) {
+    var W = { ev: [], k: 0, n: 0 };
+    var box = $(p + "-corpo");
+    box.innerHTML =
+      '<div class="controlli"><label>Versione <select id="' + p + '-ver" style="width:auto"></select></label></div>' +
+      '<div class="controlli"><label>Esempio <select id="' + p + '-es" style="width:auto"></select></label></div>' +
+      '<div class="controlli"><label>A = <input type="text" id="' + p + '-in" style="width:220px"></label>' +
+      '<button id="' + p + '-caso">10 numeri a caso</button></div>' +
+      '<div class="controlli"><button class="primario" id="' + p + '-passo">Passo →</button>' +
+      '<button id="' + p + '-fine">Fino alla fine</button><button id="' + p + '-reset">Ricomincia</button></div>' +
+      '<pre class="pseudo" id="' + p + '-cod"></pre>' +
+      '<div class="array qs" id="' + p + '-arr"></div>' +
+      '<div class="contatori" id="' + p + '-cont"></div>' +
+      '<div class="narrazione" id="' + p + '-txt"></div>' +
+      '<div class="etich-array">La pila adesso (in alto l\'ultima chiamata cominciata)</div>' +
+      '<div class="pila" id="' + p + '-pila"></div>' +
+      '<div class="etich-array">L\'altezza della pila nel tempo: in azzurro i record ancora nella pila</div>' +
+      '<div class="figura" id="' + p + '-graf" style="margin-top:6px"></div>';
+    var selV = $(p + "-ver");
+    riempiMenu(selV, opz.versioni.map(function (v) { return [VER[v].nome]; }));
+    selV.value = String(opz.versioni.indexOf(opz.ver));
+    riempiMenu($(p + "-es"), ESEMPI);
+    $(p + "-es").value = String(opz.es);
+    $(p + "-in").value = ESEMPI[opz.es][1];
+
+    function ver() { return opz.versioni[Number(selV.value)] || opz.ver; }
+    function init() {
+      var A = leggiArray($(p + "-in").value, 10);
+      if (!A) {
+        W.ev = [];
+        [p + "-arr", p + "-cont", p + "-pila", p + "-graf"].forEach(function (id) { $(id).innerHTML = ""; });
+        $(p + "-txt").innerHTML = "Scrivi da 1 a 10 numeri separati da virgole o spazi.";
+        $(p + "-passo").disabled = true; $(p + "-fine").disabled = true;
+        return;
+      }
+      W.n = A.length;
+      W.ev = simula(ver(), A).ev;
+      W.k = 0;
+      mostra();
+    }
+    function mostra() {
+      var v = ver(), ev = W.ev, k = W.k, e = ev[k];
+      var hl = rigaEvento(v, e);
+      $(p + "-cod").innerHTML = VER[v].righe.map(function (r, j) {
+        return '<span class="riga' + (hl.indexOf(j) >= 0 ? " ora" : "") + '">' + r + '</span>';
+      }).join("");
+      // caselle già al posto definitivo
+      var posto = {};
+      for (var t = 0; t <= k; t++) {
+        var q = ev[t];
+        if (q.tipo === "part") posto[q.m] = true;
+        if (q.tipo === "push" && q.f - q.i === 1) posto[q.i] = true;
+      }
+      var cima = e.pila.length ? e.pila[e.pila.length - 1] : null;
+      var out = $(p + "-arr");
+      out.innerHTML = "";
+      e.A.forEach(function (x, j) {
+        var cls = "";
+        if (cima && (j < cima.i || j >= cima.f)) cls = "fuori";
+        if (posto[j]) cls = "posto";
+        if (e.tipo === "part" && j === e.m) cls = "perno";
+        var top = "";
+        if (cima && j === cima.i && cima.f > cima.i) top = "i";
+        if (e.tipo === "part" && j === e.m) top = (top ? "i m" : "m");
+        out.appendChild(cella(x, cls, top, j));
+      });
+      var nch = 0;
+      for (var t2 = 0; t2 <= k; t2++) if (ev[t2].tipo === "push") nch++;
+      $(p + "-cont").innerHTML = "<span>altezza adesso: <b>" + e.pila.length + "</b></span><span>altezza massima finora: <b>" + e.hmax +
+        "</b></span><span>chiamate finora: <b>" + nch + "</b></span><span>confronti finora: <b>" + e.cfr + "</b></span>";
+      $(p + "-txt").innerHTML = racconta(v, ev, k, W.n);
+      var pila = $(p + "-pila");
+      pila.innerHTML = "";
+      if (!e.pila.length) pila.appendChild(el("div", "piccolo", "(vuota)"));
+      e.pila.forEach(function (r, j) {
+        var d = el("div", "record mini" + (j === e.pila.length - 1 ? " cima" : ""));
+        var s = "quickSort(A, i = " + r.i + ", f = " + r.f + ")";
+        if (r.i !== r.i0 || r.f !== r.f0) s += "   · cominciata con i = " + r.i0 + ", f = " + r.f0;
+        d.textContent = s;
+        pila.appendChild(d);
+      });
+      $(p + "-graf").innerHTML = svgPila(ev, k, { aria: "Altezza della pila nel tempo, fino al passo attuale" });
+      var fine = k >= ev.length - 1;
+      $(p + "-passo").disabled = fine; $(p + "-fine").disabled = fine;
+    }
+    selV.onchange = init;
+    $(p + "-es").onchange = function () {
+      var x = ESEMPI[Number($(p + "-es").value)];
+      if (x && x[1]) $(p + "-in").value = x[1];
+      init();
+    };
+    $(p + "-in").onchange = function () { $(p + "-es").value = String(ESEMPI.length - 1); init(); };
+    $(p + "-caso").onclick = function () {
+      var pool = [];
+      for (var x = 1; x <= 99; x++) pool.push(x);
+      for (var j = pool.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)), t = pool[j]; pool[j] = pool[r]; pool[r] = t; }
+      $(p + "-in").value = pool.slice(0, 10).join(", ");
+      $(p + "-es").value = String(ESEMPI.length - 1);
+      init();
+    };
+    $(p + "-passo").onclick = function () { if (W.k < W.ev.length - 1) { W.k++; mostra(); } };
+    $(p + "-fine").onclick = function () { if (W.ev.length) { W.k = W.ev.length - 1; mostra(); } };
+    $(p + "-reset").onclick = function () { if (W.ev.length) { W.k = 0; mostra(); } else init(); };
+    init();
+  }
+  creaPila("pa", { versioni: ["b"], ver: "b", es: 0 });
+  creaPila("pb", { versioni: ORDINE_VER, ver: "p", es: 1 });
+
+  // ---------------------------------------------------------- la gara delle altezze
+  var GH = { casuale: null };
+  function ghArray(tipo, n) {
+    var A = [], j;
+    if (tipo === "ord") for (j = 1; j <= n; j++) A.push(j);
+    else if (tipo === "B") { A.push(n); for (j = 1; j < n; j++) A.push(j); }
+    else if (tipo === "dec") for (j = n; j >= 1; j--) A.push(j);
+    else {
+      if (!GH.casuale || GH.casuale.length !== n) {
+        for (j = 1; j <= n; j++) A.push(j);
+        for (j = n - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)), t = A[j]; A[j] = A[r]; A[r] = t; }
+        GH.casuale = A;
+      }
+      A = GH.casuale.slice();
+    }
+    return A;
+  }
+  function ghCalcola() {
+    var n = Number($("gh-n").value), tipo = $("gh-tipo").value;
+    var A = ghArray(tipo, n);
+    var righe = ORDINE_VER.map(function (v) {
+      var r = simula(v, A, true);
+      return "<tr><td>" + VER[v].nome + "</td><td><b>" + fmt(r.hmax) + "</b></td><td>" + fmt(r.chiamate) + "</td><td>" + fmt(r.cfr) + "</td></tr>";
+    });
+    $("gh-tab").innerHTML = "<table><tr><th>versione</th><th>altezza massima della pila</th><th>chiamate</th><th>confronti</th></tr>" + righe.join("") + "</table>";
+    var lg = Math.log(n) / Math.log(2);
+    $("gh-txt").innerHTML = "Per confronto: n = <b>" + fmt(n) + "</b> e log<sub>2</sub> n + 1 ≈ <b>" + lg.toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "</b> + 1 = <b>" +
+      (lg + 1).toLocaleString("it-IT", { maximumFractionDigits: 1 }) + "</b>. Guarda la colonna dei confronti: è uguale in tutte le righe.";
+    $("gh-mescola").disabled = tipo !== "caso";
+  }
+  $("gh-n").onchange = ghCalcola;
+  $("gh-tipo").onchange = ghCalcola;
+  $("gh-mescola").onclick = function () { GH.casuale = null; ghCalcola(); };
+  ghCalcola();
+
+})();
+</script>
+</body>
+</html>
