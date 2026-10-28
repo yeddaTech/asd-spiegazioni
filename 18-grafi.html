@@ -1,0 +1,1196 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grafi e visite</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 18 · fine della lezione 19 e lezione 20 (lavagne del 5 e del 7 novembre 2025)</span>
+</div>
+
+<h1>Grafi: parole, rappresentazioni, alberi e visite</h1>
+<p class="sottotitolo">Un grafo è un insieme di vertici collegati da archi: strade tra città, link tra pagine, amicizie. È l'argomento dell'esercizio 3 di quasi tutti gli scritti. In questa pagina: tutte le parole dei grafi (grado, cammino, ciclo, connesso, componente…), i circuiti di Hamilton e di Eulero con i ponti di Königsberg, i cinque modi di rappresentare un grafo in memoria, gli alberi visti come grafi e gli alberi ricoprenti, e infine le visite in ampiezza e in profondità.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: nelle sezioni 1–5 «lavagna, pagina N» è la lezione 19 (5 novembre 2025), dalla sezione 6 è la lezione 20 (7 novembre 2025). «Le slide» sono quelle delle visite di grafi, con i Codici 10.1 e 10.2.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Le due lezioni in sei domande</span>
+  <ol>
+    <li><b>Cos'è un grafo?</b> Una coppia G = (V, E): V è l'insieme dei vertici, E ⊆ V × V l'insieme degli archi. È orientato se gli archi hanno un verso.</li>
+    <li><b>Quali parole servono?</b> Adiacente, grado, cammino, ciclo, catena, connesso, fortemente connesso, sottografo, componente.</li>
+    <li><b>Come si tiene in memoria?</b> Con una lista di archi, liste di adiacenza, liste di incidenza (spazio Θ(n + m)), o con una matrice di adiacenza (Θ(n<sup>2</sup>)) o di incidenza (Θ(n · m)).</li>
+    <li><b>Cos'è un albero, per i grafi?</b> Un grafo non orientato, connesso e senza cicli. Ha sempre n − 1 archi; e un grafo connesso con n − 1 archi è un albero.</li>
+    <li><b>Cos'è un albero ricoprente?</b> Un albero fatto di tutti i vertici di G e di una parte dei suoi archi.</li>
+    <li><b>Come si visita un grafo?</b> In ampiezza con una coda (prima i vicini, poi i vicini dei vicini…) o in profondità con la ricorsione. Le due visite costruiscono un albero ricoprente.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#grafo">Cos'è un grafo</a></li>
+    <li><a href="#parole">Adiacenti, vicini, grado</a></li>
+    <li><a href="#cammini">Cammini, cicli, catene, circuiti</a></li>
+    <li><a href="#connessi">Grafi connessi, sottografi e componenti</a></li>
+    <li><a href="#circuiti">Hamilton, Eulero e i ponti di Königsberg</a></li>
+    <li><a href="#rappresentazioni">Come si rappresenta un grafo</a></li>
+    <li><a href="#matrice">La matrice di adiacenza e i cammini</a></li>
+    <li><a href="#alberi">Gli alberi, visti come grafi</a></li>
+    <li><a href="#ricoprente">L'albero ricoprente</a></li>
+    <li><a href="#bfs">La visita in ampiezza</a></li>
+    <li><a href="#dfs">La visita in profondità</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti (foglio 8 e domande d'esame)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="grafo"><span class="num">1</span>Cos'è un grafo</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione (lavagna del 5 novembre, pagine 23 e 24), grafi orientati e non orientati, e i due grafi che il prof usa in tutte le lezioni.</p>
+<div class="box def">
+  <span class="etichetta">Grafo (lavagna del 5 novembre, pagina 23)</span>
+  <p>Un <strong>grafo</strong> è una coppia G = (V, E), dove:</p>
+  <ul>
+    <li>V è un insieme finito di <strong>nodi</strong> o <strong>vertici</strong>;</li>
+    <li>E ⊆ V × V è l'insieme degli <strong>archi</strong> (o lati, spigoli): coppie di vertici.</li>
+  </ul>
+  <p>Un grafo è <strong>orientato</strong> (o diretto) se l'arco (x, y) va da x a y, e non è lo stesso arco di (y, x). È <strong>non orientato</strong> se E è simmetrica: (x, y) ∈ E se e solo se (y, x) ∈ E, e le due coppie sono lo stesso collegamento.</p>
+</div>
+<p>V × V è l'insieme di tutte le coppie ordinate di vertici; E ne sceglie alcune. Si indica con <strong>n = #V</strong> il numero di vertici e con <strong>m = #E</strong> il numero di archi (# vuol dire «numero di elementi»). Gli esempi della lavagna, pagina 24, sono nella Figura 1.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">orientato: V = {1, 2, 3, 4}</div><svg viewBox="0 0 168 168" width="168" height="168" role="img" aria-label="orientato" font-family="system-ui, sans-serif"><path d="M44 29 L122 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M122 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M23 42.7 Q4.8 84 22.2 123.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M22.2 123.4 l-6.4 -6.3 l6.1 -2.7 z" class="t-muted" fill="#5b6270"/><path d="M139 44 L139 122" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M139 122 l-3.3 -8.4 l6.7 0 z" class="t-muted" fill="#5b6270"/><path d="M124 139 L46 139" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M46 139 l8.4 -3.3 l0 6.7 z" class="t-muted" fill="#5b6270"/><path d="M35 125.3 Q53.2 84 35.8 44.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M35.8 44.6 l6.4 6.3 l-6.1 2.7 z" class="t-muted" fill="#5b6270"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="139" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="139" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="29" cy="139" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="144" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="139" cy="139" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="139" y="144" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text></svg><div class="piccolo">E = {(1,2), (1,3), (2,4), (4,3), (3,1)}</div></div><div><div class="nome-mat">non orientato: V = {1, 2, 3, 4}</div><svg viewBox="0 0 168 168" width="168" height="168" role="img" aria-label="non orientato" font-family="system-ui, sans-serif"><path d="M44 29 L124 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M29 44 L29 124" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M44 139 L124 139" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M39.6 39.6 L128.4 128.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="139" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="139" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="29" cy="139" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="144" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="139" cy="139" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="139" y="144" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text></svg><div class="piccolo">E = {{1,2}, {1,3}, {3,4}, {1,4}}</div></div></div>
+<div class="didascalia"><b>Figura 1.</b> Lavagna del 5 novembre, pagina 24. A sinistra un grafo orientato: l'arco (1, 3) e l'arco (3, 1) sono due archi diversi, e ci sono tutti e due. A destra un grafo non orientato: il prof scrive E = {(1,2), (2,1), (1,3), (3,1), (3,4), (4,3), (1,4), (4,1)}, e accanto, più comodamente, {1,2}, {1,3}, {3,4}, {1,4}: ogni collegamento come insieme di due vertici.</div>
+</div>
+<p>Il prof usa sempre gli stessi due grafi (lavagna, pagina 25): uno non orientato con vertici da A a F e uno orientato con vertici da 1 a 7 (Figura 2). Anche questa pagina li usa negli esempi.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">non orientato</div><svg viewBox="0 0 314 218" width="314" height="218" role="img" aria-label="Il grafo non orientato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M39 97.9 L91 40.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M39 120.1 L91 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M101 44 L101 174" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 29 L198 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M109.6 41.3 L204.4 176.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 189 L198 189" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M223 40.1 L275 97.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M275 120.1 L223 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="101" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="213" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="285" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="285" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="213" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">orientato</div><svg viewBox="0 0 330 146" width="330" height="146" role="img" aria-label="Il grafo orientato della lavagna (1–7)" font-family="system-ui, sans-serif"><path d="M44 29 L100 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M32.2 43.7 Q41.6 87.1 78.3 108.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M78.3 108.4 l-8.9 -1.3 l3.4 -5.8 z" class="t-muted" fill="#5b6270"/><path d="M132 29 L188 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M89.8 102.3 Q80.4 58.9 43.7 37.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M43.7 37.6 l8.9 1.3 l-3.4 5.8 z" class="t-muted" fill="#5b6270"/><path d="M108 117 L204 117" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M204 117 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M193.2 38.3 L106.4 106.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M106.4 106.5 l4.5 -7.8 l4.1 5.2 z" class="t-muted" fill="#5b6270"/><path d="M220 29 L276 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M276 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M236 117 L284 117" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M284 117 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M299.6 102.1 L294.5 45.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M294.5 45.9 l4.1 8 l-6.6 0.6 z" class="t-muted" fill="#5b6270"/><path d="M283.5 40.6 L231.8 103.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M231.8 103.8 l2.7 -8.6 l5.2 4.2 z" class="t-muted" fill="#5b6270"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="117" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="93" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="205" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="221" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="221" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="301" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="301" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="293" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="293" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text></svg></div></div>
+<div class="didascalia"><b>Figura 2.</b> I due grafi della lavagna. Il non orientato ha n = 6 vertici e m = 8 lati; l'orientato ha n = 7 vertici e m = 10 archi.</div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>G = (V, E): V vertici (n = #V), E ⊆ V × V archi (m = #E).</li>
+    <li>Orientato: (x, y) va da x a y. Non orientato: E simmetrica, il lato {x, y}.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="parole"><span class="num">2</span>Adiacenti, vicini, grado</h2>
+<p class="in-questa"><b>In questa sezione:</b> le parole della lavagna del 5 novembre, pagine 25 e 26: arco incidente, vertici adiacenti, vicini, grado, grado in ingresso e in uscita; e la somma dei gradi.</p>
+<div class="box def">
+  <span class="etichetta">Definizioni (lavagna, pagine 25 e 26)</span>
+  <ul>
+    <li>Se (x, y) ∈ E, l'arco (x, y) è <strong>incidente</strong> su x e su y.</li>
+    <li>Non orientato: x e y sono <strong>adiacenti</strong>. Orientato: (x, y) <strong>esce</strong> da x ed <strong>entra</strong> in y, e y è adiacente a x (non il contrario!).</li>
+    <li><strong>Vicini</strong> di v: i vertici adiacenti a v. Vicini di B: A, C, D, F. Vicini di 4 (orientato): 7 e 3, quelli a cui arrivano gli archi che escono da 4.</li>
+    <li><strong>Grado</strong> δ(v) di un vertice: il numero di archi incidenti su v. δ(B) = 4.</li>
+    <li>Orientato: <strong>δ<sub>in</sub>(v)</strong>, grado in ingresso (archi che entrano), e <strong>δ<sub>out</sub>(v)</strong>, grado in uscita (archi che escono); δ(v) = δ<sub>in</sub>(v) + δ<sub>out</sub>(v). Per il vertice 1: δ<sub>in</sub>(1) = 1, δ<sub>out</sub>(1) = 2, grado 3.</li>
+  </ul>
+</div>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">i gradi: la somma è 16 = 2m</div><svg viewBox="0 0 314 234" width="314" height="234" role="img" aria-label="Il grafo non orientato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M39 97.9 L91 40.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M39 120.1 L91 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M101 44 L101 174" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 29 L198 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M109.6 41.3 L204.4 176.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 189 L198 189" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M223 40.1 L275 97.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M275 120.1 L223 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="29" y="139" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 2</text><circle cx="101" cy="29" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="101" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 4</text><circle cx="101" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="101" y="219" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 3</text><circle cx="213" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="213" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 2</text><circle cx="285" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="285" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><text x="285" y="139" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 2</text><circle cx="213" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text><text x="213" y="219" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 3</text></svg></div><div><div class="nome-mat">gradi in ingresso e in uscita</div><svg viewBox="0 0 364 173" width="364" height="173" role="img" aria-label="Il grafo orientato della lavagna (1–7)" font-family="system-ui, sans-serif"><path d="M44 29 L111 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M111 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M32.2 43.7 Q43.2 94.3 86.3 119.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M86.3 119.4 l-8.9 -1.3 l3.4 -5.8 z" class="t-muted" fill="#5b6270"/><path d="M143 29 L210 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M210 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M97.8 113.3 Q86.8 62.7 43.7 37.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M43.7 37.6 l8.9 1.3 l-3.4 5.8 z" class="t-muted" fill="#5b6270"/><path d="M116 128 L228 128" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M228 128 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M215.2 38.3 L114.4 117.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 117.5 l4.5 -7.8 l4.1 5.2 z" class="t-muted" fill="#5b6270"/><path d="M242 29 L309 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M309 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M260 128 L318 128" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M318 128 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M333.6 113.1 L327.5 45.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M327.5 45.9 l4.1 8 l-6.6 0.6 z" class="t-muted" fill="#5b6270"/><path d="M316.5 40.6 L255.8 114.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M255.8 114.8 l2.7 -8.6 l5.2 4.2 z" class="t-muted" fill="#5b6270"/><circle cx="29" cy="29" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><text x="29" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">in 1, out 2</text><circle cx="128" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="128" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><text x="128" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">in 1, out 1</text><circle cx="101" cy="128" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><text x="101" y="158" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">in 2, out 2</text><circle cx="227" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="227" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><text x="227" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">in 1, out 2</text><circle cx="245" cy="128" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="245" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><text x="245" y="158" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">in 2, out 1</text><circle cx="335" cy="128" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="335" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><text x="335" y="158" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">in 1, out 1</text><circle cx="326" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="326" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><text x="326" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">in 2, out 1</text></svg></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 26. Sotto ogni vertice il suo grado. A sinistra: 2 + 4 + 3 + 2 + 2 + 3 = 16 = 2 · 8. A destra, per ogni vertice, gradi in ingresso e in uscita: le somme sono 10 e 10, come gli archi.</div>
+</div>
+<p>Due formule della lavagna, pagina 26:</p>
+<ul>
+  <li>non orientato: <strong>Σ<sub>v</sub> δ(v) = 2m</strong>. Ogni lato {x, y} viene contato due volte, una nel grado di x e una nel grado di y.</li>
+  <li>orientato: <strong>Σ<sub>v</sub> δ<sub>in</sub>(v) = m = Σ<sub>v</sub> δ<sub>out</sub>(v)</strong>. Ogni arco entra in esattamente un vertice ed esce da esattamente uno.</li>
+</ul>
+<p>Conseguenza curiosa: in un grafo non orientato i vertici di grado dispari sono sempre in numero pari (la somma dei gradi è pari). Servirà nella sezione 5.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Incidente, adiacente, vicini; grado δ(v); nei grafi orientati δ<sub>in</sub> e δ<sub>out</sub>.</li>
+    <li>Σ δ(v) = 2m (non orientato); Σ δ<sub>in</sub> = Σ δ<sub>out</sub> = m (orientato).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="cammini"><span class="num">3</span>Cammini, cicli, catene, circuiti</h2>
+<p class="in-questa"><b>In questa sezione:</b> come ci si sposta in un grafo (lavagna del 5 novembre, pagine 27–29): cammini e cicli seguono il verso degli archi, catene e circuiti lo ignorano.</p>
+<div class="box def">
+  <span class="etichetta">Cammino e ciclo (lavagna, pagine 27 e 28)</span>
+  <ul>
+    <li>Un <strong>cammino</strong> da x a y (x, y ∈ V) è una sequenza di vertici v<sub>0</sub>, v<sub>1</sub>, …, v<sub>k</sub> ∈ V tale che v<sub>0</sub> = x, v<sub>k</sub> = y e (v<sub>i−1</sub>, v<sub>i</sub>) ∈ E per i = 1, …, k.</li>
+    <li>La <strong>lunghezza</strong> del cammino è il numero di archi, k.</li>
+    <li>Un cammino è <strong>semplice</strong> se non contiene vertici ripetuti.</li>
+    <li>y è <strong>raggiungibile</strong> da x se esiste un cammino da x a y.</li>
+    <li>Un <strong>ciclo</strong> è un cammino da un vertice v a v stesso. È <strong>semplice</strong> se solo il vertice iniziale è ripetuto (alla fine).</li>
+  </ul>
+</div>
+<div class="box def">
+  <span class="etichetta">Catena e circuito (lavagna, pagina 29)</span>
+  <ul>
+    <li>Una <strong>catena</strong> tra x e y è una sequenza di vertici v<sub>0</sub>, …, v<sub>k</sub> con v<sub>0</sub> = x, v<sub>k</sub> = y e, per ogni i, (v<sub>i−1</sub>, v<sub>i</sub>) ∈ E <em>oppure</em> (v<sub>i</sub>, v<sub>i−1</sub>) ∈ E: gli archi si possono percorrere anche al contrario.</li>
+    <li>Un <strong>circuito</strong> è una catena con x = y.</li>
+  </ul>
+</div>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) un cammino da 1 a 7</div><svg viewBox="0 0 330 146" width="330" height="146" role="img" aria-label="Il grafo orientato della lavagna (1–7)" font-family="system-ui, sans-serif"><path d="M44 29 L100 29" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M100 29 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M32.2 43.7 Q41.6 87.1 78.3 108.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M78.3 108.4 l-8.9 -1.3 l3.4 -5.8 z" class="t-muted" fill="#5b6270"/><path d="M132 29 L188 29" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M188 29 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M89.8 102.3 Q80.4 58.9 43.7 37.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M43.7 37.6 l8.9 1.3 l-3.4 5.8 z" class="t-muted" fill="#5b6270"/><path d="M108 117 L204 117" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M204 117 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M193.2 38.3 L106.4 106.5" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M106.4 106.5 l4.5 -7.8 l4.1 5.2 z" class="t-verde" fill="#17803d"/><path d="M220 29 L276 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M276 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M236 117 L284 117" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M284 117 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M299.6 102.1 L294.5 45.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M294.5 45.9 l4.1 8 l-6.6 0.6 z" class="t-verde" fill="#17803d"/><path d="M283.5 40.6 L231.8 103.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M231.8 103.8 l2.7 -8.6 l5.2 4.2 z" class="t-muted" fill="#5b6270"/><circle cx="29" cy="29" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="117" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="93" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="205" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="221" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="221" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="301" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="301" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="293" cy="29" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="293" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text></svg></div><div><div class="nome-mat">(b) cicli: 1, 3, 1 e 5, 6, 7, 5</div><svg viewBox="0 0 330 146" width="330" height="146" role="img" aria-label="Il grafo orientato della lavagna (1–7)" font-family="system-ui, sans-serif"><path d="M44 29 L100 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M32.2 43.7 Q41.6 87.1 78.3 108.4" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="3"/><path d="M78.3 108.4 l-8.9 -1.3 l3.4 -5.8 z" class="t-arancio" fill="#b4500f"/><path d="M132 29 L188 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M89.8 102.3 Q80.4 58.9 43.7 37.6" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="3"/><path d="M43.7 37.6 l8.9 1.3 l-3.4 5.8 z" class="t-arancio" fill="#b4500f"/><path d="M108 117 L204 117" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M204 117 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M193.2 38.3 L106.4 106.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M106.4 106.5 l4.5 -7.8 l4.1 5.2 z" class="t-muted" fill="#5b6270"/><path d="M220 29 L276 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M276 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M236 117 L284 117" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M284 117 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M299.6 102.1 L294.5 45.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M294.5 45.9 l4.1 8 l-6.6 0.6 z" class="t-verde" fill="#17803d"/><path d="M283.5 40.6 L231.8 103.8" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M231.8 103.8 l2.7 -8.6 l5.2 4.2 z" class="t-verde" fill="#17803d"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="117" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="93" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="205" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="221" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="221" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="301" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="301" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="293" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="293" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text></svg></div><div><div class="nome-mat">(c) una catena che non è un cammino: 4, 7, 6</div><svg viewBox="0 0 330 146" width="330" height="146" role="img" aria-label="Il grafo orientato della lavagna (1–7)" font-family="system-ui, sans-serif"><path d="M44 29 L100 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M32.2 43.7 Q41.6 87.1 78.3 108.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M78.3 108.4 l-8.9 -1.3 l3.4 -5.8 z" class="t-muted" fill="#5b6270"/><path d="M132 29 L188 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M89.8 102.3 Q80.4 58.9 43.7 37.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M43.7 37.6 l8.9 1.3 l-3.4 5.8 z" class="t-muted" fill="#5b6270"/><path d="M108 117 L204 117" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M204 117 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M193.2 38.3 L106.4 106.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M106.4 106.5 l4.5 -7.8 l4.1 5.2 z" class="t-muted" fill="#5b6270"/><path d="M220 29 L276 29" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M276 29 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M236 117 L284 117" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M284 117 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M299.6 102.1 L294.5 45.9" fill="none" class="l-rosso" stroke="#b42318" stroke-width="3"/><path d="M294.5 45.9 l4.1 8 l-6.6 0.6 z" class="t-rosso" fill="#b42318"/><path d="M283.5 40.6 L231.8 103.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M231.8 103.8 l2.7 -8.6 l5.2 4.2 z" class="t-muted" fill="#5b6270"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="117" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="93" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="205" cy="29" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="205" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="221" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="221" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="301" cy="117" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="301" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="293" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="293" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text></svg></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagine 27–29, sul grafo orientato. (a) 1, 2, 4, 3, 5, 6, 7 è un cammino da 1 a 7 (lunghezza 6). 7 è raggiungibile da 1, ma 1 non è raggiungibile da 7: da 7 si va solo a 5, da 5 a 6, da 6 a 7. (b) 1, 3, 1 è un ciclo (arancione) e 5, 6, 7, 5 un ciclo semplice (verde); anche 1, 2, 4, 3, 1 è un ciclo. (c) 4, 7, 6 è una catena ma non un cammino: l'arco tra 6 e 7 va da 6 a 7, e qui si percorre al contrario (in rosso).</div>
+</div>
+<p>Nei grafi non orientati la differenza sparisce: ogni lato si può percorrere nei due versi, quindi cammini e catene sono la stessa cosa, e così cicli e circuiti.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Cammino: segue il verso degli archi; lunghezza = numero di archi; semplice = senza vertici ripetuti. Ciclo: cammino che torna al punto di partenza.</li>
+    <li>Catena e circuito: come cammino e ciclo, ma ignorando il verso.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="connessi"><span class="num">4</span>Grafi connessi, sottografi e componenti</h2>
+<p class="in-questa"><b>In questa sezione:</b> quando un grafo è «tutto d'un pezzo» (lavagna del 5 novembre, pagine 30–32): connesso, fortemente connesso, sottografo, sottografo indotto, componente fortemente connessa.</p>
+<div class="box def">
+  <span class="etichetta">Connessione (lavagna, pagina 30)</span>
+  <ul>
+    <li>Un grafo è <strong>connesso</strong> se tra ogni coppia di vertici esiste una catena.</li>
+    <li>Un grafo è <strong>fortemente connesso</strong> se tra ogni coppia di vertici esiste un cammino.</li>
+  </ul>
+</div>
+<p>Il grafo orientato della Figura 2 è connesso (ignorando i versi, si va da ogni vertice a ogni altro), ma <em>non fortemente connesso</em>: da 7 non si torna a 1. Per un grafo non orientato le due nozioni coincidono.</p>
+<div class="box def">
+  <span class="etichetta">Sottografi (lavagna, pagina 31)</span>
+  <ul>
+    <li>G′ = (V′, E′) è un <strong>sottografo</strong> di G = (V, E) quando V′ ⊆ V ed E′ ⊆ E ∩ (V′ × V′): si prendono alcuni vertici, e alcuni degli archi che collegano quei vertici.</li>
+    <li>G′ è il <strong>sottografo indotto</strong> da V′ quando E′ = E ∩ (V′ × V′): si prendono <em>tutti</em> gli archi di G tra i vertici di V′.</li>
+  </ul>
+</div>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) un sottografo con V′ = {A, B, C}</div><svg viewBox="0 0 130 218" width="130" height="218" role="img" aria-label="sottografo" font-family="system-ui, sans-serif"><path d="M39 97.9 L91 40.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M39 120.1 L91 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="101" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text></svg></div><div><div class="nome-mat">(b) il sottografo indotto da {A, B, C}</div><svg viewBox="0 0 130 218" width="130" height="218" role="img" aria-label="sottografo" font-family="system-ui, sans-serif"><path d="M39 97.9 L91 40.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M39 120.1 L91 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M101 44 L101 174" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="101" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text></svg></div><div><div class="nome-mat">(c) il sottografo indotto da {B, D, F}</div><svg viewBox="0 0 242 218" width="242" height="218" role="img" aria-label="sottografo" font-family="system-ui, sans-serif"><path d="M116 29 L198 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M109.6 41.3 L204.4 176.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="101" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="213" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="213" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div></div>
+<div class="didascalia"><b>Figura 5.</b> Lavagna, pagina 31. (a) Con V′ = {A, B, C} e solo i lati A–B e A–C si ottiene un sottografo, ma non quello indotto. (b) Il sottografo indotto da {A, B, C} ha tutti e tre i lati. (c) Quello indotto da {B, D, F} ha B–D e B–F: D e F nel grafo non sono collegati.</div>
+</div>
+<div class="box def">
+  <span class="etichetta">Componente fortemente connessa (lavagna, pagina 32)</span>
+  <p>Una <strong>componente fortemente connessa</strong> è un sottografo indotto fortemente connesso <strong>massimale</strong>: non si può aggiungere nessun altro vertice senza perdere la forte connessione.</p>
+</div>
+<div class="figura">
+<svg viewBox="0 0 364 157" width="364" height="157" role="img" aria-label="Il grafo orientato della lavagna (1–7)" font-family="system-ui, sans-serif"><path d="M44 29 L111 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M111 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M32.2 43.7 Q43.2 94.3 86.3 119.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M86.3 119.4 l-8.9 -1.3 l3.4 -5.8 z" class="t-muted" fill="#5b6270"/><path d="M143 29 L210 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M210 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M97.8 113.3 Q86.8 62.7 43.7 37.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M43.7 37.6 l8.9 1.3 l-3.4 5.8 z" class="t-muted" fill="#5b6270"/><path d="M116 128 L228 128" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M228 128 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M215.2 38.3 L114.4 117.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 117.5 l4.5 -7.8 l4.1 5.2 z" class="t-muted" fill="#5b6270"/><path d="M242 29 L309 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M309 29 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M260 128 L318 128" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M318 128 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M333.6 113.1 L327.5 45.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M327.5 45.9 l4.1 8 l-6.6 0.6 z" class="t-muted" fill="#5b6270"/><path d="M316.5 40.6 L255.8 114.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M255.8 114.8 l2.7 -8.6 l5.2 4.2 z" class="t-muted" fill="#5b6270"/><circle cx="29" cy="29" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="128" cy="29" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="128" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="101" cy="128" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="227" cy="29" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="227" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="245" cy="128" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="245" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="335" cy="128" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="335" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="326" cy="29" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="326" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text></svg>
+<div class="didascalia"><b>Figura 6.</b> Lavagna, pagina 32. Il grafo orientato ha due componenti fortemente connesse: {1, 2, 3, 4} (azzurro) e {5, 6, 7} (arancione). Dentro ciascuna si va da ogni vertice a ogni altro; ma da {5, 6, 7} non si torna in {1, 2, 3, 4}.</div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Connesso: una catena tra ogni coppia. Fortemente connesso: un cammino tra ogni coppia.</li>
+    <li>Sottografo: alcuni vertici e alcuni dei loro archi. Indotto: tutti gli archi tra quei vertici.</li>
+    <li>Componente fortemente connessa: sottografo indotto fortemente connesso massimale.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="circuiti"><span class="num">5</span>Hamilton, Eulero e i ponti di Königsberg</h2>
+<p class="in-questa"><b>In questa sezione:</b> due circuiti speciali (lavagna del 5 novembre, pagine 33–35): quello che passa una volta per ogni vertice e quello che passa una volta per ogni arco; e il problema da cui è nata la teoria dei grafi.</p>
+<div class="box def">
+  <span class="etichetta">Circuito hamiltoniano (lavagna, pagina 33)</span>
+  <p>Nei grafi non orientati: un circuito che passa per <strong>ogni vertice</strong> del grafo una e una sola volta.</p>
+</div>
+<div class="figura">
+<svg viewBox="0 0 314 218" width="314" height="218" role="img" aria-label="Il grafo non orientato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M39 97.9 L91 40.1" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M39 120.1 L91 177.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M101 44 L101 174" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 29 L198 29" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M109.6 41.3 L204.4 176.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 189 L198 189" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M223 40.1 L275 97.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M275 120.1 L223 177.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><circle cx="29" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="101" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="213" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="285" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="285" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="213" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg>
+<div class="didascalia"><b>Figura 7.</b> Lavagna, pagina 33: il circuito hamiltoniano A, B, D, E, F, C (e ritorno ad A).</div>
+</div>
+<div class="box def">
+  <span class="etichetta">Circuito euleriano (lavagna, pagina 34)</span>
+  <p>Un circuito che passa per <strong>ogni arco</strong> del grafo una e una sola volta (i vertici si possono ripetere).</p>
+</div>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) un circuito euleriano (i numeri: l'ordine degli archi)</div><svg viewBox="0 0 314 218" width="314" height="218" role="img" aria-label="Il grafo con un circuito euleriano (lavagna del 5 novembre, pagina 34)" font-family="system-ui, sans-serif"><path d="M39 97.9 L91 40.1" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="71" y="65" font-size="12" class="t-viola" fill="#6d3fc0">2</text><path d="M39 120.1 L91 177.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="71" y="145" font-size="12" class="t-viola" fill="#6d3fc0">1</text><path d="M101 44 L101 174" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="107" y="105" font-size="12" class="t-viola" fill="#6d3fc0">10</text><path d="M116 29 L198 29" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="163" y="25" font-size="12" class="t-viola" fill="#6d3fc0">3</text><path d="M109.6 41.3 L204.4 176.7" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="140.6" y="73" font-size="12" class="t-viola" fill="#6d3fc0">9</text><path d="M109.6 176.7 L204.4 41.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="140.6" y="137" font-size="12" class="t-viola" fill="#6d3fc0">7</text><path d="M116 189 L198 189" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="163" y="185" font-size="12" class="t-viola" fill="#6d3fc0">6</text><path d="M223 40.1 L275 97.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="255" y="65" font-size="12" class="t-viola" fill="#6d3fc0">4</text><path d="M213 44 L213 174" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="219" y="105" font-size="12" class="t-viola" fill="#6d3fc0">8</text><path d="M275 120.1 L223 177.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="255" y="145" font-size="12" class="t-viola" fill="#6d3fc0">5</text><circle cx="29" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="101" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="213" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="285" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="285" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="213" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(b) il grafo di prima: C e F hanno grado dispari</div><svg viewBox="0 0 314 234" width="314" height="234" role="img" aria-label="Il grafo non orientato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M39 97.9 L91 40.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M39 120.1 L91 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M101 44 L101 174" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 29 L198 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M109.6 41.3 L204.4 176.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 189 L198 189" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M223 40.1 L275 97.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M275 120.1 L223 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="29" y="139" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 2</text><circle cx="101" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="101" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 4</text><circle cx="101" cy="189" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="101" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="101" y="219" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 3</text><circle cx="213" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="213" y="59" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 2</text><circle cx="285" cy="109" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="285" y="114" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><text x="285" y="139" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 2</text><circle cx="213" cy="189" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="213" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text><text x="213" y="219" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 3</text></svg></div></div>
+<div class="didascalia"><b>Figura 8.</b> Lavagna, pagina 34. (a) Il prof aggiunge al grafo solito i lati C–D e D–F; ora c'è il circuito euleriano C, A, B, D, E, F, C, D, F, B, C (i numeri dicono in che ordine si percorrono i lati). (b) Il grafo senza quei due lati non ne ha: i vertici C e F hanno grado dispari.</div>
+</div>
+<h3>I ponti di Königsberg</h3>
+<p>Nel Settecento la città di Königsberg aveva sette ponti che collegavano quattro zone (due rive, un'isola e una penisola). Ci si chiedeva se fosse possibile fare una passeggiata che attraversasse <em>tutti i ponti una sola volta</em> e tornasse al punto di partenza (lavagna, pagina 35). È proprio un circuito euleriano: le zone sono i vertici, i ponti gli archi (Figura 9). Eulero dimostrò che non si può, ed è considerato l'inizio della teoria dei grafi.</p>
+<div class="figura">
+<svg viewBox="0 0 302 274" width="302" height="274" role="img" aria-label="il multigrafo dei ponti di Königsberg" font-family="system-ui, sans-serif"><path d="M145.3 41.9 Q123 79 144.3 114.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M160.7 41.9 Q183 79 161.7 114.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M145.3 141.9 Q123 179 144.3 214.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M160.7 141.9 Q183 179 161.7 214.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M164.5 38.6 L261.5 119.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168 129 L258 129" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M164.5 219.4 L261.5 138.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="153" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="153" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="130" y="33" font-size="11.5" text-anchor="end" class="t-viola" fill="#6d3fc0">δ = 3</text><circle cx="153" cy="129" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="153" y="134" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="130" y="133" font-size="11.5" text-anchor="end" class="t-viola" fill="#6d3fc0">δ = 5</text><circle cx="273" cy="129" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="273" y="134" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="273" y="159" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">δ = 3</text><circle cx="153" cy="229" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="153" y="234" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="130" y="233" font-size="11.5" text-anchor="end" class="t-viola" fill="#6d3fc0">δ = 3</text></svg>
+<div class="didascalia"><b>Figura 9.</b> Lavagna, pagina 35: le zone A, B, C, D e i sette ponti. Tra A e B ci sono due ponti, e due anche tra B e D. Tutti i gradi sono dispari. (Il prof, per avere un grafo senza archi doppi, mette un punto intermedio A′, A″, D′, D″ su quattro dei ponti: i gradi di A, B, C, D non cambiano.)</div>
+</div>
+<div class="box def">
+  <span class="etichetta">Teorema (lavagna, pagina 35)</span>
+  <p>Un grafo (non orientato e connesso) ha un circuito euleriano <strong>se e solo se</strong> ogni vertice ha grado pari.</p>
+</div>
+<p>Perché il grado pari serve: ogni volta che il circuito passa per un vertice, ci entra con un arco e ne esce con un altro, e consuma due archi incidenti; anche il punto di partenza, che si lascia all'inizio e si ritrova alla fine, li consuma a coppie. Se tutti gli archi vanno usati una volta, il grado deve essere pari. A Königsberg tutti e quattro i gradi sono dispari: niente passeggiata. (Che il grado pari basti è la parte difficile del teorema, e alla lavagna non è dimostrata.)</p>
+<p>Attenzione alla differenza: per sapere se c'è un circuito <em>euleriano</em> basta controllare i gradi, un conto facile; per il circuito <em>hamiltoniano</em> non si conosce nessun metodo efficiente, ed è uno dei problemi «difficili» della fine del corso.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Hamiltoniano: ogni vertice una volta. Euleriano: ogni arco una volta.</li>
+    <li>Un grafo connesso ha un circuito euleriano se e solo se tutti i gradi sono pari. Königsberg: no.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="rappresentazioni"><span class="num">6</span>Come si rappresenta un grafo</h2>
+<p class="in-questa"><b>In questa sezione:</b> i cinque modi di tenere un grafo in memoria (lavagna del 7 novembre, pagine 4–15) e lo spazio che occupano. Alla fine un riquadro per confrontarli sullo stesso grafo.</p>
+<h3>Lista di archi</h3>
+<p>La più semplice (lavagna, pagine 4 e 5): un array con i vertici, spazio O(n), e una lista (spesso un array) con gli archi, uno per riga, spazio Θ(m). In tutto <strong>O(n + m)</strong>.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">non orientato</div><div class="sequenza" style="max-width:240px"><span class="el">(A, B)</span><span class="el">(A, C)</span><span class="el">(B, C)</span><span class="el">(B, D)</span><span class="el">(B, F)</span><span class="el">(C, F)</span><span class="el">(D, E)</span><span class="el">(E, F)</span></div></div><div><div class="nome-mat">orientato</div><div class="sequenza" style="max-width:300px"><span class="el">(1, 2)</span><span class="el">(1, 3)</span><span class="el">(2, 4)</span><span class="el">(3, 1)</span><span class="el">(3, 5)</span><span class="el">(4, 3)</span><span class="el">(4, 7)</span><span class="el">(5, 6)</span><span class="el">(6, 7)</span><span class="el">(7, 5)</span></div></div></div>
+<div class="didascalia"><b>Figura 10.</b> Lavagna, pagina 5: la lista di archi dei due grafi.</div>
+</div>
+<p>Per sapere i vicini di un vertice, però, bisogna scorrere tutta la lista.</p>
+<h3>Liste di adiacenza</h3>
+<p>La rappresentazione più usata (lavagna, pagine 6–8): una struttura principale, un array indicizzato dai vertici, e per ogni vertice una <strong>lista dei vertici adiacenti</strong>.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">non orientato</div><div class="tabella-wrap"><table><tr><th>A</th><td><span class="chip">B</span><span class="piccolo"> → </span><span class="chip">C</span></td></tr><tr><th>B</th><td><span class="chip">A</span><span class="piccolo"> → </span><span class="chip">C</span><span class="piccolo"> → </span><span class="chip">D</span><span class="piccolo"> → </span><span class="chip">F</span></td></tr><tr><th>C</th><td><span class="chip">A</span><span class="piccolo"> → </span><span class="chip">B</span><span class="piccolo"> → </span><span class="chip">F</span></td></tr><tr><th>D</th><td><span class="chip">B</span><span class="piccolo"> → </span><span class="chip">E</span></td></tr><tr><th>E</th><td><span class="chip">D</span><span class="piccolo"> → </span><span class="chip">F</span></td></tr><tr><th>F</th><td><span class="chip">B</span><span class="piccolo"> → </span><span class="chip">C</span><span class="piccolo"> → </span><span class="chip">E</span></td></tr></table></div></div><div><div class="nome-mat">orientato</div><div class="tabella-wrap"><table><tr><th>1</th><td><span class="chip">2</span><span class="piccolo"> → </span><span class="chip">3</span></td></tr><tr><th>2</th><td><span class="chip">4</span></td></tr><tr><th>3</th><td><span class="chip">1</span><span class="piccolo"> → </span><span class="chip">5</span></td></tr><tr><th>4</th><td><span class="chip">3</span><span class="piccolo"> → </span><span class="chip">7</span></td></tr><tr><th>5</th><td><span class="chip">6</span></td></tr><tr><th>6</th><td><span class="chip">7</span></td></tr><tr><th>7</th><td><span class="chip">5</span></td></tr></table></div></div></div>
+<div class="didascalia"><b>Figura 11.</b> Lavagna, pagine 7 e 8. Nel grafo non orientato ogni lato compare due volte (B è nella lista di A e A in quella di B); nell'orientato ogni arco una volta sola, nella lista del vertice da cui esce.</div>
+</div>
+<ul>
+  <li>Non orientato: la lunghezza della lista di v è il grado δ(v), e la somma delle lunghezze è 2m.</li>
+  <li>Orientato: la lunghezza della lista di v è δ<sub>out</sub>(v), e la somma è m.</li>
+</ul>
+<p>In tutti e due i casi lo spazio è <strong>Θ(n + m)</strong>: n per l'array, più un elemento di lista per ogni arco (o due).</p>
+<h3>Liste di incidenza</h3>
+<p>Una via di mezzo (lavagna, pagine 9 e 10): c'è la lista (array) degli archi, numerati, e per ogni vertice una lista con gli <strong>indici degli archi incidenti</strong>. Utile quando gli archi hanno delle informazioni (un peso, un nome) da tenere in un posto solo. Spazio <strong>Θ(n + m)</strong>.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">per ogni vertice, gli indici dei suoi archi</div><div class="tabella-wrap"><table><tr><th>A</th><td><span class="chip">0</span><span class="piccolo"> → </span><span class="chip">1</span></td></tr><tr><th>B</th><td><span class="chip">0</span><span class="piccolo"> → </span><span class="chip">2</span><span class="piccolo"> → </span><span class="chip">3</span><span class="piccolo"> → </span><span class="chip">4</span></td></tr><tr><th>C</th><td><span class="chip">1</span><span class="piccolo"> → </span><span class="chip">2</span><span class="piccolo"> → </span><span class="chip">5</span></td></tr><tr><th>D</th><td><span class="chip">3</span><span class="piccolo"> → </span><span class="chip">6</span></td></tr><tr><th>E</th><td><span class="chip">6</span><span class="piccolo"> → </span><span class="chip">7</span></td></tr><tr><th>F</th><td><span class="chip">4</span><span class="piccolo"> → </span><span class="chip">5</span><span class="piccolo"> → </span><span class="chip">7</span></td></tr></table></div></div><div><div class="nome-mat">la lista (array) degli archi</div><div class="tabella-wrap"><table><tr><th>0</th><td>(A, B)</td></tr><tr><th>1</th><td>(A, C)</td></tr><tr><th>2</th><td>(B, C)</td></tr><tr><th>3</th><td>(B, D)</td></tr><tr><th>4</th><td>(B, F)</td></tr><tr><th>5</th><td>(C, F)</td></tr><tr><th>6</th><td>(D, E)</td></tr><tr><th>7</th><td>(E, F)</td></tr></table></div></div></div>
+<div class="didascalia"><b>Figura 12.</b> Lavagna, pagina 9: per A gli archi 0 e 1, cioè (A, B) e (A, C); per B gli archi 0, 2, 3, 4; e così via.</div>
+</div>
+<h3>Matrice di adiacenza</h3>
+<p>Lavagna, pagine 11 e 12: una matrice booleana n × n, con righe e colonne indicate dai vertici, e <strong>M[u, v] = 1 se e solo se (u, v) ∈ E</strong>.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">non orientato: simmetrica</div><div class="tabella-wrap"><table><tr><th></th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr><tr><th>A</th><td>0</td><td class="verde" style="font-weight:700">1</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td></tr><tr><th>B</th><td class="verde" style="font-weight:700">1</td><td>0</td><td class="verde" style="font-weight:700">1</td><td class="verde" style="font-weight:700">1</td><td>0</td><td class="verde" style="font-weight:700">1</td></tr><tr><th>C</th><td class="verde" style="font-weight:700">1</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td></tr><tr><th>D</th><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td></tr><tr><th>E</th><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td><td class="verde" style="font-weight:700">1</td></tr><tr><th>F</th><td>0</td><td class="verde" style="font-weight:700">1</td><td class="verde" style="font-weight:700">1</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td></tr></table></div></div><div><div class="nome-mat">orientato</div><div class="tabella-wrap"><table><tr><th></th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr><tr><th>1</th><td>0</td><td class="verde" style="font-weight:700">1</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><th>2</th><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td></tr><tr><th>3</th><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td></tr><tr><th>4</th><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td></tr><tr><th>5</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td></tr><tr><th>6</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td></tr><tr><th>7</th><td>0</td><td>0</td><td>0</td><td>0</td><td class="verde" style="font-weight:700">1</td><td>0</td><td>0</td></tr></table></div></div></div>
+<div class="didascalia"><b>Figura 13.</b> Lavagna, pagine 11 e 12. A sinistra il grafo non orientato: la matrice è simmetrica rispetto alla diagonale. A destra l'orientato: la riga i dice gli archi uscenti da i, la colonna i gli archi entranti in i.</div>
+</div>
+<p>Si sa in un passo se due vertici sono collegati, ma lo spazio è <strong>Θ(n<sup>2</sup>)</strong> anche se gli archi sono pochi: per un grafo con un milione di vertici e tre milioni di archi, le liste usano qualche milione di celle, la matrice mille miliardi.</p>
+<h3>Matrice di incidenza</h3>
+<p>Lavagna, pagine 14 e 15: righe = vertici, colonne = archi. Nel grafo non orientato la casella (v, e) vale 1 se il lato e tocca v, 0 altrimenti. Nell'orientato vale 1 se l'arco <em>esce</em> da v, −1 se <em>entra</em> in v, 0 altrimenti. Spazio <strong>O(n · m)</strong>, il più grande.</p>
+<div class="figura">
+<div class="tabella-wrap"><table><tr><th></th><th>(1,2)</th><th>(1,3)</th><th>(2,4)</th><th>(3,1)</th><th>(3,5)</th><th>(4,3)</th><th>(4,7)</th><th>(5,6)</th><th>(6,7)</th><th>(7,5)</th></tr><tr><th>1</th><td style="font-weight:700">1</td><td style="font-weight:700">1</td><td>0</td><td style="font-weight:700">-1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><th>2</th><td style="font-weight:700">-1</td><td>0</td><td style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><th>3</th><td>0</td><td style="font-weight:700">-1</td><td>0</td><td style="font-weight:700">1</td><td style="font-weight:700">1</td><td style="font-weight:700">-1</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><th>4</th><td>0</td><td>0</td><td style="font-weight:700">-1</td><td>0</td><td>0</td><td style="font-weight:700">1</td><td style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td></tr><tr><th>5</th><td>0</td><td>0</td><td>0</td><td>0</td><td style="font-weight:700">-1</td><td>0</td><td>0</td><td style="font-weight:700">1</td><td>0</td><td style="font-weight:700">-1</td></tr><tr><th>6</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td style="font-weight:700">-1</td><td style="font-weight:700">1</td><td>0</td></tr><tr><th>7</th><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td style="font-weight:700">-1</td><td>0</td><td style="font-weight:700">-1</td><td style="font-weight:700">1</td></tr></table></div>
+<div class="didascalia"><b>Figura 14.</b> Lavagna, pagina 15: la matrice di incidenza del grafo orientato. Ogni colonna ha esattamente un 1 (dove l'arco esce) e un −1 (dove entra).</div>
+</div>
+<div class="tabella-wrap"><table>
+  <tr><th>rappresentazione</th><th>spazio</th></tr>
+  <tr><td>lista di archi</td><td>O(n + m)</td></tr>
+  <tr><td>liste di adiacenza</td><td>Θ(n + m)</td></tr>
+  <tr><td>liste di incidenza</td><td>Θ(n + m)</td></tr>
+  <tr><td>matrice di adiacenza</td><td>Θ(n<sup>2</sup>)</td></tr>
+  <tr><td>matrice di incidenza</td><td>O(n · m)</td></tr>
+</table></div>
+<div class="widget" id="w-gr">
+  <h4>Le rappresentazioni di un grafo</h4>
+  <div id="gr-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Lista di archi, liste di adiacenza, liste di incidenza: spazio Θ(n + m). Matrice di adiacenza: Θ(n<sup>2</sup>). Matrice di incidenza: O(n · m).</li>
+    <li>Liste di adiacenza: lunghezza = grado (non orientato) o δ<sub>out</sub> (orientato).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="matrice"><span class="num">7</span>La matrice di adiacenza e i cammini</h2>
+<p class="in-questa"><b>In questa sezione:</b> un fatto sorprendente della lavagna del 7 novembre, pagina 13: moltiplicando la matrice di adiacenza per sé stessa si scoprono i cammini di lunghezza 2, 3, …</p>
+<p>Nel prodotto «booleano» di matrici si usano OR al posto della somma e AND al posto del prodotto: (A · B)[i, j] = 1 se e solo se esiste un k con A[i, k] = 1 e B[k, j] = 1.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">il grafo</div><svg viewBox="0 0 238 238" width="238" height="238" role="img" aria-label="Il grafo orientato della matrice (lavagna del 7 novembre, pagina 13)" font-family="system-ui, sans-serif"><path d="M39.6 129.6 L107 197" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M107 197 l-8.3 -3.5 l4.7 -4.7 z" class="t-muted" fill="#5b6270"/><path d="M39.6 108.4 L107 41" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M107 41 l-3.5 8.3 l-4.7 -4.7 z" class="t-muted" fill="#5b6270"/><path d="M129.6 198.4 L197 131" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M197 131 l-3.5 8.3 l-4.7 -4.7 z" class="t-muted" fill="#5b6270"/><path d="M129.6 39.6 L197 107" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M197 107 l-8.3 -3.5 l4.7 -4.7 z" class="t-muted" fill="#5b6270"/><path d="M194 119 L46 119" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M46 119 l8.4 -3.3 l0 6.7 z" class="t-muted" fill="#5b6270"/><circle cx="29" cy="119" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="119" cy="209" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="214" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="119" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="209" cy="119" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="209" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text></svg></div><div><div class="nome-mat">M</div><table class="mat"><tr><td>0</td><td style="font-weight:700">1</td><td style="font-weight:700">1</td><td>0</td></tr><tr><td>0</td><td>0</td><td>0</td><td style="font-weight:700">1</td></tr><tr><td>0</td><td>0</td><td>0</td><td style="font-weight:700">1</td></tr><tr><td style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td></tr></table></div><div><div class="nome-mat">M² (prodotto booleano)</div><table class="mat"><tr><td>0</td><td>0</td><td>0</td><td style="font-weight:700">1</td></tr><tr><td style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td></tr><tr><td style="font-weight:700">1</td><td>0</td><td>0</td><td>0</td></tr><tr><td>0</td><td style="font-weight:700">1</td><td style="font-weight:700">1</td><td>0</td></tr></table></div></div>
+<div class="didascalia"><b>Figura 15.</b> Lavagna del 7 novembre, pagina 13. M<sup>2</sup>[1, 4] = 1 perché c'è un cammino di due archi da 1 a 4 (1 → 2 → 4, e anche 1 → 3 → 4); M<sup>2</sup>[4, 2] = 1 per 4 → 1 → 2.</div>
+</div>
+<p>Perché: M<sup>2</sup>[i, j] = 1 se e solo se esiste un vertice k con M[i, k] = 1 e M[k, j] = 1, cioè con un arco da i a k e uno da k a j: un cammino di 2 archi da i a j. In generale (lavagna, pagina 13): <strong>M<sup>k</sup>[i, j] = 1 se e solo se esiste un cammino di lunghezza k da i a j</strong>. È l'esercizio 8.2 del foglio, che si dimostra per induzione su k (soluzione nella sezione 13).</p>
+<div class="widget" id="w-mk">
+  <h4>Le potenze della matrice di adiacenza</h4>
+  <div id="mk-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Con il prodotto booleano (OR di AND): M<sup>k</sup>[i, j] = 1 se e solo se c'è un cammino di esattamente k archi da i a j.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="alberi"><span class="num">8</span>Gli alberi, visti come grafi</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione di albero nei grafi (lavagna del 7 novembre, pagina 17), le due proprietà con le dimostrazioni (pagine 18 e 19) e il teorema che le mette insieme (pagina 20). La definizione è una domanda frequente dell'esercizio 3.</p>
+<div class="box def">
+  <span class="etichetta">Albero (lavagna, pagina 17)</span>
+  <p>Un <strong>albero</strong> è un grafo <strong>non orientato</strong>, <strong>connesso</strong> e <strong>privo di cicli</strong>. Equivalentemente: tra ogni coppia di vertici esiste <em>uno e un solo</em> cammino.</p>
+  <p>Una <strong>foresta</strong> è un insieme di alberi.</p>
+</div>
+<p>Qui non c'è una radice e non c'è un «sopra» e un «sotto»: tutti i vertici sono alla pari. Gli alberi degli heap e degli alberi binari sono <em>alberi con radice</em>: alberi in questo senso in cui si è scelto un vertice come radice (il prof li disegna in arancione alla lavagna, pagina 17). L'equivalenza: connesso vuol dire «almeno un cammino» tra ogni coppia; senza cicli vuol dire «al più uno» (se ce ne fossero due diversi, insieme formerebbero un ciclo).</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) un albero</div><svg viewBox="0 0 178 178" width="178" height="178" role="img" aria-label="albero" font-family="system-ui, sans-serif"><path d="M78.4 39.6 L39.6 78.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M89 44 L89 74" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M99.6 39.6 L138.4 78.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M29 104 L29 134" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M149 104 L149 134" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="89" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="89" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="29" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="89" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="89" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="149" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="149" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="29" cy="149" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="154" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="149" cy="149" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="149" y="154" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text></svg></div><div><div class="nome-mat">(b) non è un albero: ha un ciclo</div><svg viewBox="0 0 148 154" width="148" height="154" role="img" aria-label="con ciclo" font-family="system-ui, sans-serif"><path d="M44 29 L74 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M95.7 42.4 L112.3 75.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M106.1 96.7 L71.9 117.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M46.5 116.7 L17.5 97.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M10.6 75.1 L23.4 42.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="89" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="89" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="119" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="59" cy="125" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="59" y="130" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="5" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="5" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></svg></div><div><div class="nome-mat">(c) una foresta di due alberi</div><svg viewBox="0 0 178 118" width="178" height="118" role="img" aria-label="foresta" font-family="system-ui, sans-serif"><path d="M29 44 L29 74" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M39.6 39.6 L78.4 78.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M149 44 L149 74" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="29" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="89" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="89" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="149" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="149" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="149" cy="89" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="149" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></svg></div></div>
+<div class="didascalia"><b>Figura 16.</b> Lavagna, pagina 17. (a) Un albero: connesso e senza cicli. (b) Non è un albero: ha un ciclo. (c) Una foresta di due alberi: senza cicli, ma non connessa.</div>
+</div>
+
+<div class="dim">
+  <div class="dim-tit">Proposizione 1 (lavagna, pagina 18)</div>
+  <p class="enunciato">Sia G = (V, E) un albero. Allora #E = #V − 1.</p>
+  <p>Per induzione su n = #V (induzione completa).</p>
+  <div class="parte prima">Base: n = 1</div>
+  <p>Un solo vertice, nessun arco: #E = 0 = 1 − 1.</p>
+  <div class="parte">Passo: n &gt; 1</div>
+  <p>Scegli un vertice x qualsiasi ed elimina da G il vertice x e i suoi archi incidenti. Restano dei pezzi G<sub>1</sub> = (V<sub>1</sub>, E<sub>1</sub>), …, G<sub>k</sub> = (V<sub>k</sub>, E<sub>k</sub>), che sono alberi (connessi per come sono definiti i pezzi, e senza cicli perché G non ne ha), ognuno con meno di n vertici. Per ipotesi induttiva #E<sub>i</sub> = #V<sub>i</sub> − 1. Inoltre x era collegato a ogni pezzo con esattamente un arco: almeno uno perché G è connesso, al più uno perché due archi da x allo stesso pezzo formerebbero un ciclo. Quindi gli archi incidenti su x sono k.</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">#E</span><span class="rel">=</span><span class="dx">#E<sub>1</sub> + … + #E<sub>k</sub> + k</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(#V<sub>1</sub> − 1) + … + (#V<sub>k</sub> − 1) + k</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">#V<sub>1</sub> + … + #V<sub>k</sub></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">#V − 1</span><span class="perche"><span class="rif">4</span></span></span></div>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Gli archi di G sono quelli dei pezzi più i k archi incidenti su x.</p>
+    <p><span class="rif">2</span>Ipotesi induttiva su ogni pezzo.</p>
+    <p><span class="rif">3</span>I k «−1» si cancellano con il «+ k».</p>
+    <p><span class="rif">4</span>I pezzi contengono tutti i vertici tranne x (alla lavagna: «vertice x»).</p>
+  </div>
+</div>
+<div class="dim">
+  <div class="dim-tit">Proposizione 2 (lavagna, pagina 19)</div>
+  <p class="enunciato">Sia G = (V, E) un grafo non orientato e connesso. Se #E = #V − 1, allora G è un albero.</p>
+  <p><b>Per assurdo</b>: supponiamo che G non sia un albero. Essendo connesso, deve contenere almeno un ciclo. Eliminiamo un arco del ciclo: il grafo resta connesso (i due estremi dell'arco tolto sono ancora collegati dal resto del ciclo). Ripetiamo finché non ci sono più cicli. Otteniamo un grafo connesso e senza cicli, cioè un albero, con gli stessi #V vertici e meno di #V − 1 archi (ne abbiamo tolto almeno uno). Ma per la Proposizione 1 un albero con #V vertici ha esattamente #V − 1 archi: <b>assurdo</b>.</p>
+  <p class="qed">□</p>
+</div>
+<div class="box def">
+  <span class="etichetta">Teorema (Proposizioni 1 + 2, lavagna, pagina 20)</span>
+  <p>Un grafo G = (V, E) non orientato e <strong>connesso</strong> è un albero <strong>se e solo se</strong> #E = #V − 1.</p>
+</div>
+<p>L'ipotesi «connesso» non si può togliere. Il controesempio della lavagna, pagina 20 (Figura 17): un quadrato più un lato staccato ha n = 6 vertici e m = 5 = n − 1 lati, ma non è un albero, perché non è connesso (e ha un ciclo).</p>
+<div class="figura">
+<svg viewBox="0 0 268 128" width="268" height="128" role="img" aria-label="controesempio" font-family="system-ui, sans-serif"><path d="M44 29 L84 29" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M99 44 L99 84" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M84 99 L44 99" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M29 84 L29 44" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M184 64 L224 64" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="29" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="99" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="99" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="99" cy="99" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="99" y="104" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="29" cy="99" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="104" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="169" cy="64" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="169" y="69" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="239" cy="64" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="239" y="69" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text></svg>
+<div class="didascalia"><b>Figura 17.</b> Lavagna, pagina 20: 6 vertici, 5 lati, non connesso. Non è un albero.</div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Albero = grafo non orientato, connesso, senza cicli = un solo cammino tra ogni coppia di vertici. Foresta = insieme di alberi.</li>
+    <li>Un albero con n vertici ha n − 1 archi; un grafo connesso con n − 1 archi è un albero.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="ricoprente"><span class="num">9</span>L'albero ricoprente</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione di albero di supporto o ricoprente (lavagna del 7 novembre, pagine 21 e 22), anche questa chiesta spesso allo scritto.</p>
+<div class="box def">
+  <span class="etichetta">Albero di supporto o ricoprente (lavagna, pagina 22)</span>
+  <p>Dato G = (V, E) grafo non orientato connesso, un <strong>albero ricoprente</strong> di G (in inglese <em>spanning tree</em>) è un albero G′ = (V′, E′) con <strong>V′ = V</strong> ed <strong>E′ ⊆ E</strong>.</p>
+</div>
+<p>In parole: si tengono <em>tutti</em> i vertici e solo alcuni archi, abbastanza per restare connessi ma senza formare cicli. Per il teorema della sezione 8 gli archi tenuti sono esattamente n − 1. Un grafo può avere molti alberi ricoprenti diversi (Figura 18).</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a)</div><svg viewBox="0 0 258.8 182" width="258.8" height="182" role="img" aria-label="Il grafo non orientato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M35.7 81.3 L75.9 36.7" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M35.7 100.7 L75.9 145.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M84.6 40 L84.6 142" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M97.6 27 L161.2 27" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M92.1 37.7 L166.7 144.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M97.6 155 L161.2 155" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M182.9 36.7 L223.1 81.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M223.1 100.7 L182.9 145.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><circle cx="27" cy="91" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="27" y="96" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="84.6" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="84.6" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="84.6" cy="155" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="84.6" y="160" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="174.2" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="174.2" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="231.8" cy="91" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="231.8" y="96" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="174.2" cy="155" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="174.2" y="160" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(b)</div><svg viewBox="0 0 258.8 182" width="258.8" height="182" role="img" aria-label="Il grafo non orientato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M35.7 81.3 L75.9 36.7" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M35.7 100.7 L75.9 145.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M84.6 40 L84.6 142" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M97.6 27 L161.2 27" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M92.1 37.7 L166.7 144.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M97.6 155 L161.2 155" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M182.9 36.7 L223.1 81.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M223.1 100.7 L182.9 145.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="27" cy="91" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="27" y="96" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="84.6" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="84.6" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="84.6" cy="155" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="84.6" y="160" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="174.2" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="174.2" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="231.8" cy="91" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="231.8" y="96" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="174.2" cy="155" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="174.2" y="160" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(c)</div><svg viewBox="0 0 258.8 182" width="258.8" height="182" role="img" aria-label="Il grafo non orientato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M35.7 81.3 L75.9 36.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M35.7 100.7 L75.9 145.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M84.6 40 L84.6 142" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M97.6 27 L161.2 27" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M92.1 37.7 L166.7 144.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M97.6 155 L161.2 155" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M182.9 36.7 L223.1 81.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M223.1 100.7 L182.9 145.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><circle cx="27" cy="91" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="27" y="96" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="84.6" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="84.6" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="84.6" cy="155" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="84.6" y="160" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="174.2" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="174.2" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="231.8" cy="91" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="231.8" y="96" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="174.2" cy="155" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="174.2" y="160" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div></div>
+<div class="didascalia"><b>Figura 18.</b> Lavagna, pagina 21: tre alberi ricoprenti diversi dello stesso grafo (in verde gli archi tenuti). Ognuno ha i 6 vertici e 5 lati.</div>
+</div>
+<p>Esiste sempre un albero ricoprente? Solo se il grafo è <strong>connesso</strong>: un albero è connesso, e se G non lo è nessun suo sottografo con tutti i vertici può esserlo. Se invece G è connesso, l'albero c'è sempre: basta togliere archi dai cicli finché ce ne sono, come nella Proposizione 2. (Le due visite delle prossime sezioni ne costruiscono uno direttamente.)</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Albero ricoprente di G connesso: un albero con tutti i vertici di G e una parte dei suoi archi (n − 1).</li>
+    <li>Esiste se e solo se G è connesso. Di solito ce ne sono molti.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="bfs"><span class="num">10</span>La visita in ampiezza</h2>
+<p class="in-questa"><b>In questa sezione:</b> la visita in ampiezza (breadth-first search) di un grafo (lavagna del 7 novembre, pagine 24–26, e Codice 10.1): l'idea, il codice riga per riga, l'esempio della lavagna, e un riquadro per seguirla passo per passo.</p>
+<p>Visitare un grafo vuol dire raggiungere tutti i vertici partendo da uno, seguendo gli archi. Rispetto agli alberi c'è una difficoltà nuova: i cicli. Si può arrivare allo stesso vertice da più strade, e bisogna ricordarsi di chi è già stato raggiunto, per non girare in tondo. Per questo i vertici si <strong>marcano</strong>.</p>
+<p>L'idea della visita in ampiezza (lavagna, pagina 24):</p>
+<ul>
+  <li>si inizia visitando un vertice s;</li>
+  <li>si visitano i vertici adiacenti a s;</li>
+  <li>si visitano i vertici adiacenti ai vertici adiacenti a s, non ancora visitati;</li>
+  <li>… e così via, a cerchi sempre più larghi.</li>
+</ul>
+<p>Sul grafo della Figura 2 da A si ottiene A, B, C, D, F, E: prima A, poi i suoi vicini B e C, poi i vicini di B (D e F), infine E. Da E: E, D, F, B, C, A (alla lavagna l'elenco si ferma a C: manca A, che si raggiunge da B).</p>
+<p class="titolo-codice">Codice 10.1 delle slide (lavagna, pagina 25)</p>
+<pre class="pseudo"><b>ALGORITMO</b> visitaInAmpiezza(grafo G = (V, E), vertice s) → albero
+  C ← coda vuota
+  T ← albero formato dal solo vertice s
+  marca s come raggiunto
+  C.enqueue(s)
+  <b>WHILE NOT</b> C.isEmpty() <b>DO</b>
+    u ← C.dequeue()
+    <b>FOREACH</b> (u, v) ∈ E <b>DO</b>
+      <b>IF</b> v non è marcato come raggiunto <b>THEN</b>
+        aggiungi il vertice v e l'arco (u, v) a T
+        marca v come raggiunto
+        C.enqueue(v)
+  <b>RETURN</b> T</pre>
+<ul>
+  <li>La <strong>coda</strong> C contiene i vertici già raggiunti ma di cui non si sono ancora guardati gli archi. Essendo una coda, li restituisce nell'ordine in cui sono arrivati: prima tutti quelli a distanza 1 da s, poi quelli a distanza 2, e così via. È lo stesso schema della visita in ampiezza degli alberi binari.</li>
+  <li>Un vertice viene marcato <em>quando entra</em> in coda: così non entra mai due volte.</li>
+  <li><strong>T</strong> è un albero: ogni volta che si raggiunge un vertice nuovo v, si aggiungono v e l'arco (u, v) da cui lo si è raggiunto. Ogni vertice raggiunto, tranne s, entra in T con un solo arco: per il teorema della sezione 8, T è un albero. Le slide: la visita è di «un grafo non orientato connesso» e costruisce «un albero ricoprente ottenuto selezionando gli archi secondo l'ordine della visita».</li>
+  <li>L'ordine degli archi di u nel FOREACH è quello della lista di adiacenza: negli esempi, in ordine crescente (o alfabetico).</li>
+</ul>
+<p>L'esempio della lavagna, pagina 26, parte dal vertice 1 (Figura 19).</p>
+<div class="figura">
+<svg viewBox="0 0 238 328" width="238" height="328" role="img" aria-label="Il grafo della visita (lavagna del 7 novembre, pagina 26)" font-family="system-ui, sans-serif"><path d="M39.6 108.4 L108.4 39.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M44 119 L104 119" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M29 134 L29 194" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M134 29 L194 29" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M119 44 L119 104" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M129.6 39.6 L198.4 108.4" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M209 44 L209 104" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M134 119 L194 119" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M198.4 129.6 L129.6 198.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M209 134 L209 194" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M44 209 L104 209" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M35.7 222.4 L67.3 285.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M112.3 222.4 L80.7 285.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M209 224 L209 284" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><circle cx="29" cy="119" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="29" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="41.8" cy="106.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="41.8" y="109.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">1</text><circle cx="119" cy="29" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="131.8" cy="16.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="131.8" y="19.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">2</text><circle cx="209" cy="29" r="15" class="r-viola" fill="#f1eafc" stroke="#6d3fc0" stroke-width="1.6"/><text x="209" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="221.8" cy="16.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="19.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">5</text><circle cx="119" cy="119" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="131.8" cy="106.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="131.8" y="109.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">3</text><circle cx="209" cy="119" r="15" class="r-viola" fill="#f1eafc" stroke="#6d3fc0" stroke-width="1.6"/><text x="209" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="221.8" cy="106.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="109.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">6</text><circle cx="29" cy="209" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="214" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="41.8" cy="196.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="41.8" y="199.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">4</text><circle cx="119" cy="209" r="15" class="r-viola" fill="#f1eafc" stroke="#6d3fc0" stroke-width="1.6"/><text x="119" y="214" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="131.8" cy="196.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="131.8" y="199.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">7</text><circle cx="74" cy="299" r="15" class="r-viola" fill="#f1eafc" stroke="#6d3fc0" stroke-width="1.6"/><text x="74" y="304" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="86.8" cy="286.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="86.8" y="289.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">8</text><circle cx="209" cy="209" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="209" y="214" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="221.8" cy="196.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="199.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">9</text><circle cx="209" cy="299" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="209" y="304" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="221.8" cy="286.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="289.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">10</text></svg>
+<div class="didascalia"><b>Figura 19.</b> Lavagna, pagina 26: la visita in ampiezza da 1. Il numero viola è l'ordine in cui i vertici vengono raggiunti: 1, 2, 4, 6, 3, 5, 7, 8, 9, 10. I colori, come alla lavagna, sono i «cerchi»: 1 (giallo); a distanza 1 i vertici 2, 4, 6 (azzurri); a distanza 2 i vertici 3, 5, 7, 8 (viola); poi 9 (arancione) e 10 (verde). In verde gli archi dell'albero T.</div>
+</div>
+<div class="widget" id="w-vi">
+  <h4>Le visite di un grafo, passo per passo</h4>
+  <div id="vi-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Visita in ampiezza: coda; si marca s e lo si mette in coda; finché la coda non è vuota, si estrae u e si mettono in coda (marcandoli) i vicini non ancora marcati.</li>
+    <li>Visita a cerchi: prima i vicini di s, poi i vicini dei vicini… Costruisce un albero ricoprente T.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="dfs"><span class="num">11</span>La visita in profondità</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'altra visita, dal Codice 10.2 delle slide (alla lavagna arriva con la lezione successiva): invece di allargarsi a cerchi, scende il più lontano possibile, con la ricorsione.</p>
+<p class="titolo-codice">Codice 10.2 delle slide</p>
+<pre class="pseudo"><b>ALGORITMO</b> visitaInProfondità(grafo G = (V, E), vertice s) → albero
+  T ← albero formato dal solo vertice s
+  visitaRicorsiva(G, s, T)
+  <b>RETURN</b> T
+
+<b>PROCEDURA</b> visitaRicorsiva(grafo G = (V, E), vertice u, albero T)
+  marca u come visitato
+  <b>FOREACH</b> (u, v) ∈ E <b>DO</b>
+    <b>IF</b> v non è marcato come visitato <b>THEN</b>
+      aggiungi il vertice v e l'arco (u, v) a T
+      visitaRicorsiva(G, v, T)</pre>
+<p>Appena si trova un vicino non ancora visitato, ci si «tuffa» dentro con una chiamata ricorsiva, e si torna indietro solo quando da lì non si può più andare avanti. La pila delle chiamate fa il lavoro che nella visita in ampiezza fa la coda (come per gli alberi binari: coda → ampiezza, pila → profondità). Anche questa visita costruisce un albero ricoprente.</p>
+<div class="figura">
+<svg viewBox="0 0 238 328" width="238" height="328" role="img" aria-label="Il grafo della visita (lavagna del 7 novembre, pagina 26)" font-family="system-ui, sans-serif"><path d="M39.6 108.4 L108.4 39.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M44 119 L104 119" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M29 134 L29 194" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M134 29 L194 29" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M119 44 L119 104" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M129.6 39.6 L198.4 108.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M209 44 L209 104" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M134 119 L194 119" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M198.4 129.6 L129.6 198.4" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M209 134 L209 194" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M44 209 L104 209" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M35.7 222.4 L67.3 285.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M112.3 222.4 L80.7 285.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M209 224 L209 284" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><circle cx="29" cy="119" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="29" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="41.8" cy="106.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="41.8" y="109.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">1</text><circle cx="119" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="131.8" cy="16.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="131.8" y="19.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">2</text><circle cx="209" cy="29" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="209" y="34" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="221.8" cy="16.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="19.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">3</text><circle cx="119" cy="119" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="131.8" cy="106.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="131.8" y="109.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">5</text><circle cx="209" cy="119" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="209" y="124" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="221.8" cy="106.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="109.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">4</text><circle cx="29" cy="209" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="29" y="214" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="41.8" cy="196.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="41.8" y="199.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">7</text><circle cx="119" cy="209" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="119" y="214" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="131.8" cy="196.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="131.8" y="199.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">6</text><circle cx="74" cy="299" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="74" y="304" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="86.8" cy="286.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="86.8" y="289.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">8</text><circle cx="209" cy="209" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="209" y="214" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="221.8" cy="196.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="199.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">9</text><circle cx="209" cy="299" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="209" y="304" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="221.8" cy="286.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="221.8" y="289.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">10</text></svg>
+<div class="didascalia"><b>Figura 20.</b> La visita in profondità da 1 sullo stesso grafo della Figura 19 (esempio nostro, non della lavagna). Ordine: 1, 2, 3, 5, 4, 7, 6, 8, 9, 10. Da 1 si scende a 2, poi a 3, poi a 5, poi a 4 (i cui vicini sono già tutti visitati: si torna a 5), poi a 7, 6, 8; tornati a 5 si va a 9 e infine a 10. L'albero (in verde) è molto più «alto» di quello della visita in ampiezza.</div>
+</div>
+<p>Nel riquadro della sezione 10 puoi scegliere «in profondità» e seguirla passo per passo, con la pila delle chiamate.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Visita in profondità: visitaRicorsiva(u) marca u e, per ogni vicino v non visitato, aggiunge (u, v) a T e chiama visitaRicorsiva(v).</li>
+    <li>Scende il più possibile prima di tornare indietro; costruisce anche lei un albero ricoprente.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="riassunto"><span class="num">12</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Grafo</b> G = (V, E), orientato o no; n vertici, m archi. Grado δ, δ<sub>in</sub>, δ<sub>out</sub>; Σ δ = 2m.</li>
+    <li><b>Cammino</b> (segue i versi), ciclo; <b>catena</b> (ignora i versi), circuito. <b>Connesso</b>: catena tra ogni coppia; <b>fortemente connesso</b>: cammino tra ogni coppia. Sottografo, indotto, componente fortemente connessa.</li>
+    <li><b>Hamiltoniano</b>: ogni vertice una volta. <b>Euleriano</b>: ogni arco una volta; esiste se e solo se tutti i gradi sono pari.</li>
+    <li><b>Rappresentazioni</b>: lista di archi, liste di adiacenza, liste di incidenza Θ(n + m); matrice di adiacenza Θ(n<sup>2</sup>) (M<sup>k</sup> e i cammini di lunghezza k); matrice di incidenza O(n m).</li>
+    <li><b>Albero</b>: non orientato, connesso, senza cicli; n − 1 archi; connesso con n − 1 archi ⇒ albero. <b>Albero ricoprente</b>: tutti i vertici, n − 1 archi di G; esiste se e solo se G è connesso.</li>
+    <li><b>Visite</b>: in ampiezza con una coda, in profondità con la ricorsione; marcano i vertici e costruiscono un albero ricoprente.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>L'esercizio 3 dello scritto è quasi sempre sui grafi. Domande frequenti: «Fornite la definizione di albero (nell'ambito dei grafi)», «Definite cosa è un albero ricoprente di G», «Esiste sempre un albero ricoprente?» (20 settembre 2024, 14 febbraio 2025). Le risposte sono nelle sezioni 8 e 9: scrivile con le parole esatte della definizione.</li>
+    <li>Nei problemi bisogna scegliere una rappresentazione e dire quanto costa: liste di adiacenza o matrice, con i costi della sezione 6.</li>
+    <li>Le visite sono la base degli algoritmi delle prossime lezioni (cammini minimi, albero ricoprente minimo).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="esercizi"><span class="num">13</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> il foglio di esercizi 8 («Grafi») e le domande teoriche dei temi d'esame. Prova prima da solo, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Temi d'esame: definizione di albero e di albero ricoprente</summary>
+  <p>(a) Fornite la definizione di albero (nell'ambito dei grafi). (b) Sia G = (V, E) un grafo non orientato. Definite cosa è un albero ricoprente di G. (c) Esiste sempre un albero ricoprente, o esistono grafi non orientati che ne sono privi? (20 settembre 2024; (a) e (b) anche il 14 febbraio 2025)</p>
+  <div class="soluzione">
+    <p><b>(a)</b> Un albero è un grafo non orientato, connesso e privo di cicli.</p>
+    <p><b>(b)</b> Un albero ricoprente di G è un albero G′ = (V′, E′) con V′ = V ed E′ ⊆ E: un sottografo di G che contiene tutti i vertici ed è un albero.</p>
+    <p><b>(c)</b> Non sempre: un albero è connesso, quindi se G non è connesso non ha alberi ricoprenti (per esempio due vertici senza lati). Se G è connesso un albero ricoprente esiste sempre: lo costruisce, per esempio, una visita in ampiezza; oppure si tolgono archi dai cicli finché non ce ne sono più.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.1: quanto è lungo, al massimo, il cammino più corto?</summary>
+  <p>In un grafo con n vertici esiste un cammino da x a y. Dare un limite superiore alla lunghezza del più corto cammino da x a y.</p>
+  <div class="soluzione">
+    <p><b>n − 1</b>. Il cammino più corto è semplice: se ripetesse un vertice, si potrebbe togliere il pezzo tra le due ripetizioni (un ciclo) e ottenere un cammino più corto. Un cammino semplice ha al più n vertici, quindi al più n − 1 archi. Il limite si raggiunge, per esempio, in una catena 1 → 2 → … → n, da 1 a n.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.2: M<sup>k</sup> e i cammini di lunghezza k</summary>
+  <p>Dimostrate che per ogni k ≥ 0, M<sup>k</sup>[i, j] = 1 se e solo se G contiene un cammino da v<sub>i</sub> a v<sub>j</sub> di k archi, con la potenza calcolata con OR e AND.</p>
+  <div class="soluzione">
+    <p>Per induzione su k.</p>
+    <p><b>Base k = 0</b>: M<sup>0</sup> è la matrice identità: M<sup>0</sup>[i, j] = 1 se e solo se i = j, e il cammino di 0 archi da v<sub>i</sub> a v<sub>j</sub> esiste se e solo se i = j (è il cammino fatto del solo v<sub>i</sub>).</p>
+    <p><b>Passo da k a k + 1</b>: M<sup>k+1</sup> = M<sup>k</sup> · M, quindi M<sup>k+1</sup>[i, j] = 1 se e solo se esiste h con M<sup>k</sup>[i, h] = 1 e M[h, j] = 1. Per ipotesi induttiva M<sup>k</sup>[i, h] = 1 vuol dire «c'è un cammino di k archi da v<sub>i</sub> a v<sub>h</sub>», e M[h, j] = 1 vuol dire «c'è l'arco (v<sub>h</sub>, v<sub>j</sub>)». Insieme: c'è un cammino di k + 1 archi da v<sub>i</sub> a v<sub>j</sub> che passa per v<sub>h</sub> come penultimo vertice. Viceversa, ogni cammino di k + 1 archi ha un penultimo vertice v<sub>h</sub>, e dà M<sup>k</sup>[i, h] = M[h, j] = 1.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.3: e con somma e prodotto normali?</summary>
+  <div class="soluzione">
+    <p>Con le operazioni usuali sugli interi, M<sup>k</sup>[i, j] è il <b>numero di cammini</b> di esattamente k archi da v<sub>i</sub> a v<sub>j</sub>. Stessa induzione: M<sup>k+1</sup>[i, j] = Σ<sub>h</sub> M<sup>k</sup>[i, h] · M[h, j], cioè, per ogni possibile penultimo vertice v<sub>h</sub> collegato a v<sub>j</sub>, il numero di cammini di k archi da v<sub>i</sub> a v<sub>h</sub>. Esempio (Figura 15): M<sup>2</sup>[1, 4] con gli interi vale 2, perché i cammini sono due: 1 → 2 → 4 e 1 → 3 → 4.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.4: la matrice della raggiungibilità</summary>
+  <p>Trovate una matrice N con N[i, j] = 1 se e solo se esiste un cammino (di qualsiasi lunghezza) da v<sub>i</sub> a v<sub>j</sub>.</p>
+  <div class="soluzione">
+    <p>Per l'esercizio 8.1, se c'è un cammino ce n'è uno di lunghezza al più n − 1. Quindi <b>N = M<sup>0</sup> OR M<sup>1</sup> OR … OR M<sup>n−1</sup></b>, elemento per elemento: N[i, j] = 1 se e solo se M<sup>k</sup>[i, j] = 1 per qualche k tra 0 e n − 1. (Se non si vuole contare il cammino di lunghezza 0 da un vertice a sé stesso, si parte da M<sup>1</sup>.) Costo con i prodotti fatti per definizione: n − 1 prodotti da Θ(n<sup>3</sup>), cioè O(n<sup>4</sup>).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.5: le componenti fortemente connesse</summary>
+  <div class="soluzione">
+    <p>v<sub>i</sub> e v<sub>j</sub> stanno nella stessa componente fortemente connessa se e solo se ognuno è raggiungibile dall'altro, cioè <b>N[i, j] = 1 e N[j, i] = 1</b>. Quindi i vertici della componente di v<sub>i</sub> sono i v<sub>j</sub> con N[i, j] = N[j, i] = 1: si guardano la riga i e la colonna i di N.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.6: la visita in profondità senza ricorsione</summary>
+  <div class="soluzione">
+    <p>Si usa una pila al posto della pila delle chiamate. Una versione semplice mette nella pila le coppie (u, v) degli archi da esaminare:</p>
+<pre class="pseudo"><b>ALGORITMO</b> visitaInProfonditàIterativa(grafo G = (V, E), vertice s) → albero
+  T ← albero formato dal solo vertice s
+  marca s come visitato
+  P ← pila vuota
+  <b>FOREACH</b> (s, v) ∈ E, in ordine inverso <b>DO</b> P.push((s, v))
+  <b>WHILE NOT</b> P.isEmpty() <b>DO</b>
+    (u, v) ← P.pop()
+    <b>IF</b> v non è marcato come visitato <b>THEN</b>
+      aggiungi il vertice v e l'arco (u, v) a T
+      marca v come visitato
+      <b>FOREACH</b> (v, w) ∈ E, in ordine inverso <b>DO</b> P.push((v, w))
+  <b>RETURN</b> T</pre>
+    <p>Gli archi si mettono in ordine inverso perché la pila restituisce per primo l'ultimo entrato: così il primo arco della lista di adiacenza è il primo a essere esaminato, come nella ricorsione, e l'ordine di visita è lo stesso del Codice 10.2. Un vertice si marca quando lo si visita (non quando entra in pila), perché può entrare nella pila più volte da archi diversi.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.7: le foreste</summary>
+  <p>Dimostrate che un grafo non orientato G con n vertici è una foresta di k alberi se e solo se ha n − k archi ed è privo di cicli.</p>
+  <div class="soluzione">
+    <p>(⇒) Se G è una foresta di k alberi con n<sub>1</sub>, …, n<sub>k</sub> vertici (n<sub>1</sub> + … + n<sub>k</sub> = n), per la Proposizione 1 l'albero i ha n<sub>i</sub> − 1 archi, e in tutto Σ (n<sub>i</sub> − 1) = n − k. E non ha cicli, perché nessun albero ne ha.</p>
+    <p>(⇐) Se G è privo di cicli, ognuno dei suoi pezzi connessi è un albero: G è una foresta, diciamo di k′ alberi. Per la parte (⇒) ha n − k′ archi; ma ne ha n − k, quindi k′ = k.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 8.8: tre alberi ricoprenti</summary>
+  <p>Individuate almeno tre alberi ricoprenti diversi per il grafo del foglio: vertici A, B, C, D, E, F; lati A–B, A–C, A–E, B–D, B–F, C–D, C–E, C–F, D–F, E–F.</p>
+  <div class="figura">
+<div class="affianco"><div><div class="nome-mat">il grafo</div><svg viewBox="0 0 289.6 178" width="289.6" height="178" role="img" aria-label="Il grafo dell'esercizio 8.8" font-family="system-ui, sans-serif"><path d="M40 151 L249.6 151" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M37 142.7 L91.4 97.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M33.7 139.9 L94.7 38.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M252.6 142.7 L198.2 97.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M255.9 139.9 L194.9 38.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 89 L175.2 89" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M101.4 76 L101.4 40" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M112 81.4 L177.6 34.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188.2 76 L188.2 40" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 27 L175.2 27" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="27" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="27" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="262.6" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="262.6" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101.4" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="188.2" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="101.4" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="188.2" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(a)</div><svg viewBox="0 0 289.6 178" width="289.6" height="178" role="img" aria-label="Il grafo dell'esercizio 8.8" font-family="system-ui, sans-serif"><path d="M40 151 L249.6 151" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M37 142.7 L91.4 97.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M33.7 139.9 L94.7 38.1" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M252.6 142.7 L198.2 97.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M255.9 139.9 L194.9 38.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 89 L175.2 89" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M101.4 76 L101.4 40" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M112 81.4 L177.6 34.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M188.2 76 L188.2 40" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 27 L175.2 27" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="27" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="27" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="262.6" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="262.6" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101.4" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="188.2" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="101.4" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="188.2" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(b)</div><svg viewBox="0 0 289.6 178" width="289.6" height="178" role="img" aria-label="Il grafo dell'esercizio 8.8" font-family="system-ui, sans-serif"><path d="M40 151 L249.6 151" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M37 142.7 L91.4 97.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M33.7 139.9 L94.7 38.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M252.6 142.7 L198.2 97.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M255.9 139.9 L194.9 38.1" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M114.4 89 L175.2 89" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M101.4 76 L101.4 40" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M112 81.4 L177.6 34.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188.2 76 L188.2 40" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 27 L175.2 27" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="27" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="27" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="262.6" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="262.6" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101.4" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="188.2" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="101.4" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="188.2" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(c)</div><svg viewBox="0 0 289.6 178" width="289.6" height="178" role="img" aria-label="Il grafo dell'esercizio 8.8" font-family="system-ui, sans-serif"><path d="M40 151 L249.6 151" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M37 142.7 L91.4 97.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M33.7 139.9 L94.7 38.1" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M252.6 142.7 L198.2 97.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M255.9 139.9 L194.9 38.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.4 89 L175.2 89" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M101.4 76 L101.4 40" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M112 81.4 L177.6 34.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188.2 76 L188.2 40" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><path d="M114.4 27 L175.2 27" fill="none" class="l-verde" stroke="#17803d" stroke-width="3"/><circle cx="27" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="27" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="262.6" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="262.6" y="156" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="101.4" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="188.2" cy="89" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="94" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="101.4" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="101.4" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="188.2" cy="27" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188.2" y="32" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div></div>
+  <div class="didascalia"><b>Figura 21.</b> Il grafo dell'esercizio 8.8 e tre suoi alberi ricoprenti (in verde): ognuno ha 6 vertici e 5 lati, è connesso e senza cicli.</div>
+  </div>
+  <div class="soluzione">
+    <p>(a) A–B, A–C, A–E, C–D, C–F. (b) A–B, B–D, B–F, C–D, C–E. (c) A–E, E–F, D–F, C–D, B–D. Un modo sistematico per trovarne uno: fare una visita in ampiezza o in profondità (puoi provarle nel riquadro della sezione 10 scegliendo questo grafo, con partenze diverse).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizi 8.9 e 8.10: cambiare rappresentazione, rovesciare un grafo</summary>
+  <div class="soluzione">
+    <p><b>8.9</b> Da lista di archi a liste di adiacenza: si crea un array di n liste vuote (Θ(n)); per ogni arco (u, v) si aggiunge v in testa alla lista di u (e, se il grafo non è orientato, u in testa alla lista di v): O(1) per arco. Totale <b>Θ(n + m)</b>. Per le liste di incidenza è uguale, ma nella lista di u si aggiunge l'indice dell'arco.</p>
+    <p><b>8.10</b> Grafo rovesciato G<sup>r</sup> (ogni arco (u, v) diventa (v, u)): si crea un array di n liste vuote e, per ogni vertice u e ogni v nella lista di u, si aggiunge u alla lista di v nella nuova struttura. Ogni arco si guarda una volta: <b>Θ(n + m)</b>. Per farlo senza creare una nuova struttura si possono staccare uno alla volta gli elementi delle liste e riattaccarli (spostando i puntatori) nelle liste giuste, ricordando da quale vertice si stava staccando: sempre Θ(n + m), senza nuova memoria per gli elementi.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 14 -->
+<h2 id="approfondimenti"><span class="num">14</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> due anticipazioni che non sono ancora alla lavagna. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: quanto costano le visite</summary>
+  <div class="soluzione">
+    <p>Con le liste di adiacenza ogni vertice entra in coda (o viene visitato) una volta, e la lista di ogni vertice si scorre una volta: in tutto Θ(n) per i vertici e Θ(m) per gli archi (2m nel non orientato), cioè <b>Θ(n + m)</b>. Con la matrice di adiacenza, per trovare i vicini di u bisogna scorrere tutta la riga di u, n caselle: <b>Θ(n<sup>2</sup>)</b>. Per grafi con pochi archi le liste sono molto meglio.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: la visita in ampiezza trova i cammini più corti</summary>
+  <div class="soluzione">
+    <p>Nella visita in ampiezza i vertici escono dalla coda in ordine di distanza da s (il numero minimo di archi per raggiungerli). Ne segue che, nell'albero T, il cammino da s a ogni vertice v è un cammino con il minimo numero di archi da s a v nel grafo. Nella Figura 19, per esempio, 10 è a distanza 4 da 1 (1 → 2 → 5 → 9 → 10), ed è proprio il cammino nell'albero. Quando gli archi hanno dei pesi diversi non basta più: servirà l'algoritmo di Dijkstra.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="17-union-find.html">← Pacco 17: union-find</a>
+  <a href="index.html">Tutti i pacchi</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- alberi.js
+// Alberi binari: costruzione, disegno, visite (pacco 12).
+// Un albero è { radice: id|null, nodi: { id: { v: "8", sx: id|null, dx: id|null } } }.
+function escA(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1a(v) { return Math.round(v * 10) / 10; }
+
+// "8(14(22,12(1,3)),11(,5))": etichetta, poi tra parentesi il sottoalbero sinistro e il destro (vuoto = niente)
+function alberoDa(testo) {
+  var s = testo.replace(/\s+/g, ""), k = 0, n = 0, nodi = {};
+  function nodo() {
+    var et = "";
+    while (k < s.length && "(),".indexOf(s[k]) < 0) et += s[k++];
+    if (et === "") return null;
+    var id = "a" + (n++);
+    nodi[id] = { v: et, sx: null, dx: null };
+    if (s[k] === "(") {
+      k++;
+      nodi[id].sx = nodo();
+      if (s[k] !== ",") throw new Error("manca la virgola in " + testo);
+      k++;
+      nodi[id].dx = nodo();
+      if (s[k] !== ")") throw new Error("manca la parentesi in " + testo);
+      k++;
+    }
+    return id;
+  }
+  var r = nodo();
+  return { radice: r, nodi: nodi };
+}
+// vettore posizionale: radice in A[0], figli di A[i] in A[2i+1] e A[2i+2]
+function alberoDaVettore(A) {
+  var nodi = {};
+  for (var i = 0; i < A.length; i++) nodi["p" + i] = { v: String(A[i]), sx: 2 * i + 1 < A.length ? "p" + (2 * i + 1) : null, dx: 2 * i + 2 < A.length ? "p" + (2 * i + 2) : null, pos: i };
+  return { radice: A.length ? "p0" : null, nodi: nodi };
+}
+function altezza(T, id) {
+  if (id === undefined) id = T.radice;
+  if (id === null) return -1;
+  return 1 + Math.max(altezza(T, T.nodi[id].sx), altezza(T, T.nodi[id].dx));
+}
+function contaNodi(T, id) { if (id === undefined) id = T.radice; if (id === null) return 0; return 1 + contaNodi(T, T.nodi[id].sx) + contaNodi(T, T.nodi[id].dx); }
+
+// posizioni: a profondità d il nodo occupa uno dei 2^d «posti» del livello (come nel vettore posizionale)
+function disponi(T, opz) {
+  opz = opz || {};
+  var h = Math.max(0, altezza(T)), slot = opz.slot || 46, dy = opz.dy || 62;
+  var W = Math.max(opz.minW || 0, Math.pow(2, h) * slot + 2 * (opz.margine || 14));
+  var pos = {}, m = opz.margine || 14, top = opz.top || 30;
+  function vai(id, d, k) {
+    if (id === null) return;
+    var largh = (W - 2 * m) / Math.pow(2, d);
+    pos[id] = { x: m + (k + 0.5) * largh, y: top + d * dy, d: d, k: k };
+    vai(T.nodi[id].sx, d + 1, 2 * k);
+    vai(T.nodi[id].dx, d + 1, 2 * k + 1);
+  }
+  vai(T.radice, 0, 0);
+  return { pos: pos, W: W, H: top + h * dy + (opz.basso || 30), h: h };
+}
+
+var STILE_NODO = {
+  normale: ["r-nodo", "#ffffff", "#9aa3b2", "t-testo", "#1f2328"],
+  visitato: ["r-verde", "#e6f5ea", "#17803d", "t-testo", "#1f2328"],
+  corrente: ["r-giallo", "#fff1a8", "#b4500f", "t-testo", "#1f2328"],
+  inS: ["r-blu", "#e8edfc", "#2f52c4", "t-testo", "#1f2328"],
+  spento: ["r-nodo", "#ffffff", "#9aa3b2", "t-muted", "#5b6270"],
+  rosso: ["r-rosso", "#fdecea", "#b42318", "t-testo", "#1f2328"],
+  viola: ["r-viola", "#f1eafc", "#6d3fc0", "t-testo", "#1f2328"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f", "t-testo", "#1f2328"]
+};
+// opz: { stato: {id: chiave di STILE_NODO}, ordine: {id: numero}, nulls: true, nullStato: {"id:sx": stile},
+//        etichette: [{id, testo, lato: "sx"|"dx"|"sopra"|"sotto", col}], gusci: [{id, testo, col, lato}],
+//        livelli: true, indici: true (mostra la posizione nel vettore), giro: {punti, fino, tacche}, aria }
+function svgAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, R = opz.r || 17, s = [], k;
+  var extraSx = opz.livelli ? 64 : 0, W = L.W + extraSx + (opz.extraDx || 0), H = L.H + (opz.nulls ? 34 : 0) + (opz.extraBasso || 0);
+  s.push('<svg viewBox="0 0 ' + r1a(W) + ' ' + r1a(H) + '" width="' + r1a(W) + '" height="' + r1a(H) + '" role="img" aria-label="' + escA(opz.aria || "Un albero binario") + '" font-family="system-ui, sans-serif">');
+  s.push('<g transform="translate(' + extraSx + ',0)">');
+  // gusci (sottoalberi evidenziati)
+  (opz.gusci || []).forEach(function (g) {
+    var ids = [];
+    (function raccogli(id) { if (id === null) return; ids.push(id); raccogli(T.nodi[id].sx); raccogli(T.nodi[id].dx); })(g.id);
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    ids.forEach(function (i) { x0 = Math.min(x0, pos[i].x); x1 = Math.max(x1, pos[i].x); y0 = Math.min(y0, pos[i].y); y1 = Math.max(y1, pos[i].y); });
+    var pad = R + 9 + (g.pad || 0), c = STILE_NODO[g.col || "viola"];
+    s.push('<rect x="' + r1a(x0 - pad) + '" y="' + r1a(y0 - pad) + '" width="' + r1a(x1 - x0 + 2 * pad) + '" height="' + r1a(y1 - y0 + 2 * pad) + '" rx="' + r1a(pad) + '" class="' + c[0] + '" fill="' + c[1] + '" fill-opacity="0.55" stroke="' + c[2] + '" stroke-width="1.4" stroke-dasharray="5 4"/>');
+    if (g.testo) {
+      var colT = g.col === "arancio" ? ["t-arancio", "#b4500f"] : g.col === "inS" ? ["t-blu", "#2f52c4"] : ["t-viola", "#6d3fc0"];
+      String(g.testo).split("\n").forEach(function (riga, j) {
+        var tx = g.lato === "destra" ? x1 + pad + 6 : x0 - pad + 4, ty = g.lato === "destra" ? y1 - 4 + j * 15 : y1 + pad + 15 + j * 15;
+        s.push('<text x="' + r1a(tx) + '" y="' + r1a(ty) + '" font-size="12.5" font-weight="600" text-anchor="start" class="' + colT[0] + '" fill="' + colT[1] + '">' + riga + '</text>');
+      });
+    }
+  });
+  // livelli
+  if (opz.livelli) {
+    for (var d = 0; d <= L.h; d++) {
+      var yy = (opz.top || 30) + d * (opz.dy || 62);
+      s.push('<text x="' + (-extraSx + 6) + '" y="' + (yy + 4) + '" font-size="12" class="t-muted" fill="#5b6270">livello ' + d + '</text>');
+      s.push('<line x1="' + (-extraSx + 58) + '" y1="' + yy + '" x2="' + (L.W - 6) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/>');
+    }
+  }
+  // archi
+  for (k in pos) {
+    ["sx", "dx"].forEach(function (lato) {
+      var c = T.nodi[k][lato];
+      if (c !== null && pos[c]) {
+        var a = pos[k], b = pos[c], dx = b.x - a.x, dyy = b.y - a.y, l = Math.sqrt(dx * dx + dyy * dyy);
+        s.push('<line x1="' + r1a(a.x + dx / l * R) + '" y1="' + r1a(a.y + dyy / l * R) + '" x2="' + r1a(b.x - dx / l * R) + '" y2="' + r1a(b.y - dyy / l * R) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      } else if (opz.nulls) {
+        var a2 = pos[k], ox = lato === "sx" ? -1 : 1, nx = a2.x + ox * 16, ny = a2.y + 40;
+        var st = (opz.nullStato || {})[k + ":" + lato];
+        var cc = st ? STILE_NODO[st] : STILE_NODO.spento;
+        s.push('<line x1="' + r1a(a2.x + ox * R * 0.6) + '" y1="' + r1a(a2.y + R * 0.8) + '" x2="' + r1a(nx) + '" y2="' + r1a(ny - 7) + '" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="3 3"/>');
+        s.push('<rect x="' + r1a(nx - 13) + '" y="' + r1a(ny - 7) + '" width="26" height="14" rx="3" class="' + cc[0] + '" fill="' + cc[1] + '" stroke="' + cc[2] + '" stroke-width="1"/>');
+        s.push('<text x="' + r1a(nx) + '" y="' + r1a(ny + 3.5) + '" font-size="9.5" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      }
+    });
+  }
+  // giro intorno all'albero
+  if (opz.giro) {
+    var G = opz.giro, pts = G.punti, fino = G.fino === undefined ? pts.length - 1 : G.fino;
+    var dTutto = "M" + pts.map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+    s.push('<path d="' + dTutto + '" class="l-giro" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"/>');
+    if (fino > 0) {
+      var dFatto = "M" + pts.slice(0, fino + 1).map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+      s.push('<path d="' + dFatto + '" class="l-giro-fatto" fill="none" stroke="#6d3fc0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>');
+    }
+    (G.tacche || []).forEach(function (t) {
+      var col = t.tipo === "pre" ? ["t-blu", "#2f52c4"] : t.tipo === "in" ? ["t-verde", "#17803d"] : ["t-arancio", "#b4500f"];
+      s.push('<circle cx="' + r1a(t.x) + '" cy="' + r1a(t.y) + '" r="' + (t.fatta ? 4.2 : 3.2) + '" class="' + col[0] + '" fill="' + (t.fatta ? col[1] : "none") + '" stroke="' + col[1] + '" stroke-width="1.4"' + (t.fatta ? "" : ' fill-opacity="0"') + '/>');
+    });
+    if (G.punto) s.push('<circle cx="' + r1a(G.punto.x) + '" cy="' + r1a(G.punto.y) + '" r="6.5" class="t-viola" fill="#6d3fc0"/>');
+  }
+  // nodi
+  for (k in pos) {
+    var p = pos[k], st2 = STILE_NODO[(opz.stato || {})[k] || "normale"];
+    s.push('<circle cx="' + r1a(p.x) + '" cy="' + r1a(p.y) + '" r="' + R + '" class="' + st2[0] + '" fill="' + st2[1] + '" stroke="' + st2[2] + '" stroke-width="1.6"/>');
+    var et = T.nodi[k].v, fs = et.length > 2 ? 12.5 : 15;
+    s.push('<text x="' + r1a(p.x) + '" y="' + r1a(p.y + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="' + st2[3] + '" fill="' + st2[4] + '">' + escA(et) + '</text>');
+    if (opz.ordine && opz.ordine[k] !== undefined) {
+      s.push('<circle cx="' + r1a(p.x + R * 0.85) + '" cy="' + r1a(p.y - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1a(p.x + R * 0.85) + '" y="' + r1a(p.y - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.ordine[k] + '</text>');
+    }
+    if (opz.indici && T.nodi[k].pos !== undefined) {
+      s.push('<text x="' + r1a(p.x - R - 3) + '" y="' + r1a(p.y - R + 4) + '" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">' + T.nodi[k].pos + '</text>');
+    }
+  }
+  // etichette con freccia
+  (opz.etichette || []).forEach(function (e) {
+    var p = pos[e.id], col = e.col === "arancio" ? ["t-arancio", "#b4500f"] : e.col === "verde" ? ["t-verde", "#17803d"] : e.col === "rosso" ? ["t-rosso", "#b42318"] : e.col === "viola" ? ["t-viola", "#6d3fc0"] : ["t-blu", "#2f52c4"];
+    var lx, ly, ax, ay, anc;
+    if (e.lato === "sx") { lx = p.x - R - 44; ly = p.y + 4; ax = p.x - R - 3; ay = p.y; anc = "end"; }
+    else if (e.lato === "sopra") { lx = p.x + R + 14; ly = p.y - R - 6; ax = p.x + R * 0.6; ay = p.y - R * 0.8; anc = "start"; }
+    else if (e.lato === "sotto") { lx = p.x; ly = p.y + R + 30; ax = p.x; ay = p.y + R + 3; anc = "middle"; }
+    else { lx = p.x + R + 44; ly = p.y + 4; ax = p.x + R + 3; ay = p.y; anc = "start"; }
+    var righe = String(e.testo).split("\n");
+    righe.forEach(function (rg, j) { s.push('<text x="' + r1a(lx + (anc === "start" ? 4 : anc === "end" ? -4 : 0)) + '" y="' + r1a(ly + j * 14 + (e.lato === "sotto" ? 0 : -(righe.length - 1) * 7)) + '" font-size="12.5" font-weight="600" text-anchor="' + anc + '" class="' + col[0] + '" fill="' + col[1] + '">' + rg + '</text>'); });
+    var sx0 = e.lato === "sx" ? lx : e.lato === "sotto" ? lx : lx, sy0 = e.lato === "sotto" ? ly - 12 : e.lato === "sopra" ? ly - 4 : ly - 4;
+    if (e.lato === "sopra") sx0 = lx;
+    var ang = Math.atan2(ay - sy0, ax - sx0);
+    s.push('<line x1="' + r1a(sx0) + '" y1="' + r1a(sy0) + '" x2="' + r1a(ax - 4 * Math.cos(ang)) + '" y2="' + r1a(ay - 4 * Math.sin(ang)) + '" class="' + col[0].replace("t-", "l-") + '" stroke="' + col[1] + '" stroke-width="1.3"/>');
+    s.push('<path d="M' + r1a(ax) + ' ' + r1a(ay) + ' l' + r1a(-8 * Math.cos(ang - 0.42)) + ' ' + r1a(-8 * Math.sin(ang - 0.42)) + ' l' + r1a(8 * Math.cos(ang - 0.42) - 8 * Math.cos(ang + 0.42)) + ' ' + r1a(8 * Math.sin(ang - 0.42) - 8 * Math.sin(ang + 0.42)) + ' z" class="' + col[0] + '" fill="' + col[1] + '"/>');
+  });
+  s.push('</g></svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- visite
+function preordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; out.push(id); preordine(T, T.nodi[id].sx, out); preordine(T, T.nodi[id].dx, out); return out; }
+function inordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; inordine(T, T.nodi[id].sx, out); out.push(id); inordine(T, T.nodi[id].dx, out); return out; }
+function postordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; postordine(T, T.nodi[id].sx, out); postordine(T, T.nodi[id].dx, out); out.push(id); return out; }
+function ampiezza(T) { var out = [], C = T.radice === null ? [] : [T.radice]; while (C.length) { var n = C.shift(); out.push(n); if (T.nodi[n].sx !== null) C.push(T.nodi[n].sx); if (T.nodi[n].dx !== null) C.push(T.nodi[n].dx); } return out; }
+function valori(T, ids) { return ids.map(function (id) { return T.nodi[id].v; }); }
+
+// Il giro intorno all'albero: un percorso che parte a sinistra della radice e gira in senso antiorario,
+// con una tacca a sinistra (pre), sotto (in) e a destra (post) di ogni nodo.
+function giroAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, d = (opz.r || 17) + 9, pts = [], tacche = [];
+  function punto(x, y, tipo, id) { pts.push({ x: x, y: y }); if (tipo) tacche.push({ x: x, y: y, tipo: tipo, id: id, i: pts.length - 1 }); }
+  function giro(id) {
+    var p = pos[id], n = T.nodi[id];
+    punto(p.x - d, p.y, "pre", id);
+    if (n.sx !== null) giro(n.sx);
+    else punto(p.x - d * 0.75, p.y + d * 0.75);
+    punto(p.x, p.y + d, "in", id);
+    if (n.dx !== null) giro(n.dx);
+    else punto(p.x + d * 0.75, p.y + d * 0.75);
+    punto(p.x + d, p.y, "post", id);
+  }
+  if (T.radice !== null) {
+    var r = pos[T.radice];
+    punto(r.x - d * 0.6, r.y - d * 1.25);
+    giro(T.radice);
+    punto(r.x + d * 0.6, r.y - d * 1.25);
+  }
+  return { punti: pts, tacche: tacche };
+}
+
+// Eventi delle visite iterative (con la coda o con la pila), come nel codice della lavagna dell'anno scorso.
+// Ogni evento: { riga, testo, S: [id|null...], corrente, visitati: [id...], nullStato }
+var CODICE_VISITE = {
+  coda: ["<b>ALGORITMO</b> visitaInAmpiezza(AlberoBinario r)", "  C ← coda vuota", "  C.enqueue(r)", "  <b>WHILE NOT</b> (C.isEmpty()) <b>DO</b>", "    n ← C.dequeue()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      C.enqueue(n.sx)", "      C.enqueue(n.dx)"],
+  pila: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  P ← pila vuota", "  P.push(r)", "  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>", "    n ← P.pop()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      P.push(n.dx)", "      P.push(n.sx)"]
+};
+function eventiVisita(T, tipo) {
+  var ev = [], S = [], vis = [], cor = null, X = tipo === "coda" ? "C" : "P";
+  var ins = tipo === "coda" ? "C.enqueue" : "P.push", est = tipo === "coda" ? "C.dequeue()" : "P.pop()";
+  function nome(id) { return id === null ? "null" : "il nodo " + escA(T.nodi[id].v); }
+  function scatta(riga, testo) { ev.push({ riga: riga, testo: testo, S: S.slice(), corrente: cor, visitati: vis.slice() }); }
+  scatta(0, "Chiamata della visita sulla radice, " + nome(T.radice) + ".");
+  scatta(1, (tipo === "coda" ? "Si crea una coda vuota C." : "Si crea una pila vuota P."));
+  S.push(T.radice); scatta(2, ins + "(r): " + (tipo === "coda" ? "la radice entra nella coda." : "la radice entra nella pila."));
+  var giri = 0;
+  while (giri++ < 200) {
+    if (!S.length) { cor = null; scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " è vuota: il ciclo finisce. Ordine di visita: <b>" + valori(T, vis).join(" ") + "</b>."); break; }
+    scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " non è vuota: si entra nel ciclo.");
+    var n = tipo === "coda" ? S.shift() : S.pop();
+    cor = n;
+    scatta(4, "n ← " + est + ": si toglie " + nome(n) + (tipo === "coda" ? ", il primo della coda." : ", quello in cima alla pila."));
+    if (n === null) { scatta(5, "n = null: non c'è nessun nodo da visitare, si torna al WHILE."); continue; }
+    scatta(5, "n ≠ null: è un nodo vero.");
+    vis.push(n); scatta(6, "Si visita il nodo " + escA(T.nodi[n].v) + ": è il " + vis.length + "° visitato.");
+    var a = tipo === "coda" ? T.nodi[n].sx : T.nodi[n].dx, b = tipo === "coda" ? T.nodi[n].dx : T.nodi[n].sx;
+    S.push(a); scatta(7, ins + "(n." + (tipo === "coda" ? "sx" : "dx") + "): entra " + (a === null ? "null (il figlio " + (tipo === "coda" ? "sinistro" : "destro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "sinistro, " : "destro, ") + escA(T.nodi[a].v)) + ".");
+    S.push(b); scatta(8, ins + "(n." + (tipo === "coda" ? "dx" : "sx") + "): entra " + (b === null ? "null (il figlio " + (tipo === "coda" ? "destro" : "sinistro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "destro, " : "sinistro, ") + escA(T.nodi[b].v)) + "." + (tipo === "pila" && b !== null ? " È in cima: sarà il prossimo a uscire." : ""));
+  }
+  return ev;
+}
+
+// Eventi della visita ricorsiva: ordine "pre" | "in" | "post".
+var CODICE_RIC = {
+  pre: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visita la radice", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)"],
+  "in": ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visita la radice", "    visitaInProfondità(r.dx)"],
+  post: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)", "    visita la radice"]
+};
+function eventiRicorsiva(T, ordine) {
+  var ev = [], pila = [], out = [];
+  var righe = ordine === "pre" ? { vis: 2, sx: 3, dx: 4 } : ordine === "in" ? { sx: 2, vis: 3, dx: 4 } : { sx: 2, dx: 3, vis: 4 };
+  function nome(id) { return id === null ? "null" : escA(T.nodi[id].v); }
+  function scatta(riga, testo, extra) {
+    var e = { riga: riga, testo: testo, pila: pila.map(function (r) { return { id: r.id, lato: r.lato }; }), out: out.slice(), corrente: pila.length ? pila[pila.length - 1].id : null };
+    if (extra) for (var q in extra) e[q] = extra[q];
+    ev.push(e);
+  }
+  function chiama(id, lato) {
+    pila.push({ id: id, lato: lato });
+    scatta(0, "Chiamata visitaInProfondità(" + nome(id) + ")" + (lato ? ", sul sottoalbero " + (lato === "sx" ? "sinistro" : "destro") + " del nodo " + nome(pila[pila.length - 2].id) : ", sulla radice") + ". Nella pila delle chiamate entra un record.");
+    if (id === null) {
+      scatta(1, "r = null: l'albero è vuoto, non c'è niente da fare. La chiamata finisce subito.");
+      pila.pop();
+      return;
+    }
+    scatta(1, "r ≠ null: si esegue il corpo dell'IF.");
+    var passi = [["vis", righe.vis], ["sx", righe.sx], ["dx", righe.dx]].sort(function (a, b) { return a[1] - b[1]; });
+    passi.forEach(function (ps) {
+      if (ps[0] === "vis") { out.push(id); scatta(ps[1], "Si visita la radice di questo sottoalbero: " + nome(id) + ". Ordine finora: <b>" + valori(T, out).join(" ") + "</b>.", { visitaOra: id }); }
+      else {
+        scatta(ps[1], "Chiamata ricorsiva sul figlio " + (ps[0] === "sx" ? "sinistro" : "destro") + " di " + nome(id) + ": " + nome(T.nodi[id][ps[0]]) + ".");
+        chiama(T.nodi[id][ps[0]], ps[0]);
+        scatta(ps[1], "Torniamo alla chiamata su " + nome(id) + ": il sottoalbero " + (ps[0] === "sx" ? "sinistro" : "destro") + " è finito.");
+      }
+    });
+    pila.pop();
+  }
+  chiama(T.radice, null);
+  ev.push({ riga: 0, testo: "La prima chiamata è finita: la pila delle chiamate è vuota. Ordine di visita: <b>" + valori(T, out).join(" ") + "</b>.", pila: [], out: out.slice(), corrente: null, fine: true });
+  return ev;
+}
+
+// Notazione polacca inversa: valuta con una pila. Restituisce i passi.
+function passiRPN(tokens) {
+  var P = [], passi = [{ j: -1, pila: [], testo: "Si leggono i simboli da sinistra a destra, con una pila vuota." }], err = null;
+  for (var j = 0; j < tokens.length && !err; j++) {
+    var t = tokens[j];
+    if (/^-?\d+(\.\d+)?$/.test(t)) { P.push(Number(t)); passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un numero: push(" + t + ")." }); }
+    else if ("+-−*×/:".indexOf(t) >= 0 && t.length === 1) {
+      if (P.length < 2) { err = "«" + t + "» è un operatore, ma nella pila ci sono meno di due numeri: l'espressione è sbagliata."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); break; }
+      var b = P.pop(), a = P.pop(), v;
+      if (t === "+") v = a + b; else if (t === "-" || t === "−") v = a - b; else if (t === "*" || t === "×") v = a * b; else v = b === 0 ? NaN : a / b;
+      v = Math.round(v * 1e6) / 1e6;
+      P.push(v);
+      passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un operatore: pop() dà " + b + " (il secondo operando), pop() dà " + a + " (il primo). Si calcola " + a + " " + t + " " + b + " = " + v + " e si fa push(" + v + ").", tolti: [a, b] });
+    } else { err = "Simbolo non riconosciuto: «" + escA(t) + "»."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); }
+  }
+  if (!err) {
+    if (P.length === 1) passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli: nella pila resta un solo numero, <b>" + P[0] + "</b>. È il valore dell'espressione.", fine: true });
+    else passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli, ma nella pila restano " + P.length + " numeri: l'espressione è sbagliata (mancano operatori).", errore: true, fine: true });
+  }
+  return passi;
+}
+// HTML di una pila verticale di "chip" (cima in alto) e di una coda orizzontale
+function htmlPilaChip(els, fmt, opz) {
+  opz = opz || {};
+  var h = '<div class="pilachip">';
+  if (!els.length) h += '<div class="chip zero">vuota</div>';
+  els.forEach(function (e, j) { h += '<div class="chip' + (e === null ? " zero" : "") + (j === els.length - 1 ? " cima" : "") + '">' + fmt(e) + (j === els.length - 1 ? ' <span class="lab-cima">← cima</span>' : '') + '</div>'; });
+  return h + '</div>';
+}
+function htmlCodaChip(els, fmt) {
+  var h = '<div class="codachip"><span class="lab-coda">primo →</span>';
+  if (!els.length) h += '<span class="chip zero">vuota</span>';
+  els.forEach(function (e) { h += '<span class="chip' + (e === null ? " zero" : "") + '">' + fmt(e) + '</span>'; });
+  return h + '<span class="lab-coda">← ultimo</span></div>';
+}
+
+// ---- grafi.js
+// Grafi (pacco 18): dati degli esempi della lavagna, disegno, rappresentazioni, visite.
+// Un grafo: { nome, orientato, V: [etichette], pos: { v: [x, y] } (coordinate in «caselle»), E: [[u, v], ...] }
+var GRAFI = {
+  esagono: { nome: "Il grafo non orientato della lavagna (A–F)", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    E: [["A", "B"], ["A", "C"], ["B", "C"], ["B", "D"], ["B", "F"], ["C", "F"], ["D", "E"], ["E", "F"]] },
+  orientato: { nome: "Il grafo orientato della lavagna (1–7)", orientato: true, V: [1, 2, 3, 4, 5, 6, 7],
+    pos: { 1: [0, 0], 2: [1.1, 0], 4: [2.2, 0], 7: [3.3, 0], 3: [0.8, 1.1], 5: [2.4, 1.1], 6: [3.4, 1.1] },
+    E: [[1, 2], [1, 3], [2, 4], [3, 1], [3, 5], [4, 3], [4, 7], [5, 6], [6, 7], [7, 5]] },
+  quattro: { nome: "Il grafo orientato della matrice (lavagna del 7 novembre, pagina 13)", orientato: true, V: [1, 2, 3, 4],
+    pos: { 1: [0, 1], 3: [1, 0], 4: [2, 1], 2: [1, 2] }, E: [[1, 2], [1, 3], [2, 4], [3, 4], [4, 1]] },
+  dieci: { nome: "Il grafo della visita (lavagna del 7 novembre, pagina 26)", orientato: false, V: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    pos: { 2: [1, 0], 3: [2, 0], 1: [0, 1], 4: [1, 1], 5: [2, 1], 6: [0, 2], 7: [1, 2], 9: [2, 2], 8: [0.5, 3], 10: [2, 3] },
+    E: [[1, 2], [1, 4], [1, 6], [2, 3], [2, 4], [2, 5], [3, 5], [4, 5], [5, 7], [5, 9], [6, 7], [6, 8], [7, 8], [9, 10]] },
+  es88: { nome: "Il grafo dell'esercizio 8.8", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 2], E: [1.2, 0], F: [2.6, 0], C: [1.2, 1], D: [2.6, 1], B: [3.8, 2] },
+    E: [["A", "B"], ["A", "C"], ["A", "E"], ["B", "D"], ["B", "F"], ["C", "D"], ["C", "E"], ["C", "F"], ["D", "F"], ["E", "F"]] },
+  eulero: { nome: "Il grafo con un circuito euleriano (lavagna del 5 novembre, pagina 34)", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    E: [["A", "B"], ["A", "C"], ["B", "C"], ["B", "D"], ["B", "F"], ["C", "D"], ["C", "F"], ["D", "E"], ["D", "F"], ["E", "F"]] }
+};
+function escG(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function chiaveA(u, v, orientato) { return orientato ? u + ">" + v : [String(u), String(v)].sort().join("~"); }
+// vicini in ordine (alfabetico o numerico), come nelle liste di adiacenza della lavagna
+function vicini(G, u) {
+  var r = [];
+  G.E.forEach(function (e) { if (e[0] === u) r.push(e[1]); else if (!G.orientato && e[1] === u) r.push(e[0]); });
+  return r.sort(function (a, b) { return typeof a === "number" ? a - b : String(a).localeCompare(String(b)); });
+}
+function gradi(G, v) {
+  var din = 0, dout = 0;
+  G.E.forEach(function (e) { if (e[0] === v) dout++; if (e[1] === v) din++; });
+  return G.orientato ? { din: din, dout: dout, d: din + dout } : { d: din + dout };
+}
+// opz: { cella: px per casella, r, evNodi: { v: stile }, evArchi: { chiave: "verde"|"arancio"|"rosso" }, numeri: { v: testo }, etich: { v: testo sotto } }
+var STILE_G = { n: ["r-nodo", "#ffffff", "#2f52c4"], giallo: ["r-giallo", "#fff1a8", "#b4500f"], verde: ["r-verde", "#e6f5ea", "#17803d"], blu: ["r-blu", "#e8edfc", "#2f52c4"], arancio: ["r-arancio", "#fdf0e3", "#b4500f"], rosso: ["r-rosso", "#fdecea", "#b42318"], viola: ["r-viola", "#f1eafc", "#6d3fc0"], grigio: ["r-nodo", "#ffffff", "#9aa3b2"] };
+function svgGrafo(G, opz) {
+  opz = opz || {};
+  var C = opz.cella || 90, R = opz.r || 15, m = R + 14, s = [], xs = [], ys = [];
+  G.V.forEach(function (v) { xs.push(G.pos[v][0]); ys.push(G.pos[v][1]); });
+  var ox = opz.etichSx ? 44 : 0, W = (Math.max.apply(null, xs)) * C + 2 * m + ox, H = (Math.max.apply(null, ys)) * C + 2 * m + (opz.basso || 0);
+  function P(v) { return [m + ox + G.pos[v][0] * C, m + G.pos[v][1] * C]; }
+  var esiste = {}; G.E.forEach(function (e) { esiste[e[0] + ">" + e[1]] = true; });
+  s.push('<svg viewBox="0 0 ' + r1g(W) + ' ' + r1g(H) + '" width="' + r1g(W) + '" height="' + r1g(H) + '" role="img" aria-label="' + escG(opz.aria || G.nome) + '" font-family="system-ui, sans-serif">');
+  var colA = { verde: ["l-verde", "#17803d", 3], arancio: ["l-arancio", "#b4500f", 3], rosso: ["l-rosso", "#b42318", 3], blu: ["l-blu", "#2f52c4", 3] };
+  G.E.forEach(function (e, k) {
+    var a = P(e[0]), b = P(e[1]), ev = opz.evArchi && opz.evArchi[chiaveA(e[0], e[1], G.orientato)], c = ev ? colA[ev] : ["l-muted", "#5b6270", 1.4];
+    var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.sqrt(dx * dx + dy * dy), ux = dx / l, uy = dy / l;
+    var doppio = G.orientato && esiste[e[1] + ">" + e[0]];
+    var curva = (opz.curve && opz.curve[k]) || (doppio ? 0.22 : 0);
+    var x1 = a[0] + ux * R, y1 = a[1] + uy * R, x2 = b[0] - ux * (R + (G.orientato ? 2 : 0)), y2 = b[1] - uy * (R + (G.orientato ? 2 : 0));
+    var d, ang;
+    if (curva) {
+      var cx = (a[0] + b[0]) / 2 - uy * curva * l, cy = (a[1] + b[1]) / 2 + ux * curva * l;
+      var vx = cx - a[0], vy = cy - a[1], vl = Math.sqrt(vx * vx + vy * vy); x1 = a[0] + vx / vl * R; y1 = a[1] + vy / vl * R;
+      var wx = b[0] - cx, wy = b[1] - cy, wl = Math.sqrt(wx * wx + wy * wy); x2 = b[0] - wx / wl * (R + 2); y2 = b[1] - wy / wl * (R + 2);
+      d = "M" + r1g(x1) + " " + r1g(y1) + " Q" + r1g(cx) + " " + r1g(cy) + " " + r1g(x2) + " " + r1g(y2); ang = Math.atan2(wy, wx);
+    } else { d = "M" + r1g(x1) + " " + r1g(y1) + " L" + r1g(x2) + " " + r1g(y2); ang = Math.atan2(dy, dx); }
+    s.push('<path d="' + d + '" fill="none" class="' + c[0] + '" stroke="' + c[1] + '" stroke-width="' + c[2] + '"/>');
+    if (G.orientato) s.push('<path d="M' + r1g(x2) + ' ' + r1g(y2) + ' l' + r1g(-9 * Math.cos(ang - 0.38)) + ' ' + r1g(-9 * Math.sin(ang - 0.38)) + ' l' + r1g(9 * Math.cos(ang - 0.38) - 9 * Math.cos(ang + 0.38)) + ' ' + r1g(9 * Math.sin(ang - 0.38) - 9 * Math.sin(ang + 0.38)) + ' z" class="' + c[0].replace("l-", "t-") + '" fill="' + c[1] + '"/>');
+    if (opz.pesi && opz.pesi[k] !== undefined) { var tp = (opz.pesiT && opz.pesiT[k]) || 0.5; s.push('<text x="' + r1g(a[0] + (b[0] - a[0]) * tp + 6) + '" y="' + r1g(a[1] + (b[1] - a[1]) * tp - 4) + '" font-size="12" class="t-viola" fill="#6d3fc0">' + opz.pesi[k] + '</text>'); }
+  });
+  G.V.forEach(function (v) {
+    var p = P(v), st = STILE_G[(opz.evNodi && opz.evNodi[v]) || "n"];
+    s.push('<circle cx="' + r1g(p[0]) + '" cy="' + r1g(p[1]) + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    s.push('<text x="' + r1g(p[0]) + '" y="' + r1g(p[1] + 5) + '" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + escG(v) + '</text>');
+    if (opz.numeri && opz.numeri[v] !== undefined) {
+      s.push('<circle cx="' + r1g(p[0] + R * 0.85) + '" cy="' + r1g(p[1] - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1g(p[0] + R * 0.85) + '" y="' + r1g(p[1] - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.numeri[v] + '</text>');
+    }
+    if (opz.etich && opz.etich[v] !== undefined) {
+      if (opz.etichSx === true || (opz.etichSx && opz.etichSx[v])) s.push('<text x="' + r1g(p[0] - R - 8) + '" y="' + r1g(p[1] + 4) + '" font-size="11.5" text-anchor="end" class="t-viola" fill="#6d3fc0">' + escG(opz.etich[v]) + '</text>');
+      else s.push('<text x="' + r1g(p[0]) + '" y="' + r1g(p[1] + R + 15) + '" font-size="11.5" text-anchor="middle" class="t-viola" fill="#6d3fc0">' + escG(opz.etich[v]) + '</text>');
+    }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+function r1g(v) { return Math.round(v * 10) / 10; }
+
+// ---------------------------------------------------------------- visite (Codici 10.1 e 10.2)
+var COD101 = ["<b>ALGORITMO</b> visitaInAmpiezza(grafo G = (V, E), vertice s) → albero", "  C ← coda vuota", "  T ← albero formato dal solo vertice s", "  marca s come raggiunto", "  C.enqueue(s)",
+  "  <b>WHILE NOT</b> C.isEmpty() <b>DO</b>", "    u ← C.dequeue()", "    <b>FOREACH</b> (u, v) ∈ E <b>DO</b>", "      <b>IF</b> v non è marcato come raggiunto <b>THEN</b>", "        aggiungi il vertice v e l'arco (u, v) a T", "        marca v come raggiunto", "        C.enqueue(v)", "  <b>RETURN</b> T"];
+var COD102 = ["<b>ALGORITMO</b> visitaInProfondità(grafo G = (V, E), vertice s) → albero", "  T ← albero formato dal solo vertice s", "  visitaRicorsiva(G, s, T)", "  <b>RETURN</b> T", " ",
+  "<b>PROCEDURA</b> visitaRicorsiva(grafo G = (V, E), vertice u, albero T)", "  marca u come visitato", "  <b>FOREACH</b> (u, v) ∈ E <b>DO</b>", "    <b>IF</b> v non è marcato come visitato <b>THEN</b>", "      aggiungi il vertice v e l'arco (u, v) a T", "      visitaRicorsiva(G, v, T)"];
+// evento: { riga, testo, marcati: [..], ordine: [..] (ordine di marcatura), C: [...] (coda) o P: [...] (pila delle chiamate), u, v, albero: [[u, v]...] }
+function eventiBFS(G, s) {
+  var ev = [], C = [], marc = [], ord = [], T = [], u = null, v = null;
+  function sc(riga, testo) { ev.push({ riga: riga, testo: testo, C: C.slice(), marcati: marc.slice(), ordine: ord.slice(), albero: T.slice(), u: u, v: v }); }
+  sc(0, "Visita in ampiezza a partire da " + s + ".");
+  sc(1, "C ← coda vuota.");
+  sc(2, "T ← l'albero formato dal solo vertice " + s + ".");
+  marc.push(s); ord.push(s); sc(3, s + " è marcato come raggiunto.");
+  C.push(s); sc(4, "C.enqueue(" + s + "): " + s + " entra nella coda.");
+  var giri = 0;
+  while (C.length && giri++ < 200) {
+    u = C.shift(); v = null; sc(6, "u ← C.dequeue(): esce " + u + ". Si guardano i suoi archi, nell'ordine della lista di adiacenza: " + vicini(G, u).join(", ") + ".");
+    vicini(G, u).forEach(function (w) {
+      v = w;
+      if (marc.indexOf(w) >= 0) { sc(8, "Arco (" + u + ", " + w + "): " + w + " è già marcato, non si fa niente."); return; }
+      T.push([u, w]); marc.push(w); ord.push(w);
+      sc(9, "Arco (" + u + ", " + w + "): " + w + " non è marcato. Il vertice " + w + " e l'arco (" + u + ", " + w + ") entrano in T, " + w + " viene marcato ed entra nella coda.");
+      C.push(w);
+    });
+    v = null;
+  }
+  u = null;
+  sc(12, "La coda è vuota: la visita è finita. Ordine in cui i vertici sono stati raggiunti: <b>" + ord.join(" ") + "</b>. L'albero T ha " + T.length + " archi.");
+  return ev;
+}
+function eventiDFS(G, s) {
+  var ev = [], P = [], marc = [], ord = [], T = [], u = null, v = null;
+  function sc(riga, testo) { ev.push({ riga: riga, testo: testo, P: P.slice(), marcati: marc.slice(), ordine: ord.slice(), albero: T.slice(), u: u, v: v }); }
+  sc(0, "Visita in profondità a partire da " + s + ".");
+  sc(1, "T ← l'albero formato dal solo vertice " + s + ".");
+  function ric(x) {
+    P.push(x); u = x; v = null;
+    sc(5, "Chiamata visitaRicorsiva(G, " + x + ", T): nella pila delle chiamate entra un record per " + x + ".");
+    marc.push(x); ord.push(x); sc(6, x + " è marcato come visitato.");
+    vicini(G, x).forEach(function (w) {
+      u = x; v = w;
+      if (marc.indexOf(w) >= 0) { sc(8, "Arco (" + x + ", " + w + "): " + w + " è già visitato, si passa al prossimo arco."); return; }
+      T.push([x, w]); sc(9, "Arco (" + x + ", " + w + "): " + w + " non è visitato. Il vertice " + w + " e l'arco (" + x + ", " + w + ") entrano in T, e si scende ricorsivamente su " + w + ".");
+      ric(w);
+      u = x; v = null; sc(7, "La chiamata su " + w + " è finita: si torna a " + x + " e si continua con i suoi archi.");
+    });
+    P.pop(); u = P.length ? P[P.length - 1] : null; v = null;
+    sc(7, "Gli archi di " + x + " sono finiti: la chiamata su " + x + " termina ed esce dalla pila.");
+  }
+  sc(2, "visitaRicorsiva(G, " + s + ", T).");
+  ric(s);
+  sc(3, "La prima chiamata è finita: la visita è finita. Ordine di visita: <b>" + ord.join(" ") + "</b>. L'albero T ha " + T.length + " archi.");
+  return ev;
+}
+// matrice di adiacenza e potenze booleane
+function matrice(G) { var n = G.V.length, M = []; for (var i = 0; i < n; i++) { M.push([]); for (var j = 0; j < n; j++) M[i].push(0); } G.E.forEach(function (e) { var i = G.V.indexOf(e[0]), j = G.V.indexOf(e[1]); M[i][j] = 1; if (!G.orientato) M[j][i] = 1; }); return M; }
+function prodBool(A, B) { var n = A.length, R = []; for (var i = 0; i < n; i++) { R.push([]); for (var j = 0; j < n; j++) { var x = 0; for (var k = 0; k < n; k++) if (A[i][k] && B[k][j]) { x = 1; break; } R[i].push(x); } } return R; }
+function potenzaBool(M, k) { var n = M.length, R = []; for (var i = 0; i < n; i++) { R.push([]); for (var j = 0; j < n; j++) R[i].push(i === j ? 1 : 0); } for (var t = 0; t < k; t++) R = prodBool(R, M); return R; }
+function camminoLung(G, i, j, k) { // un cammino da V[i] a V[j] con esattamente k archi (o null)
+  var M = matrice(G), n = M.length, memo = {};
+  function c(a, r) { if (r === 0) return a === j ? [a] : null; var key = a + "," + r; if (memo[key] !== undefined) return memo[key]; for (var b = 0; b < n; b++) if (M[a][b]) { var p = c(b, r - 1); if (p) { memo[key] = [a].concat(p); return memo[key]; } } memo[key] = null; return null; }
+  var p = c(i, k); return p ? p.map(function (x) { return G.V[x]; }) : null;
+}
+
+// ---- w18.js
+// Riquadri interattivi del pacco 18.
+function $(id) { return document.getElementById(id); }
+function codiceHL(righe, riga) { return righe.map(function (r, j) { return '<span class="riga' + (j === riga ? " ora" : "") + '">' + r + '</span>'; }).join(""); }
+
+// ---------------------------------------------------------------- 1. le rappresentazioni di un grafo
+(function () {
+  if (!$("gr-corpo")) return;
+  var GS = ["esagono", "orientato", "es88"], RAP = [["archi", "lista di archi"], ["adiacenza", "liste di adiacenza"], ["incidenza", "liste di incidenza"], ["madj", "matrice di adiacenza"], ["minc", "matrice di incidenza"]];
+  $("gr-corpo").innerHTML = '<div class="controlli"><label>Grafo <select id="gr-g" style="width:auto;max-width:100%">' + GS.map(function (g) { return '<option value="' + g + '">' + GRAFI[g].nome + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label>Rappresentazione <select id="gr-r" style="width:auto">' + RAP.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli" id="gr-v"></div><div class="figura" id="gr-fig" style="margin:6px 0"></div><div id="gr-rap"></div><div class="narrazione" id="gr-txt"></div>';
+  var V = { sel: null };
+  function mostra() {
+    var G = GRAFI[$("gr-g").value], r = $("gr-r").value, s = V.sel, ev = {}, evA = {};
+    if (G.V.indexOf(s) < 0) s = V.sel = G.V[0];
+    $("gr-v").innerHTML = '<span class="piccolo">Vertice:</span> ' + G.V.map(function (v) { return '<button class="' + (v === s ? "primario" : "") + '" data-v="' + v + '" style="min-width:40px">' + v + '</button>'; }).join("");
+    [].forEach.call($("gr-v").querySelectorAll("button"), function (b) { b.onclick = function () { var x = b.getAttribute("data-v"); V.sel = isNaN(Number(x)) ? x : Number(x); mostra(); }; });
+    ev[s] = "giallo"; var vic = vicini(G, s); vic.forEach(function (w) { ev[w] = ev[w] || "blu"; });
+    G.E.forEach(function (e) { if (e[0] === s || e[1] === s) evA[chiaveA(e[0], e[1], G.orientato)] = "verde"; });
+    $("gr-fig").innerHTML = svgGrafo(G, { cella: 80, evNodi: ev, evArchi: evA });
+    var h = "", idx = function (e) { return e[0] === s || e[1] === s; };
+    if (r === "archi") h = '<div class="sequenza">' + G.E.map(function (e, k) { return '<span class="el' + (idx(e) ? " nuovo" : "") + '">(' + e[0] + ', ' + e[1] + ')</span>'; }).join("") + '</div>';
+    else if (r === "adiacenza" || r === "incidenza") {
+      h = '<div class="tabella-wrap"><table>' + G.V.map(function (v) {
+        var L = r === "adiacenza" ? vicini(G, v) : G.E.map(function (e, k) { return (e[0] === v || (!G.orientato && e[1] === v)) ? k : null; }).filter(function (x) { return x !== null; });
+        return '<tr' + (v === s ? ' class="riga-attuale"' : '') + '><th>' + v + '</th><td>' + (L.length ? L.map(function (x) { return '<span class="chip">' + x + '</span>'; }).join('<span class="piccolo"> → </span>') : '<span class="piccolo">vuota</span>') + '</td></tr>';
+      }).join("") + '</table></div>';
+      if (r === "incidenza") h += '<div class="etich-array">L\'array degli archi</div><div class="sequenza">' + G.E.map(function (e, k) { return '<span class="el' + (idx(e) ? " nuovo" : "") + '">' + k + ': (' + e[0] + ', ' + e[1] + ')</span>'; }).join("") + '</div>';
+    } else if (r === "madj") {
+      var M = matrice(G), i0 = G.V.indexOf(s);
+      h = '<div class="tabella-wrap"><table><tr><th></th>' + G.V.map(function (v, j) { return '<th' + (j === i0 && G.orientato ? ' class="arancio"' : '') + '>' + v + '</th>'; }).join("") + '</tr>' + M.map(function (row, i) { return '<tr' + (i === i0 ? ' class="riga-attuale"' : '') + '><th>' + G.V[i] + '</th>' + row.map(function (x) { return '<td' + (x ? ' style="font-weight:700"' : '') + '>' + x + '</td>'; }).join("") + '</tr>'; }).join("") + '</table></div>';
+    } else {
+      h = '<div class="tabella-wrap"><table><tr><th></th>' + G.E.map(function (e) { return '<th>(' + e[0] + ',' + e[1] + ')</th>'; }).join("") + '</tr>' + G.V.map(function (v) { return '<tr' + (v === s ? ' class="riga-attuale"' : '') + '><th>' + v + '</th>' + G.E.map(function (e) { var x = G.orientato ? (e[0] === v ? 1 : e[1] === v ? -1 : 0) : ((e[0] === v || e[1] === v) ? 1 : 0); return '<td' + (x ? ' style="font-weight:700"' : '') + '>' + x + '</td>'; }).join("") + '</tr>'; }).join("") + '</table></div>';
+    }
+    $("gr-rap").innerHTML = h;
+    var g = gradi(G, s), n = G.V.length, m = G.E.length;
+    var spazio = { archi: "Θ(n + m)", adiacenza: "Θ(n + m)", incidenza: "Θ(n + m)", madj: "Θ(n²)", minc: "Θ(n · m)" }[r];
+    $("gr-txt").innerHTML = "Vertice <b>" + s + "</b>: " + (G.orientato ? "grado in ingresso " + g.din + ", in uscita " + g.dout + ", grado " + g.d + ". Adiacenti a " + s + " (gli archi che escono da " + s + "): " : "grado " + g.d + ". Vicini: ") + (vic.length ? vic.join(", ") : "nessuno") + "." +
+      "<br>Il grafo ha n = " + n + " vertici e m = " + m + (G.orientato ? " archi" : " lati") + ". Spazio di questa rappresentazione: " + spazio + "." + (r === "madj" ? (G.orientato ? " La riga di " + s + " dice dove escono gli archi, la colonna dove entrano." : " La matrice è simmetrica.") : "");
+  }
+  $("gr-g").onchange = mostra; $("gr-r").onchange = mostra;
+  mostra();
+})();
+
+// ---------------------------------------------------------------- 2. le potenze della matrice di adiacenza
+(function () {
+  if (!$("mk-corpo")) return;
+  var GS = ["quattro", "orientato"];
+  $("mk-corpo").innerHTML = '<div class="controlli"><label>Grafo <select id="mk-g" style="width:auto;max-width:100%">' + GS.map(function (g) { return '<option value="' + g + '">' + GRAFI[g].nome + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label>k = <b id="mk-kv"></b> <input type="range" id="mk-k" min="0" max="6" value="2" style="width:180px;max-width:100%"></label></div>' +
+    '<div class="coppia"><div><div class="figura" id="mk-fig" style="margin:4px 0"></div></div><div><div class="lato-tit" id="mk-tit"></div><div id="mk-m"></div></div></div><div class="narrazione" id="mk-txt"></div>';
+  var V = { i: 0, j: 3 };
+  function mostra() {
+    var G = GRAFI[$("mk-g").value], k = Number($("mk-k").value), n = G.V.length;
+    if (V.i >= n) V.i = 0; if (V.j >= n) V.j = n - 1;
+    var P = potenzaBool(matrice(G), k), cam = camminoLung(G, V.i, V.j, k), evA = {}, ev = {};
+    ev[G.V[V.i]] = "giallo"; ev[G.V[V.j]] = ev[G.V[V.j]] === "giallo" ? "giallo" : "arancio";
+    if (cam) for (var t = 1; t < cam.length; t++) evA[chiaveA(cam[t - 1], cam[t], true)] = "verde";
+    $("mk-kv").textContent = k;
+    $("mk-fig").innerHTML = svgGrafo(G, { cella: 80, evNodi: ev, evArchi: evA });
+    $("mk-tit").innerHTML = "M<sup>" + k + "</sup> (clicca una casella)";
+    $("mk-m").innerHTML = '<table class="mat">' + P.map(function (r, i) { return '<tr>' + r.map(function (x, j) { return '<td class="cliccabile' + (i === V.i && j === V.j ? " hl-x" : "") + '" data-i="' + i + '" data-j="' + j + '"' + (x ? ' style="font-weight:700"' : '') + '>' + x + '</td>'; }).join("") + '</tr>'; }).join("") + '</table>';
+    [].forEach.call($("mk-m").querySelectorAll("td"), function (td) { td.onclick = function () { V.i = Number(td.getAttribute("data-i")); V.j = Number(td.getAttribute("data-j")); mostra(); }; });
+    var a = G.V[V.i], b = G.V[V.j];
+    $("mk-txt").innerHTML = "M<sup>" + k + "</sup>[" + a + ", " + b + "] = <b>" + P[V.i][V.j] + "</b>: " + (cam ? "c'è un cammino da " + a + " a " + b + " fatto di esattamente " + k + " archi, per esempio " + cam.join(" → ") + " (in verde)." : "non c'è nessun cammino da " + a + " a " + b + " fatto di esattamente " + k + " archi.") + (k === 0 ? " (M<sup>0</sup> è la matrice identità: da ogni vertice a sé stesso c'è il cammino di lunghezza 0.)" : "");
+  }
+  $("mk-g").onchange = mostra; $("mk-k").oninput = mostra;
+  mostra();
+})();
+
+// ---------------------------------------------------------------- 3. le visite in ampiezza e in profondità
+(function () {
+  if (!$("vi-corpo")) return;
+  var GS = ["dieci", "esagono", "es88"];
+  $("vi-corpo").innerHTML = '<div class="controlli"><label>Grafo <select id="vi-g" style="width:auto;max-width:100%">' + GS.map(function (g) { return '<option value="' + g + '">' + GRAFI[g].nome + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label>Visita <select id="vi-t" style="width:auto"><option value="bfs">in ampiezza (coda)</option><option value="dfs">in profondità (ricorsiva)</option></select></label><label>da <select id="vi-s" style="width:auto"></select></label></div>' +
+    '<div class="controlli"><button class="primario" id="vi-passo">Passo →</button><button id="vi-salto">Fino al prossimo vertice raggiunto</button><button id="vi-fine">Fino alla fine</button><button id="vi-reset">Ricomincia</button></div>' +
+    '<pre class="pseudo" id="vi-cod"></pre><div class="figura" id="vi-fig" style="margin:6px 0"></div><div id="vi-strut"></div><div id="vi-ord"></div><div class="narrazione" id="vi-txt"></div>';
+  var V = { ev: [], k: 0 };
+  function riempiPartenze() { var G = GRAFI[$("vi-g").value]; $("vi-s").innerHTML = G.V.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join(""); }
+  function prepara() {
+    var G = GRAFI[$("vi-g").value], x = $("vi-s").value, s = isNaN(Number(x)) ? x : Number(x);
+    V.ev = $("vi-t").value === "bfs" ? eventiBFS(G, s) : eventiDFS(G, s); V.k = 0; mostra();
+  }
+  function mostra() {
+    var G = GRAFI[$("vi-g").value], e = V.ev[V.k], bfs = $("vi-t").value === "bfs", ev = {}, evA = {}, num = {};
+    e.marcati.forEach(function (v) { ev[v] = "verde"; });
+    (bfs ? e.C : e.P).forEach(function (v) { ev[v] = "blu"; });
+    if (e.u !== null && e.u !== undefined) ev[e.u] = "giallo";
+    if (e.v !== null && e.v !== undefined) ev[e.v] = ev[e.v] === "verde" || ev[e.v] === "blu" ? ev[e.v] : "arancio";
+    e.albero.forEach(function (a) { evA[chiaveA(a[0], a[1], false)] = "verde"; });
+    if (e.u !== null && e.u !== undefined && e.v !== null && e.v !== undefined) evA[chiaveA(e.u, e.v, false)] = evA[chiaveA(e.u, e.v, false)] ? "verde" : "arancio";
+    e.ordine.forEach(function (v, i) { num[v] = i + 1; });
+    $("vi-cod").innerHTML = codiceHL(bfs ? COD101 : COD102, e.riga);
+    $("vi-fig").innerHTML = svgGrafo(G, { cella: 80, evNodi: ev, evArchi: evA, numeri: num });
+    $("vi-strut").innerHTML = bfs ? '<div class="lato-tit">La coda C</div>' + htmlCodaChip(e.C, function (x) { return x; }) : '<div class="lato-tit">La pila delle chiamate (cima in alto)</div>' + htmlPilaChip(e.P, function (x) { return "visitaRicorsiva(" + x + ")"; });
+    $("vi-ord").innerHTML = '<div class="sequenza"><span class="tit">' + (bfs ? "raggiunti" : "visitati") + '</span>' + (e.ordine.length ? e.ordine.map(function (v) { return '<span class="el">' + v + '</span>'; }).join("") : '<span class="piccolo">nessuno</span>') + '</div>';
+    $("vi-txt").innerHTML = "<b>Passo " + (V.k + 1) + " di " + V.ev.length + ".</b> " + e.testo + '<br><span class="piccolo">Verde: vertici marcati e archi dell\'albero T (il numero viola è l\'ordine). Azzurro: ' + (bfs ? "in coda" : "chiamate aperte") + '. Giallo: u. Arancione: l\'arco (u, v) che si sta guardando.</span>';
+    var fine = V.k >= V.ev.length - 1;
+    $("vi-passo").disabled = fine; $("vi-fine").disabled = fine; $("vi-salto").disabled = fine;
+  }
+  $("vi-passo").onclick = function () { if (V.k < V.ev.length - 1) { V.k++; mostra(); } };
+  $("vi-salto").onclick = function () { var n0 = V.ev[V.k].ordine.length, k = V.k + 1; while (k < V.ev.length - 1 && V.ev[k].ordine.length === n0) k++; V.k = k; mostra(); };
+  $("vi-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("vi-reset").onclick = function () { V.k = 0; mostra(); };
+  $("vi-g").onchange = function () { riempiPartenze(); prepara(); };
+  $("vi-t").onchange = prepara; $("vi-s").onchange = prepara;
+  riempiPartenze(); prepara();
+})();
+})();
+</script>
+</body>
+</html>
