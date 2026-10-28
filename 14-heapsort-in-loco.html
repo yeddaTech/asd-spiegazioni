@@ -1,0 +1,1365 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>heapSort in loco</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 14 · lezione 16 (lavagna del 29 ottobre 2025), prima parte</span>
+</div>
+
+<h1>heapSort in loco: lo heap dentro l'array</h1>
+<p class="sottotitolo">Nel pacco 13 heapSort usava un albero con i puntatori e una lista a parte per il risultato. Qui il prof mostra come fare tutto dentro l'array da ordinare, senza memoria in più. In questa pagina: come si legge un array come albero quasi completo (il vettore posizionale), come lo heap e la parte già ordinata convivono nello stesso array, risistema e creaHeap scritti con gli indici, heapSort completo, perché non è stabile, come si ordina in modo decrescente, e le due domande che arrivano sempre allo scritto.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti. Le parole «heap», «risistema» e «creaHeap» sono spiegate da zero nel pacco 13; qui le riprendiamo in breve dove servono.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di matematica o di programmazione che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue la lavagna dell'anno scorso: «lavagna, pagina N» è la pagina N del PDF della lezione 16 (29 ottobre 2025). «Le slide» sono quelle di heapSort, con i Codici 6.5, 6.6 e 6.7.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede. L'ultimo, nella sezione 8, è un allenamento per lo scritto.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in cinque domande</span>
+  <ol>
+    <li><b>Come si mette un albero quasi completo in un array?</b> Livello per livello, da sinistra a destra: è il vettore posizionale. I figli della posizione i sono in 2i + 1 e 2i + 2, il padre in ⌊(i − 1)/2⌋.</li>
+    <li><b>Dove va la sequenza ordinata?</b> In fondo allo stesso array: a sinistra lo heap, a destra gli elementi già al loro posto. Un solo scambio, A[0] con A[ℓ], toglie il massimo e lo mette al suo posto.</li>
+    <li><b>Cosa cambia in risistema e creaHeap?</b> Lavorano con gli indici. risistema deve controllare che il figlio destro sia ancora dentro lo heap; creaHeap parte da ⌊n/2⌋, perché dopo ci sono solo foglie.</li>
+    <li><b>Quanto costa?</b> Θ(n log n) confronti, memoria in più costante. Ma non è stabile.</li>
+    <li><b>Cosa chiede l'esame?</b> L'array dopo creaHeap (max-heap per l'ordine crescente, min-heap per il decrescente) e l'array <em>subito dopo</em> lo scambio che colloca un certo elemento.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#vettore">Il vettore posizionale</a></li>
+    <li><a href="#in-loco">Lo heap e la parte ordinata nello stesso array</a></li>
+    <li><a href="#risistema">risistema sull'array</a></li>
+    <li><a href="#creaheap">creaHeap sull'array</a></li>
+    <li><a href="#heapsort">heapSort in loco, tutto insieme</a></li>
+    <li><a href="#costo">Memoria, tempo e stabilità</a></li>
+    <li><a href="#decrescente">Ordinare in modo decrescente</a></li>
+    <li><a href="#esame">Le due domande dell'esame</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti (foglio 5 e temi d'esame)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi (anche il codice in C e in Go)</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="vettore"><span class="num">1</span>Il vettore posizionale</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si mette un albero quasi completo in un array, senza puntatori (lavagna, pagine 7 e 8, e le slide): dove stanno i figli e il padre di ogni nodo, dove stanno i livelli, e perché le formule funzionano. Alla fine un riquadro per provarle.</p>
+<p>heapSort, come l'abbiamo visto nel pacco 13, costruisce un albero con i puntatori e mette il risultato in una lista X a parte: usa memoria in più, proporzionale a n. Ma gli elementi da ordinare stanno già in un array. L'idea del prof è leggere <em>l'array stesso</em> come un albero quasi completo, e fare tutto lì dentro.</p>
+<p>La regola: si mettono i nodi dell'albero nell'array <strong>livello per livello, e in ogni livello da sinistra a destra</strong> (le slide: «come in una visita in ampiezza»). Al contrario, ogni array si può leggere come un albero: A[0] è la radice, A[1] e A[2] sono il livello 1, da A[3] ad A[6] il livello 2, e così via. L'array letto così si chiama <strong>vettore posizionale</strong> dell'albero. La Figura 1 è l'esempio della lavagna, pagine 7 e 8.</p>
+<div class="figura">
+<div class="array qs"><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div><div style="height:6px"></div><svg viewBox="0 0 380 220" width="380" height="220" role="img" aria-label="lo heap della lavagna con accanto a ogni nodo la sua posizione nell'array" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="176.5" y1="30.6" x2="115.5" y2="69.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="203.5" y1="30.6" x2="264.5" y2="69.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="92.1" y1="90.6" x2="67.9" y2="121.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="111.9" y1="90.6" x2="136.1" y2="121.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="52.1" y1="148.9" x2="41.9" y2="175.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="63.9" y1="148.9" x2="74.1" y2="175.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="140.1" y1="148.9" x2="129.9" y2="175.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="268.1" y1="90.6" x2="243.9" y2="121.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="287.9" y1="90.6" x2="312.1" y2="121.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="190" cy="22" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="190" y="27" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><text x="171" y="10" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">0</text><circle cx="102" cy="78" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="102" y="83" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><text x="83" y="66" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">1</text><circle cx="58" cy="134" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="58" y="139" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><text x="39" y="122" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">3</text><circle cx="36" cy="190" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="36" y="195" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><text x="17" y="178" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">7</text><circle cx="80" cy="190" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="80" y="195" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="61" y="178" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">8</text><circle cx="146" cy="134" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="146" y="139" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><text x="127" y="122" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">4</text><circle cx="124" cy="190" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="124" y="195" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><text x="105" y="178" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">9</text><circle cx="278" cy="78" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="278" y="83" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><text x="259" y="66" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">2</text><circle cx="234" cy="134" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="234" y="139" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><text x="215" y="122" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">5</text><circle cx="322" cy="134" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="322" y="139" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><text x="303" y="122" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">6</text></g></svg>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagine 7 e 8. L'array 26 11 19 10 5 6 2 1 8 4 (sotto ogni cella, in verde, la posizione) e l'albero che rappresenta: accanto a ogni nodo, in verde, la sua posizione nell'array. È lo heap del pacco 13.</div>
+</div>
+<p>Funziona perché gli heap hanno le foglie dell'ultimo livello più a sinistra possibile: riempiendo i livelli in ordine non resta mai un buco, quindi l'array non ha celle vuote. Con un buco nell'ultimo livello servirebbe una cella «vuota» in mezzo all'array.</p>
+
+<h3>Dove stanno i figli e il padre</h3>
+<div class="box def">
+  <span class="etichetta">Le formule (lavagna, pagina 7)</span>
+  <ul>
+    <li>I figli del nodo in posizione i sono nelle posizioni <strong>2i + 1</strong> (sinistro) e <strong>2i + 2</strong> (destro), se queste sono minori di n; altrimenti quel figlio non c'è.</li>
+    <li>Il padre del nodo in posizione i (con i &gt; 0) è nella posizione <strong>⌊(i − 1)/2⌋</strong>.</li>
+  </ul>
+</div>
+<p>Controllo sulla Figura 1: i figli di 11 (posizione 1) sono in 3 e 4: 10 e 5. I figli di 10 (posizione 3) sono in 7 e 8: 1 e 8. Il figlio sinistro di 5 (posizione 4) è in 9: il 4; il destro sarebbe in 10, che non esiste. E il padre di 4 (posizione 9) è in ⌊8/2⌋ = 4: il 5. Il padre di 8 (posizione 8) è in ⌊7/2⌋ = 3: il 10.</p>
+<p>La Figura 2 disegna le formule come frecce sull'array, come fa il prof a colori alla lavagna, pagina 8.</p>
+<div class="figura">
+<svg viewBox="0 0 488 180" width="488" height="180" role="img" aria-label="Nel vettore posizionale i figli della posizione i sono nelle posizioni 2i+1 e 2i+2" font-family="system-ui, sans-serif"><path d="M41 70 C 41 49.8, 79 49.8, 79 67" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="1.7"/><path d="M79 69 l -4 -7 l 8 0 z" class="t-arancio" fill="#b4500f"/><path d="M41 70 C 41 45.6, 125 45.6, 125 67" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="1.7"/><path d="M125 69 l -4 -7 l 8 0 z" class="t-arancio" fill="#b4500f"/><path d="M79 110 C 79 134.4, 171 134.4, 171 113" fill="none" class="l-rosso" stroke="#b42318" stroke-width="1.7"/><path d="M171 111 l -4 7 l 8 0 z" class="t-rosso" fill="#b42318"/><path d="M79 110 C 79 138.6, 217 138.6, 217 113" fill="none" class="l-rosso" stroke="#b42318" stroke-width="1.7"/><path d="M217 111 l -4 7 l 8 0 z" class="t-rosso" fill="#b42318"/><path d="M133 70 C 133 41.4, 263 41.4, 263 67" fill="none" class="l-verde" stroke="#17803d" stroke-width="1.7"/><path d="M263 69 l -4 -7 l 8 0 z" class="t-verde" fill="#17803d"/><path d="M133 70 C 133 37.2, 309 37.2, 309 67" fill="none" class="l-verde" stroke="#17803d" stroke-width="1.7"/><path d="M309 69 l -4 -7 l 8 0 z" class="t-verde" fill="#17803d"/><path d="M171 110 C 171 142.8, 355 142.8, 355 113" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="1.7"/><path d="M355 111 l -4 7 l 8 0 z" class="t-blu" fill="#2f52c4"/><path d="M171 110 C 171 147, 401 147, 401 113" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="1.7"/><path d="M401 111 l -4 7 l 8 0 z" class="t-blu" fill="#2f52c4"/><path d="M225 70 C 225 33, 447 33, 447 67" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="1.7"/><path d="M447 69 l -4 -7 l 8 0 z" class="t-viola" fill="#6d3fc0"/><rect x="14" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><text x="37" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">0</text><rect x="60" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="83" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><text x="83" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">1</text><rect x="106" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="129" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><text x="129" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="152" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="175" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><text x="175" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">3</text><rect x="198" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="221" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><text x="221" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">4</text><rect x="244" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="267" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><text x="267" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">5</text><rect x="290" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="313" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><text x="313" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">6</text><rect x="336" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="359" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><text x="359" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">7</text><rect x="382" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="405" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="405" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">8</text><rect x="428" y="70" width="46" height="40" class="r-cella" fill="#ffffff" stroke="#b4500f" stroke-width="1.6"/><text x="451" y="96" font-size="16" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><text x="451" y="168" font-size="12.5" text-anchor="middle" class="t-verde" fill="#17803d">9</text></svg>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagina 8. Da ogni posizione i partono due frecce, verso 2i + 1 e 2i + 2: arancione dalla radice (0 → 1, 2), rossa da 1 (→ 3, 4), verde da 2 (→ 5, 6), blu da 3 (→ 7, 8), viola da 4 (→ 9). Le posizioni da 5 in poi non hanno figli: sono le foglie.</div>
+</div>
+
+<h3>Dove stanno i livelli, e perché le formule funzionano</h3>
+<p>Il livello p ha 2<sup>p</sup> posti, e prima di lui ci sono i livelli 0, …, p − 1, con 1 + 2 + … + 2<sup>p−1</sup> = 2<sup>p</sup> − 1 nodi (la somma delle potenze di 2). Quindi <strong>il livello p occupa le posizioni da 2<sup>p</sup> − 1 a 2<sup>p+1</sup> − 2</strong>: il livello 0 la posizione 0, il livello 1 le posizioni 1–2, il livello 2 le posizioni 3–6, il livello 3 le posizioni 7–14 (Figura 3).</p>
+<div class="figura">
+<div class="array qs"><div class="cella zsx"><div class="f">liv. 0</div><div class="v">26</div><div class="i">0</div></div><div class="cella zdx"><div class="f">liv. 1</div><div class="v">11</div><div class="i">1</div></div><div class="cella zdx"><div class="f"></div><div class="v">19</div><div class="i">2</div></div><div class="cella posto"><div class="f">liv. 2</div><div class="v">10</div><div class="i">3</div></div><div class="cella posto"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella posto"><div class="f"></div><div class="v">6</div><div class="i">5</div></div><div class="cella posto"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella mossa"><div class="f">liv. 3</div><div class="v">1</div><div class="i">7</div></div><div class="cella mossa"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella mossa"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lo stesso array, colorato per livello: azzurro il livello 0, arancione il livello 1, verde il livello 2, viola il livello 3 (che qui ha solo 3 nodi su 8 posti).</div>
+</div>
+<p>Da qui viene la formula dei figli. Prendiamo il nodo in posizione i; sta al livello p ed è il k-esimo del suo livello contando da 0, cioè i = 2<sup>p</sup> − 1 + k. Se ha dei figli, tutti i k nodi alla sua sinistra nel livello p hanno due figli (l'ultimo livello si riempie da sinistra), e i loro 2k figli vengono, nel livello p + 1, prima dei suoi.</p>
+<div class="dim">
+  <div class="dim-tit">Dove sta il figlio sinistro</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">posizione del figlio sinistro</span><span class="rel">=</span><span class="dx">(inizio del livello p + 1) + 2k</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>p+1</sup> − 1 + 2k</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>p+1</sup> − 1 + 2(i − 2<sup>p</sup> + 1)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>p+1</sup> − 1 + 2i − 2<sup>p+1</sup> + 2</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2i + 1</span><span class="perche"></span></span></div>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Nel livello p + 1 vengono prima i 2k figli dei k nodi alla sinistra del nostro; il suo figlio sinistro è il successivo.</p>
+    <p><span class="rif">2</span>Il livello p + 1 comincia nella posizione 2<sup>p+1</sup> − 1.</p>
+    <p><span class="rif">3</span>Da i = 2<sup>p</sup> − 1 + k si ricava k = i − 2<sup>p</sup> + 1.</p>
+  </div>
+</div>
+<p>Il figlio destro viene subito dopo il sinistro: 2i + 2. E la formula del padre è il conto al contrario: se j = 2i + 1 oppure j = 2i + 2, allora (j − 1)/2 vale i oppure i + 1/2, e arrotondando per difetto si ottiene i in tutti e due i casi: ⌊(j − 1)/2⌋ = i.</p>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: indici da 0 o da 1</span>
+  <p>A lezione gli array partono dalla posizione 0. Se partissero da 1 (radice in A[1]), le formule cambierebbero: figli in <strong>2i</strong> e <strong>2i + 1</strong>, padre in <strong>⌊i/2⌋</strong> (nota delle slide ed esercizio 5.7). Il riquadro «Figli e padre nel vettore posizionale», alla fine di questa sezione, mostra tutte e due le versioni.</p>
+</div>
+<div class="widget" id="w-vp">
+  <h4>Figli e padre nel vettore posizionale</h4>
+  <div id="vp-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Vettore posizionale: i nodi livello per livello, da sinistra a destra. Ogni array è un albero quasi completo, e viceversa.</li>
+    <li>Figli di i: 2i + 1 e 2i + 2 (se &lt; n). Padre di i: ⌊(i − 1)/2⌋. Il livello p occupa le posizioni da 2<sup>p</sup> − 1 a 2<sup>p+1</sup> − 2.</li>
+    <li>Con indici da 1: figli 2i e 2i + 1, padre ⌊i/2⌋.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="in-loco"><span class="num">2</span>Lo heap e la parte ordinata nello stesso array</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'idea che rende heapSort «in loco» (lavagna, pagina 9, e le slide): la prima parte dell'array è lo heap, l'ultima è la sequenza già ordinata, e un solo scambio fa tutto il lavoro dell'estrazione del massimo.</p>
+<div class="box def">
+  <span class="etichetta">Attrezzo: lo heap in breve</span>
+  <p>Uno <strong>heap</strong> (max-heap) è un albero binario quasi completo (tutti i livelli pieni tranne al più l'ultimo, riempito da sinistra) in cui ogni nodo è maggiore o uguale dei suoi figli: il massimo sta nella radice. La procedura <strong>risistema</strong> fa scendere al suo posto la chiave della radice quando è l'unica fuori posto, scambiandola via via con il figlio maggiore: Θ(log n) confronti. <strong>creaHeap</strong> trasforma un albero quasi completo qualsiasi in uno heap chiamando risistema su ogni nodo, dal basso verso l'alto: Θ(n) confronti.</p>
+</div>
+<p>Ricordiamo cosa fa ogni giro di heapSort sull'albero (Codice 6.4, pacco 13): (1) la radice, il massimo, va all'inizio della sequenza ordinata X; (2) l'ultima foglia va nella radice; (3) la foglia viene eliminata; (4) risistema fa scendere la nuova radice.</p>
+<p>Nell'array lo heap occupa le prime posizioni, A[0..ℓ], e la sua ultima foglia è A[ℓ]. Ora guarda cosa succede <strong>scambiando A[0] e A[ℓ]</strong>:</p>
+<ul>
+  <li>il massimo, che era in A[0], finisce in A[ℓ];</li>
+  <li>l'ultima foglia, che era in A[ℓ], finisce nella radice A[0]: sono i passi (1) e (2) in una volta;</li>
+  <li>la foglia si «elimina» semplicemente smettendo di considerare la posizione ℓ parte dello heap: da qui in poi lo heap è A[0..ℓ − 1], cioè i primi ℓ elementi. È il passo (3);</li>
+  <li>resta da far scendere A[0] dentro i primi ℓ elementi: risistema, passo (4).</li>
+</ul>
+<p>E la sequenza X? È la parte destra dell'array, A[ℓ..n − 1]. Il primo massimo va in A[n − 1], il secondo (più piccolo o uguale) in A[n − 2], e così via: ogni nuovo elemento va subito a sinistra dei precedenti, proprio come «all'inizio di X». Alla fine la parte destra è tutto l'array, in ordine crescente. Nessuna struttura in più: la memoria aggiuntiva è costante. La Figura 4 riproduce la lavagna, pagina 9.</p>
+<div class="figura">
+<div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">dopo creaHeap: ℓ = 9</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">26</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella attiva"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">dopo il 1° giro: ℓ = 8</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">19</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="cella attiva"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">dopo il 2° giro: ℓ = 7</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">11</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella attiva"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagina 9. A sinistra dello spazio lo heap, a destra, in verde, la parte ordinata. In giallo i due elementi che il giro successivo scambia: la radice A[0] e l'ultima foglia A[ℓ]. Dopo creaHeap si scambiano 26 e 4; dopo il primo giro (scambio e risistema) 19 e 8; dopo il secondo 11 e 1.</div>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: cosa vuol dire ℓ</span>
+  <p>Nelle slide ℓ è l'indice dell'ultima foglia dello heap <em>prima</em> dello scambio: lo heap è A[0..ℓ]. Dopo lo scambio lo heap è A[0..ℓ − 1], quindi ha esattamente ℓ elementi, e ℓ è anche la prima posizione fuori dallo heap. È lo stesso numero visto in due modi. Esempio con n = 10: al primo giro ℓ = 9; prima dello scambio lo heap è A[0..9]; dopo è A[0..8], 9 elementi, e la posizione 9 contiene 26, già al suo posto.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Nell'array: A[0..ℓ] è lo heap, A[ℓ + 1..n − 1] la parte già ordinata.</li>
+    <li>Scambiare A[0] e A[ℓ] mette il massimo nella sua posizione definitiva e l'ultima foglia nella radice; poi lo heap ha ℓ elementi e si risistema.</li>
+    <li>Nessuna memoria in più: heapSort diventa <strong>in loco</strong>.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="risistema"><span class="num">3</span>risistema sull'array</h2>
+<p class="in-questa"><b>In questa sezione:</b> la procedura risistema scritta con gli indici (lavagna, pagina 10, e Codice 6.7), riga per riga; il controllo u + 1 &lt; ℓ e perché senza di lui l'algoritmo sbaglia; l'esempio della lavagna. Alla fine un riquadro per eseguirla una riga alla volta.</p>
+<p>È la stessa procedura del pacco 13 (la chiave x della radice scende, i figli maggiori salgono nel posto libero), ma «nodo» diventa «posizione», e «figlio» diventa «posizione 2v + 1 o 2v + 2».</p>
+<p class="titolo-codice">Codice 6.7 delle slide (lavagna, pagina 10)</p>
+<pre class="pseudo"><b>PROCEDURA</b> risistema(array A[0..n−1], intero r, intero ℓ)
+  v ← r                               <span class="com">// v: posizione in esame</span>
+  x ← A[v]                            <span class="com">// x: chiave da far scendere</span>
+  daCollocare ← true
+  <b>DO</b>
+    <b>IF</b> 2*v + 1 ≥ ℓ <b>THEN</b>                <span class="com">// v è una foglia</span>
+      daCollocare ← false
+    <b>ELSE</b>
+      u ← 2*v + 1                     <span class="com">// figlio sinistro</span>
+      <b>IF</b> u + 1 &lt; ℓ <b>AND</b> A[u + 1] &gt; A[u] <b>THEN</b>
+        u ← u + 1                     <span class="com">// c'è il destro ed è maggiore</span>
+      <b>IF</b> A[u] &gt; x <b>THEN</b>
+        A[v] ← A[u]                   <span class="com">// il figlio risale</span>
+        v ← u
+      <b>ELSE</b>
+        daCollocare ← false
+  <b>WHILE</b> daCollocare
+  A[v] ← x</pre>
+<p>I parametri:</p>
+<ul>
+  <li><strong>A</strong> è l'array. Le slide: «A è un array i cui primi ℓ elementi formano uno heap», tranne forse la posizione r.</li>
+  <li><strong>r</strong> è la posizione della radice della parte da risistemare. In heapSort è sempre 0; in creaHeap (sezione 4) sarà la radice di un sottoalbero.</li>
+  <li><strong>ℓ</strong> è il numero di elementi dello heap, cioè la prima posizione <em>fuori</em> dallo heap. Tutto quello che sta da ℓ in poi non va toccato.</li>
+</ul>
+<p>Rispetto alla versione con l'albero cambiano due righe:</p>
+<ul>
+  <li><b>«v è una foglia»</b> diventa <code>2*v + 1 ≥ ℓ</code>: il figlio sinistro starebbe in 2v + 1, e se quella posizione è fuori dallo heap v non ha figli. (Se non c'è il sinistro non c'è nemmeno il destro.)</li>
+  <li><b>«u ← figlio di v di valore max»</b> diventa due righe. Prima u è il figlio sinistro, 2v + 1. Poi, <em>se il destro esiste</em> (u + 1 &lt; ℓ) <em>ed è maggiore</em> (A[u + 1] &gt; A[u]), u passa al destro. Alla lavagna, pagina 10, il prof scrive «u ← indice del figlio di v di valore max» e mette queste due righe in un riquadro accanto.</li>
+</ul>
+<p>Qui ci sono solo chiavi numeriche, quindi non ci sono gli «altri campi» del pacco 13: le slide lo dicono esplicitamente («per semplicità viene indicata solo la chiave»).</p>
+
+<div class="box def">
+  <span class="etichetta">Attrezzo: l'AND «pigro»</span>
+  <p>Nella condizione <code>u + 1 &lt; ℓ AND A[u + 1] &gt; A[u]</code> l'AND si valuta da sinistra: se la prima parte è falsa, il risultato è falso comunque, e la seconda parte <em>non viene nemmeno calcolata</em>. Si chiama valutazione pigra (o cortocircuito), e la fanno anche C, Java e Go con <code>&amp;&amp;</code>. Qui è essenziale: se il figlio destro non è nello heap, A[u + 1] non viene letto.</p>
+</div>
+
+<h3>Perché serve il controllo u + 1 &lt; ℓ</h3>
+<p>Non è solo per non uscire dall'array. Durante heapSort, subito dopo lo heap ci sono gli elementi <em>già ordinati</em>, che sono i più grandi di tutti. Se risistema li guardasse come figli, li tirerebbe di nuovo dentro lo heap. La Figura 5 mostra un caso vero, verso la fine dell'ordinamento dell'esempio della Figura 1.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">lo heap è A[0..1]: ℓ = 2</div><div class="array qs"><div class="cella attiva"><div class="f">v</div><div class="v">1</div><div class="i">0</div></div><div class="cella"><div class="f">u</div><div class="v">2</div><div class="i">1</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f">u + 1</div><div class="v">4</div><div class="i">2</div></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco"><div><div class="nome-mat">con il controllo u + 1 &lt; ℓ</div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div><div class="piccolo"><span class="ok">giusto</span>: sale 2</div></div><div><div class="nome-mat">senza il controllo</div><div class="array qs mini"><div class="cella perno"><div class="f"></div><div class="v">4</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="stacco"></div><div class="cella perno"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div><div class="piccolo"><span class="errore">sbagliato</span>: 4 rientra nello heap e 1 finisce tra gli ordinati</div></div></div>
+<div class="didascalia"><b>Figura 5.</b> Lo heap ha 2 elementi (ℓ = 2): la radice 1 e il suo figlio sinistro 2. La posizione u + 1 = 2 esiste, ma contiene 4, già ordinato. Con il controllo, u resta 1, sale 2 e tutto va bene. Senza, si sceglierebbe 4 come «figlio maggiore»: 4 tornerebbe nella radice, 1 finirebbe tra gli ordinati, e alla fine l'array non sarebbe ordinato.</div>
+</div>
+
+<h3>L'esempio della lavagna</h3>
+<p>Alla lavagna, pagina 10, il prof esegue risistema(A, 0, 9) sull'array 4 11 19 10 5 6 2 1 8 | 26: è il primo giro di heapSort, subito dopo lo scambio tra 26 e 4.</p>
+<ol>
+  <li>v = 0, x = 4.</li>
+  <li>2 · 0 + 1 = 1 &lt; 9: non è una foglia. u = 1; u + 1 = 2 &lt; 9 e A[2] = 19 &gt; A[1] = 11: u = 2. A[2] = 19 &gt; 4: 19 sale in posizione 0, v = 2.</li>
+  <li>2 · 2 + 1 = 5 &lt; 9. u = 5; u + 1 = 6 &lt; 9 ma A[6] = 2 non è maggiore di A[5] = 6: u resta 5. 6 &gt; 4: 6 sale in posizione 2, v = 5.</li>
+  <li>2 · 5 + 1 = 11 ≥ 9: v è una foglia. Fine del ciclo; A[5] ← 4.</li>
+</ol>
+<p>Risultato: 19 11 6 10 5 4 2 1 8 | 26, con 4 confronti. È lo stesso risultato della Figura 7 (b) del pacco 13, ora scritto nell'array.</p>
+<div class="widget" id="w-ra">
+  <h4>risistema sull'array, una riga alla volta</h4>
+  <div id="ra-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>risistema(A, r, ℓ): i primi ℓ elementi sono uno heap tranne forse A[r]; A[r] scende al suo posto.</li>
+    <li>Foglia: 2v + 1 ≥ ℓ. Figlio maggiore: u ← 2v + 1; se u + 1 &lt; ℓ e A[u + 1] &gt; A[u], u ← u + 1.</li>
+    <li>Il controllo u + 1 &lt; ℓ impedisce di tirare dentro lo heap gli elementi già ordinati.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="creaheap"><span class="num">4</span>creaHeap sull'array</h2>
+<p class="in-questa"><b>In questa sezione:</b> la costruzione dello heap dal basso scritta con gli indici (lavagna, pagina 11, e Codice 6.6); perché il ciclo parte da ⌊n/2⌋ e scende; l'esempio delle slide passo per passo.</p>
+<p class="titolo-codice">Codice 6.6 delle slide (lavagna, pagina 11)</p>
+<pre class="pseudo"><b>PROCEDURA</b> creaHeap(array A[0..n−1])
+  <b>FOR</b> i ← ⌊n/2⌋ <b>DOWNTO</b> 0 <b>DO</b>
+    risistema(A, i, n)</pre>
+<p>È la creaHeap dal basso del pacco 13 (Codice 6.3): si chiama risistema su ogni nodo, dal basso verso l'alto e, in ogni livello, da destra a sinistra. Nell'array quell'ordine è semplicissimo: <strong>dalle posizioni più alte alle più basse</strong>, perché le posizioni crescono livello per livello e, dentro un livello, da sinistra a destra. Il parametro i, scrive il prof in rosso, è la «radice dell'albero da risistemare»; ℓ = n, perché lo heap che si sta costruendo occupa tutto l'array.</p>
+<h3>Perché si parte da ⌊n/2⌋</h3>
+<p>Alla lavagna il prof scrive prima «FOR i ← n − 1 DOWNTO 0», poi cancella n − 1 e lo corregge in n/2. Il motivo (dalle slide): le foglie sono già heap, ed è inutile chiamare risistema su di loro. E le foglie sono tutte in fondo all'array:</p>
+<ul>
+  <li>la posizione i è una foglia quando il suo figlio sinistro è fuori dall'array, cioè quando 2i + 1 ≥ n;</li>
+  <li>per i = ⌊n/2⌋ succede già: 2⌊n/2⌋ + 1 ≥ n, perché ⌊n/2⌋ è n/2 oppure (n − 1)/2. Esempio n = 10: ⌊10/2⌋ = 5 e 2 · 5 + 1 = 11 ≥ 10; esempio n = 9: ⌊9/2⌋ = 4 e 2 · 4 + 1 = 9 ≥ 9;</li>
+  <li>quindi tutte le posizioni da ⌊n/2⌋ a n − 1 sono foglie, circa metà dell'array.</li>
+</ul>
+<p>(Anche ⌊n/2⌋ è una foglia: si potrebbe partire da ⌊n/2⌋ − 1, l'ultimo nodo con figli. Partire da ⌊n/2⌋, come nelle slide, costa una chiamata inutile, che non fa niente. Allo scritto il risultato è lo stesso.)</p>
+
+<h3>L'esempio delle slide</h3>
+<p>Le slide partono dall'array 6 1 2 10 4 19 26 11 8 5 (n = 10, quindi i va da 5 a 0). La Figura 6 mostra l'array dopo ogni chiamata di risistema; in giallo le posizioni cambiate.</p>
+<div class="figura">
+<div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">l'array di partenza</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">i = 5: niente</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">4</div></div><div class="cella attiva"><div class="f"></div><div class="v">19</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">i = 4</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella attiva"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella attiva"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">i = 3</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">2</div></div><div class="cella attiva"><div class="f"></div><div class="v">11</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">6</div></div><div class="cella attiva"><div class="f"></div><div class="v">10</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">i = 2</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="cella attiva"><div class="f"></div><div class="v">26</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">5</div></div><div class="cella attiva"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">i = 1</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">0</div></div><div class="cella attiva"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">2</div></div><div class="cella attiva"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella attiva"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">i = 0</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">26</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella attiva"><div class="f"></div><div class="v">19</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella attiva"><div class="f"></div><div class="v">6</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div></div></div>
+<div class="didascalia"><b>Figura 6.</b> creaHeap sull'array delle slide. i = 5: è una foglia. i = 4: 4 ha il solo figlio 5 (posizione 9), che sale. i = 3: 10 ha figli 11 e 8: sale 11. i = 2: 2 ha figli 19 e 26: sale 26. i = 1: 1 ha figli 11 e 5: sale 11, poi sotto ha 10 e 8: sale 10. i = 0: 6 ha figli 11 e 26: sale 26, poi sotto ha 19 e 2: sale 19. Il risultato è lo heap della Figura 1.</div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>creaHeap(A): FOR i ← ⌊n/2⌋ DOWNTO 0: risistema(A, i, n).</li>
+    <li>Scendere con i vuol dire salire nell'albero, da destra a sinistra: è la creaHeap dal basso.</li>
+    <li>Le posizioni da ⌊n/2⌋ in poi sono foglie: non serve trattarle. Costo Θ(n) confronti, come nel pacco 13.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="heapsort"><span class="num">5</span>heapSort in loco, tutto insieme</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'algoritmo completo (lavagna, pagina 12, e Codice 6.5), l'esempio delle slide giro per giro, e un riquadro che esegue tutto heapSort su un array a scelta.</p>
+<p class="titolo-codice">Codice 6.5 delle slide (lavagna, pagina 12)</p>
+<pre class="pseudo"><b>ALGORITMO</b> heapSort(array A[0..n−1])
+  creaHeap(A)
+  <b>FOR</b> ℓ ← n − 1 <b>DOWNTO</b> 1 <b>DO</b>
+    scambia A[0] e A[ℓ]
+    risistema(A, 0, ℓ)</pre>
+<ul>
+  <li><b>creaHeap(A)</b>: tutto l'array diventa uno heap (sezione 4).</li>
+  <li><b>FOR ℓ ← n − 1 DOWNTO 1</b>: ℓ è l'ultima foglia dello heap; parte dall'ultima posizione e a ogni giro scende di uno.</li>
+  <li><b>scambia A[0] e A[ℓ]</b>: il massimo va in posizione ℓ, la sua posizione definitiva; l'ultima foglia va nella radice (sezione 2).</li>
+  <li><b>risistema(A, 0, ℓ)</b>: la nuova radice scende dentro lo heap, che ora ha ℓ elementi (sezione 3).</li>
+</ul>
+<p>Perché il ciclo si ferma a ℓ = 1? All'ultimo giro si scambiano A[0] e A[1] e lo heap resta con un elemento solo, A[0]: è il più piccolo di tutti, ed è già al suo posto. Un giro con ℓ = 0 non avrebbe niente da fare.</p>
+<p>La Figura 7 è l'esempio delle slide, giro per giro: per ogni ℓ l'array subito dopo lo scambio e dopo risistema. (Le slide mostrano i primi giri, con l'albero accanto; il riquadro alla fine della sezione li disegna tutti.)</p>
+<div class="figura">
+<div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 9, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">4</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 9, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">19</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 8, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">8</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 8, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">11</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">7</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 7, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">1</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 7, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">10</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 6, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 6, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">8</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 5, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">4</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">4</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 5, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">6</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">4</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 4, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 4, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">5</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">3</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 3, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">1</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 3, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 2, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">1</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 2, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 1, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">1</div><div class="i">0</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella ordinata"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 1, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">0</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">2</div><div class="i">1</div></div><div class="cella ordinata"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella ordinata"><div class="f"></div><div class="v">5</div><div class="i">3</div></div><div class="cella ordinata"><div class="f"></div><div class="v">6</div><div class="i">4</div></div><div class="cella ordinata"><div class="f"></div><div class="v">8</div><div class="i">5</div></div><div class="cella ordinata"><div class="f"></div><div class="v">10</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">11</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">19</div><div class="i">8</div></div><div class="cella ordinata"><div class="f"></div><div class="v">26</div><div class="i">9</div></div></div></div></div>
+<div class="didascalia"><b>Figura 7.</b> heapSort in loco sull'array 26 11 19 10 5 6 2 1 8 4, che è già uno heap. In verde la parte ordinata, che cresce da destra; in giallo, dopo ogni scambio, i due elementi scambiati.</div>
+</div>
+<div class="widget" id="w-hl">
+  <h4>heapSort in loco, passo per passo</h4>
+  <div id="hl-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>heapSort(A): creaHeap(A); poi FOR ℓ ← n − 1 DOWNTO 1: scambia A[0] e A[ℓ], risistema(A, 0, ℓ).</li>
+    <li>Dopo il giro con un certo ℓ, le posizioni da ℓ a n − 1 contengono i massimi, in ordine e al loro posto definitivo.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="costo"><span class="num">6</span>Memoria, tempo e stabilità</h2>
+<p class="in-questa"><b>In questa sezione:</b> il riassunto del prof (lavagna, pagina 13): heapSort è in loco, non usa memoria aggiuntiva, fa Θ(n log n) confronti, ma non è stabile. Con l'esempio 10<sub>a</sub> 10<sub>b</sub> 20.</p>
+<div class="box def">
+  <span class="etichetta">HeapSort riassumendo (lavagna, pagina 13)</span>
+  <ul>
+    <li>Algoritmo di ordinamento <strong>in loco</strong>.</li>
+    <li><strong>Nessuna memoria aggiuntiva</strong> (con creaHeap bottom-up).</li>
+    <li>Numero di confronti <strong>Θ(n log n)</strong>.</li>
+    <li>Tempo <strong>Θ(n log n)</strong>, se i confronti costano O(1).</li>
+    <li><strong>Non stabile</strong>.</li>
+  </ul>
+</div>
+<p><strong>Memoria.</strong> Oltre all'array servono poche variabili (i, ℓ, v, u, x, daCollocare), sempre le stesse qualunque sia n: memoria aggiuntiva Θ(1). Per questo il prof precisa «con creaHeap bottom-up»: la versione ricorsiva del pacco 13 userebbe la pila delle chiamate, alta Θ(log n). Anche risistema è scritta con un ciclo, non con la ricorsione.</p>
+<p><strong>Confronti e tempo.</strong> I confronti sono esattamente quelli della versione con l'albero: Θ(n) per creaHeap e O(log n) per ognuno degli n − 1 giri, in tutto Θ(n log n). Il resto del lavoro (scambi, conti sugli indici) è proporzionale ai confronti: per ogni livello di discesa, al più 2 confronti e un paio di assegnazioni. Quindi se ogni confronto costa un tempo costante, anche il tempo è Θ(n log n).</p>
+
+<h3>Perché non è stabile</h3>
+<p>Un algoritmo di ordinamento è <strong>stabile</strong> se gli elementi con la stessa chiave restano, alla fine, nell'ordine in cui erano all'inizio. heapSort non lo è: lo scambio tra la radice e l'ultima foglia fa saltare un elemento da un capo all'altro dello heap, scavalcando gli altri. L'esempio della lavagna, pagina 13 (lo stesso che suggeriscono le slide), ha tre record con chiavi 10, 10 e 20; chiamiamo 10<sub>a</sub> e 10<sub>b</sub> i due 10, nell'ordine iniziale.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) all'inizio</div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">10<sub>a</sub></div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">10<sub>b</sub></div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">20</div><div class="i">2</div></div></div></div><div><div class="nome-mat">(b) dopo creaHeap</div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">20</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">10<sub>b</sub></div><div class="i">1</div></div><div class="cella attiva"><div class="f"></div><div class="v">10<sub>a</sub></div><div class="i">2</div></div></div></div><div><div class="nome-mat">(c) ℓ = 2: scambio</div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">10<sub>a</sub></div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">10<sub>b</sub></div><div class="i">1</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">20</div><div class="i">2</div></div></div></div><div><div class="nome-mat">(d) ℓ = 1: scambio</div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">10<sub>b</sub></div><div class="i">0</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">10<sub>a</sub></div><div class="i">1</div></div><div class="cella ordinata"><div class="f"></div><div class="v">20</div><div class="i">2</div></div></div></div></div>
+<div class="didascalia"><b>Figura 8.</b> Lavagna, pagina 13. (a) All'inizio 10<sub>a</sub> viene prima di 10<sub>b</sub>. (b) creaHeap: 20 è più grande di 10<sub>a</sub> e sale nella radice; 10<sub>a</sub> va in fondo. (c) ℓ = 2: si scambiano 20 e 10<sub>a</sub>; risistema non sposta niente, perché 10<sub>b</sub> non è maggiore di 10<sub>a</sub>. (d) ℓ = 1: si scambiano 10<sub>a</sub> e 10<sub>b</sub>. Alla fine 10<sub>b</sub> viene prima di 10<sub>a</sub>: l'ordine dei due 10 si è invertito.</div>
+</div>
+<div class="tabella-wrap"><table>
+  <tr><th>algoritmo</th><th>confronti nel caso peggiore</th><th>memoria in più</th><th>stabile</th></tr>
+  <tr><td>mergeSort</td><td>Θ(n log n)</td><td>Θ(n) (array ausiliario)</td><td>sì</td></tr>
+  <tr><td>quickSort</td><td>Θ(n<sup>2</sup>)</td><td>la pila delle chiamate</td><td>no</td></tr>
+  <tr><td>heapSort</td><td>Θ(n log n)</td><td>Θ(1)</td><td>no</td></tr>
+</table></div>
+<p>heapSort è l'unico dei tre che garantisce Θ(n log n) confronti anche nel caso peggiore <em>e</em> non usa memoria in più. Il prezzo è la stabilità.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>In loco, memoria aggiuntiva Θ(1) (con creaHeap dal basso e risistema iterativa).</li>
+    <li>Θ(n log n) confronti, e Θ(n log n) tempo se i confronti costano O(1).</li>
+    <li>Non stabile: 10<sub>a</sub> 10<sub>b</sub> 20 diventa 10<sub>b</sub> 10<sub>a</sub> 20.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="decrescente"><span class="num">7</span>Ordinare in modo decrescente</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si ordina dal più grande al più piccolo con lo stesso algoritmo: basta un min-heap. È una richiesta frequente allo scritto (esercizio 5.5 del foglio e diversi temi d'esame).</p>
+<p>heapSort mette in fondo all'array, a ogni giro, la radice dello heap. Con un max-heap la radice è il massimo: in fondo finiscono i più grandi, e l'array viene in ordine <strong>crescente</strong>. Per avere l'ordine <strong>decrescente</strong> in fondo devono finire i più piccoli: serve un <strong>min-heap</strong>, dove ogni nodo è minore o uguale dei figli e la radice è il minimo.</p>
+<p>Cosa cambia nel codice? Solo i due confronti di risistema:</p>
+<ul>
+  <li>il figlio scelto è il <em>minore</em>: <code>IF u + 1 &lt; ℓ AND A[u + 1] &lt; A[u] THEN u ← u + 1</code>;</li>
+  <li>il figlio sale se è <em>più piccolo</em> di x: <code>IF A[u] &lt; x THEN …</code>.</li>
+</ul>
+<p>creaHeap e il ciclo di heapSort restano identici.</p>
+<div class="box esame">
+  <span class="etichetta">Come lo chiede l'esame</span>
+  <ul>
+    <li>«Supponete di ordinare la sequenza in modo <b>crescente</b> (o <b>non decrescente</b>) mediante heapSort» → si usa un <b>max-heap</b>.</li>
+    <li>«… in modo <b>decrescente</b> …» → si usa un <b>min-heap</b>.</li>
+    <li>«… dopo averlo trasformato in uno heap <b>del tipo opportuno</b>» (16 gennaio e 6 febbraio 2026): sei tu a dover scegliere, con le due regole dei punti precedenti.</li>
+  </ul>
+  <p>«Non decrescente» vuol dire «crescente, ma con eventuali valori uguali uno accanto all'altro»: con numeri tutti diversi è la stessa cosa.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Crescente (non decrescente): max-heap. Decrescente: min-heap.</li>
+    <li>Nel min-heap risistema sceglie il figlio minore e lo fa salire se è più piccolo di x; il resto non cambia.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="esame"><span class="num">8</span>Le due domande dell'esame</h2>
+<p class="in-questa"><b>In questa sezione:</b> le domande su heapSort dell'esercizio 2 dello scritto, la trappola di «immediatamente dopo lo scambio», l'esercizio della lavagna, pagina 14, risolto passo per passo, e un riquadro per allenarsi con tutti i temi e con esercizi nuovi a caso.</p>
+<p>Nei temi d'esame, su heapSort, ci sono due tipi di domanda (oltre a «trasformate l'array in un max-heap/min-heap», che è la domanda (a) dell'elenco seguente, con il tipo di heap già scritto nel testo):</p>
+<ol type="a">
+  <li>«Indicate il contenuto dell'array <b>dopo averlo trasformato in uno heap</b>.» Si fa solo creaHeap (sezione 4), con il tipo di heap giusto (sezione 7).</li>
+  <li>«Indicate il contenuto dell'array <b>immediatamente dopo lo scambio che colloca X nella sua posizione definitiva</b>.» Si fa creaHeap, poi i giri di heapSort, e ci si ferma subito dopo lo scambio che porta X in posizione ℓ.</li>
+</ol>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: «immediatamente dopo lo scambio»</span>
+  <p>La risposta è l'array <em>subito dopo lo scambio</em>, <strong>prima</strong> del risistema che lo segue. Quindi in posizione 0 c'è l'elemento appena arrivato dall'ultima foglia, che non è ancora sceso: la parte di sinistra <em>non</em> è uno heap. È l'errore più comune: scrivere l'array dopo risistema.</p>
+</div>
+<p>Quando viene collocato X? Con l'ordine crescente, al primo giro va al suo posto il massimo, al secondo il secondo più grande, e così via: se X è il k-esimo più grande, è il k-esimo scambio. Nei temi X è quasi sempre il secondo o il terzo più grande, quindi bastano pochi giri. (Con l'ordine decrescente vale lo stesso con i più piccoli.)</p>
+<p>La ricetta:</p>
+<ol>
+  <li><strong>Scegli il tipo di heap</strong>: max per crescente o non decrescente, min per decrescente.</li>
+  <li><strong>Fai creaHeap</strong>: disegna l'albero dal vettore posizionale e tratta le posizioni da ⌊n/2⌋ − 1 fino a 0 (sezione 4). Scrivi l'array.</li>
+  <li><strong>Conta quale scambio colloca X</strong>: se X è il k-esimo più grande (o più piccolo, per il decrescente), è lo scambio del k-esimo giro.</li>
+  <li><strong>Fai i giri</strong>: scambia A[0] e A[ℓ], poi risistema i primi ℓ elementi; ripeti, con ℓ che scende di uno.</li>
+  <li><strong>Al k-esimo giro fermati subito dopo lo scambio</strong>: quella è la risposta, con X in posizione ℓ e tutta la parte da ℓ in poi già ordinata.</li>
+</ol>
+
+<h3>L'esercizio della lavagna, pagina 14</h3>
+<p>«Considerate la seguente sequenza di numeri, memorizzata in un array: 25 15 14 18 26 33 35 16 47. Supponete di ordinare la sequenza in modo crescente mediante l'algoritmo heapSort. Indicate il contenuto dell'array immediatamente dopo lo scambio che colloca 33 nella sua posizione definitiva.»</p>
+<ol>
+  <li>Crescente: max-heap. n = 9, quindi i va da ⌊9/2⌋ = 4 a 0.</li>
+  <li>creaHeap. i = 4 (26): foglia. i = 3 (18, figli 16 e 47): sale 47. i = 2 (14, figli 33 e 35): sale 35. i = 1 (15, figli 47 e 26): sale 47; poi 15 ha figli 16 e 18: sale 18. i = 0 (25, figli 47 e 35): sale 47; poi 25 ha figli 18 e 26: sale 26; 25 è in una foglia. Heap: <b>47 26 35 18 25 33 14 16 15</b>.</li>
+  <li>33 è il terzo più grande (dopo 47 e 35): sarà il terzo scambio.</li>
+  <li>ℓ = 8: scambio → 15 26 35 18 25 33 14 16 | 47; risistema → 35 26 33 18 25 15 14 16 | 47.</li>
+  <li>ℓ = 7: scambio → 16 26 33 18 25 15 14 | 35 47; risistema → 33 26 16 18 25 15 14 | 35 47.</li>
+  <li>ℓ = 6: scambio → <b>14 26 16 18 25 15 | 33 35 47</b>. È la risposta (la stessa che scrive il prof alla lavagna): 14 26 16 18 25 15 33 35 47.</li>
+</ol>
+<div class="figura">
+<div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">l'array dato</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">14</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">35</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">16</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">47</div><div class="i">8</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">dopo creaHeap</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">47</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">35</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">14</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">16</div><div class="i">7</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">8</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 8, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">15</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">35</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">14</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">16</div><div class="i">7</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">47</div><div class="i">8</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 8, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">35</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">14</div><div class="i">6</div></div><div class="cella"><div class="f"></div><div class="v">16</div><div class="i">7</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">47</div><div class="i">8</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 7, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">16</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">14</div><div class="i">6</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">35</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">47</div><div class="i">8</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 7, dopo risistema</div><div><div class="array qs mini"><div class="cella"><div class="f"></div><div class="v">33</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">16</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">5</div></div><div class="cella"><div class="f"></div><div class="v">14</div><div class="i">6</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">35</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">47</div><div class="i">8</div></div></div></div></div><div class="affianco" style="justify-content:flex-start;gap:4px 14px;margin:4px 0"><div style="text-align:left;min-width:120px" class="piccolo">ℓ = 6, dopo lo scambio</div><div><div class="array qs mini"><div class="cella attiva"><div class="f"></div><div class="v">14</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">26</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">16</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">18</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">25</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">15</div><div class="i">5</div></div><div class="stacco"></div><div class="cella ordinata"><div class="f"></div><div class="v">33</div><div class="i">6</div></div><div class="cella ordinata"><div class="f"></div><div class="v">35</div><div class="i">7</div></div><div class="cella ordinata"><div class="f"></div><div class="v">47</div><div class="i">8</div></div></div></div></div>
+<div class="didascalia"><b>Figura 9.</b> L'esercizio della lavagna, pagina 14. L'ultima riga è la risposta: 14 è appena arrivato nella radice e non è ancora sceso.</div>
+</div>
+
+<div class="widget" id="w-ea">
+  <h4>Allenamento: le domande su heapSort dei temi d'esame</h4>
+  <div id="ea-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>«Dopo averlo trasformato in uno heap»: solo creaHeap, con il tipo giusto.</li>
+    <li>«Immediatamente dopo lo scambio che colloca X»: creaHeap, poi i giri; ci si ferma subito dopo lo scambio, <b>prima</b> di risistema.</li>
+    <li>Se X è il k-esimo più grande (crescente) o più piccolo (decrescente), è il k-esimo scambio.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Vettore posizionale</b>: l'albero quasi completo livello per livello. Figli di i in 2i + 1 e 2i + 2, padre in ⌊(i − 1)/2⌋; livello p nelle posizioni da 2<sup>p</sup> − 1 a 2<sup>p+1</sup> − 2.</li>
+    <li><b>In loco</b>: A[0..ℓ] heap, A[ℓ + 1..n − 1] ordinati. Scambiare A[0] e A[ℓ] mette il massimo al suo posto e l'ultima foglia nella radice.</li>
+    <li><b>risistema(A, r, ℓ)</b>: foglia se 2v + 1 ≥ ℓ; figlio maggiore: u ← 2v + 1, e u ← u + 1 se u + 1 &lt; ℓ AND A[u + 1] &gt; A[u].</li>
+    <li><b>creaHeap(A)</b>: FOR i ← ⌊n/2⌋ DOWNTO 0: risistema(A, i, n).</li>
+    <li><b>heapSort(A)</b>: creaHeap(A); FOR ℓ ← n − 1 DOWNTO 1: scambia A[0] e A[ℓ]; risistema(A, 0, ℓ).</li>
+    <li><b>Costo</b>: Θ(n log n) confronti, memoria in più Θ(1). <b>Non stabile</b>.</li>
+    <li><b>Decrescente</b>: min-heap.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Allo scritto (esercizio 2): l'array dopo creaHeap (max-heap o min-heap) e l'array subito dopo lo scambio che colloca un certo elemento. Allenati con il riquadro della sezione 8 finché non sbagli più: sono punti sicuri.</li>
+    <li>All'orale: perché i figli stanno in 2i + 1 e 2i + 2, il codice di risistema sull'array (e perché serve u + 1 &lt; ℓ), perché creaHeap parte da ⌊n/2⌋, perché heapSort è in loco e non è stabile.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> gli esercizi del foglio 5 sulla versione in loco (5.2, 5.3, 5.5, 5.6, 5.7, 5.8) e le domande su heapSort dei temi d'esame. Prova prima da solo, poi apri la soluzione. Tutti i risultati sono stati controllati eseguendo l'algoritmo.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 5.3 del foglio 5: heapSort in loco su 20 11 18 16 17 3 30 4 19 25</summary>
+  <p>Applicate heapSort in loco al vettore posizionale 20 11 18 16 17 3 30 4 19 25: scrivete l'array dopo averlo trasformato in uno heap e dopo ogni iterazione della seconda parte dell'algoritmo.</p>
+  <div class="soluzione">
+    <p><b>creaHeap</b> (n = 10, i da 5 a 0): i = 5 foglia; i = 4 (17, figlio 25): sale 25; i = 3 (16, figli 4 e 19): sale 19; i = 2 (18, figli 3 e 30): sale 30; i = 1 (11, figli 19 e 25): sale 25, poi 11 ha il figlio 17: sale 17; i = 0 (20, figli 25 e 30): sale 30, poi 20 ha figli 3 e 18: resta. Heap: <b>30 25 20 19 17 3 18 4 16 11</b>.</p>
+    <p><b>Le iterazioni</b> (dopo scambio e risistema; dopo la barra la parte ordinata):</p>
+    <div class="tabella-wrap"><table>
+      <tr><th>ℓ</th><th>array</th></tr>
+      <tr><td>9</td><td>25 19 20 16 17 3 18 4 11 | 30</td></tr>
+      <tr><td>8</td><td>20 19 18 16 17 3 11 4 | 25 30</td></tr>
+      <tr><td>7</td><td>19 17 18 16 4 3 11 | 20 25 30</td></tr>
+      <tr><td>6</td><td>18 17 11 16 4 3 | 19 20 25 30</td></tr>
+      <tr><td>5</td><td>17 16 11 3 4 | 18 19 20 25 30</td></tr>
+      <tr><td>4</td><td>16 4 11 3 | 17 18 19 20 25 30</td></tr>
+      <tr><td>3</td><td>11 4 3 | 16 17 18 19 20 25 30</td></tr>
+      <tr><td>2</td><td>4 3 | 11 16 17 18 19 20 25 30</td></tr>
+      <tr><td>1</td><td>3 | 4 11 16 17 18 19 20 25 30</td></tr>
+    </table></div>
+    <p>Puoi vedere ogni passo nel riquadro della sezione 5, scegliendo «Esercizio 5.3 del foglio».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5.5 del foglio 5: lo stesso in ordine decrescente</summary>
+  <p>Risolvete l'esercizio 5.3 ordinando in modo decrescente.</p>
+  <div class="soluzione">
+    <p>Serve un min-heap. <b>creaHeap</b>: i = 5 e i = 4 non cambiano niente (17 è minore di 25); i = 3 (16, figli 4 e 19): sale 4; i = 2 (18, figli 3 e 30): sale 3; i = 1 (11, figli 4 e 17): sale 4, poi 11 ha figli 16 e 19: resta; i = 0 (20, figli 4 e 3): sale 3, poi 20 ha figli 18 e 30: sale 18. Min-heap: <b>3 4 18 11 17 20 30 16 19 25</b>.</p>
+    <div class="tabella-wrap"><table>
+      <tr><th>ℓ</th><th>array dopo scambio e risistema</th></tr>
+      <tr><td>9</td><td>4 11 18 16 17 20 30 25 19 | 3</td></tr>
+      <tr><td>8</td><td>11 16 18 19 17 20 30 25 | 4 3</td></tr>
+      <tr><td>7</td><td>16 17 18 19 25 20 30 | 11 4 3</td></tr>
+      <tr><td>6</td><td>17 19 18 30 25 20 | 16 11 4 3</td></tr>
+      <tr><td>5</td><td>18 19 20 30 25 | 17 16 11 4 3</td></tr>
+      <tr><td>4</td><td>19 25 20 30 | 18 17 16 11 4 3</td></tr>
+      <tr><td>3</td><td>20 25 30 | 19 18 17 16 11 4 3</td></tr>
+      <tr><td>2</td><td>25 30 | 20 19 18 17 16 11 4 3</td></tr>
+      <tr><td>1</td><td>30 | 25 20 19 18 17 16 11 4 3</td></tr>
+    </table></div>
+    <p>Per l'esercizio 5.2 (12 14 20 25 13 10 22 19 24 27 15 16 21) il max-heap è 27 25 22 24 15 21 20 19 12 13 14 16 10 e il min-heap è 10 13 12 19 14 16 22 25 24 27 15 20 21: puoi controllare i passi nel riquadro della sezione 5, scrivendo l'array.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5.6 del foglio 5: altezza, livelli e posizioni</summary>
+  <p>In un albero quasi completo di n nodi (foglie dell'ultimo livello a sinistra): (a) calcolate l'altezza esatta e il numero di nodi di ogni livello; (b) nel vettore posizionale con radice in 0, quali posizioni occupa il livello p? (c) Dimostrate che i figli della posizione i sono in 2i + 1 e 2i + 2. (d) Qual è la posizione del padre?</p>
+  <div class="soluzione">
+    <p><b>(a)</b> Altezza h = ⌊log<sub>2</sub> n⌋ (pacco 13, sezione 3). I livelli p &lt; h sono pieni: 2<sup>p</sup> nodi. L'ultimo ha quello che resta: n − (2<sup>h</sup> − 1) = n − 2<sup>h</sup> + 1 nodi. Esempio n = 10: h = 3, livelli con 1, 2, 4 e 3 nodi.</p>
+    <p><b>(b)</b> Dalla posizione 2<sup>p</sup> − 1 alla 2<sup>p+1</sup> − 2 (sezione 1), per p &lt; h; l'ultimo livello va da 2<sup>h</sup> − 1 a n − 1. La formula si verifica per induzione su p: il livello 0 è la sola posizione 0 = 2<sup>0</sup> − 1 = 2<sup>1</sup> − 2; se il livello p finisce in 2<sup>p+1</sup> − 2, il livello p + 1 comincia subito dopo, in 2<sup>p+1</sup> − 1, e ha 2<sup>p+1</sup> posti, quindi finisce in 2<sup>p+1</sup> − 1 + 2<sup>p+1</sup> − 1 = 2<sup>p+2</sup> − 2.</p>
+    <p><b>(c)</b> È la dimostrazione della sezione 1: il nodo in posizione i = 2<sup>p</sup> − 1 + k ha il figlio sinistro in 2<sup>p+1</sup> − 1 + 2k = 2i + 1, e il destro subito dopo, in 2i + 2.</p>
+    <p><b>(d)</b> Padre di j ≥ 1: ⌊(j − 1)/2⌋. Se j = 2i + 1, (j − 1)/2 = i; se j = 2i + 2, (j − 1)/2 = i + 1/2, e arrotondando per difetto viene ancora i.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5.7 del foglio 5: con gli indici da 1</summary>
+  <p>Ripetete la seconda parte dell'esercizio 5.6 con la radice in posizione 1.</p>
+  <div class="soluzione">
+    <p>Tutte le posizioni aumentano di 1. Il livello p occupa le posizioni da <b>2<sup>p</sup></b> a <b>2<sup>p+1</sup> − 1</b>. I figli di i sono in <b>2i</b> e <b>2i + 1</b>: chiamando j = i − 1 la posizione contata da 0, i figli sono in 2j + 1 e 2j + 2 contando da 0, cioè 2j + 2 = 2i e 2j + 3 = 2i + 1 contando da 1. Il padre di i ≥ 2 è in <b>⌊i/2⌋</b>. Con gli indici da 1 le formule sono più semplici: per questo molti libri li usano.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5.8 del foglio 5: heapSort non è stabile</summary>
+  <p>Fornite un esempio che mostri che heapSort non è un algoritmo di ordinamento stabile.</p>
+  <div class="soluzione">
+    <p>L'esempio della lavagna (sezione 6, Figura 8): 10<sub>a</sub> 10<sub>b</sub> 20. creaHeap dà 20 10<sub>b</sub> 10<sub>a</sub>; ℓ = 2: scambio → 10<sub>a</sub> 10<sub>b</sub> | 20, risistema non sposta niente (10<sub>b</sub> non è maggiore di 10<sub>a</sub>); ℓ = 1: scambio → 10<sub>b</sub> | 10<sub>a</sub> 20. Risultato 10<sub>b</sub> 10<sub>a</sub> 20: i due 10 hanno cambiato ordine.</p>
+    <p>Un esempio ancora più piccolo: 5<sub>a</sub> 5<sub>b</sub>. creaHeap non sposta niente; ℓ = 1: si scambiano A[0] e A[1]: 5<sub>b</sub> 5<sub>a</sub>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 14 giugno 2024: 24 17 43 14 12 26 39 34 16</summary>
+  <p>(c) Ordinamento crescente: l'array immediatamente dopo lo scambio che colloca 39. (d) Ordinamento decrescente: l'array dopo averlo trasformato in uno heap.</p>
+  <div class="soluzione">
+    <p><b>(c)</b> Max-heap: <b>43 34 39 17 12 26 24 14 16</b> (i = 4 foglia; i = 3, il 14 con figli 34 e 16: sale 34; i = 2, il 43 con figli 26 e 39: resta; i = 1, il 17 con figli 34 e 12: sale 34, e 17 si ferma sopra 14 e 16, che sono più piccoli; i = 0, il 24 con figli 34 e 43: sale 43, poi 24 ha figli 26 e 39: sale 39). 39 è il secondo più grande: secondo scambio. ℓ = 8: scambio → 16 34 39 17 12 26 24 14 | 43; risistema → 39 34 26 17 12 16 24 14 | 43. ℓ = 7: scambio → <b>14 34 26 17 12 16 24 39 43</b>.</p>
+    <p><b>(d)</b> Decrescente: min-heap. i = 3 (14, figli 34 e 16): resta; i = 2 (43, figli 26 e 39): sale 26; i = 1 (17, figli 14 e 12): sale 12; i = 0 (24, figli 12 e 26): sale 12, poi 24 ha figli 14 e 17: sale 14, poi 24 ha figli 34 e 16: sale 16. Min-heap: <b>12 14 26 16 17 43 39 34 24</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 12 luglio 2024 (d): decrescente, dopo lo scambio che colloca 12</summary>
+  <p>Array 12 14 17 24 2 33 46 21 15. Ordinamento decrescente: l'array immediatamente dopo lo scambio che colloca 12 nella sua posizione definitiva.</p>
+  <div class="soluzione">
+    <p>Decrescente: min-heap. creaHeap: i = 4 foglia; i = 3 (24, figli 21 e 15): sale 15; i = 2 (17, figli 33 e 46): resta; i = 1 (14, figli 15 e 2): sale 2; i = 0 (12, figli 2 e 17): sale 2, poi 12 ha figli 15 e 14: resta. Min-heap: <b>2 12 17 15 14 33 46 21 24</b>. 12 è il secondo più piccolo: secondo scambio. ℓ = 8: scambio → 24 12 17 15 14 33 46 21 | 2; risistema → 12 14 17 15 24 33 46 21 | 2. ℓ = 7: scambio → <b>21 14 17 15 24 33 46 12 2</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 20 settembre 2024: 15 21 23 29 12 18 44 22 16 17</summary>
+  <p>(b) Max-heap; (c) min-heap; (d) ordinamento decrescente: l'array immediatamente dopo lo scambio che colloca 15.</p>
+  <div class="soluzione">
+    <p>n = 10, i da 5 a 0.</p>
+    <p><b>(b)</b> i = 5 foglia; i = 4 (12, figlio 17): sale 17; i = 3 (29, figli 22 e 16): resta; i = 2 (23, figli 18 e 44): sale 44; i = 1 (21, figli 29 e 17): sale 29, poi 21 ha figli 22 e 16: sale 22; i = 0 (15, figli 29 e 44): sale 44, poi 15 ha figli 18 e 23: sale 23. Max-heap: <b>44 29 23 22 17 18 15 21 16 12</b>.</p>
+    <p><b>(c)</b> i = 5 foglia; i = 4 (12, figlio 17): resta; i = 3 (29, figli 22 e 16): sale 16; i = 2 (23, figli 18 e 44): sale 18; i = 1 (21, figli 16 e 12): sale 12, poi 21 ha il figlio 17: sale 17; i = 0 (15, figli 12 e 18): sale 12, poi 15 ha figli 16 e 17: resta. Min-heap: <b>12 15 18 16 17 23 44 22 29 21</b>.</p>
+    <p><b>(d)</b> Si parte dal min-heap di (c). 15 è il secondo più piccolo. ℓ = 9: scambio → 21 15 18 16 17 23 44 22 29 | 12; risistema → 15 16 18 21 17 23 44 22 29 | 12. ℓ = 8: scambio → <b>29 16 18 21 17 23 44 22 15 12</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 31 gennaio 2025 (c): dopo lo scambio che colloca 33</summary>
+  <p>Array 26 36 11 16 33 28 23 77, ordinamento non decrescente.</p>
+  <div class="soluzione">
+    <p>Max-heap: i = 4 foglia; i = 3 (16, figlio 77): sale 77; i = 2 (11, figli 28 e 23): sale 28; i = 1 (36, figli 77 e 33): sale 77, e 36 resta sopra 16; i = 0 (26, figli 77 e 28): sale 77, poi 26 ha figli 36 e 33: sale 36. Heap: <b>77 36 28 26 33 11 23 16</b>. 33 è il terzo più grande (77, 36, 33): terzo scambio.</p>
+    <ol>
+      <li>ℓ = 7: scambio → 16 36 28 26 33 11 23 | 77; risistema → 36 33 28 26 16 11 23 | 77.</li>
+      <li>ℓ = 6: scambio → 23 33 28 26 16 11 | 36 77; risistema → 33 26 28 23 16 11 | 36 77.</li>
+      <li>ℓ = 5: scambio → <b>11 26 28 23 16 33 36 77</b>.</li>
+    </ol>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 16 gennaio 2026: 16 25 33 40 11 50 14 47</summary>
+  <p>Ordinamento non decrescente. (b) L'array dopo averlo trasformato in uno heap del tipo opportuno. (c) L'array immediatamente dopo lo scambio che colloca 40.</p>
+  <div class="soluzione">
+    <p><b>(b)</b> Non decrescente: max-heap. i = 4 foglia; i = 3 (40, figlio 47): sale 47; i = 2 (33, figli 50 e 14): sale 50; i = 1 (25, figli 47 e 11): sale 47, poi 25 ha il figlio 40: sale 40; i = 0 (16, figli 47 e 50): sale 50, poi 16 ha figli 33 e 14: sale 33. Heap: <b>50 47 33 40 11 16 14 25</b>.</p>
+    <p><b>(c)</b> 40 è il terzo più grande (50, 47, 40). ℓ = 7: scambio → 25 47 33 40 11 16 14 | 50; risistema → 47 40 33 25 11 16 14 | 50. ℓ = 6: scambio → 14 40 33 25 11 16 | 47 50; risistema → 40 25 33 14 11 16 | 47 50. ℓ = 5: scambio → <b>16 25 33 14 11 40 47 50</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Tema d'esame, 17 gennaio 2025 (c): dopo lo scambio che colloca 45</summary>
+  <p>Array 14 19 23 11 45 18 43 52, ordinamento non decrescente.</p>
+  <div class="soluzione">
+    <p>Max-heap: i = 3 (11, figlio 52): sale 52; i = 2 (23, figli 18 e 43): sale 43; i = 1 (19, figli 52 e 45): sale 52, poi 19 ha il figlio 11: resta; i = 0 (14, figli 52 e 43): sale 52, poi 14 ha figli 19 e 45: sale 45. Heap: <b>52 45 43 19 14 18 23 11</b>.</p>
+    <p>45 è il secondo più grande. ℓ = 7: scambio → 11 45 43 19 14 18 23 | 52; risistema → 45 19 43 11 14 18 23 | 52. ℓ = 6: scambio → <b>23 19 43 11 14 18 45 52</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Temi d'esame, «dopo averlo trasformato in uno heap»: 19 gennaio 2024, 16 febbraio 2024, 6 febbraio 2026</summary>
+  <p>Per ciascun array, l'array dopo creaHeap per l'ordinamento crescente (max-heap) e, dove richiesto, decrescente (min-heap).</p>
+  <div class="soluzione">
+    <ul>
+      <li><b>19 gennaio 2024</b>, 28 42 17 15 36 25 32 20 44. Crescente: i = 3: sale 44; i = 2: sale 32; i = 1: sale 44; i = 0: sale 44, poi sale 42. Max-heap <b>44 42 32 28 36 25 17 20 15</b>. Decrescente: i = 1 (42, figli 15 e 36): sale 15, poi 42 ha figli 20 e 44: sale 20; i = 0 (28, figli 15 e 17): sale 15, poi 28 ha figli 20 e 36: sale 20. Min-heap <b>15 20 17 28 36 25 32 42 44</b>.</li>
+      <li><b>16 febbraio 2024</b>, 35 50 37 22 49 52 46 60 55. Max-heap <b>60 55 52 50 49 37 46 22 35</b> (alla radice 35 scende di tre livelli: salgono 60, 55, 50). Min-heap <b>22 35 37 50 49 52 46 60 55</b>.</li>
+      <li><b>6 febbraio 2026</b>, 18 44 11 24 13 22 31 33, «del tipo opportuno» con ordine non decrescente: max-heap. i = 3: sale 33; i = 2: sale 31; i = 1: 44 resta; i = 0: sale 44, poi sale 33, poi sale 24. Max-heap <b>44 33 31 24 13 22 11 18</b>.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Altri temi d'esame: solo le risposte, per controllarti</summary>
+  <p>Ordinamento non decrescente; l'array immediatamente dopo lo scambio che colloca l'elemento indicato. Risolvili da solo, poi confronta (o usa il riquadro della sezione 8, che li ha tutti con i passaggi).</p>
+  <div class="soluzione">
+    <div class="tabella-wrap"><table>
+      <tr><th>tema</th><th>array</th><th>colloca</th><th>max-heap</th><th>risposta</th></tr>
+      <tr><td>14 febbraio 2025</td><td>23 11 10 13 46 22 48 44</td><td>46</td><td>48 46 23 44 11 22 10 13</td><td>10 44 23 13 11 22 46 48</td></tr>
+      <tr><td>20 giugno 2025</td><td>17 28 35 16 45 80 33 44</td><td>45</td><td>80 45 35 44 28 17 33 16</td><td>33 44 35 16 28 17 45 80</td></tr>
+      <tr><td>19 settembre 2025</td><td>25 16 14 13 48 56 29 26</td><td>48</td><td>56 48 29 26 16 14 25 13</td><td>25 26 29 13 16 14 48 56</td></tr>
+      <tr><td>14 novembre 2025</td><td>21 18 24 63 35 34 27 29</td><td>35</td><td>63 35 34 29 21 24 27 18</td><td>27 29 34 18 21 24 35 63</td></tr>
+      <tr><td>27 febbraio 2026</td><td>15 11 44 18 42 12 33 24</td><td>42</td><td>44 42 33 24 11 12 15 18</td><td>15 24 33 18 11 12 42 44</td></tr>
+    </table></div>
+    <p>In tutti e cinque l'elemento da collocare è il secondo più grande: basta il primo giro completo (scambio e risistema) e poi il secondo scambio. Nel tema del 14 novembre 2025 il max-heap era anche la domanda (b).</p>
+  </div>
+</details>
+
+<!-- ============================================================ 11 -->
+<h2 id="approfondimenti"><span class="num">11</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per lo scritto. Si aprono con un clic.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: heapSort in C e in Go</summary>
+  <div class="soluzione">
+    <p>La traduzione riga per riga dei Codici 6.5, 6.6 e 6.7. In C c'è il DO … WHILE; in Go no, e il ciclo diventa un <code>for</code> senza condizione con <code>break</code> dove il codice mette daCollocare a false. In tutti e due l'AND è pigro (<code>&amp;&amp;</code>), come serve per u + 1 &lt; ℓ. Unica aggiunta: con n = 0 l'array non ha nemmeno la posizione 0, e risistema(A, 0, 0) leggerebbe A[0]; per questo si esce subito se n &lt; 2. Entrambi i programmi sono stati provati su 20 000 array casuali, confrontando il risultato con l'ordinamento della libreria.</p>
+<pre class="go">#include &lt;stdbool.h&gt;
+
+/* Codice 6.7: le prime l posizioni di A sono uno heap, tranne forse A[r] */
+void risistema(int A[], int r, int l) {
+    int v = r;
+    int x = A[v];
+    bool daCollocare = true;
+    do {
+        if (2 * v + 1 &gt;= l) {              /* v è una foglia */
+            daCollocare = false;
+        } else {
+            int u = 2 * v + 1;             /* figlio sinistro */
+            if (u + 1 &lt; l &amp;&amp; A[u + 1] &gt; A[u])
+                u = u + 1;                 /* il destro è maggiore */
+            if (A[u] &gt; x) {
+                A[v] = A[u];
+                v = u;
+            } else {
+                daCollocare = false;
+            }
+        }
+    } while (daCollocare);
+    A[v] = x;
+}
+
+/* Codici 6.6 e 6.5 */
+void heapSort(int A[], int n) {
+    if (n &lt; 2) return;                     /* con n = 0 non c'è nemmeno A[0] */
+    for (int i = n / 2; i &gt;= 0; i--)       /* creaHeap */
+        risistema(A, i, n);
+    for (int l = n - 1; l &gt;= 1; l--) {
+        int t = A[0]; A[0] = A[l]; A[l] = t;   /* scambia A[0] e A[l] */
+        risistema(A, 0, l);
+    }
+}</pre>
+<pre class="go">// Codice 6.7: le prime l posizioni di a sono uno heap, tranne forse a[r]
+func risistema(a []int, r, l int) {
+	v := r
+	x := a[v]
+	for {
+		if 2*v+1 &gt;= l { // v è una foglia
+			break
+		}
+		u := 2*v + 1 // figlio sinistro
+		if u+1 &lt; l &amp;&amp; a[u+1] &gt; a[u] {
+			u = u + 1 // il destro è maggiore
+		}
+		if a[u] &gt; x {
+			a[v] = a[u]
+			v = u
+		} else {
+			break
+		}
+	}
+	a[v] = x
+}
+
+// Codici 6.6 e 6.5
+func heapSort(a []int) {
+	n := len(a)
+	if n &lt; 2 { // con n = 0 non c'è nemmeno a[0]
+		return
+	}
+	for i := n / 2; i &gt;= 0; i-- { // creaHeap
+		risistema(a, i, n)
+	}
+	for l := n - 1; l &gt;= 1; l-- {
+		a[0], a[l] = a[l], a[0] // scambia a[0] e a[l]
+		risistema(a, 0, l)
+	}
+}</pre>
+  </div>
+</details>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: si può rendere heapSort stabile?</summary>
+  <div class="soluzione">
+    <p>Sì, ma costa memoria. Basta confrontare le coppie (chiave, posizione iniziale) invece delle sole chiavi: a parità di chiave vince chi stava prima, e due elementi non sono mai «uguali». Il risultato è stabile, ma bisogna tenere da parte la posizione iniziale di ogni elemento, cioè n numeri in più: l'algoritmo non è più in loco. Per questo, quando serve un ordinamento stabile con Θ(n log n) confronti, di solito si usa mergeSort.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="13-heap.html">← Pacco 13: heap e creaHeap</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="15-limite-e-radixsort.html">Pacco 15: limite n log n e radixSort →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- alberi.js
+// Alberi binari: costruzione, disegno, visite (pacco 12).
+// Un albero è { radice: id|null, nodi: { id: { v: "8", sx: id|null, dx: id|null } } }.
+function escA(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1a(v) { return Math.round(v * 10) / 10; }
+
+// "8(14(22,12(1,3)),11(,5))": etichetta, poi tra parentesi il sottoalbero sinistro e il destro (vuoto = niente)
+function alberoDa(testo) {
+  var s = testo.replace(/\s+/g, ""), k = 0, n = 0, nodi = {};
+  function nodo() {
+    var et = "";
+    while (k < s.length && "(),".indexOf(s[k]) < 0) et += s[k++];
+    if (et === "") return null;
+    var id = "a" + (n++);
+    nodi[id] = { v: et, sx: null, dx: null };
+    if (s[k] === "(") {
+      k++;
+      nodi[id].sx = nodo();
+      if (s[k] !== ",") throw new Error("manca la virgola in " + testo);
+      k++;
+      nodi[id].dx = nodo();
+      if (s[k] !== ")") throw new Error("manca la parentesi in " + testo);
+      k++;
+    }
+    return id;
+  }
+  var r = nodo();
+  return { radice: r, nodi: nodi };
+}
+// vettore posizionale: radice in A[0], figli di A[i] in A[2i+1] e A[2i+2]
+function alberoDaVettore(A) {
+  var nodi = {};
+  for (var i = 0; i < A.length; i++) nodi["p" + i] = { v: String(A[i]), sx: 2 * i + 1 < A.length ? "p" + (2 * i + 1) : null, dx: 2 * i + 2 < A.length ? "p" + (2 * i + 2) : null, pos: i };
+  return { radice: A.length ? "p0" : null, nodi: nodi };
+}
+function altezza(T, id) {
+  if (id === undefined) id = T.radice;
+  if (id === null) return -1;
+  return 1 + Math.max(altezza(T, T.nodi[id].sx), altezza(T, T.nodi[id].dx));
+}
+function contaNodi(T, id) { if (id === undefined) id = T.radice; if (id === null) return 0; return 1 + contaNodi(T, T.nodi[id].sx) + contaNodi(T, T.nodi[id].dx); }
+
+// posizioni: a profondità d il nodo occupa uno dei 2^d «posti» del livello (come nel vettore posizionale)
+function disponi(T, opz) {
+  opz = opz || {};
+  var h = Math.max(0, altezza(T)), slot = opz.slot || 46, dy = opz.dy || 62;
+  var W = Math.max(opz.minW || 0, Math.pow(2, h) * slot + 2 * (opz.margine || 14));
+  var pos = {}, m = opz.margine || 14, top = opz.top || 30;
+  function vai(id, d, k) {
+    if (id === null) return;
+    var largh = (W - 2 * m) / Math.pow(2, d);
+    pos[id] = { x: m + (k + 0.5) * largh, y: top + d * dy, d: d, k: k };
+    vai(T.nodi[id].sx, d + 1, 2 * k);
+    vai(T.nodi[id].dx, d + 1, 2 * k + 1);
+  }
+  vai(T.radice, 0, 0);
+  return { pos: pos, W: W, H: top + h * dy + (opz.basso || 30), h: h };
+}
+
+var STILE_NODO = {
+  normale: ["r-nodo", "#ffffff", "#9aa3b2", "t-testo", "#1f2328"],
+  visitato: ["r-verde", "#e6f5ea", "#17803d", "t-testo", "#1f2328"],
+  corrente: ["r-giallo", "#fff1a8", "#b4500f", "t-testo", "#1f2328"],
+  inS: ["r-blu", "#e8edfc", "#2f52c4", "t-testo", "#1f2328"],
+  spento: ["r-nodo", "#ffffff", "#9aa3b2", "t-muted", "#5b6270"],
+  rosso: ["r-rosso", "#fdecea", "#b42318", "t-testo", "#1f2328"],
+  viola: ["r-viola", "#f1eafc", "#6d3fc0", "t-testo", "#1f2328"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f", "t-testo", "#1f2328"]
+};
+// opz: { stato: {id: chiave di STILE_NODO}, ordine: {id: numero}, nulls: true, nullStato: {"id:sx": stile},
+//        etichette: [{id, testo, lato: "sx"|"dx"|"sopra"|"sotto", col}], gusci: [{id, testo, col, lato}],
+//        livelli: true, indici: true (mostra la posizione nel vettore), giro: {punti, fino, tacche}, aria }
+function svgAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, R = opz.r || 17, s = [], k;
+  var extraSx = opz.livelli ? 64 : 0, W = L.W + extraSx + (opz.extraDx || 0), H = L.H + (opz.nulls ? 34 : 0) + (opz.extraBasso || 0);
+  s.push('<svg viewBox="0 0 ' + r1a(W) + ' ' + r1a(H) + '" width="' + r1a(W) + '" height="' + r1a(H) + '" role="img" aria-label="' + escA(opz.aria || "Un albero binario") + '" font-family="system-ui, sans-serif">');
+  s.push('<g transform="translate(' + extraSx + ',0)">');
+  // gusci (sottoalberi evidenziati)
+  (opz.gusci || []).forEach(function (g) {
+    var ids = [];
+    (function raccogli(id) { if (id === null) return; ids.push(id); raccogli(T.nodi[id].sx); raccogli(T.nodi[id].dx); })(g.id);
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    ids.forEach(function (i) { x0 = Math.min(x0, pos[i].x); x1 = Math.max(x1, pos[i].x); y0 = Math.min(y0, pos[i].y); y1 = Math.max(y1, pos[i].y); });
+    var pad = R + 9 + (g.pad || 0), c = STILE_NODO[g.col || "viola"];
+    s.push('<rect x="' + r1a(x0 - pad) + '" y="' + r1a(y0 - pad) + '" width="' + r1a(x1 - x0 + 2 * pad) + '" height="' + r1a(y1 - y0 + 2 * pad) + '" rx="' + r1a(pad) + '" class="' + c[0] + '" fill="' + c[1] + '" fill-opacity="0.55" stroke="' + c[2] + '" stroke-width="1.4" stroke-dasharray="5 4"/>');
+    if (g.testo) {
+      var colT = g.col === "arancio" ? ["t-arancio", "#b4500f"] : g.col === "inS" ? ["t-blu", "#2f52c4"] : ["t-viola", "#6d3fc0"];
+      String(g.testo).split("\n").forEach(function (riga, j) {
+        var tx = g.lato === "destra" ? x1 + pad + 6 : x0 - pad + 4, ty = g.lato === "destra" ? y1 - 4 + j * 15 : y1 + pad + 15 + j * 15;
+        s.push('<text x="' + r1a(tx) + '" y="' + r1a(ty) + '" font-size="12.5" font-weight="600" text-anchor="start" class="' + colT[0] + '" fill="' + colT[1] + '">' + riga + '</text>');
+      });
+    }
+  });
+  // livelli
+  if (opz.livelli) {
+    for (var d = 0; d <= L.h; d++) {
+      var yy = (opz.top || 30) + d * (opz.dy || 62);
+      s.push('<text x="' + (-extraSx + 6) + '" y="' + (yy + 4) + '" font-size="12" class="t-muted" fill="#5b6270">livello ' + d + '</text>');
+      s.push('<line x1="' + (-extraSx + 58) + '" y1="' + yy + '" x2="' + (L.W - 6) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/>');
+    }
+  }
+  // archi
+  for (k in pos) {
+    ["sx", "dx"].forEach(function (lato) {
+      var c = T.nodi[k][lato];
+      if (c !== null && pos[c]) {
+        var a = pos[k], b = pos[c], dx = b.x - a.x, dyy = b.y - a.y, l = Math.sqrt(dx * dx + dyy * dyy);
+        s.push('<line x1="' + r1a(a.x + dx / l * R) + '" y1="' + r1a(a.y + dyy / l * R) + '" x2="' + r1a(b.x - dx / l * R) + '" y2="' + r1a(b.y - dyy / l * R) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      } else if (opz.nulls) {
+        var a2 = pos[k], ox = lato === "sx" ? -1 : 1, nx = a2.x + ox * 16, ny = a2.y + 40;
+        var st = (opz.nullStato || {})[k + ":" + lato];
+        var cc = st ? STILE_NODO[st] : STILE_NODO.spento;
+        s.push('<line x1="' + r1a(a2.x + ox * R * 0.6) + '" y1="' + r1a(a2.y + R * 0.8) + '" x2="' + r1a(nx) + '" y2="' + r1a(ny - 7) + '" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="3 3"/>');
+        s.push('<rect x="' + r1a(nx - 13) + '" y="' + r1a(ny - 7) + '" width="26" height="14" rx="3" class="' + cc[0] + '" fill="' + cc[1] + '" stroke="' + cc[2] + '" stroke-width="1"/>');
+        s.push('<text x="' + r1a(nx) + '" y="' + r1a(ny + 3.5) + '" font-size="9.5" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      }
+    });
+  }
+  // giro intorno all'albero
+  if (opz.giro) {
+    var G = opz.giro, pts = G.punti, fino = G.fino === undefined ? pts.length - 1 : G.fino;
+    var dTutto = "M" + pts.map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+    s.push('<path d="' + dTutto + '" class="l-giro" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"/>');
+    if (fino > 0) {
+      var dFatto = "M" + pts.slice(0, fino + 1).map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+      s.push('<path d="' + dFatto + '" class="l-giro-fatto" fill="none" stroke="#6d3fc0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>');
+    }
+    (G.tacche || []).forEach(function (t) {
+      var col = t.tipo === "pre" ? ["t-blu", "#2f52c4"] : t.tipo === "in" ? ["t-verde", "#17803d"] : ["t-arancio", "#b4500f"];
+      s.push('<circle cx="' + r1a(t.x) + '" cy="' + r1a(t.y) + '" r="' + (t.fatta ? 4.2 : 3.2) + '" class="' + col[0] + '" fill="' + (t.fatta ? col[1] : "none") + '" stroke="' + col[1] + '" stroke-width="1.4"' + (t.fatta ? "" : ' fill-opacity="0"') + '/>');
+    });
+    if (G.punto) s.push('<circle cx="' + r1a(G.punto.x) + '" cy="' + r1a(G.punto.y) + '" r="6.5" class="t-viola" fill="#6d3fc0"/>');
+  }
+  // nodi
+  for (k in pos) {
+    var p = pos[k], st2 = STILE_NODO[(opz.stato || {})[k] || "normale"];
+    s.push('<circle cx="' + r1a(p.x) + '" cy="' + r1a(p.y) + '" r="' + R + '" class="' + st2[0] + '" fill="' + st2[1] + '" stroke="' + st2[2] + '" stroke-width="1.6"/>');
+    var et = T.nodi[k].v, fs = et.length > 2 ? 12.5 : 15;
+    s.push('<text x="' + r1a(p.x) + '" y="' + r1a(p.y + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="' + st2[3] + '" fill="' + st2[4] + '">' + escA(et) + '</text>');
+    if (opz.ordine && opz.ordine[k] !== undefined) {
+      s.push('<circle cx="' + r1a(p.x + R * 0.85) + '" cy="' + r1a(p.y - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1a(p.x + R * 0.85) + '" y="' + r1a(p.y - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.ordine[k] + '</text>');
+    }
+    if (opz.indici && T.nodi[k].pos !== undefined) {
+      s.push('<text x="' + r1a(p.x - R - 3) + '" y="' + r1a(p.y - R + 4) + '" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">' + T.nodi[k].pos + '</text>');
+    }
+  }
+  // etichette con freccia
+  (opz.etichette || []).forEach(function (e) {
+    var p = pos[e.id], col = e.col === "arancio" ? ["t-arancio", "#b4500f"] : e.col === "verde" ? ["t-verde", "#17803d"] : e.col === "rosso" ? ["t-rosso", "#b42318"] : e.col === "viola" ? ["t-viola", "#6d3fc0"] : ["t-blu", "#2f52c4"];
+    var lx, ly, ax, ay, anc;
+    if (e.lato === "sx") { lx = p.x - R - 44; ly = p.y + 4; ax = p.x - R - 3; ay = p.y; anc = "end"; }
+    else if (e.lato === "sopra") { lx = p.x + R + 14; ly = p.y - R - 6; ax = p.x + R * 0.6; ay = p.y - R * 0.8; anc = "start"; }
+    else if (e.lato === "sotto") { lx = p.x; ly = p.y + R + 30; ax = p.x; ay = p.y + R + 3; anc = "middle"; }
+    else { lx = p.x + R + 44; ly = p.y + 4; ax = p.x + R + 3; ay = p.y; anc = "start"; }
+    var righe = String(e.testo).split("\n");
+    righe.forEach(function (rg, j) { s.push('<text x="' + r1a(lx + (anc === "start" ? 4 : anc === "end" ? -4 : 0)) + '" y="' + r1a(ly + j * 14 + (e.lato === "sotto" ? 0 : -(righe.length - 1) * 7)) + '" font-size="12.5" font-weight="600" text-anchor="' + anc + '" class="' + col[0] + '" fill="' + col[1] + '">' + rg + '</text>'); });
+    var sx0 = e.lato === "sx" ? lx : e.lato === "sotto" ? lx : lx, sy0 = e.lato === "sotto" ? ly - 12 : e.lato === "sopra" ? ly - 4 : ly - 4;
+    if (e.lato === "sopra") sx0 = lx;
+    var ang = Math.atan2(ay - sy0, ax - sx0);
+    s.push('<line x1="' + r1a(sx0) + '" y1="' + r1a(sy0) + '" x2="' + r1a(ax - 4 * Math.cos(ang)) + '" y2="' + r1a(ay - 4 * Math.sin(ang)) + '" class="' + col[0].replace("t-", "l-") + '" stroke="' + col[1] + '" stroke-width="1.3"/>');
+    s.push('<path d="M' + r1a(ax) + ' ' + r1a(ay) + ' l' + r1a(-8 * Math.cos(ang - 0.42)) + ' ' + r1a(-8 * Math.sin(ang - 0.42)) + ' l' + r1a(8 * Math.cos(ang - 0.42) - 8 * Math.cos(ang + 0.42)) + ' ' + r1a(8 * Math.sin(ang - 0.42) - 8 * Math.sin(ang + 0.42)) + ' z" class="' + col[0] + '" fill="' + col[1] + '"/>');
+  });
+  s.push('</g></svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- visite
+function preordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; out.push(id); preordine(T, T.nodi[id].sx, out); preordine(T, T.nodi[id].dx, out); return out; }
+function inordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; inordine(T, T.nodi[id].sx, out); out.push(id); inordine(T, T.nodi[id].dx, out); return out; }
+function postordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; postordine(T, T.nodi[id].sx, out); postordine(T, T.nodi[id].dx, out); out.push(id); return out; }
+function ampiezza(T) { var out = [], C = T.radice === null ? [] : [T.radice]; while (C.length) { var n = C.shift(); out.push(n); if (T.nodi[n].sx !== null) C.push(T.nodi[n].sx); if (T.nodi[n].dx !== null) C.push(T.nodi[n].dx); } return out; }
+function valori(T, ids) { return ids.map(function (id) { return T.nodi[id].v; }); }
+
+// Il giro intorno all'albero: un percorso che parte a sinistra della radice e gira in senso antiorario,
+// con una tacca a sinistra (pre), sotto (in) e a destra (post) di ogni nodo.
+function giroAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, d = (opz.r || 17) + 9, pts = [], tacche = [];
+  function punto(x, y, tipo, id) { pts.push({ x: x, y: y }); if (tipo) tacche.push({ x: x, y: y, tipo: tipo, id: id, i: pts.length - 1 }); }
+  function giro(id) {
+    var p = pos[id], n = T.nodi[id];
+    punto(p.x - d, p.y, "pre", id);
+    if (n.sx !== null) giro(n.sx);
+    else punto(p.x - d * 0.75, p.y + d * 0.75);
+    punto(p.x, p.y + d, "in", id);
+    if (n.dx !== null) giro(n.dx);
+    else punto(p.x + d * 0.75, p.y + d * 0.75);
+    punto(p.x + d, p.y, "post", id);
+  }
+  if (T.radice !== null) {
+    var r = pos[T.radice];
+    punto(r.x - d * 0.6, r.y - d * 1.25);
+    giro(T.radice);
+    punto(r.x + d * 0.6, r.y - d * 1.25);
+  }
+  return { punti: pts, tacche: tacche };
+}
+
+// Eventi delle visite iterative (con la coda o con la pila), come nel codice della lavagna dell'anno scorso.
+// Ogni evento: { riga, testo, S: [id|null...], corrente, visitati: [id...], nullStato }
+var CODICE_VISITE = {
+  coda: ["<b>ALGORITMO</b> visitaInAmpiezza(AlberoBinario r)", "  C ← coda vuota", "  C.enqueue(r)", "  <b>WHILE NOT</b> (C.isEmpty()) <b>DO</b>", "    n ← C.dequeue()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      C.enqueue(n.sx)", "      C.enqueue(n.dx)"],
+  pila: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  P ← pila vuota", "  P.push(r)", "  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>", "    n ← P.pop()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      P.push(n.dx)", "      P.push(n.sx)"]
+};
+function eventiVisita(T, tipo) {
+  var ev = [], S = [], vis = [], cor = null, X = tipo === "coda" ? "C" : "P";
+  var ins = tipo === "coda" ? "C.enqueue" : "P.push", est = tipo === "coda" ? "C.dequeue()" : "P.pop()";
+  function nome(id) { return id === null ? "null" : "il nodo " + escA(T.nodi[id].v); }
+  function scatta(riga, testo) { ev.push({ riga: riga, testo: testo, S: S.slice(), corrente: cor, visitati: vis.slice() }); }
+  scatta(0, "Chiamata della visita sulla radice, " + nome(T.radice) + ".");
+  scatta(1, (tipo === "coda" ? "Si crea una coda vuota C." : "Si crea una pila vuota P."));
+  S.push(T.radice); scatta(2, ins + "(r): " + (tipo === "coda" ? "la radice entra nella coda." : "la radice entra nella pila."));
+  var giri = 0;
+  while (giri++ < 200) {
+    if (!S.length) { cor = null; scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " è vuota: il ciclo finisce. Ordine di visita: <b>" + valori(T, vis).join(" ") + "</b>."); break; }
+    scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " non è vuota: si entra nel ciclo.");
+    var n = tipo === "coda" ? S.shift() : S.pop();
+    cor = n;
+    scatta(4, "n ← " + est + ": si toglie " + nome(n) + (tipo === "coda" ? ", il primo della coda." : ", quello in cima alla pila."));
+    if (n === null) { scatta(5, "n = null: non c'è nessun nodo da visitare, si torna al WHILE."); continue; }
+    scatta(5, "n ≠ null: è un nodo vero.");
+    vis.push(n); scatta(6, "Si visita il nodo " + escA(T.nodi[n].v) + ": è il " + vis.length + "° visitato.");
+    var a = tipo === "coda" ? T.nodi[n].sx : T.nodi[n].dx, b = tipo === "coda" ? T.nodi[n].dx : T.nodi[n].sx;
+    S.push(a); scatta(7, ins + "(n." + (tipo === "coda" ? "sx" : "dx") + "): entra " + (a === null ? "null (il figlio " + (tipo === "coda" ? "sinistro" : "destro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "sinistro, " : "destro, ") + escA(T.nodi[a].v)) + ".");
+    S.push(b); scatta(8, ins + "(n." + (tipo === "coda" ? "dx" : "sx") + "): entra " + (b === null ? "null (il figlio " + (tipo === "coda" ? "destro" : "sinistro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "destro, " : "sinistro, ") + escA(T.nodi[b].v)) + "." + (tipo === "pila" && b !== null ? " È in cima: sarà il prossimo a uscire." : ""));
+  }
+  return ev;
+}
+
+// Eventi della visita ricorsiva: ordine "pre" | "in" | "post".
+var CODICE_RIC = {
+  pre: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visita la radice", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)"],
+  "in": ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visita la radice", "    visitaInProfondità(r.dx)"],
+  post: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)", "    visita la radice"]
+};
+function eventiRicorsiva(T, ordine) {
+  var ev = [], pila = [], out = [];
+  var righe = ordine === "pre" ? { vis: 2, sx: 3, dx: 4 } : ordine === "in" ? { sx: 2, vis: 3, dx: 4 } : { sx: 2, dx: 3, vis: 4 };
+  function nome(id) { return id === null ? "null" : escA(T.nodi[id].v); }
+  function scatta(riga, testo, extra) {
+    var e = { riga: riga, testo: testo, pila: pila.map(function (r) { return { id: r.id, lato: r.lato }; }), out: out.slice(), corrente: pila.length ? pila[pila.length - 1].id : null };
+    if (extra) for (var q in extra) e[q] = extra[q];
+    ev.push(e);
+  }
+  function chiama(id, lato) {
+    pila.push({ id: id, lato: lato });
+    scatta(0, "Chiamata visitaInProfondità(" + nome(id) + ")" + (lato ? ", sul sottoalbero " + (lato === "sx" ? "sinistro" : "destro") + " del nodo " + nome(pila[pila.length - 2].id) : ", sulla radice") + ". Nella pila delle chiamate entra un record.");
+    if (id === null) {
+      scatta(1, "r = null: l'albero è vuoto, non c'è niente da fare. La chiamata finisce subito.");
+      pila.pop();
+      return;
+    }
+    scatta(1, "r ≠ null: si esegue il corpo dell'IF.");
+    var passi = [["vis", righe.vis], ["sx", righe.sx], ["dx", righe.dx]].sort(function (a, b) { return a[1] - b[1]; });
+    passi.forEach(function (ps) {
+      if (ps[0] === "vis") { out.push(id); scatta(ps[1], "Si visita la radice di questo sottoalbero: " + nome(id) + ". Ordine finora: <b>" + valori(T, out).join(" ") + "</b>.", { visitaOra: id }); }
+      else {
+        scatta(ps[1], "Chiamata ricorsiva sul figlio " + (ps[0] === "sx" ? "sinistro" : "destro") + " di " + nome(id) + ": " + nome(T.nodi[id][ps[0]]) + ".");
+        chiama(T.nodi[id][ps[0]], ps[0]);
+        scatta(ps[1], "Torniamo alla chiamata su " + nome(id) + ": il sottoalbero " + (ps[0] === "sx" ? "sinistro" : "destro") + " è finito.");
+      }
+    });
+    pila.pop();
+  }
+  chiama(T.radice, null);
+  ev.push({ riga: 0, testo: "La prima chiamata è finita: la pila delle chiamate è vuota. Ordine di visita: <b>" + valori(T, out).join(" ") + "</b>.", pila: [], out: out.slice(), corrente: null, fine: true });
+  return ev;
+}
+
+// Notazione polacca inversa: valuta con una pila. Restituisce i passi.
+function passiRPN(tokens) {
+  var P = [], passi = [{ j: -1, pila: [], testo: "Si leggono i simboli da sinistra a destra, con una pila vuota." }], err = null;
+  for (var j = 0; j < tokens.length && !err; j++) {
+    var t = tokens[j];
+    if (/^-?\d+(\.\d+)?$/.test(t)) { P.push(Number(t)); passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un numero: push(" + t + ")." }); }
+    else if ("+-−*×/:".indexOf(t) >= 0 && t.length === 1) {
+      if (P.length < 2) { err = "«" + t + "» è un operatore, ma nella pila ci sono meno di due numeri: l'espressione è sbagliata."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); break; }
+      var b = P.pop(), a = P.pop(), v;
+      if (t === "+") v = a + b; else if (t === "-" || t === "−") v = a - b; else if (t === "*" || t === "×") v = a * b; else v = b === 0 ? NaN : a / b;
+      v = Math.round(v * 1e6) / 1e6;
+      P.push(v);
+      passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un operatore: pop() dà " + b + " (il secondo operando), pop() dà " + a + " (il primo). Si calcola " + a + " " + t + " " + b + " = " + v + " e si fa push(" + v + ").", tolti: [a, b] });
+    } else { err = "Simbolo non riconosciuto: «" + escA(t) + "»."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); }
+  }
+  if (!err) {
+    if (P.length === 1) passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli: nella pila resta un solo numero, <b>" + P[0] + "</b>. È il valore dell'espressione.", fine: true });
+    else passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli, ma nella pila restano " + P.length + " numeri: l'espressione è sbagliata (mancano operatori).", errore: true, fine: true });
+  }
+  return passi;
+}
+// HTML di una pila verticale di "chip" (cima in alto) e di una coda orizzontale
+function htmlPilaChip(els, fmt, opz) {
+  opz = opz || {};
+  var h = '<div class="pilachip">';
+  if (!els.length) h += '<div class="chip zero">vuota</div>';
+  els.forEach(function (e, j) { h += '<div class="chip' + (e === null ? " zero" : "") + (j === els.length - 1 ? " cima" : "") + '">' + fmt(e) + (j === els.length - 1 ? ' <span class="lab-cima">← cima</span>' : '') + '</div>'; });
+  return h + '</div>';
+}
+function htmlCodaChip(els, fmt) {
+  var h = '<div class="codachip"><span class="lab-coda">primo →</span>';
+  if (!els.length) h += '<span class="chip zero">vuota</span>';
+  els.forEach(function (e) { h += '<span class="chip' + (e === null ? " zero" : "") + '">' + fmt(e) + '</span>'; });
+  return h + '<span class="lab-coda">← ultimo</span></div>';
+}
+
+// ---- heap.js
+// Heap su vettore posizionale (pacchi 13 e 14): radice in A[0], figli di A[i] in A[2i+1] e A[2i+2].
+// tipo "max" (ogni nodo ≥ figli) o "min" (ogni nodo ≤ figli).
+if (typeof STILE_NODO !== "undefined") STILE_NODO.buco = ["r-giallo", "#fff1a8", "#b4500f", "t-muted", "#5b6270"];
+function sopraH(tipo) { return tipo === "min" ? function (a, b) { return a < b; } : function (a, b) { return a > b; }; }
+function nomeFiglio(i) { return i % 2 === 1 ? "sinistro" : "destro"; }
+function figliDi(i, l) { var f = []; if (2 * i + 1 < l) f.push(2 * i + 1); if (2 * i + 2 < l) f.push(2 * i + 2); return f; }
+function eHeap(A, l, tipo) {
+  var meglio = sopraH(tipo);
+  for (var i = 1; i < l; i++) if (meglio(A[i], A[(i - 1) >> 1])) return false;
+  return true;
+}
+
+// risistema "grosso": restituisce le mosse livello per livello e modifica A.
+// mossa: { cosa: "inizio"|"sale"|"fermo"|"foglia"|"colloca", v, u, x, cfr (confronti di questa mossa), A (copia dopo la mossa) }
+function risistemaMosse(A, r, l, tipo) {
+  var meglio = sopraH(tipo), mosse = [], v = r, x = A[r];
+  mosse.push({ cosa: "inizio", v: v, x: x, cfr: 0, A: A.slice(0, l) });
+  while (true) {
+    var f = figliDi(v, l);
+    if (!f.length) { mosse.push({ cosa: "foglia", v: v, x: x, cfr: 0, A: A.slice(0, l) }); break; }
+    var u = f[0], c = 0;
+    if (f.length === 2) { c++; if (meglio(A[f[1]], A[f[0]])) u = f[1]; }
+    c++;
+    if (meglio(A[u], x)) { A[v] = A[u]; mosse.push({ cosa: "sale", v: v, u: u, x: x, figli: f, cfr: c, A: A.slice(0, l) }); v = u; }
+    else { mosse.push({ cosa: "fermo", v: v, u: u, x: x, figli: f, cfr: c, A: A.slice(0, l) }); break; }
+  }
+  A[v] = x;
+  mosse.push({ cosa: "colloca", v: v, x: x, cfr: 0, A: A.slice(0, l) });
+  return mosse;
+}
+function confrontiDi(mosse) { return mosse.reduce(function (s, m) { return s + m.cfr; }, 0); }
+
+// creaHeap dal basso (Codice 6.3 / 6.6): i nodi dall'ultimo alla radice.
+function creaHeap(A, tipo) {
+  var c = 0;
+  for (var i = A.length - 1; i >= 0; i--) c += confrontiDi(risistemaMosse(A, i, A.length, tipo));
+  return c;
+}
+// heapSort in loco (Codice 6.5): restituisce le fotografie dell'array dopo ogni scambio.
+function heapSortInLoco(A, tipo) {
+  var foto = [], c = creaHeap(A, tipo);
+  foto.push({ dopo: "creaHeap", A: A.slice(), cfr: c });
+  for (var l = A.length - 1; l >= 1; l--) {
+    var t = A[0]; A[0] = A[l]; A[l] = t;
+    foto.push({ dopo: "scambio", l: l, messo: t, A: A.slice() });
+    c += confrontiDi(risistemaMosse(A, 0, l, tipo));
+    foto.push({ dopo: "risistema", l: l, A: A.slice(), cfr: c });
+  }
+  return foto;
+}
+
+// creaHeap ricorsivo (Codice 6.2) su vettore posizionale: prima i due sottoalberi, poi la radice
+function creaHeapRic(A, i, tipo, ordine) {
+  if (i >= A.length) return;
+  creaHeapRic(A, 2 * i + 1, tipo, ordine);
+  creaHeapRic(A, 2 * i + 2, tipo, ordine);
+  risistemaMosse(A, i, A.length, tipo);
+  if (ordine) ordine.push(i);
+}
+
+// ---------------------------------------------------------------- alberi qualsiasi (esercizio 5.11)
+// T come in alberi.js: { radice, nodi: { id: { v, sx, dx } } }; valori numerici in v (stringhe)
+function risistemaAlbero(T, id) {
+  var v = id, x = Number(T.nodi[id].v);
+  while (true) {
+    var n = T.nodi[v], f = [n.sx, n.dx].filter(function (c) { return c !== null; });
+    if (!f.length) break;
+    var u = f[0];
+    if (f.length === 2 && Number(T.nodi[f[1]].v) > Number(T.nodi[f[0]].v)) u = f[1];
+    if (Number(T.nodi[u].v) > x) { n.v = T.nodi[u].v; v = u; } else break;
+  }
+  T.nodi[v].v = String(x);
+}
+function creaHeapAlbero(T) {
+  // per profondità decrescente, da destra a sinistra
+  var livelli = [];
+  (function giu(id, d) { if (id === null) return; (livelli[d] = livelli[d] || []).push(id); giu(T.nodi[id].sx, d + 1); giu(T.nodi[id].dx, d + 1); })(T.radice, 0);
+  for (var d = livelli.length - 1; d >= 0; d--) for (var j = livelli[d].length - 1; j >= 0; j--) risistemaAlbero(T, livelli[d][j]);
+  return T;
+}
+
+// ---------------------------------------------------------------- disegno di array (pacco 14)
+// opz: { cls: fn(i) → classi della cella, f: fn(i) → testo sopra, idx: false per non scrivere gli indici, stacco: [i...] (spazio prima di i), mini, base: 0|1 }
+function htmlArray(A, opz) {
+  opz = opz || {};
+  var h = '<div class="array qs' + (opz.mini ? ' mini' : '') + '">';
+  A.forEach(function (v, i) {
+    if (opz.stacco && opz.stacco.indexOf(i) >= 0) h += '<div class="stacco"></div>';
+    h += '<div class="cella' + (opz.cls && opz.cls(i) ? ' ' + opz.cls(i) : '') + '"><div class="f">' + (opz.f ? (opz.f(i) || '') : '') + '</div><div class="v">' + v + '</div><div class="i">' + (opz.idx === false ? '' : i + (opz.base || 0)) + '</div></div>';
+  });
+  return h + '</div>';
+}
+// heapSort in loco con eventi "grossi" (scambi visibili), per i riquadri.
+// evento: { fase: "crea"|"ordina"|"fine", riga, A, l (elementi nello heap), i (creaHeap), v, su, scambio: [0, l], messo, cfr, testo }
+function eventiInLoco(A0, tipo) {
+  var A = A0.slice(), n = A.length, ev = [], cfr = 0, l = n, meglio = sopraH(tipo), fase = "crea", curI = null;
+  var piu = tipo === "min" ? "più piccolo" : "più grande";
+  function sc(o) { o.A = A.slice(); o.l = l; o.cfr = cfr; o.fase = fase; o.i = curI; ev.push(o); }
+  function scendi(r, riga) {
+    var v = r, giri = 0;
+    while (giri++ < 40) {
+      if (2 * v + 1 >= l) { sc({ riga: riga, v: v, testo: "Posizione " + v + ": 2·" + v + " + 1 = " + (2 * v + 1) + " ≥ " + l + ", quindi è una foglia dello heap: " + A[v] + " si ferma qui." }); return; }
+      var u = 2 * v + 1, c = 0, due = u + 1 < l;
+      if (due) { c++; if (meglio(A[u + 1], A[u])) u = u + 1; }
+      c++; cfr += c;
+      var desc = due ? "I figli di " + A[v] + " (posizione " + v + ") sono in " + (2 * v + 1) + " e " + (2 * v + 2) + ": " + A[2 * v + 1] + " e " + A[2 * v + 2] + "; il " + (tipo === "min" ? "minore" : "maggiore") + " è " + A[u] : "Il figlio di " + A[v] + " (posizione " + v + ") è solo in " + u + " (" + u + " + 1 = " + l + " è già fuori dallo heap): " + A[u];
+      if (meglio(A[u], A[v])) {
+        var x = A[v]; A[v] = A[u]; A[u] = x;
+        sc({ riga: riga, v: u, su: v, testo: desc + ", " + piu + " di " + x + " (" + c + (c === 1 ? " confronto" : " confronti") + "): si scambiano. " + x + " scende in posizione " + u + "." });
+        v = u;
+      } else { sc({ riga: riga, v: v, testo: desc + ", e " + A[v] + " non è " + (tipo === "min" ? "più grande" : "più piccolo") + " (" + c + (c === 1 ? " confronto" : " confronti") + "): resta in posizione " + v + "." }); return; }
+    }
+  }
+  sc({ riga: 0, testo: "L'array di partenza, n = " + n + ". Prima si chiama creaHeap, che lo trasforma in un " + (tipo === "min" ? "min-heap" : "max-heap") + "." });
+  for (var i = Math.floor(n / 2); i >= 0; i--) {
+    curI = i;
+    if (2 * i + 1 >= n) { sc({ riga: 8, inizio: true, v: i, testo: "i = " + i + (i === Math.floor(n / 2) ? " (cioè ⌊n/2⌋ = ⌊" + n + "/2⌋)" : "") + ": risistema(A, " + i + ", " + n + "). La posizione " + i + " è una foglia (2·" + i + " + 1 = " + (2 * i + 1) + " ≥ " + n + "), quindi non succede niente." }); continue; }
+    sc({ riga: 8, inizio: true, v: i, testo: "i = " + i + (i === Math.floor(n / 2) ? " (cioè ⌊n/2⌋ = ⌊" + n + "/2⌋)" : "") + ": risistema(A, " + i + ", " + n + "), sul sottoalbero con radice in posizione " + i + ", che contiene " + A[i] + ". I sottoalberi dei suoi figli sono già heap." });
+    scendi(i, 8);
+  }
+  curI = null;
+  sc({ riga: 1, finitoCrea: true, testo: "creaHeap è finito: l'array è un " + (tipo === "min" ? "min-heap" : "max-heap") + ": <b>" + A.join(" ") + "</b>. Confronti: " + cfr + "." });
+  fase = "ordina";
+  for (var ll = n - 1; ll >= 1; ll--) {
+    var t = A[0]; A[0] = A[ll]; A[ll] = t;
+    l = ll;
+    sc({ riga: 3, scambio: [0, ll], messo: t, testo: "ℓ = " + ll + ": scambia A[0] e A[" + ll + "]. " + t + ", il " + (tipo === "min" ? "minimo" : "massimo") + " dello heap, va in posizione " + ll + ", la sua posizione definitiva; " + A[0] + " (l'ultima foglia) va nella radice. Ora lo heap è A[0.." + (ll - 1) + "]: " + ll + (ll === 1 ? " elemento." : " elementi.") });
+    if (ll > 1) { sc({ riga: 4, v: 0, testo: "risistema(A, 0, " + ll + "): " + A[0] + " deve scendere al suo posto, dentro le prime " + ll + " posizioni." }); scendi(0, 4); }
+    else sc({ riga: 4, testo: "risistema(A, 0, 1): lo heap ha un solo elemento, non c'è niente da fare." });
+  }
+  l = 0; fase = "fine";
+  sc({ riga: 2, testo: "Il FOR è finito: l'array è ordinato in modo " + (tipo === "min" ? "decrescente" : "crescente") + ": <b>" + A.join(" ") + "</b>. Confronti in tutto: <b>" + cfr + "</b>." });
+  return ev;
+}
+
+// ---- w14.js
+// Riquadri interattivi del pacco 14.
+function $(id) { return document.getElementById(id); }
+function codiceHL(righe, riga) { return righe.map(function (r, j) { return '<span class="riga' + (j === riga ? " ora" : "") + '">' + r + '</span>'; }).join(""); }
+function leggiNumeri(s, max) {
+  var A = s.trim().split(/[\s,;]+/).filter(function (t) { return t !== ""; });
+  if (!A.length || A.length > max || A.some(function (x) { return !/^-?\d{1,4}$/.test(x); })) return null;
+  return A.map(Number);
+}
+
+// ---------------------------------------------------------------- 1. il vettore posizionale: figli e padre
+(function () {
+  if (!$("vp-corpo")) return;
+  var A = [26, 11, 19, 10, 5, 6, 2, 1, 8, 4];
+  $("vp-corpo").innerHTML = '<div class="controlli"><label>Indici <select id="vp-base" style="width:auto"><option value="0">da 0 (come a lezione)</option><option value="1">da 1 (esercizio 5.7)</option></select></label></div>' +
+    '<div class="controlli" id="vp-bott"></div><div id="vp-arr"></div><div class="figura" id="vp-fig" style="margin:6px 0"></div><div class="narrazione" id="vp-txt"></div>';
+  var V = { k: 3 };
+  function mostra() {
+    var b = Number($("vp-base").value), k = V.k, n = A.length;
+    var fs = [2 * k + 1, 2 * k + 2];   // posizioni (contate da 0) dei figli: l'albero è lo stesso, cambiano solo i numeri scritti
+    fs = fs.filter(function (j) { return j < n; });
+    var pa = k === 0 ? null : (k - 1) >> 1;
+    var h = "";
+    for (var i = 0; i < n; i++) h += '<button class="' + (i === k ? "primario" : "") + '" data-k="' + i + '" style="min-width:42px">' + (i + b) + '</button>';
+    $("vp-bott").innerHTML = '<span class="piccolo">Scegli una posizione:</span> ' + h;
+    [].forEach.call($("vp-bott").querySelectorAll("button"), function (bt) { bt.onclick = function () { V.k = Number(bt.getAttribute("data-k")); mostra(); }; });
+    $("vp-arr").innerHTML = htmlArray(A, { base: b, cls: function (i) { return i === k ? "attiva" : fs.indexOf(i) >= 0 ? "zsx" : i === pa ? "zdx" : ""; }, f: function (i) { return i === k ? "i" : fs.indexOf(i) >= 0 ? "figlio" : i === pa ? "padre" : ""; } });
+    var T = alberoDaVettore(A), st = {};
+    for (var q in T.nodi) T.nodi[q].pos = T.nodi[q].pos + b;
+    st["p" + k] = "corrente"; fs.forEach(function (j) { st["p" + j] = "inS"; }); if (pa !== null) st["p" + pa] = "arancio";
+    $("vp-fig").innerHTML = svgAlbero(T, { indici: true, stato: st, slot: 44, r: 16, dy: 56, top: 22, aria: "lo heap con le posizioni" });
+    var p = k + b, prof = Math.floor(Math.log2(k + 1)), testo;
+    if (b === 0) testo = "Posizione <b>i = " + p + "</b>, che contiene " + A[k] + ", a profondità " + prof + ". Figli: 2i + 1 = " + (2 * p + 1) + (2 * p + 1 < n ? " (" + A[2 * p + 1] + ")" : ", che non esiste (≥ " + n + ")") + " e 2i + 2 = " + (2 * p + 2) + (2 * p + 2 < n ? " (" + A[2 * p + 2] + ")" : ", che non esiste") + ". Padre: " + (k === 0 ? "nessuno, è la radice" : "⌊(i − 1)/2⌋ = ⌊" + (p - 1) + "/2⌋ = " + pa + " (" + A[pa] + ")") + ".";
+    else testo = "Posizione <b>i = " + p + "</b> (contando da 1), che contiene " + A[k] + ". Figli: 2i = " + (2 * p) + (2 * p <= n ? " (" + A[2 * p - 1] + ")" : ", che non esiste (&gt; " + n + ")") + " e 2i + 1 = " + (2 * p + 1) + (2 * p + 1 <= n ? " (" + A[2 * p] + ")" : ", che non esiste") + ". Padre: " + (k === 0 ? "nessuno, è la radice" : "⌊i/2⌋ = ⌊" + p + "/2⌋ = " + (pa + 1) + " (" + A[pa] + ")") + ".";
+    $("vp-txt").innerHTML = testo + '<br><span class="piccolo">In giallo la posizione scelta, in azzurro i figli, in arancione il padre.</span>';
+  }
+  $("vp-base").onchange = mostra;
+  mostra();
+})();
+
+// ---------------------------------------------------------------- 2. risistema sull'array, riga per riga (Codice 6.7)
+var COD67 = ["<b>PROCEDURA</b> risistema(array A[0..n−1], intero r, intero ℓ)", "  v ← r", "  x ← A[v]", "  daCollocare ← true", "  <b>DO</b>",
+  "    <b>IF</b> 2*v + 1 ≥ ℓ <b>THEN</b>                <span class=\"com\">// v è una foglia</span>", "      daCollocare ← false", "    <b>ELSE</b>",
+  "      u ← 2*v + 1                     <span class=\"com\">// figlio sinistro</span>", "      <b>IF</b> u + 1 &lt; ℓ <b>AND</b> A[u + 1] &gt; A[u] <b>THEN</b>", "        u ← u + 1                     <span class=\"com\">// il destro è maggiore</span>",
+  "      <b>IF</b> A[u] &gt; x <b>THEN</b>", "        A[v] ← A[u]", "        v ← u", "      <b>ELSE</b>", "        daCollocare ← false", "  <b>WHILE</b> daCollocare", "  A[v] ← x"];
+function eventiRisistemaArray(A0, r, l) {
+  var A = A0.slice(), ev = [], v = null, u = null, x = null, mano = false, cfr = 0, guarda = [];
+  function sc(riga, testo, fine) { ev.push({ riga: riga, testo: testo, A: A.slice(), v: v, u: u, x: x, mano: mano, cfr: cfr, guarda: guarda.slice(), fine: !!fine }); }
+  sc(0, "Chiamata risistema(A, " + r + ", " + l + "): lo heap occupa le posizioni da 0 a " + (l - 1) + " (ℓ = " + l + " è la prima posizione fuori dallo heap). Si sistema il sottoalbero con radice in posizione " + r + ".");
+  v = r; sc(1, "v ← r: v = " + v + ".");
+  x = A[v]; mano = true; sc(2, "x ← A[v]: x = " + x + ". Da qui A[" + v + "] è un posto libero: il numero scritto lì è solo una copia vecchia.");
+  sc(3, "daCollocare ← true.");
+  var giri = 0;
+  while (giri++ < 40) {
+    if (2 * v + 1 >= l) { sc(5, "2·v + 1 = " + (2 * v + 1) + " ≥ ℓ = " + l + "? Sì: il figlio sinistro sarebbe fuori dallo heap, quindi v è una foglia."); sc(6, "daCollocare ← false."); break; }
+    sc(5, "2·v + 1 = " + (2 * v + 1) + " ≥ ℓ = " + l + "? No: v ha almeno il figlio sinistro.");
+    u = 2 * v + 1; guarda = []; sc(8, "u ← 2·v + 1 = " + u + ": per ora u è il figlio sinistro, " + A[u] + ".");
+    if (u + 1 < l) {
+      cfr++; guarda = [u, u + 1];
+      if (A[u + 1] > A[u]) { sc(9, "u + 1 = " + (u + 1) + " &lt; ℓ = " + l + "? Sì, il figlio destro esiste. A[" + (u + 1) + "] = " + A[u + 1] + " &gt; A[" + u + "] = " + A[u] + "? Sì (1 confronto)."); u = u + 1; guarda = []; sc(10, "u ← u + 1 = " + u + ": il figlio maggiore è il destro, " + A[u] + "."); }
+      else { sc(9, "u + 1 = " + (u + 1) + " &lt; ℓ = " + l + "? Sì, il figlio destro esiste. A[" + (u + 1) + "] = " + A[u + 1] + " &gt; A[" + u + "] = " + A[u] + "? No (1 confronto): resta u = " + u + "."); guarda = []; }
+    } else {
+      sc(9, "u + 1 = " + (u + 1) + " &lt; ℓ = " + l + "? No: la posizione " + (u + 1) + (u + 1 < A.length ? " non fa parte dello heap (lì c'è " + A[u + 1] + ", già ordinato)" : " non esiste") + ". L'AND si ferma qui: A[u + 1] non viene nemmeno letto, e u resta " + u + ".");
+    }
+    cfr++;
+    if (A[u] > x) {
+      sc(11, "A[u] = " + A[u] + " &gt; x = " + x + "? Sì (1 confronto).");
+      A[v] = A[u]; sc(12, "A[v] ← A[u]: " + A[u] + " sale in posizione " + v + ". Per un attimo compare due volte.");
+      v = u; u = null; sc(13, "v ← u: il posto libero adesso è la posizione " + v + ".");
+      sc(16, "WHILE daCollocare: è ancora true, si fa un altro giro.");
+    } else {
+      sc(11, "A[u] = " + A[u] + " &gt; x = " + x + "? No (1 confronto): x può stare in posizione " + v + ".");
+      u = null; sc(15, "daCollocare ← false."); break;
+    }
+  }
+  u = null; guarda = [];
+  sc(16, "WHILE daCollocare: è false, il ciclo finisce.");
+  A[v] = x; mano = false; sc(17, "A[v] ← x: " + x + " va in posizione " + v + ". Fine. Confronti: <b>" + cfr + "</b>.", true);
+  return ev;
+}
+(function () {
+  if (!$("ra-corpo")) return;
+  var ES = [["Lavagna del 29 ottobre, pagina 10: risistema(A, 0, 9)", [4, 11, 19, 10, 5, 6, 2, 1, 8, 26], 0, 9],
+    ["Il caso u + 1 = ℓ: risistema(A, 0, 2)", [1, 2, 4, 5, 6, 8, 10, 11, 19, 26], 0, 2],
+    ["Dentro creaHeap: risistema(A, 1, 10)", [6, 1, 26, 11, 5, 19, 2, 10, 8, 4], 1, 10]];
+  $("ra-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="ra-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><button class="primario" id="ra-passo">Passo →</button><button id="ra-giro">Fino al prossimo giro</button><button id="ra-fine">Fino alla fine</button><button id="ra-reset">Ricomincia</button></div>' +
+    '<pre class="pseudo" id="ra-cod"></pre><div class="contatori" id="ra-cont"></div><div id="ra-arr"></div><div class="figura" id="ra-fig" style="margin:6px 0"></div><div class="narrazione" id="ra-txt"></div>';
+  var V = { ev: [], k: 0, l: 0, r: 0 };
+  function prepara() { var e = ES[Number($("ra-es").value)]; V.l = e[3]; V.r = e[2]; V.ev = eventiRisistemaArray(e[1], e[2], e[3]); V.k = 0; mostra(); }
+  function mostra() {
+    var e = V.ev[V.k], l = V.l;
+    $("ra-cod").innerHTML = codiceHL(COD67, e.riga);
+    $("ra-cont").innerHTML = '<span>ℓ = <b>' + l + '</b></span><span>x in mano: <b>' + (e.mano ? e.x : "—") + '</b></span><span>confronti: <b>' + e.cfr + '</b></span>';
+    $("ra-arr").innerHTML = htmlArray(e.A, { stacco: l < e.A.length ? [l] : [], cls: function (i) { return i >= l ? "ordinata" : i === e.v ? "attiva" : (i === e.u || e.guarda.indexOf(i) >= 0) ? "zsx" : ""; }, f: function (i) { var t = []; if (i === e.v) t.push("v"); if (i === e.u) t.push("u"); if (i === l) t.push("ℓ"); return t.join(" "); } });
+    var T = alberoDaVettore(e.A.slice(0, l)), st = {};
+    if (e.v !== null) st["p" + e.v] = e.mano ? "buco" : (e.fine ? "visitato" : "corrente");
+    e.guarda.forEach(function (i) { st["p" + i] = "inS"; }); if (e.u !== null) st["p" + e.u] = "inS";
+    $("ra-fig").innerHTML = svgAlbero(T, { indici: true, stato: st, slot: 44, r: 16, dy: 56, top: 22, minW: 8 * 44 + 28, aria: "lo heap A[0..ℓ−1]" });
+    $("ra-txt").innerHTML = "<b>Passo " + (V.k + 1) + " di " + V.ev.length + ".</b> " + e.testo + '<br><span class="piccolo">Nell\'array, a destra dello spazio, in verde, la parte già ordinata: non fa parte dello heap, e l\'albero non la mostra.</span>';
+    var fine = V.k >= V.ev.length - 1;
+    $("ra-passo").disabled = fine; $("ra-fine").disabled = fine; $("ra-giro").disabled = fine;
+  }
+  $("ra-passo").onclick = function () { if (V.k < V.ev.length - 1) { V.k++; mostra(); } };
+  $("ra-giro").onclick = function () { var k = V.k + 1; while (k < V.ev.length - 1 && V.ev[k].riga !== 16) k++; V.k = k; mostra(); };
+  $("ra-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("ra-reset").onclick = function () { V.k = 0; mostra(); };
+  $("ra-es").onchange = prepara;
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 3. heapSort in loco, passo per passo
+var COD65 = ["<b>ALGORITMO</b> heapSort(array A[0..n−1])", "  creaHeap(A)", "  <b>FOR</b> ℓ ← n − 1 <b>DOWNTO</b> 1 <b>DO</b>", "    scambia A[0] e A[ℓ]", "    risistema(A, 0, ℓ)", " ",
+  "<b>PROCEDURA</b> creaHeap(array A[0..n−1])", "  <b>FOR</b> i ← ⌊n/2⌋ <b>DOWNTO</b> 0 <b>DO</b>", "    risistema(A, i, n)"];
+(function () {
+  if (!$("hl-corpo")) return;
+  var ES = [["Le slide: 26 11 19 10 5 6 2 1 8 4", "26 11 19 10 5 6 2 1 8 4"], ["Le slide: 6 1 2 10 4 19 26 11 8 5", "6 1 2 10 4 19 26 11 8 5"],
+    ["Lavagna del 29 ottobre, pagina 14", "25 15 14 18 26 33 35 16 47"], ["Esercizio 5.3 del foglio", "20 11 18 16 17 3 30 4 19 25"],
+    ["Tema del 31 gennaio 2025", "26 36 11 16 33 28 23 77"], ["Tema del 12 luglio 2024 (decrescente)", "12 14 17 24 2 33 46 21 15", "min"], ["Scrivi tu", null]];
+  $("hl-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="hl-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label>' +
+    '<label>Ordine <select id="hl-tipo" style="width:auto"><option value="max">crescente (max-heap)</option><option value="min">decrescente (min-heap)</option></select></label></div>' +
+    '<div class="controlli"><label>Array <input type="text" id="hl-in" style="width:250px;max-width:100%"></label></div>' +
+    '<div class="controlli"><button class="primario" id="hl-passo">Passo →</button><button id="hl-salto">Fino al prossimo scambio</button><button id="hl-fine">Fino alla fine</button><button id="hl-reset">Ricomincia</button></div>' +
+    '<div class="controlli"><label>Vai a: subito dopo lo scambio che colloca <select id="hl-vai" style="width:auto"></select></label></div>' +
+    '<pre class="pseudo" id="hl-cod"></pre><div class="contatori" id="hl-cont"></div><div id="hl-arr"></div><div class="figura" id="hl-fig" style="margin:6px 0"></div><div class="narrazione" id="hl-txt"></div>';
+  var V = { ev: [], k: 0, W: 0 };
+  function prepara() {
+    var A = leggiNumeri($("hl-in").value, 15);
+    if (!A) { $("hl-txt").innerHTML = '<span class="errore">Scrivi da 1 a 15 numeri interi (al massimo 4 cifre), separati da spazi.</span>'; return; }
+    V.ev = eventiInLoco(A, $("hl-tipo").value); V.k = 0; V.W = disponi(alberoDaVettore(A), { slot: 44 }).W;
+    var opts = '<option value="">—</option>';
+    V.ev.forEach(function (e, k) { if (e.scambio) opts += '<option value="' + k + '">' + e.messo + '</option>'; });
+    $("hl-vai").innerHTML = opts;
+    mostra();
+  }
+  function mostra() {
+    var e = V.ev[V.k], l = e.l, n = e.A.length;
+    $("hl-cod").innerHTML = codiceHL(COD65, e.riga);
+    $("hl-cont").innerHTML = (e.fase === "crea" && e.i !== null ? '<span>i = <b>' + e.i + '</b></span>' : '') + (e.fase === "ordina" ? '<span>ℓ = <b>' + l + '</b></span>' : '') + '<span>confronti: <b>' + e.cfr + '</b></span>';
+    $("hl-arr").innerHTML = htmlArray(e.A, { stacco: l < n && l > 0 ? [l] : [], cls: function (i) { return i >= l ? "ordinata" + (e.scambio && i === e.scambio[1] ? " attiva" : "") : (e.scambio && i === 0) ? "attiva" : i === e.v ? "attiva" : i === e.su ? "mossa" : ""; }, f: function (i) { return e.fase === "crea" && i === e.i ? "i" : e.scambio && i === e.scambio[1] ? "ℓ" : ""; } });
+    var st = {};
+    if (l > 0) {
+      if (e.v !== undefined && e.v < l) st["p" + e.v] = "corrente";
+      if (e.su !== undefined) st["p" + e.su] = "arancio";
+      if (e.scambio) st.p0 = "corrente";
+    }
+    $("hl-fig").innerHTML = l > 0 ? svgAlbero(alberoDaVettore(e.A.slice(0, l)), { indici: true, stato: st, slot: 44, r: 16, dy: 56, top: 22, minW: V.W, aria: "lo heap A[0..ℓ−1]" }) : "";
+    $("hl-txt").innerHTML = "<b>Passo " + (V.k + 1) + " di " + V.ev.length + ".</b> " + e.testo + '<br><span class="piccolo">L\'albero mostra solo lo heap, cioè le prime ' + l + ' posizioni. In verde, a destra, la parte già ordinata; in giallo il valore che scende (o i due appena scambiati); in viola quello appena salito.</span>';
+    var fine = V.k >= V.ev.length - 1;
+    $("hl-passo").disabled = fine; $("hl-fine").disabled = fine; $("hl-salto").disabled = fine;
+  }
+  $("hl-passo").onclick = function () { if (V.k < V.ev.length - 1) { V.k++; mostra(); } };
+  $("hl-salto").onclick = function () { var k = V.k + 1; while (k < V.ev.length - 1 && !V.ev[k].scambio && !V.ev[k].finitoCrea) k++; V.k = k; mostra(); };
+  $("hl-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("hl-reset").onclick = function () { V.k = 0; mostra(); };
+  $("hl-vai").onchange = function () { var v = $("hl-vai").value; if (v !== "") { V.k = Number(v); mostra(); } };
+  $("hl-es").onchange = function () { var e = ES[Number($("hl-es").value)]; if (e[1] !== null) { $("hl-in").value = e[1]; $("hl-tipo").value = e[2] || "max"; } prepara(); };
+  $("hl-in").onchange = function () { $("hl-es").value = String(ES.length - 1); prepara(); };
+  $("hl-tipo").onchange = prepara;
+  $("hl-in").value = ES[0][1];
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 4. allenamento: le domande dell'esame
+(function () {
+  if (!$("ea-corpo")) return;
+  // tipo: "max" | "min" (trasformato in max/min-heap), "hc" | "hd" (heap per ordinare crescente/decrescente), "sc" | "sd" (dopo lo scambio che colloca X)
+  var TEMI = [["14 giugno 2024 (c)", [24, 17, 43, 14, 12, 26, 39, 34, 16], "sc", 39, "crescente"], ["14 giugno 2024 (d)", [24, 17, 43, 14, 12, 26, 39, 34, 16], "hd"],
+    ["12 luglio 2024 (d)", [12, 14, 17, 24, 2, 33, 46, 21, 15], "sd", 12], ["20 settembre 2024 (d)", [15, 21, 23, 29, 12, 18, 44, 22, 16, 17], "sd", 15],
+    ["17 gennaio 2025 (c)", [14, 19, 23, 11, 45, 18, 43, 52], "sc", 45], ["31 gennaio 2025 (c)", [26, 36, 11, 16, 33, 28, 23, 77], "sc", 33],
+    ["14 febbraio 2025 (c)", [23, 11, 10, 13, 46, 22, 48, 44], "sc", 46], ["20 giugno 2025 (c)", [17, 28, 35, 16, 45, 80, 33, 44], "sc", 45],
+    ["19 settembre 2025 (c)", [25, 16, 14, 13, 48, 56, 29, 26], "sc", 48], ["14 novembre 2025 (b)", [21, 18, 24, 63, 35, 34, 27, 29], "max"],
+    ["14 novembre 2025 (c)", [21, 18, 24, 63, 35, 34, 27, 29], "sc", 35], ["16 gennaio 2026 (b)", [16, 25, 33, 40, 11, 50, 14, 47], "hc"],
+    ["16 gennaio 2026 (c)", [16, 25, 33, 40, 11, 50, 14, 47], "sc", 40], ["6 febbraio 2026 (c)", [18, 44, 11, 24, 13, 22, 31, 33], "hc"],
+    ["27 febbraio 2026 (c)", [15, 11, 44, 18, 42, 12, 33, 24], "sc", 42], ["19 gennaio 2024 (d)", [28, 42, 17, 15, 36, 25, 32, 20, 44], "hd"], ["19 gennaio 2024 (c)", [28, 42, 17, 15, 36, 25, 32, 20, 44], "hc", null, "crescente"]];
+  $("ea-corpo").innerHTML = '<div class="controlli"><label>Tema <select id="ea-es" style="width:auto;max-width:100%">' + TEMI.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label><button id="ea-caso">Nuovo esercizio a caso</button></div>' +
+    '<div class="box domanda" id="ea-dom" style="margin:8px 0"></div>' +
+    '<div class="controlli"><button class="primario" id="ea-sol">Mostra la soluzione</button><button id="ea-pas">Mostra i passaggi</button></div><div id="ea-out"></div>';
+  var V = { Q: null, sol: false, pas: false };
+  function testo(Q) {
+    var s = "Considerate la seguente sequenza di numeri, memorizzata in un array: <b>" + Q.A.join(" ") + "</b>. ";
+    if (Q.tipo === "max" || Q.tipo === "min") s += "Supponete che l'array contenga la sequenza data e venga trasformato in un " + (Q.tipo === "max" ? "max-Heap" : "min-Heap") + ", mediante la strategia utilizzata dall'algoritmo heapSort e presentata a lezione. Indicate il contenuto dell'array dopo la trasformazione.";
+    else if (Q.tipo === "hc" || Q.tipo === "hd") s += "Supponete di ordinare la sequenza in modo " + (Q.tipo === "hc" ? (Q.parola || "non decrescente") : "decrescente") + " mediante l'algoritmo heapSort. Indicate il contenuto dell'array dopo averlo trasformato in uno heap del tipo opportuno.";
+    else s += "Supponete di ordinare la sequenza in modo " + (Q.tipo === "sc" ? (Q.parola || "non decrescente") : "decrescente") + " mediante l'algoritmo heapSort. Indicate il contenuto dell'array immediatamente dopo lo scambio che colloca " + Q.X + " nella sua posizione definitiva.";
+    return s;
+  }
+  function risolvi(Q) {
+    var tipoHeap = (Q.tipo === "max" || Q.tipo === "hc" || Q.tipo === "sc") ? "max" : "min";
+    var F = heapSortInLoco(Q.A.slice(), tipoHeap), passi = [{ t: "dopo creaHeap (" + (tipoHeap === "max" ? "max-heap" : "min-heap") + ")", A: F[0].A, l: Q.A.length }];
+    if (Q.tipo === "max" || Q.tipo === "min" || Q.tipo === "hc" || Q.tipo === "hd") return { ris: F[0].A, passi: passi, tipoHeap: tipoHeap };
+    for (var k = 1; k < F.length; k++) {
+      var f = F[k];
+      if (f.dopo === "scambio") { passi.push({ t: "ℓ = " + f.l + ": dopo lo scambio (esce " + f.messo + ")", A: f.A, l: f.l, ev: true }); if (f.messo === Q.X) return { ris: f.A, passi: passi, tipoHeap: tipoHeap, l: f.l }; }
+      else passi.push({ t: "ℓ = " + f.l + ": dopo risistema", A: f.A, l: f.l });
+    }
+    return { ris: null, passi: passi, tipoHeap: tipoHeap };
+  }
+  function nuovoCaso() {
+    var n = 8 + Math.floor(Math.random() * 2), S = {}, A = [];
+    while (A.length < n) { var x = 10 + Math.floor(Math.random() * 90); if (!S[x]) { S[x] = 1; A.push(x); } }
+    var tipi = ["max", "min", "hc", "hd", "sc", "sc", "sd"], tipo = tipi[Math.floor(Math.random() * tipi.length)], X;
+    var ord = A.slice().sort(function (a, b) { return a - b; });
+    if (tipo === "sc") X = ord[n - 2 - Math.floor(Math.random() * 2)];
+    if (tipo === "sd") X = ord[1 + Math.floor(Math.random() * 2)];
+    return { A: A, tipo: tipo, X: X };
+  }
+  function mostra() {
+    var Q = V.Q, R = risolvi(Q);
+    $("ea-dom").innerHTML = '<span class="etichetta">La domanda</span><p>' + testo(Q) + '</p>';
+    var h = "";
+    if (V.sol) h += '<div class="etich-array">Risposta</div>' + htmlArray(R.ris, { stacco: R.l ? [R.l] : [], cls: function (i) { return R.l && i >= R.l ? "ordinata" : ""; } }) +
+      '<p class="piccolo">' + (R.l ? "Lo heap è ancora da risistemare: il " + R.ris[0] + " nella radice è appena arrivato dall'ultima foglia. Le posizioni da " + R.l + " in poi sono già definitive." : "Heap " + (R.tipoHeap === "max" ? "massimo" : "minimo") + " in posizione 0. Controllo: ogni A[i] è " + (R.tipoHeap === "max" ? "≥" : "≤") + " di A[2i + 1] e A[2i + 2].") + '</p>';
+    if (V.pas) h += '<div class="etich-array">Passaggi</div>' + R.passi.map(function (p) { return '<div class="piccolo" style="margin-top:6px">' + p.t + '</div>' + htmlArray(p.A, { mini: true, stacco: p.l < p.A.length ? [p.l] : [], cls: function (i) { return i >= p.l ? "ordinata" : (p.ev && i === 0 ? "attiva" : ""); } }); }).join("");
+    $("ea-out").innerHTML = h;
+    $("ea-sol").textContent = V.sol ? "Nascondi la soluzione" : "Mostra la soluzione";
+    $("ea-pas").textContent = V.pas ? "Nascondi i passaggi" : "Mostra i passaggi";
+  }
+  $("ea-es").onchange = function () { var t = TEMI[Number($("ea-es").value)]; V.Q = { A: t[1], tipo: t[2], X: t[3], parola: t[4] }; V.sol = false; V.pas = false; mostra(); };
+  $("ea-caso").onclick = function () { V.Q = nuovoCaso(); V.sol = false; V.pas = false; mostra(); };
+  $("ea-sol").onclick = function () { V.sol = !V.sol; mostra(); };
+  $("ea-pas").onclick = function () { V.pas = !V.pas; mostra(); };
+  $("ea-es").onchange();
+})();
+})();
+</script>
+</body>
+</html>

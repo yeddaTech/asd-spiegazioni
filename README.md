@@ -21,6 +21,12 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 10 · Le liste concatenate | tipi di dato e strutture dati, ricerca, inserimento e cancellazione, liste in C e in Go | 12–14 |
 | 11 · Pile e code | LIFO e FIFO, realizzazioni con array (anche circolare) e con liste, costi | 13–14 |
 | 12 · Alberi binari e visite | nomi, rappresentazione, visite in ampiezza e in profondità, tre ordini, notazione polacca inversa, visite dei temi d'esame | 13–14 |
+| 13 · Heap e creaHeap | alberi quasi completi e altezza ⌊log₂ n⌋, heap, risistema, creaHeap ricorsivo e dal basso in Θ(n), heapSort sull'albero, max-heap e min-heap dei temi d'esame | 15 |
+| 14 · heapSort in loco | vettore posizionale, heap e parte ordinata nello stesso array, risistema e creaHeap con gli indici, non stabilità, ordine decrescente, le domande d'esame su heapSort | 16 |
+| 15 · Limite n log n e ordinare senza confrontare | riepilogo degli ordinamenti, alberi di decisione e limite log₂(n!), integerSort, bucketSort, ordinamento per più chiavi, radixSort, cifre con shift e AND | 16–17 |
+| 16 · Operazioni sugli heap, code con priorità, analisi ammortizzata | togli la radice, inserisci, cancella, cambia chiave, min-heap come coda con priorità, deleteMin e changeKey dei temi d'esame, contatore binario | 17–18 |
+| 17 · Union-find | partizioni, QuickFind e bilanciamento, QuickUnion, union by rank e il lemma, compressione dei cammini, log* n, esercizio 7.1 | 18–19 |
+| 18 · Grafi: parole, rappresentazioni, alberi e visite | definizioni, gradi, cammini e connessione, Eulero e Hamilton, liste e matrici, M^k, alberi e alberi ricoprenti, visita in ampiezza e in profondità | 19–20 |
 
 ## Come si usa
 

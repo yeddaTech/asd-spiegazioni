@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Limite e radixSort</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 15 · lezione 16, seconda parte, e lezione 17 (lavagne del 29 e 31 ottobre 2025)</span>
+</div>
+
+<h1>Meno di n log n confronti non si può: e allora si ordina senza confrontare</h1>
+<p class="sottotitolo">mergeSort e heapSort ordinano con Θ(n log n) confronti. Si può fare meglio? Se l'algoritmo lavora confrontando le chiavi, no: con gli alberi di decisione il prof dimostra che servono almeno log<sub>2</sub>(n!) confronti, cioè circa n log<sub>2</sub> n. Poi la sorpresa: se le chiavi sono numeri interi non troppo grandi, si può ordinare <em>senza confrontarle</em>, in tempo lineare: integerSort, bucketSort e radixSort.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di matematica che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso. Nelle sezioni 1–5, «lavagna, pagina N» è la lezione 16 (29 ottobre 2025); nelle sezioni 6–11 è la lezione 17 (31 ottobre 2025). «Le slide» sono quelle del riepilogo degli ordinamenti e di radixSort, con i Codici 8.1, 8.2 e 8.3.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Le due lezioni in sei domande</span>
+  <ol>
+    <li><b>Si può ordinare con meno di n log n confronti?</b> No, se l'algoritmo è basato su confronti: nel caso peggiore ne servono almeno log<sub>2</sub>(n!) = Θ(n log n).</li>
+    <li><b>Come si dimostra?</b> Ogni algoritmo è un albero di decisione: i nodi interni sono domande «x<sub>i</sub> ≤ x<sub>j</sub>?», le foglie i possibili ordini. Le foglie sono almeno n!, quindi l'albero è alto almeno log<sub>2</sub>(n!).</li>
+    <li><b>Come si ordina senza confrontare?</b> Usando la chiave come indice di un array: integerSort conta, bucketSort mette ogni elemento in una coda per chiave.</li>
+    <li><b>Quanto costa bucketSort?</b> Θ(b + n), con b il numero di chiavi possibili: lineare se b = O(n). Ed è stabile.</li>
+    <li><b>E se le chiavi sono grandi?</b> radixSort: bucketSort cifra per cifra, dalla meno significativa. Funziona grazie alla stabilità.</li>
+    <li><b>Come si prende una cifra?</b> La cifra di posizione t di x in base b è (x / b<sup>t</sup>) MOD b; con b potenza di 2 bastano uno shift e un AND.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#problema">Il problema dell'ordinamento, detto con precisione</a></li>
+    <li><a href="#riepilogo">Gli algoritmi visti finora</a></li>
+    <li><a href="#domanda">Si può fare meglio? I confronti come domande</a></li>
+    <li><a href="#decisione">Gli alberi di decisione</a></li>
+    <li><a href="#limite">Il limite: almeno log₂(n!) confronti</a></li>
+    <li><a href="#integersort">Ordinare senza confrontare: integerSort</a></li>
+    <li><a href="#bucketsort">bucketSort: una coda per ogni chiave</a></li>
+    <li><a href="#compleanno">Ordinare per due chiavi: i compleanni</a></li>
+    <li><a href="#radixsort">radixSort: una cifra alla volta</a></li>
+    <li><a href="#base">Quanto costa radixSort e come si sceglie la base</a></li>
+    <li><a href="#cifra">Come si calcola una cifra</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti (foglio 6)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="problema"><span class="num">1</span>Il problema dell'ordinamento, detto con precisione</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione del problema delle slide (lavagna, pagina 16): cosa si dà in ingresso, cosa si vuole in uscita, cosa vuol dire «stabile» scritto in formule, e quanti sono i possibili ordini di n elementi.</p>
+<div class="box def">
+  <span class="etichetta">Il problema dell'ordinamento (slide, lavagna pagina 16)</span>
+  <p><b>Input:</b> n elementi x<sub>1</sub>, x<sub>2</sub>, …, x<sub>n</sub>, provenienti da un dominio D su cui è definita una relazione ≤ di ordine totale.</p>
+  <p><b>Output:</b> la sequenza x<sub>j<sub>1</sub></sub>, x<sub>j<sub>2</sub></sub>, …, x<sub>j<sub>n</sub></sub>, dove (j<sub>1</sub>, j<sub>2</sub>, …, j<sub>n</sub>) è una permutazione di (1, 2, …, n), tale che x<sub>j<sub>1</sub></sub> ≤ x<sub>j<sub>2</sub></sub> ≤ … ≤ x<sub>j<sub>n</sub></sub>.</p>
+</div>
+<p>Riga per riga:</p>
+<ul>
+  <li>«Ordine totale» vuol dire che due elementi qualsiasi si possono sempre confrontare: per ogni coppia, x ≤ y oppure y ≤ x. I numeri, le parole in ordine alfabetico, le date funzionano così.</li>
+  <li>La risposta è scritta con gli indici: j<sub>1</sub> è l'indice dell'elemento che va al primo posto, j<sub>2</sub> quello che va al secondo, e così via. Esempio: con x<sub>1</sub> = 5, x<sub>2</sub> = 10, x<sub>3</sub> = 7, la risposta è x<sub>1</sub>, x<sub>3</sub>, x<sub>2</sub>, cioè (j<sub>1</sub>, j<sub>2</sub>, j<sub>3</sub>) = (1, 3, 2).</li>
+  <li>Una <strong>permutazione</strong> di (1, 2, …, n) è un modo di mettere in fila i numeri da 1 a n, ognuno una volta sola. Ordinare vuol dire trovare la permutazione giusta.</li>
+</ul>
+<div class="box def">
+  <span class="etichetta">Attrezzo matematico: quante sono le permutazioni</span>
+  <p>Le permutazioni di n elementi distinti sono <strong>n! = 1 · 2 · 3 · … · n</strong> («n fattoriale»), come scrive il prof in verde alla lavagna, pagina 16. Perché: il primo posto si può riempire in n modi, il secondo con uno dei n − 1 rimasti, il terzo in n − 2 modi, … l'ultimo in 1 modo; i modi si moltiplicano. Con n = 3: 3! = 6, e infatti gli ordini di x<sub>1</sub>, x<sub>2</sub>, x<sub>3</sub> sono 123, 132, 213, 231, 312, 321. Il fattoriale cresce in fretta: 10! = 3 628 800.</p>
+</div>
+<p>Le slide scrivono anche la <strong>stabilità</strong> in formule: «se x<sub>j<sub>k′</sub></sub> = x<sub>j<sub>k″</sub></sub> e j<sub>k′</sub> ≤ j<sub>k″</sub>, allora k′ ≤ k″». In parole: se nelle posizioni k′ e k″ dell'uscita ci sono due elementi uguali, e quello in k′ veniva prima nell'ingresso (il suo indice j<sub>k′</sub> è più piccolo), allora viene prima anche nell'uscita. Gli elementi uguali mantengono l'ordine che avevano.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Ordinare = trovare la permutazione (j<sub>1</sub>, …, j<sub>n</sub>) con x<sub>j<sub>1</sub></sub> ≤ … ≤ x<sub>j<sub>n</sub></sub>.</li>
+    <li>Le permutazioni di n elementi sono n!. Stabile = gli elementi uguali restano nell'ordine iniziale.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="riepilogo"><span class="num">2</span>Gli algoritmi visti finora</h2>
+<p class="in-questa"><b>In questa sezione:</b> la tabella riassuntiva che il prof compila a mano alla lavagna, pagina 17 (e che le slide riportano a stampa, pagina 18), con il significato di ogni casella.</p>
+<div class="tabella-wrap"><table>
+  <tr><th>algoritmo</th><th>numero di confronti</th><th>spazio in più</th><th>note</th><th>stabile</th></tr>
+  <tr><td>selectionSort</td><td>Θ(n<sup>2</sup>) sempre</td><td>Θ(1)</td><td>in loco</td><td>no</td></tr>
+  <tr><td>insertionSort</td><td>Θ(n<sup>2</sup>) nel caso peggiore; n − 1 su array già ordinato</td><td>Θ(1)</td><td>in loco</td><td>sì</td></tr>
+  <tr><td>bubbleSort</td><td>Θ(n<sup>2</sup>) nel caso peggiore; n − 1 su array già ordinato</td><td>Θ(1)</td><td>in loco</td><td>sì</td></tr>
+  <tr><td>mergeSort</td><td>Θ(n log n)</td><td>Θ(n)</td><td>array ausiliario Θ(n), più Θ(log n) per la pila della ricorsione</td><td>sì</td></tr>
+  <tr><td>quickSort</td><td>Θ(n<sup>2</sup>) nel caso peggiore; Θ(n log n) nel migliore; ≈ 1,39 n log<sub>2</sub> n in media</td><td>Θ(n) o Θ(log n)</td><td>in loco più la pila: Θ(n) nella versione base, Θ(log n) in quella migliorata</td><td>no</td></tr>
+  <tr><td>heapSort</td><td>Θ(n log n)</td><td>Θ(1)</td><td>in loco</td><td>no</td></tr>
+</table></div>
+<p>Come si legge:</p>
+<ul>
+  <li><b>Numero di confronti</b>: quello nel caso peggiore, se non è detto altro. selectionSort ne fa sempre circa n<sup>2</sup>/2, qualunque sia l'array; insertionSort e bubbleSort su un array già ordinato si accorgono subito che non c'è niente da fare (n − 1 confronti).</li>
+  <li><b>Spazio in più</b>: la memoria oltre all'array da ordinare. «In loco» vuol dire che gli elementi si spostano dentro l'array stesso, con un numero costante di variabili in più.</li>
+  <li><b>Stabile</b>: vedi la sezione 1. selectionSort, quickSort e heapSort fanno scambi «a distanza», che possono scavalcare elementi uguali.</li>
+</ul>
+<p>Due algoritmi arrivano a Θ(n log n) anche nel caso peggiore: mergeSort e heapSort. La domanda naturale è: si può scendere sotto?</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Elementari (selection, insertion, bubble): Θ(n<sup>2</sup>), in loco. mergeSort: Θ(n log n), stabile, Θ(n) di memoria. quickSort: Θ(n<sup>2</sup>) nel caso peggiore, ma veloce in media. heapSort: Θ(n log n), in loco, non stabile.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="domanda"><span class="num">3</span>Si può fare meglio? I confronti come domande</h2>
+<p class="in-questa"><b>In questa sezione:</b> la domanda della lavagna, pagina 19 («è possibile ordinare array di n elementi utilizzando un numero di confronti tra chiavi che cresca meno di n log n?»), la risposta del prof («NO!»), e il punto di partenza della dimostrazione: un confronto è una domanda con risposta sì o no.</p>
+<p>Tutti gli algoritmi della tabella hanno una cosa in comune: per decidere dove mettere gli elementi li <strong>confrontano</strong>. Un confronto è una domanda del tipo «x<sub>i</sub> ≤ x<sub>j</sub>?», e la risposta può essere solo <strong>sì</strong> o <strong>no</strong> (lavagna, pagina 19: il prof cerchia «x<sub>i</sub> ≤ x<sub>j</sub>?» e ci scrive accanto «sì / no»). L'algoritmo è un giocatore che fa domande sì/no finché non sa qual è l'ordine giusto.</p>
+<p>Il prof comincia con un gioco (lavagna, pagina 20): indovinare un numero x tra 1 e 1000 facendo solo domande sì/no. La strategia migliore è dimezzare ogni volta: «x ≥ 500?»; se no, «x ≥ 250?»; se sì, «x ≥ 750?»; e così via (Figura 1). È la ricerca binaria.</p>
+<div class="figura">
+<svg viewBox="0 0 560 218" width="560" height="218" role="img" aria-label="Indovinare un numero da 1 a 1000 con domande sì/no" font-family="system-ui, sans-serif"><line x1="280" y1="44" x2="140" y2="86" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="196" y="67" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">no</text><line x1="280" y1="44" x2="420" y2="86" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="364" y="67" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">sì</text><line x1="140" y1="114" x2="70" y2="154" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="91" y="136" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">no</text><line x1="140" y1="114" x2="210" y2="154" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="189" y="136" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">sì</text><line x1="420" y1="114" x2="350" y2="154" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="371" y="136" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">no</text><line x1="420" y1="114" x2="490" y2="154" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="469" y="136" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">sì</text><rect x="236" y="16" width="88" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="280" y="35" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x ≥ 500?</text><rect x="96" y="86" width="88" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="140" y="105" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x ≥ 250?</text><rect x="376" y="86" width="88" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="420" y="105" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x ≥ 750?</text><rect x="26" y="154" width="88" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="70" y="173" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x ≥ 125?</text><rect x="166" y="154" width="88" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="210" y="173" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x ≥ 375?</text><rect x="306" y="154" width="88" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="350" y="173" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x ≥ 625?</text><rect x="446" y="154" width="88" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="490" y="173" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x ≥ 875?</text><text x="280" y="212" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270">… e così via: dopo 10 domande resta un solo numero</text></svg>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagina 20: le prime domande per indovinare un numero tra 1 e 1000. Ogni domanda dimezza i numeri possibili.</div>
+</div>
+<p>Quante domande servono? Dopo 1 domanda restano circa 500 numeri, dopo 2 circa 250, … dopo 10 ne resta uno (2<sup>10</sup> = 1024 ≥ 1000). E non si può fare con meno di 10: con 9 domande le possibili sequenze di risposte sono 2<sup>9</sup> = 512, troppo poche per distinguere 1000 numeri. In generale, per distinguere N possibilità con domande sì/no servono, nel caso peggiore, almeno log<sub>2</sub> N domande. Per ordinare, le possibilità sono gli n! ordini degli elementi. È tutta qui l'idea; le prossime due sezioni la scrivono per bene.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Un algoritmo basato su confronti fa domande sì/no del tipo «x<sub>i</sub> ≤ x<sub>j</sub>?».</li>
+    <li>Per distinguere N possibilità con domande sì/no servono almeno log<sub>2</sub> N domande. Per ordinare, le possibilità sono n!.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="decisione"><span class="num">4</span>Gli alberi di decisione</h2>
+<p class="in-questa"><b>In questa sezione:</b> cos'è un albero di decisione (lavagna, pagine 20 e 21), l'albero delle slide per ordinare tre elementi, come si legge un cammino, e perché il numero di confronti nel caso peggiore è l'altezza dell'albero. Alla fine un riquadro per percorrerlo con valori a scelta.</p>
+<div class="box def">
+  <span class="etichetta">Albero di decisione (lavagna, pagina 20)</span>
+  <ul>
+    <li><strong>Nodi interni</strong>: domande sì/no, cioè i confronti che l'algoritmo fa.</li>
+    <li><strong>Foglie</strong>: i possibili risultati, cioè gli ordini degli elementi.</li>
+  </ul>
+  <p>La radice è il primo confronto. I suoi due figli sono il secondo confronto, se la risposta al primo è sì oppure no. In generale i due figli di un nodo dicono come prosegue l'algoritmo dopo la risposta sì o dopo la risposta no.</p>
+</div>
+<p>Un algoritmo fissato, su n elementi, dà un albero di decisione: si scrive quale confronto fa per primo, poi quale fa dopo ognuna delle due risposte, e così via, fino a quando l'algoritmo ha deciso l'ordine. La Figura 2 è l'albero delle slide (e della lavagna, pagina 21) per n = 3.</p>
+<div class="figura">
+<svg viewBox="0 0 580 288" width="580" height="288" style="min-width:520px" role="img" aria-label="Albero di decisione per ordinare tre elementi" font-family="system-ui, sans-serif"><line x1="266" y1="40" x2="122" y2="86" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="182" y="63" font-size="12" text-anchor="middle" class="t-verde" fill="#17803d" font-weight="700">sì</text><line x1="122" y1="114" x2="50" y2="160" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="74" y="137" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270" font-weight="400">sì</text><line x1="122" y1="114" x2="194" y2="160" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="170" y="137" font-size="12" text-anchor="middle" class="t-verde" fill="#17803d" font-weight="700">no</text><line x1="194" y1="188" x2="146" y2="234" class="l-verde" stroke="#17803d" stroke-width="3"/><text x="158" y="211" font-size="12" text-anchor="middle" class="t-verde" fill="#17803d" font-weight="700">sì</text><line x1="194" y1="188" x2="242" y2="234" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="230" y="211" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270" font-weight="400">no</text><line x1="266" y1="40" x2="410" y2="86" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="350" y="63" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270" font-weight="400">no</text><line x1="410" y1="114" x2="338" y2="160" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="362" y="137" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270" font-weight="400">sì</text><line x1="410" y1="114" x2="482" y2="160" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="458" y="137" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270" font-weight="400">no</text><line x1="482" y1="188" x2="434" y2="234" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="446" y="211" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270" font-weight="400">sì</text><line x1="482" y1="188" x2="530" y2="234" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><text x="518" y="211" font-size="12" text-anchor="middle" class="t-muted" fill="#5b6270" font-weight="400">no</text><rect x="226" y="12" width="80" height="28" rx="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="2"/><text x="266" y="31" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"> ≤ x</tspan><tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3">?</tspan></text><rect x="82" y="86" width="80" height="28" rx="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="2"/><text x="122" y="105" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"> ≤ x</tspan><tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3">?</tspan></text><rect x="6" y="160" width="88" height="28" rx="6" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.3"/><text x="50" y="179" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3"></tspan></text><rect x="154" y="160" width="80" height="28" rx="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="2"/><text x="194" y="179" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"> ≤ x</tspan><tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3">?</tspan></text><rect x="102" y="234" width="88" height="28" rx="6" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="2.4"/><text x="146" y="253" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"></tspan></text><rect x="198" y="234" width="88" height="28" rx="6" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.3"/><text x="242" y="253" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"></tspan></text><rect x="370" y="86" width="80" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="410" y="105" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"> ≤ x</tspan><tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3">?</tspan></text><rect x="294" y="160" width="88" height="28" rx="6" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.3"/><text x="338" y="179" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3"></tspan></text><rect x="442" y="160" width="80" height="28" rx="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="482" y="179" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"> ≤ x</tspan><tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3">?</tspan></text><rect x="390" y="234" width="88" height="28" rx="6" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.3"/><text x="434" y="253" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"></tspan></text><rect x="486" y="234" width="88" height="28" rx="6" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.3"/><text x="530" y="253" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">3</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">2</tspan><tspan dy="-3"></tspan>, x<tspan font-size="9.5" dy="3">1</tspan><tspan dy="-3"></tspan></text></svg>
+<div class="didascalia"><b>Figura 2.</b> L'albero di decisione delle slide per ordinare x<sub>1</sub>, x<sub>2</sub>, x<sub>3</sub>. A sinistra di ogni nodo il ramo «sì», a destra il ramo «no». In verde il cammino dell'esempio delle slide, x<sub>1</sub> = 5, x<sub>2</sub> = 10, x<sub>3</sub> = 7: x<sub>1</sub> ≤ x<sub>2</sub>? sì; x<sub>2</sub> ≤ x<sub>3</sub>? no; x<sub>1</sub> ≤ x<sub>3</sub>? sì. La foglia dice: x<sub>1</sub>, x<sub>3</sub>, x<sub>2</sub>, cioè 5, 7, 10.</div>
+</div>
+<p>Come si legge: un <strong>cammino</strong> dalla radice a una foglia è una sequenza di confronti con le loro risposte, che basta a stabilire l'ordine scritto nella foglia. Sull'albero della Figura 2 alcuni cammini fanno 2 confronti (se x<sub>1</sub> ≤ x<sub>2</sub> e x<sub>2</sub> ≤ x<sub>3</sub>, l'ordine è già deciso: x<sub>1</sub>, x<sub>2</sub>, x<sub>3</sub>), altri ne fanno 3.</p>
+<p>Il numero di confronti nel <strong>caso peggiore</strong> è quello del cammino più lungo: è l'<strong>altezza</strong> dell'albero, cioè il numero di nodi interni incontrati scendendo dalla radice fino alla foglia più lontana. Per l'albero della Figura 2 è 3.</p>
+<div class="widget" id="w-dt">
+  <h4>L'albero di decisione per tre elementi</h4>
+  <div id="dt-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Albero di decisione: nodi interni = confronti, foglie = ordini possibili, cammino = esecuzione dell'algoritmo su un input.</li>
+    <li>Confronti nel caso peggiore = altezza dell'albero.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="limite"><span class="num">5</span>Il limite: almeno log₂(n!) confronti</h2>
+<p class="in-questa"><b>In questa sezione:</b> la dimostrazione della lavagna, pagine 21 e 22: l'albero ha almeno n! foglie, quindi è alto almeno log<sub>2</sub>(n!); con l'approssimazione di Stirling, log<sub>2</sub>(n!) = Θ(n log n). E cosa ne segue per gli algoritmi che conosciamo.</p>
+<p>Qualunque sia l'algoritmo, il suo albero di decisione deve avere <strong>almeno n! foglie</strong>. Infatti ognuno degli n! ordini è la risposta giusta per qualche input (basta mettere i numeri da 1 a n in quell'ordine), e a due input che vogliono ordini diversi l'algoritmo deve dare risposte diverse: devono arrivare a foglie diverse.</p>
+<div class="box def">
+  <span class="etichetta">Attrezzo matematico: foglie e altezza</span>
+  <p>Un albero binario di altezza h ha al più <strong>2<sup>h</sup> foglie</strong>: il livello h ha al più 2<sup>h</sup> posti, e una foglia su un livello più alto occupa il posto di tutti i suoi possibili discendenti. Al contrario, un albero con F foglie ha altezza almeno log<sub>2</sub> F (da 2<sup>h</sup> ≥ F, prendendo il logaritmo).</p>
+</div>
+<p>Quindi, come scrive il prof alla lavagna, pagina 21:</p>
+<div class="formula">altezza ≥ log<sub>2</sub>(numero di foglie) ≥ log<sub>2</sub>(n!)</div>
+<p>e siccome i confronti nel caso peggiore sono l'altezza: <strong>ogni algoritmo basato su confronti fa, nel caso peggiore, almeno log<sub>2</sub>(n!) confronti</strong>. Con n = 3: log<sub>2</sub> 6 ≈ 2,58, quindi almeno 3 confronti, proprio quelli dell'albero della Figura 2: quell'albero è il migliore possibile.</p>
+
+<h3>Quanto vale log₂(n!)</h3>
+<p>Il prof usa l'approssimazione di Stirling (lavagna, pagina 22):</p>
+<div class="formula">n! ≈ √(2πn) · (n/e)<sup>n</sup></div>
+<p>dove e ≈ 2,718 è il numero di Nepero. Per esempio 10! = 3 628 800 e la formula dà circa 3 598 696: lo sbaglio è meno dell'1%.</p>
+<div class="box def">
+  <span class="etichetta">Attrezzo matematico: tre regole dei logaritmi</span>
+  <ul>
+    <li>Il logaritmo di un prodotto è la somma dei logaritmi: log<sub>2</sub>(a · b) = log<sub>2</sub> a + log<sub>2</sub> b.</li>
+    <li>Quello di una potenza porta giù l'esponente: log<sub>2</sub>(a<sup>k</sup>) = k · log<sub>2</sub> a. In particolare log<sub>2</sub> √a = ½ log<sub>2</sub> a.</li>
+    <li>Quello di un quoziente è la differenza: log<sub>2</sub>(a / b) = log<sub>2</sub> a − log<sub>2</sub> b.</li>
+  </ul>
+</div>
+<div class="dim">
+  <div class="dim-tit">Il logaritmo del fattoriale (lavagna, pagina 22)</div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">log<sub>2</sub>(n!)</span><span class="rel">≈</span><span class="dx">log<sub>2</sub>(√(2πn) · (n/e)<sup>n</sup>)</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">log<sub>2</sub> √(2π) + log<sub>2</sub> √n + log<sub>2</sub>(n/e)<sup>n</sup></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">log<sub>2</sub> √(2π) + ½ log<sub>2</sub> n + n log<sub>2</sub> n − n log<sub>2</sub> e</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">Θ(n log n)</span><span class="perche"><span class="rif">4</span></span></span></div>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Stirling.</p>
+    <p><span class="rif">2</span>√(2πn) = √(2π) · √n, e il logaritmo di un prodotto è la somma dei logaritmi.</p>
+    <p><span class="rif">3</span>log<sub>2</sub> √n = ½ log<sub>2</sub> n; log<sub>2</sub>(n/e)<sup>n</sup> = n · log<sub>2</sub>(n/e) = n log<sub>2</sub> n − n log<sub>2</sub> e (il prof lo scrive in verde: «n log<sub>2</sub>(n/e)»).</p>
+    <p><span class="rif">4</span>Il termine che cresce di più è n log<sub>2</sub> n; gli altri sono costanti (log<sub>2</sub> √(2π) ≈ 1,33), logaritmici (½ log<sub>2</sub> n) o lineari (n log<sub>2</sub> e ≈ 1,44 n). Quindi la somma è Θ(n log n).</p>
+  </div>
+</div>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: lo stesso risultato senza Stirling</summary>
+  <div class="soluzione">
+    <p>Questo ragionamento non viene dalla lezione, ma usa solo cose semplici. Dall'alto: n! = 1 · 2 · … · n ≤ n · n · … · n = n<sup>n</sup>, quindi log<sub>2</sub>(n!) ≤ n log<sub>2</sub> n. Dal basso: nel prodotto n! gli ultimi n/2 fattori (da n/2 a n) valgono ciascuno almeno n/2, quindi n! ≥ (n/2)<sup>n/2</sup> e log<sub>2</sub>(n!) ≥ (n/2) log<sub>2</sub>(n/2). Tutti e due i limiti sono «una costante per n log n», quindi log<sub>2</sub>(n!) = Θ(n log n).</p>
+  </div>
+</details>
+<div class="box idea">
+  <span class="etichetta">La conclusione</span>
+  <p>Ogni algoritmo di ordinamento basato su confronti richiede, nel caso peggiore, un numero di confronti dell'ordine di <strong>n log n</strong>. Quindi:</p>
+  <ul>
+    <li><strong>mergeSort e heapSort sono ottimi</strong> nel caso peggiore: a meno di costanti, nessuno può fare meglio. Per questo per loro si scrive Θ(n log n), non solo O(n log n).</li>
+    <li>Il limite vale solo per gli algoritmi che <em>confrontano le chiavi</em>. Se un algoritmo usa le chiavi in un altro modo, il limite non lo riguarda: è quello che succede dalla sezione 6.</li>
+  </ul>
+</div>
+<p>Il riquadro calcola il limite per un n a scelta.</p>
+<div class="widget" id="w-lb">
+  <h4>Quanti confronti servono almeno?</h4>
+  <div id="lb-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>L'albero di decisione ha almeno n! foglie, quindi altezza ≥ log<sub>2</sub>(n!).</li>
+    <li>Stirling: log<sub>2</sub>(n!) = n log<sub>2</sub> n − n log<sub>2</sub> e + ½ log<sub>2</sub> n + costante = Θ(n log n).</li>
+    <li>Ogni ordinamento per confronti fa Ω(n log n) confronti nel caso peggiore: mergeSort e heapSort sono ottimi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="integersort"><span class="num">6</span>Ordinare senza confrontare: integerSort</h2>
+<p class="in-questa"><b>In questa sezione:</b> la lezione 17 si apre con «ordinare senza confrontare» (lavagna, pagine 2 e 3). Il primo algoritmo, integerSort (Codice 8.1), ordina n interi tra 0 e b − 1 contando quante volte compare ogni valore.</p>
+<p>Il limite della sezione 5 riguarda gli algoritmi che confrontano. Se le chiavi sono <strong>numeri interi in un intervallo piccolo e conosciuto</strong>, da 0 a b − 1, si può fare in un altro modo: usare la chiave come <em>indice di un array</em>. Il problema della lavagna, pagina 3: ordinare n interi in [0..b − 1].</p>
+<p class="titolo-codice">Codice 8.1 delle slide</p>
+<pre class="pseudo"><b>ALGORITMO</b> integerSort(array A[0..n−1], intero b)
+  <span class="com">/* ordina un array di interi appartenenti all'intervallo [0, b−1] */</span>
+  Sia Y[0..b−1] un array                     <span class="com">// array di contatori</span>
+  <b>FOR</b> i ← 0 <b>TO</b> b − 1 <b>DO</b> Y[i] ← 0           <span class="com">// azzera i contatori</span>
+  <span class="com">// conta le occorrenze in A di ciascun intero in [0, b−1]</span>
+  <b>FOR</b> i ← 0 <b>TO</b> n − 1 <b>DO</b>
+    x ← A[i]
+    Y[x] ← Y[x] + 1
+  <span class="com">// riempi A con i valori ordinati</span>
+  j ← 0                                      <span class="com">// prossima posizione di A da riempire</span>
+  <b>FOR</b> i ← 0 <b>TO</b> b − 1 <b>DO</b>
+    <span class="com">// assegna l'intero i alle successive Y[i] posizioni di A</span>
+    <b>FOR</b> h ← 1 <b>TO</b> Y[i] <b>DO</b>
+      A[j] ← i
+      j ← j + 1</pre>
+<p>Tre fasi: si azzerano i b contatori; si scorre A e, per ogni valore x, si aggiunge 1 al contatore Y[x]; infine si riscrive A da sinistra, mettendo Y[0] volte lo 0, poi Y[1] volte l'1, e così via. L'esempio della lavagna, pagina 3, con b = 5, è nella Figura 3.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">A all'inizio</div><div class="array qs"><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">0</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">0</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">5</div></div></div></div><div><div class="nome-mat">Y: quante volte compare ogni valore</div><div class="array qs"><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">0</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">4</div></div></div></div><div><div class="nome-mat">A alla fine</div><div class="array qs"><div class="cella"><div class="f"></div><div class="v">0</div><div class="i">0</div></div><div class="cella"><div class="f"></div><div class="v">0</div><div class="i">1</div></div><div class="cella"><div class="f"></div><div class="v">1</div><div class="i">2</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">3</div></div><div class="cella"><div class="f"></div><div class="v">2</div><div class="i">4</div></div><div class="cella"><div class="f"></div><div class="v">4</div><div class="i">5</div></div></div></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 3. A = 1 0 4 2 0 2. I contatori: lo 0 compare 2 volte, l'1 una volta, il 2 due volte, il 3 mai, il 4 una volta. Riscrivendo A: 0 0 1 2 2 4.</div>
+</div>
+<p>Nessun confronto tra elementi di A: la chiave stessa dice in quale contatore andare. Il costo: azzerare Θ(b), contare Θ(n), riscrivere Θ(b + n) (il ciclo esterno fa b giri, e quello interno n giri in tutto). Totale <strong>Θ(b + n)</strong>, che si discute nella prossima sezione.</p>
+<p>Il limite di integerSort: riscrive dei <em>numeri</em>. Se gli elementi sono record (una chiave più altri campi, come «1 gatto»), contare non basta: bisogna spostare i record interi. Serve bucketSort.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>integerSort: per chiavi intere in [0, b − 1]. Conta le occorrenze di ogni valore in Y, poi riscrive A in ordine. Nessun confronto.</li>
+    <li>Costo Θ(b + n). Va bene per numeri, non per record con altri campi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="bucketsort"><span class="num">7</span>bucketSort: una coda per ogni chiave</h2>
+<p class="in-questa"><b>In questa sezione:</b> bucketSort (lavagna, pagine 4–7, Codice 8.2), che ordina record con chiave intera usando una coda per ogni valore; perché è stabile; quanto costa e quando conviene; e la versione che ordina direttamente una lista.</p>
+<p>Il problema della lavagna, pagina 4: ordinare n <strong>record</strong> con chiavi intere in [0..b − 1]. Al posto dei contatori, Y diventa un array di <strong>code</strong> («secchi», in inglese <em>bucket</em>): ogni record va in fondo alla coda della sua chiave, poi si svuotano le code in ordine.</p>
+<p class="titolo-codice">Codice 8.2 delle slide (lavagna, pagina 5)</p>
+<pre class="pseudo"><b>ALGORITMO</b> bucketSort(array A[0..n−1], intero b)
+  <span class="com">/* ordina un array di record in base a un campo chiave intero in [0, b−1] */</span>
+  Sia Y[0..b−1] un array                     <span class="com">// array di code</span>
+  <b>FOR</b> i ← 0 <b>TO</b> b − 1 <b>DO</b> Y[i] ← coda vuota
+  <span class="com">// colloca gli elementi di A in code differenti, in base alle chiavi</span>
+  <b>FOR</b> i ← 0 <b>TO</b> n − 1 <b>DO</b>
+    x ← A[i].chiave
+    Y[x].enqueue(A[i])
+  <span class="com">// riempi A con i valori ordinati</span>
+  j ← 0                                      <span class="com">// prossima posizione di A da riempire</span>
+  <b>FOR</b> i ← 0 <b>TO</b> b − 1 <b>DO</b>
+    <span class="com">// colloca i record con chiave i nelle prossime posizioni di A</span>
+    <b>WHILE NOT</b> Y[i].isEmpty() <b>DO</b>
+      A[j] ← Y[i].dequeue()
+      j ← j + 1</pre>
+<p>Ricordiamo le operazioni della coda: <code>enqueue</code> aggiunge in fondo, <code>dequeue</code> toglie e restituisce il primo, <code>isEmpty</code> dice se è vuota. Una coda è FIFO: il primo che entra è il primo che esce. La Figura 4 è l'esempio della lavagna, pagine 4 e 5.</p>
+<div class="figura">
+<div class="etich-array">A all'inizio (sopra ogni record la chiave)</div><div class="array qs"><div class="cella" style="width:62px"><div class="f">1</div><div class="v" style="font-size:13px">gatto</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">0</div><div class="v" style="font-size:13px">cavallo</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">4</div><div class="v" style="font-size:13px">gallina</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">2</div><div class="v" style="font-size:13px">topo</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">0</div><div class="v" style="font-size:13px">orso</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">2</div><div class="v" style="font-size:13px">cane</div><div class="i"></div></div></div><div class="etich-array">Le code dopo aver distribuito i record</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0"><span class="piccolo" style="min-width:40px">Y[0]</span><span class="chip">0 cavallo</span><span class="piccolo">→</span><span class="chip">0 orso</span></div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0"><span class="piccolo" style="min-width:40px">Y[1]</span><span class="chip">1 gatto</span></div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0"><span class="piccolo" style="min-width:40px">Y[2]</span><span class="chip">2 topo</span><span class="piccolo">→</span><span class="chip">2 cane</span></div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0"><span class="piccolo" style="min-width:40px">Y[3]</span><span class="chip zero">vuota</span></div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0"><span class="piccolo" style="min-width:40px">Y[4]</span><span class="chip">4 gallina</span></div><div class="etich-array">A dopo aver svuotato le code in ordine</div><div class="array qs"><div class="cella" style="width:62px"><div class="f">0</div><div class="v" style="font-size:13px">cavallo</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">0</div><div class="v" style="font-size:13px">orso</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">1</div><div class="v" style="font-size:13px">gatto</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">2</div><div class="v" style="font-size:13px">topo</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">2</div><div class="v" style="font-size:13px">cane</div><div class="i"></div></div><div class="cella" style="width:62px"><div class="f">4</div><div class="v" style="font-size:13px">gallina</div><div class="i"></div></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagine 4 e 5. Sei record con chiavi da 0 a 4 (b = 5). Nella coda Y[0] entrano, nell'ordine, cavallo e orso; in Y[2] topo e cane; Y[3] resta vuota. Svuotando le code da Y[0] a Y[4], A diventa: 0 cavallo, 0 orso, 1 gatto, 2 topo, 2 cane, 4 gallina.</div>
+</div>
+<h3>Le code danno la stabilità</h3>
+<p>Accanto alle code il prof scrive: «code ⇒ stabilità». I record entrano nelle code nell'ordine in cui stanno in A (il FOR va da 0 a n − 1), e una coda li restituisce nello stesso ordine. Quindi due record con la stessa chiave escono nell'ordine in cui erano: cavallo prima di orso, topo prima di cane. <strong>bucketSort è stabile.</strong> (Con delle pile, invece, l'ordine tra chiavi uguali si invertirebbe.)</p>
+<h3>Quanto costa</h3>
+<p>Lavagna, pagine 5 e 6, fase per fase:</p>
+<ul>
+  <li>predisporre le b code vuote: <strong>Θ(b)</strong>;</li>
+  <li>riempire le code: n enqueue, ognuno O(1): <strong>Θ(n)</strong>;</li>
+  <li>svuotare le code: il FOR fa b giri, e i dequeue sono n in tutto (ogni record esce una volta): <strong>Θ(b + n)</strong>.</li>
+</ul>
+<div class="formula">tempo di bucketSort = Θ(b) + Θ(n) + Θ(b + n) = Θ(b + n)</div>
+<p>Due casi (lavagna, pagina 6):</p>
+<ul>
+  <li>se <strong>b = O(n)</strong> (le chiavi possibili non sono molte più degli elementi), allora Θ(b + n) = Θ(n): <strong>tempo lineare</strong>! Meglio di qualsiasi ordinamento per confronti.</li>
+  <li>se b ≈ n<sup>2</sup> (chiavi possibili molte di più degli elementi), il tempo è Θ(n<sup>2</sup>): conviene heapSort. Esempio: ordinare 1000 numeri tra 0 e 999 999 con bucketSort vuol dire un milione di code, quasi tutte vuote.</li>
+</ul>
+<p>bucketSort <strong>non è in loco</strong>: le code occupano memoria, Θ(b + n). E non contraddice il limite della sezione 5: non fa nessun confronto tra chiavi, ma usa la chiave come indice dell'array Y, cosa che un algoritmo «basato su confronti» non può fare.</p>
+<h3>Con le liste</h3>
+<p>Lavagna, pagina 7: bucketSort si può usare anche per ordinare una lista, manipolando direttamente i puntatori. Ogni nodo della lista viene staccato e attaccato in fondo alla coda della sua chiave (le code sono liste anche loro); alla fine le code si concatenano una dopo l'altra. Nessun nodo viene copiato: si spostano solo i puntatori.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>bucketSort: una coda Y[x] per ogni chiave x in [0, b − 1]; ogni record va in coda alla sua; poi si svuotano le code in ordine.</li>
+    <li>Stabile (grazie alle code), non in loco. Tempo Θ(b + n): lineare se b = O(n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="compleanno"><span class="num">8</span>Ordinare per due chiavi: i compleanni</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'esempio della lavagna, pagine 8–10: mettere in ordine delle persone per data di compleanno con due bucketSort, prima sul giorno e poi sul mese. Perché funziona (la stabilità) e perché l'ordine dei due passaggi conta. Alla fine il riquadro su bucketSort.</p>
+<p>Il problema: ordinare un insieme di persone rispetto alla data del compleanno (giorno e mese). La data ha due pezzi: il mese conta di più, il giorno decide tra persone dello stesso mese. Si potrebbe trasformare ogni data in un unico numero (il giorno dell'anno, da 1 a 366), ma il prof fa una cosa più interessante: due bucketSort, uno per pezzo.</p>
+<ol>
+  <li>Prima un bucketSort con chiave il <strong>giorno</strong> (da 1 a 31).</li>
+  <li>Poi un bucketSort con chiave il <strong>mese</strong> (da 1 a 12).</li>
+</ol>
+<div class="figura">
+<div class="tabella-wrap"><table><tr><th>all'inizio</th><th>dopo bucketSort sul giorno</th><th>poi bucketSort sul mese</th></tr><tr><td>Alberto 22 gennaio</td><td>Anna <b>9</b> dicembre</td><td>Paolo 12 <b>gennaio</b></td></tr><tr><td>Anna 9 dicembre</td><td>Sara <b>9</b> giugno</td><td>Lorenzo 15 <b>gennaio</b></td></tr><tr><td>Claudia 27 aprile</td><td>Paolo <b>12</b> gennaio</td><td>Alberto 22 <b>gennaio</b></td></tr><tr><td>Franco 31 maggio</td><td>Lucia <b>14</b> dicembre</td><td>Claudia 27 <b>aprile</b></td></tr><tr><td>Lorenzo 15 gennaio</td><td>Lorenzo <b>15</b> gennaio</td><td>Franco 31 <b>maggio</b></td></tr><tr><td>Lucia 14 dicembre</td><td>Alberto <b>22</b> gennaio</td><td>Sara 9 <b>giugno</b></td></tr><tr><td>Paolo 12 gennaio</td><td>Claudia <b>27</b> aprile</td><td>Anna 9 <b>dicembre</b></td></tr><tr><td>Sara 9 giugno</td><td>Franco <b>31</b> maggio</td><td>Lucia 14 <b>dicembre</b></td></tr></table></div>
+<div class="didascalia"><b>Figura 5.</b> Lavagna, pagine 8–10. Dopo il primo passaggio le persone sono in ordine di giorno, senza guardare il mese. Dopo il secondo sono in ordine di mese e, nello stesso mese, di giorno: Paolo, Lorenzo e Alberto (gennaio) sono in ordine 12, 15, 22.</div>
+</div>
+<p>Perché alla fine anche i giorni sono in ordine? Il secondo bucketSort mette Paolo, Lorenzo e Alberto nella stessa coda, quella di gennaio, e li tira fuori <em>nell'ordine in cui li trova</em>, perché è stabile. E li trova in ordine di giorno, perché il primo passaggio li ha messi così. La stabilità conserva il lavoro del passaggio precedente.</p>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: prima la chiave meno importante</span>
+  <p>Il primo passaggio usa la chiave che conta di <em>meno</em> (il giorno), l'ultimo quella che conta di <em>più</em> (il mese). Al contrario non funziona: ordinando prima per mese e poi per giorno, l'ultimo passaggio rimescola tutto secondo il giorno, e il risultato è ordinato solo per giorno (Anna 9 dicembre finirebbe prima di Paolo 12 gennaio). Nel riquadro puoi provare tutti e due gli ordini.</p>
+</div>
+<div class="widget" id="w-bs">
+  <h4>bucketSort con le code</h4>
+  <div id="bs-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Per ordinare con più chiavi: un bucketSort per chiave, dalla meno importante alla più importante.</li>
+    <li>Funziona perché bucketSort è stabile: ogni passaggio conserva l'ordine dei precedenti tra chiavi uguali.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="radixsort"><span class="num">9</span>radixSort: una cifra alla volta</h2>
+<p class="in-questa"><b>In questa sezione:</b> la stessa idea applicata ai numeri (lavagna, pagine 11 e 12, Codice 8.3): le cifre sono le «chiavi», dalla meno significativa alla più significativa. L'esempio della lavagna e un riquadro per seguirlo passo per passo.</p>
+<p>Un numero di più cifre è come una data con più pezzi: la cifra delle migliaia conta più di quella delle centinaia, che conta più delle decine, che contano più delle unità. Allora, come per i compleanni (lavagna, pagina 11):</p>
+<ol>
+  <li>un bucketSort con chiave la cifra delle <strong>unità</strong> (10 code, una per cifra da 0 a 9);</li>
+  <li>poi uno con chiave la cifra delle <strong>decine</strong>;</li>
+  <li>poi le centinaia, le migliaia, e così via, fino alla cifra più significativa.</li>
+</ol>
+<p>È <strong>radixSort</strong> («ordinamento per radice»: la radice è la base del sistema di numerazione). La Figura 6 è l'esempio della lavagna.</p>
+<div class="figura">
+<div class="tabella-wrap"><table class="radix"><tr><th>all'inizio</th><th>dopo t = 0</th><th>dopo t = 1</th><th>dopo t = 2</th><th>dopo t = 3</th></tr><tr><td style="font-family:ui-monospace,monospace;text-align:right">123<mark>4</mark></td><td style="font-family:ui-monospace,monospace;text-align:right">51<mark>3</mark>1</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><mark>2</mark>24</td><td style="font-family:ui-monospace,monospace;text-align:right"><mark><span class="piccolo">0</span></mark><span class="piccolo">0</span>37</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span>37</td></tr><tr><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span>3<mark>7</mark></td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span><mark>4</mark>1</td><td style="font-family:ui-monospace,monospace;text-align:right">5<mark>1</mark>31</td><td style="font-family:ui-monospace,monospace;text-align:right"><mark><span class="piccolo">0</span></mark><span class="piccolo">0</span>41</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span>41</td></tr><tr><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span>22<mark>4</mark></td><td style="font-family:ui-monospace,monospace;text-align:right">12<mark>3</mark>4</td><td style="font-family:ui-monospace,monospace;text-align:right">1<mark>2</mark>34</td><td style="font-family:ui-monospace,monospace;text-align:right"><mark><span class="piccolo">0</span></mark><span class="piccolo">0</span>48</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span>48</td></tr><tr><td style="font-family:ui-monospace,monospace;text-align:right">513<mark>1</mark></td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span>2<mark>2</mark>4</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><mark><span class="piccolo">0</span></mark>37</td><td style="font-family:ui-monospace,monospace;text-align:right"><mark>5</mark>131</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span>224</td></tr><tr><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span>4<mark>1</mark></td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span><mark>3</mark>7</td><td style="font-family:ui-monospace,monospace;text-align:right">4<mark>2</mark>37</td><td style="font-family:ui-monospace,monospace;text-align:right"><mark><span class="piccolo">0</span></mark>224</td><td style="font-family:ui-monospace,monospace;text-align:right">1234</td></tr><tr><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span>4<mark>8</mark></td><td style="font-family:ui-monospace,monospace;text-align:right">42<mark>3</mark>7</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><mark><span class="piccolo">0</span></mark>41</td><td style="font-family:ui-monospace,monospace;text-align:right"><mark>1</mark>234</td><td style="font-family:ui-monospace,monospace;text-align:right">4237</td></tr><tr><td style="font-family:ui-monospace,monospace;text-align:right">423<mark>7</mark></td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><span class="piccolo">0</span><mark>4</mark>8</td><td style="font-family:ui-monospace,monospace;text-align:right"><span class="piccolo">0</span><mark><span class="piccolo">0</span></mark>48</td><td style="font-family:ui-monospace,monospace;text-align:right"><mark>4</mark>237</td><td style="font-family:ui-monospace,monospace;text-align:right">5131</td></tr></table></div>
+<div class="didascalia"><b>Figura 6.</b> Lavagna, pagine 11 e 12. In ogni colonna è evidenziata la cifra che userà il passo successivo: prima le unità, poi le decine, le centinaia, le migliaia. Gli zeri grigi davanti servono solo ad allineare: 37 ha 0 come cifra delle centinaia e delle migliaia. Dopo quattro passi l'array è ordinato.</div>
+</div>
+<p>Guarda per esempio 37 e 41 nel secondo passo (le decine): 37 ha decina 3, 41 ha decina 4, e infatti 37 finisce prima. E 41 e 48, che hanno la stessa decina, restano nell'ordine del passo precedente (1 prima di 8): è di nuovo la stabilità.</p>
+<p class="titolo-codice">Codice 8.3 delle slide (lavagna, pagina 12)</p>
+<pre class="pseudo"><b>ALGORITMO</b> radixSort(array A[0..n−1])
+  <span class="com">/* ordina A secondo un campo chiave intero; B &gt; 1 è una costante, es. B = 10 */</span>
+  t ← 0
+  <b>WHILE</b> esiste una chiave k in A con ⌊k/B<sup>t</sup>⌋ ≠ 0 <b>DO</b>
+    bucketSort(A, B, t)
+    t ← t + 1
+
+<b>PROCEDURA</b> bucketSort(array A[0..n−1], intero b, intero t)
+  <span class="com">/* ordina A secondo la cifra di posizione t nella rappresentazione in base b
+     della chiave; le posizioni si contano da 0, la cifra meno significativa */</span>
+  Sia Y[0..b−1] un array                     <span class="com">// array di code</span>
+  <b>FOR</b> i ← 0 <b>TO</b> b − 1 <b>DO</b> Y[i] ← coda vuota
+  <b>FOR</b> i ← 0 <b>TO</b> n − 1 <b>DO</b>
+    x ← cifra di posizione t nella rappresentazione in base b di A[i].chiave
+    Y[x].enqueue(A[i])
+  j ← 0
+  <b>FOR</b> i ← 0 <b>TO</b> b − 1 <b>DO</b>
+    <b>WHILE NOT</b> Y[i].isEmpty() <b>DO</b>
+      A[j] ← Y[i].dequeue()
+      j ← j + 1</pre>
+<ul>
+  <li>t è la posizione della cifra: 0 le unità, 1 le decine, 2 le centinaia… (in base 10).</li>
+  <li>La condizione del WHILE: ⌊k/B<sup>t</sup>⌋ ≠ 0 vuol dire che k ha almeno t + 1 cifre (alla lavagna, in verde: «A contiene una chiave composta da almeno t + 1 cifre»). Per esempio ⌊37/10<sup>2</sup>⌋ = 0: 37 non ha la cifra delle centinaia; ⌊1234/10<sup>2</sup>⌋ = 12 ≠ 0. Il ciclo continua finché qualche chiave ha ancora cifre.</li>
+  <li>La procedura bucketSort è quella della sezione 7, con una sola differenza: la chiave usata è la cifra t, non tutto il numero.</li>
+</ul>
+<div class="widget" id="w-rx">
+  <h4>radixSort cifra per cifra</h4>
+  <div id="rx-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>radixSort: bucketSort sulla cifra t, per t = 0, 1, 2, … (dalla meno significativa), finché qualche chiave ha ancora cifre.</li>
+    <li>Funziona grazie alla stabilità di bucketSort, come nei compleanni.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="base"><span class="num">10</span>Quanto costa radixSort e come si sceglie la base</h2>
+<p class="in-questa"><b>In questa sezione:</b> il costo di radixSort (lavagna, pagine 13 e 14): un bucketSort per cifra, e la scelta della base per avere poche cifre senza troppe code.</p>
+<p>Se le chiavi hanno al più d cifre in base b, radixSort fa d passi, e ogni passo è un bucketSort con b code, che costa Θ(b + n). In tutto:</p>
+<div class="formula">tempo di radixSort = Θ(d · (b + n))</div>
+<p>La base non deve essere per forza 10: la si sceglie in modo che d e b siano tutti e due piccoli. Gli esempi della lavagna:</p>
+<ul>
+  <li><b>Chiavi tra 0 e 999 999 999</b> (pagina 13). In base b = 10<sup>3</sup> = 1000 ogni «cifra» è un gruppo di tre cifre decimali (999 | 999 | 999): 1000 code e solo 3 passi. Tempo 3 · Θ(1000 + n) = <strong>Θ(n)</strong>, se n è grande.</li>
+  <li><b>Chiavi di 32 bit</b>, cioè tra 0 e 2<sup>32</sup> − 1 (pagina 14). Meglio una base potenza di 2, perché, come si vede nella sezione 11, le divisioni diventano velocissime. Con b = 2<sup>8</sup>: 256 code e 4 passi (32 bit = 4 gruppi da 8). Con b = 2<sup>16</sup>: 65 536 code e 2 passi. Tempo <strong>Θ(n)</strong> in entrambi i casi.</li>
+</ul>
+<p>Il numero di passi d è fissato dalla grandezza massima delle chiavi, non da n: per chiavi di 32 bit, d è una costante. Per questo radixSort è lineare. Ma attenzione: se le chiavi possono essere grandi quanto si vuole (per esempio fino a n<sup>n</sup>), le cifre crescono con n e il discorso cambia.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Con chiavi di d cifre in base b: d passi, ognuno Θ(b + n). Totale Θ(d(b + n)).</li>
+    <li>Con chiavi di grandezza limitata (es. 32 bit) e base fissata, d è costante: tempo Θ(n).</li>
+    <li>Basi potenze di 2 (2<sup>8</sup>, 2<sup>16</sup>): divisioni veloci.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="cifra"><span class="num">11</span>Come si calcola una cifra</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si ottiene la cifra di posizione t di un numero x in base b (lavagna, pagine 15–17): con una divisione e un resto, oppure, se b è una potenza di 2, con uno shift e un AND.</p>
+<div class="box def">
+  <span class="etichetta">La cifra in una certa posizione (lavagna, pagina 15)</span>
+  <p>La cifra di posizione t di x in base b è <strong>(x / b<sup>t</sup>) MOD b</strong>, dove / è la divisione intera (si butta il resto) e MOD è il resto della divisione.</p>
+</div>
+<p>Perché: dividere per b<sup>t</sup> butta via le ultime t cifre; il resto della divisione per b tiene solo l'ultima di quelle rimaste. Esempi della lavagna in base 10, con t = 2 (le centinaia):</p>
+<ul>
+  <li>x = 1234: 1234 / 10<sup>2</sup> = 12, e 12 MOD 10 = <b>2</b>;</li>
+  <li>x = 12345: 12345 / 100 = 123, e 123 MOD 10 = <b>3</b>.</li>
+</ul>
+<h3>Con una base potenza di 2</h3>
+<p>Il computer tiene i numeri in binario. Se b = 2<sup>k</sup>, ogni cifra in base b è un gruppo di k bit, e i due conti diventano operazioni sui bit, molto più veloci di una divisione (lavagna, pagine 16 e 17, con b = 16 = 2<sup>4</sup>, t = 2, x = 9999):</p>
+<ul>
+  <li>dividere per b<sup>t</sup> = 16<sup>2</sup> = 2<sup>8</sup> vuol dire <strong>spostare a destra di 8 bit</strong> (shift, in C e in Go <code>x &gt;&gt; 8</code>): gli ultimi 8 bit cadono fuori;</li>
+  <li>fare MOD 16 vuol dire <strong>tenere solo gli ultimi 4 bit</strong>: un AND bit a bit con 0000 1111, cioè 16 − 1 = 15 (in C e in Go <code>&amp; 15</code>).</li>
+</ul>
+<pre class="binario">x = 9999     = 0010 0111 0000 1111   <span class="com">← 4 gruppi da 4 bit: le cifre in base 16 sono 2, 7, 0, 15</span>
+x &gt;&gt; 8       = 0000 0000 0010 0111   <span class="com">← 9999 / 256 = 39</span>
+     AND       0000 0000 0000 1111
+             = 0000 0000 0000 <span class="uno">0111</span>   <span class="com">← 7 = 39 MOD 16</span></pre>
+<p>La cifra di posizione 2 di 9999 in base 16 è 7. Il riquadro fa lo stesso conto con numeri a scelta, e mostra i bit quando la base è una potenza di 2.</p>
+<div class="widget" id="w-cf">
+  <h4>La cifra di posizione t in base b</h4>
+  <div id="cf-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Cifra di posizione t di x in base b: (x / b<sup>t</sup>) MOD b.</li>
+    <li>Se b = 2<sup>k</sup>: (x &gt;&gt; k·t) AND (b − 1). Shift e AND sono velocissimi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="riassunto"><span class="num">12</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Limite inferiore</b>: ogni ordinamento basato su confronti è un albero di decisione con almeno n! foglie, quindi fa almeno log<sub>2</sub>(n!) = Θ(n log n) confronti nel caso peggiore (Stirling). mergeSort e heapSort sono ottimi.</li>
+    <li><b>integerSort</b>: interi in [0, b − 1]; conta le occorrenze e riscrive. Θ(b + n).</li>
+    <li><b>bucketSort</b>: una coda per chiave; stabile, non in loco; Θ(b + n), lineare se b = O(n). Funziona anche sulle liste.</li>
+    <li><b>Più chiavi</b>: un bucketSort per chiave, dalla meno importante alla più importante; funziona per la stabilità.</li>
+    <li><b>radixSort</b>: bucketSort cifra per cifra, dalla meno significativa. Θ(d(b + n)); lineare per chiavi di grandezza limitata.</li>
+    <li><b>Cifra t in base b</b>: (x / b<sup>t</sup>) MOD b; con b = 2<sup>k</sup>, shift e AND.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Negli scritti degli ultimi anni radixSort non è mai stato chiesto, e il limite inferiore nemmeno: sono argomenti da orale. All'orale: la dimostrazione con l'albero di decisione (perché almeno n! foglie, perché altezza ≥ log<sub>2</sub>(n!)), il costo di bucketSort, perché radixSort parte dalla cifra meno significativa e cosa c'entra la stabilità.</li>
+    <li>La tabella della sezione 2 è un ottimo ripasso per lo scritto: l'esercizio 2 chiede spesso quickSort, heapSort, bubbleSort o merge su una sequenza. L'esercizio 6.1, nella sezione 13, li fa tutti sulla stessa sequenza.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="esercizi"><span class="num">13</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> il foglio di esercizi 6, «Algoritmi di ordinamento», e due domande sul limite inferiore. Tutti i risultati sono stati controllati eseguendo gli algoritmi del corso. Prova prima da solo, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 6.1 del foglio 6: sette algoritmi sulla stessa sequenza</summary>
+  <p>La sequenza 2222 4512 27 890 345 1234 9876 1236 2345 231 234 543 è memorizzata in un array. Indicate: (a)–(c) la sequenza alla fine di ogni iterazione del ciclo principale di selectionSort, insertionSort e bubbleSort; (d) la sequenza dopo ogni iterazione di radixSort (base 10); (e) lo heap ottenuto e la sequenza dopo ogni iterazione di heapSort; (f) l'array dopo la partizione di quickSort con il primo elemento come perno, prima delle chiamate ricorsive; (g) come mergeSort scompone e ricompone l'array a ogni livello di ricorsione.</p>
+  <div class="soluzione">
+    <p><b>(a) selectionSort</b> (a ogni iterazione k il minimo di A[k..n − 1] va in posizione k):</p>
+<pre class="binario"> 1: 27 4512 2222 890 345 1234 9876 1236 2345 231 234 543
+ 2: 27 231 2222 890 345 1234 9876 1236 2345 4512 234 543
+ 3: 27 231 234 890 345 1234 9876 1236 2345 4512 2222 543
+ 4: 27 231 234 345 890 1234 9876 1236 2345 4512 2222 543
+ 5: 27 231 234 345 543 1234 9876 1236 2345 4512 2222 890
+ 6: 27 231 234 345 543 890 9876 1236 2345 4512 2222 1234
+ 7: 27 231 234 345 543 890 1234 1236 2345 4512 2222 9876
+ 8: 27 231 234 345 543 890 1234 1236 2345 4512 2222 9876   <span class="com">← 1236 era già al suo posto</span>
+ 9: 27 231 234 345 543 890 1234 1236 2222 4512 2345 9876
+10: 27 231 234 345 543 890 1234 1236 2222 2345 4512 9876
+11: 27 231 234 345 543 890 1234 1236 2222 2345 4512 9876</pre>
+    <p><b>(b) insertionSort</b> (a ogni iterazione k l'elemento A[k] si inserisce tra i precedenti):</p>
+<pre class="binario"> 1: 2222 4512 27 890 345 1234 9876 1236 2345 231 234 543
+ 2: 27 2222 4512 890 345 1234 9876 1236 2345 231 234 543
+ 3: 27 890 2222 4512 345 1234 9876 1236 2345 231 234 543
+ 4: 27 345 890 2222 4512 1234 9876 1236 2345 231 234 543
+ 5: 27 345 890 1234 2222 4512 9876 1236 2345 231 234 543
+ 6: 27 345 890 1234 2222 4512 9876 1236 2345 231 234 543
+ 7: 27 345 890 1234 1236 2222 4512 9876 2345 231 234 543
+ 8: 27 345 890 1234 1236 2222 2345 4512 9876 231 234 543
+ 9: 27 231 345 890 1234 1236 2222 2345 4512 9876 234 543
+10: 27 231 234 345 890 1234 1236 2222 2345 4512 9876 543
+11: 27 231 234 345 543 890 1234 1236 2222 2345 4512 9876</pre>
+    <p><b>(c) bubbleSort</b> (una scansione per iterazione; il massimo dei rimasti arriva in fondo):</p>
+<pre class="binario">1: 2222 27 890 345 1234 4512 1236 2345 231 234 543 9876
+2: 27 890 345 1234 2222 1236 2345 231 234 543 4512 9876
+3: 27 345 890 1234 1236 2222 231 234 543 2345 4512 9876
+4: 27 345 890 1234 1236 231 234 543 2222 2345 4512 9876
+5: 27 345 890 1234 231 234 543 1236 2222 2345 4512 9876
+6: 27 345 890 231 234 543 1234 1236 2222 2345 4512 9876
+7: 27 345 231 234 543 890 1234 1236 2222 2345 4512 9876
+8: 27 231 234 345 543 890 1234 1236 2222 2345 4512 9876
+9: 27 231 234 345 543 890 1234 1236 2222 2345 4512 9876   <span class="com">← nessuno scambio: fine</span></pre>
+    <p><b>(d) radixSort</b> in base 10 (la cifra più lunga ha 4 cifre: 4 passi):</p>
+<pre class="binario">t = 0: 890 231 2222 4512 543 1234 234 345 2345 9876 1236 27
+t = 1: 4512 2222 27 231 1234 234 1236 543 345 2345 9876 890
+t = 2: 27 2222 231 1234 234 1236 345 2345 4512 543 9876 890
+t = 3: 27 231 234 345 543 890 1234 1236 2222 2345 4512 9876</pre>
+    <p><b>(e) heapSort</b>: lo heap è <b>9876 4512 2222 2345 345 1234 27 1236 890 231 234 543</b>; poi, dopo ogni iterazione (scambio e risistema):</p>
+<pre class="binario">ℓ = 11: 4512 2345 2222 1236 345 1234 27 543 890 231 234 | 9876
+ℓ = 10: 2345 1236 2222 890 345 1234 27 543 234 231 | 4512 9876
+ℓ =  9: 2222 1236 1234 890 345 231 27 543 234 | 2345 4512 9876
+ℓ =  8: 1236 890 1234 543 345 231 27 234 | 2222 2345 4512 9876
+ℓ =  7: 1234 890 234 543 345 231 27 | 1236 2222 2345 4512 9876
+ℓ =  6: 890 543 234 27 345 231 | 1234 1236 2222 2345 4512 9876
+ℓ =  5: 543 345 234 27 231 | 890 1234 1236 2222 2345 4512 9876
+ℓ =  4: 345 231 234 27 | 543 890 1234 1236 2222 2345 4512 9876
+ℓ =  3: 234 231 27 | 345 543 890 1234 1236 2222 2345 4512 9876
+ℓ =  2: 231 27 | 234 345 543 890 1234 1236 2222 2345 4512 9876
+ℓ =  1: 27 | 231 234 345 543 890 1234 1236 2222 2345 4512 9876</pre>
+    <p><b>(f) quickSort</b>, prima partizione con perno 2222: <b>231 543 27 890 345 1234 234 1236 2222 2345 9876 4512</b>; il perno finisce in posizione 8. I passi: dx si ferma su 543 e sx su 4512: scambio; dx si ferma su 234 e sx su 9876: scambio; dx si ferma su 231 e sx su 2345: scambio; poi dx si ferma su 231 (posizione 8) e sx lo supera: gli indici si incrociano, e il perno si scambia con A[8].</p>
+    <p><b>(g) mergeSort</b>. Scomposizione (la prima metà ha ⌊n/2⌋ elementi):</p>
+<pre class="binario">livello 0: 2222 4512 27 890 345 1234 9876 1236 2345 231 234 543
+livello 1: 2222 4512 27 890 345 1234 | 9876 1236 2345 231 234 543
+livello 2: 2222 4512 27 | 890 345 1234 | 9876 1236 2345 | 231 234 543
+livello 3: 2222 | 4512 27 | 890 | 345 1234 | 9876 | 1236 2345 | 231 | 234 543
+livello 4: 4512 | 27 | 345 | 1234 | 1236 | 2345 | 234 | 543</pre>
+    <p>Ricomposizione, dal basso (i pezzi di un solo elemento sono già ordinati):</p>
+<pre class="binario">livello 3: 27 4512 | 345 1234 | 1236 2345 | 234 543
+livello 2: 27 2222 4512 | 345 890 1234 | 1236 2345 9876 | 231 234 543
+livello 1: 27 345 890 1234 2222 4512 | 231 234 543 1236 2345 9876
+livello 0: 27 231 234 345 543 890 1234 1236 2222 2345 4512 9876</pre>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 6.2 del foglio 6: la stessa cosa con un'altra sequenza</summary>
+  <p>Ripetete l'esercizio 6.1 con 4567 8776 2324 3434 9876 123 876 1232 234 975 654 444.</p>
+  <div class="soluzione">
+    <p>Le risposte principali (i passaggi intermedi si ricavano come nel 6.1; radixSort, heapSort e la partizione si possono controllare nei riquadri di questo pacco, del 14 e dell'8):</p>
+    <ul>
+      <li><b>(a) selectionSort</b>, prime tre iterazioni: 123 8776 2324 3434 9876 4567 876 1232 234 975 654 444 → 123 234 2324 3434 9876 4567 876 1232 8776 975 654 444 → 123 234 444 3434 9876 4567 876 1232 8776 975 654 2324.</li>
+      <li><b>(b) insertionSort</b>, prime tre iterazioni: 4567 8776 … (invariato) → 2324 4567 8776 3434 … → 2324 3434 4567 8776 9876 123 876 1232 234 975 654 444.</li>
+      <li><b>(c) bubbleSort</b>, prima scansione: 4567 2324 3434 8776 123 876 1232 234 975 654 444 9876; servono 9 scansioni con scambi, più una senza.</li>
+      <li><b>(d) radixSort</b>: t = 0: 1232 123 2324 3434 234 654 444 975 8776 9876 876 4567; t = 1: 123 2324 1232 3434 234 444 654 4567 975 8776 9876 876; t = 2: 123 1232 234 2324 3434 444 4567 654 8776 9876 876 975; t = 3: ordinato.</li>
+      <li><b>(e) heapSort</b>: heap 9876 8776 2324 3434 4567 444 876 1232 234 975 654 123; dopo la prima iterazione 8776 4567 2324 3434 975 444 876 1232 234 123 654 | 9876.</li>
+      <li><b>(f) partizione</b> con perno 4567: 975 444 2324 3434 654 123 876 1232 234 4567 9876 8776 (perno in posizione 9).</li>
+      <li><b>(g) mergeSort</b>: livello 1: 4567 8776 2324 3434 9876 123 | 876 1232 234 975 654 444; ricomposto al livello 1: 123 2324 3434 4567 8776 9876 | 234 444 654 876 975 1232.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 6.3 del foglio 6: radixSort con i numeri negativi</summary>
+  <p>Scrivete una versione di radixSort che tratti anche numeri negativi.</p>
+  <div class="soluzione">
+    <p>Il problema: la cifra (x / b<sup>t</sup>) MOD b non ha senso per x &lt; 0, e comunque i negativi devono venire prima. Il modo più semplice è <b>spostare tutte le chiavi</b> in modo che diventino ≥ 0: sommare a tutte −m, dove m è la chiave minima. Sommare una costante non cambia l'ordine.</p>
+<pre class="pseudo"><b>ALGORITMO</b> radixSortConNegativi(array A[0..n−1])
+  m ← la chiave minima di A
+  <b>IF</b> m &lt; 0 <b>THEN</b>
+    <b>FOR</b> i ← 0 <b>TO</b> n − 1 <b>DO</b> A[i] ← A[i] − m      <span class="com">// ora tutte ≥ 0</span>
+  radixSort(A)
+  <b>IF</b> m &lt; 0 <b>THEN</b>
+    <b>FOR</b> i ← 0 <b>TO</b> n − 1 <b>DO</b> A[i] ← A[i] + m      <span class="com">// valori originali</span></pre>
+    <p>Esempio: 23 −5 0 −17 8 −5 14. Il minimo è −17; sommando 17: 40 12 17 0 25 12 31; radixSort: 0 12 12 17 25 31 40; togliendo 17: −17 −5 −5 0 8 14 23. Costo Θ(n) in più. (Con dei record, si sposta una copia della chiave, non il dato.) Un'altra strada: dividere i negativi dai non negativi, ordinare i negativi secondo il valore assoluto, rovesciarli e metterli davanti.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 6.4 del foglio 6: radixSort per parole di lunghezza diversa</summary>
+  <p>Scrivete una versione di radixSort per ordinare stringhe di lettere sull'alfabeto {a, …, z}, che possono avere lunghezze diverse.</p>
+  <div class="soluzione">
+    <p>Le «cifre» sono le lettere, e la base è 27: una coda per ogni lettera (1 per a, …, 26 per z) più una, la coda 0, per «lettera che manca». Si parte dall'ultima posizione e si va verso la prima, come per le cifre dei numeri: la prima lettera è la più significativa. Una parola più corta della posizione t ha in quella posizione la «lettera che manca», che viene prima di tutte: così «ape» viene prima di «apex», come nel dizionario.</p>
+<pre class="pseudo"><b>ALGORITMO</b> radixSortParole(array A[0..n−1] di stringhe)
+  L ← la lunghezza massima delle parole di A
+  <b>FOR</b> t ← L − 1 <b>DOWNTO</b> 0 <b>DO</b>
+    bucketSort(A, 27, t)
+    <span class="com">// chiave: 0 se la parola ha meno di t + 1 lettere,</span>
+    <span class="com">// altrimenti 1 + il posto nell'alfabeto della sua lettera t (a = 0, …, z = 25)</span></pre>
+    <p>Qui le posizioni si contano da sinistra (t = 0 è la prima lettera), e il ciclo va da L − 1 a 0. Costo Θ(L · (27 + n)) = Θ(L · n).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizi 6.5 e 6.6 del foglio 6: le parole</summary>
+  <p>Ripetete l'esercizio 6.1 con le parole (6.5) gatto topo papera cane formica oca pantera falco lupo zebra ape vespa e (6.6) giallo rosso verde viola blu nero bianco arancio rosa lilla, con l'ordine del dizionario.</p>
+  <div class="soluzione">
+    <p>I punti (a), (b), (c), (e), (f) e (g) si fanno esattamente come con i numeri, confrontando le parole nell'ordine del dizionario. Per (d) si usa il radixSort dell'esercizio 6.4. Per 6.5 la parola più lunga ha 7 lettere (formica, pantera): 7 passi.</p>
+<pre class="binario">t = 6: gatto topo papera cane oca falco lupo zebra ape vespa formica pantera
+t = 5: gatto topo cane oca falco lupo zebra ape vespa papera formica pantera
+t = 4: topo cane oca lupo ape zebra vespa pantera formica gatto falco papera
+t = 3: oca ape falco cane papera formica topo lupo vespa zebra pantera gatto
+t = 2: oca zebra ape falco cane pantera papera topo lupo formica vespa gatto
+t = 1: falco cane pantera papera gatto oca zebra vespa topo formica ape lupo
+t = 0: ape cane falco formica gatto lupo oca pantera papera topo vespa zebra</pre>
+    <p>Al primo passo (t = 6, la settima lettera) solo formica e pantera hanno una lettera: tutte le altre vanno nella coda 0, nell'ordine in cui sono, e le due parole lunghe in fondo. Per 6.6 (arancio ha 7 lettere) il risultato finale è arancio bianco blu giallo lilla nero rosa rosso verde viola.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Quanti confronti servono almeno per 5 elementi? E per 12?</summary>
+  <div class="soluzione">
+    <p>5! = 120, log<sub>2</sub> 120 ≈ 6,91: almeno <b>7</b> confronti nel caso peggiore, per qualsiasi algoritmo basato su confronti. 12! = 479 001 600, log<sub>2</sub>(12!) ≈ 28,84: almeno <b>29</b>.</p>
+    <p>Attenzione: è un limite inferiore, non per forza raggiungibile. Per 5 elementi esiste un metodo con 7 confronti; per 12 elementi invece si sa (con una ricerca al calcolatore, non da questa lezione) che ne servono 30.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. bucketSort contraddice il limite inferiore?</summary>
+  <div class="soluzione">
+    <p>No. Il limite riguarda gli algoritmi che ricavano informazioni sulle chiavi <em>solo</em> confrontandole a due a due, cioè quelli descritti da un albero di decisione con domande «x<sub>i</sub> ≤ x<sub>j</sub>?». bucketSort non fa nessun confronto: usa la chiave come indice dell'array di code, e così in un solo passo la «manda» nella posizione giusta tra b possibili. È un'operazione che un albero di decisione binario non sa fare. In cambio, bucketSort funziona solo con chiavi intere in un intervallo noto, e usa Θ(b) memoria.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 14 -->
+<h2 id="approfondimenti"><span class="num">14</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> una cosa che non viene dalla lezione e non serve per lo scritto. Si apre con un clic.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: bucketSort senza code (counting sort)</summary>
+  <div class="soluzione">
+    <p>Si può fare bucketSort stabile anche senza code, con due array. Si contano le chiavi come in integerSort (Y[x] = quante chiavi valgono x); poi si calcola, per ogni x, dove comincia il suo «blocco» nell'array finale: inizio[0] = 0, inizio[x] = inizio[x − 1] + Y[x − 1]. Infine si scorre A da sinistra e ogni record con chiave x va in B[inizio[x]], e inizio[x] aumenta di 1. Scorrendo A da sinistra, i record con la stessa chiave mantengono l'ordine: è stabile. Costo Θ(b + n), con un array B di n posti al posto delle code. È la versione che si trova spesso nei libri con il nome di <em>counting sort</em>, ed è quella che usano di solito le implementazioni di radixSort.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="14-heapsort-in-loco.html">← Pacco 14: heapSort in loco</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="16-code-priorita.html">Pacco 16: code con priorità →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- alberi.js
+// Alberi binari: costruzione, disegno, visite (pacco 12).
+// Un albero è { radice: id|null, nodi: { id: { v: "8", sx: id|null, dx: id|null } } }.
+function escA(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1a(v) { return Math.round(v * 10) / 10; }
+
+// "8(14(22,12(1,3)),11(,5))": etichetta, poi tra parentesi il sottoalbero sinistro e il destro (vuoto = niente)
+function alberoDa(testo) {
+  var s = testo.replace(/\s+/g, ""), k = 0, n = 0, nodi = {};
+  function nodo() {
+    var et = "";
+    while (k < s.length && "(),".indexOf(s[k]) < 0) et += s[k++];
+    if (et === "") return null;
+    var id = "a" + (n++);
+    nodi[id] = { v: et, sx: null, dx: null };
+    if (s[k] === "(") {
+      k++;
+      nodi[id].sx = nodo();
+      if (s[k] !== ",") throw new Error("manca la virgola in " + testo);
+      k++;
+      nodi[id].dx = nodo();
+      if (s[k] !== ")") throw new Error("manca la parentesi in " + testo);
+      k++;
+    }
+    return id;
+  }
+  var r = nodo();
+  return { radice: r, nodi: nodi };
+}
+// vettore posizionale: radice in A[0], figli di A[i] in A[2i+1] e A[2i+2]
+function alberoDaVettore(A) {
+  var nodi = {};
+  for (var i = 0; i < A.length; i++) nodi["p" + i] = { v: String(A[i]), sx: 2 * i + 1 < A.length ? "p" + (2 * i + 1) : null, dx: 2 * i + 2 < A.length ? "p" + (2 * i + 2) : null, pos: i };
+  return { radice: A.length ? "p0" : null, nodi: nodi };
+}
+function altezza(T, id) {
+  if (id === undefined) id = T.radice;
+  if (id === null) return -1;
+  return 1 + Math.max(altezza(T, T.nodi[id].sx), altezza(T, T.nodi[id].dx));
+}
+function contaNodi(T, id) { if (id === undefined) id = T.radice; if (id === null) return 0; return 1 + contaNodi(T, T.nodi[id].sx) + contaNodi(T, T.nodi[id].dx); }
+
+// posizioni: a profondità d il nodo occupa uno dei 2^d «posti» del livello (come nel vettore posizionale)
+function disponi(T, opz) {
+  opz = opz || {};
+  var h = Math.max(0, altezza(T)), slot = opz.slot || 46, dy = opz.dy || 62;
+  var W = Math.max(opz.minW || 0, Math.pow(2, h) * slot + 2 * (opz.margine || 14));
+  var pos = {}, m = opz.margine || 14, top = opz.top || 30;
+  function vai(id, d, k) {
+    if (id === null) return;
+    var largh = (W - 2 * m) / Math.pow(2, d);
+    pos[id] = { x: m + (k + 0.5) * largh, y: top + d * dy, d: d, k: k };
+    vai(T.nodi[id].sx, d + 1, 2 * k);
+    vai(T.nodi[id].dx, d + 1, 2 * k + 1);
+  }
+  vai(T.radice, 0, 0);
+  return { pos: pos, W: W, H: top + h * dy + (opz.basso || 30), h: h };
+}
+
+var STILE_NODO = {
+  normale: ["r-nodo", "#ffffff", "#9aa3b2", "t-testo", "#1f2328"],
+  visitato: ["r-verde", "#e6f5ea", "#17803d", "t-testo", "#1f2328"],
+  corrente: ["r-giallo", "#fff1a8", "#b4500f", "t-testo", "#1f2328"],
+  inS: ["r-blu", "#e8edfc", "#2f52c4", "t-testo", "#1f2328"],
+  spento: ["r-nodo", "#ffffff", "#9aa3b2", "t-muted", "#5b6270"],
+  rosso: ["r-rosso", "#fdecea", "#b42318", "t-testo", "#1f2328"],
+  viola: ["r-viola", "#f1eafc", "#6d3fc0", "t-testo", "#1f2328"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f", "t-testo", "#1f2328"]
+};
+// opz: { stato: {id: chiave di STILE_NODO}, ordine: {id: numero}, nulls: true, nullStato: {"id:sx": stile},
+//        etichette: [{id, testo, lato: "sx"|"dx"|"sopra"|"sotto", col}], gusci: [{id, testo, col, lato}],
+//        livelli: true, indici: true (mostra la posizione nel vettore), giro: {punti, fino, tacche}, aria }
+function svgAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, R = opz.r || 17, s = [], k;
+  var extraSx = opz.livelli ? 64 : 0, W = L.W + extraSx + (opz.extraDx || 0), H = L.H + (opz.nulls ? 34 : 0) + (opz.extraBasso || 0);
+  s.push('<svg viewBox="0 0 ' + r1a(W) + ' ' + r1a(H) + '" width="' + r1a(W) + '" height="' + r1a(H) + '" role="img" aria-label="' + escA(opz.aria || "Un albero binario") + '" font-family="system-ui, sans-serif">');
+  s.push('<g transform="translate(' + extraSx + ',0)">');
+  // gusci (sottoalberi evidenziati)
+  (opz.gusci || []).forEach(function (g) {
+    var ids = [];
+    (function raccogli(id) { if (id === null) return; ids.push(id); raccogli(T.nodi[id].sx); raccogli(T.nodi[id].dx); })(g.id);
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    ids.forEach(function (i) { x0 = Math.min(x0, pos[i].x); x1 = Math.max(x1, pos[i].x); y0 = Math.min(y0, pos[i].y); y1 = Math.max(y1, pos[i].y); });
+    var pad = R + 9 + (g.pad || 0), c = STILE_NODO[g.col || "viola"];
+    s.push('<rect x="' + r1a(x0 - pad) + '" y="' + r1a(y0 - pad) + '" width="' + r1a(x1 - x0 + 2 * pad) + '" height="' + r1a(y1 - y0 + 2 * pad) + '" rx="' + r1a(pad) + '" class="' + c[0] + '" fill="' + c[1] + '" fill-opacity="0.55" stroke="' + c[2] + '" stroke-width="1.4" stroke-dasharray="5 4"/>');
+    if (g.testo) {
+      var colT = g.col === "arancio" ? ["t-arancio", "#b4500f"] : g.col === "inS" ? ["t-blu", "#2f52c4"] : ["t-viola", "#6d3fc0"];
+      String(g.testo).split("\n").forEach(function (riga, j) {
+        var tx = g.lato === "destra" ? x1 + pad + 6 : x0 - pad + 4, ty = g.lato === "destra" ? y1 - 4 + j * 15 : y1 + pad + 15 + j * 15;
+        s.push('<text x="' + r1a(tx) + '" y="' + r1a(ty) + '" font-size="12.5" font-weight="600" text-anchor="start" class="' + colT[0] + '" fill="' + colT[1] + '">' + riga + '</text>');
+      });
+    }
+  });
+  // livelli
+  if (opz.livelli) {
+    for (var d = 0; d <= L.h; d++) {
+      var yy = (opz.top || 30) + d * (opz.dy || 62);
+      s.push('<text x="' + (-extraSx + 6) + '" y="' + (yy + 4) + '" font-size="12" class="t-muted" fill="#5b6270">livello ' + d + '</text>');
+      s.push('<line x1="' + (-extraSx + 58) + '" y1="' + yy + '" x2="' + (L.W - 6) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/>');
+    }
+  }
+  // archi
+  for (k in pos) {
+    ["sx", "dx"].forEach(function (lato) {
+      var c = T.nodi[k][lato];
+      if (c !== null && pos[c]) {
+        var a = pos[k], b = pos[c], dx = b.x - a.x, dyy = b.y - a.y, l = Math.sqrt(dx * dx + dyy * dyy);
+        s.push('<line x1="' + r1a(a.x + dx / l * R) + '" y1="' + r1a(a.y + dyy / l * R) + '" x2="' + r1a(b.x - dx / l * R) + '" y2="' + r1a(b.y - dyy / l * R) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      } else if (opz.nulls) {
+        var a2 = pos[k], ox = lato === "sx" ? -1 : 1, nx = a2.x + ox * 16, ny = a2.y + 40;
+        var st = (opz.nullStato || {})[k + ":" + lato];
+        var cc = st ? STILE_NODO[st] : STILE_NODO.spento;
+        s.push('<line x1="' + r1a(a2.x + ox * R * 0.6) + '" y1="' + r1a(a2.y + R * 0.8) + '" x2="' + r1a(nx) + '" y2="' + r1a(ny - 7) + '" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="3 3"/>');
+        s.push('<rect x="' + r1a(nx - 13) + '" y="' + r1a(ny - 7) + '" width="26" height="14" rx="3" class="' + cc[0] + '" fill="' + cc[1] + '" stroke="' + cc[2] + '" stroke-width="1"/>');
+        s.push('<text x="' + r1a(nx) + '" y="' + r1a(ny + 3.5) + '" font-size="9.5" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      }
+    });
+  }
+  // giro intorno all'albero
+  if (opz.giro) {
+    var G = opz.giro, pts = G.punti, fino = G.fino === undefined ? pts.length - 1 : G.fino;
+    var dTutto = "M" + pts.map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+    s.push('<path d="' + dTutto + '" class="l-giro" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"/>');
+    if (fino > 0) {
+      var dFatto = "M" + pts.slice(0, fino + 1).map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+      s.push('<path d="' + dFatto + '" class="l-giro-fatto" fill="none" stroke="#6d3fc0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>');
+    }
+    (G.tacche || []).forEach(function (t) {
+      var col = t.tipo === "pre" ? ["t-blu", "#2f52c4"] : t.tipo === "in" ? ["t-verde", "#17803d"] : ["t-arancio", "#b4500f"];
+      s.push('<circle cx="' + r1a(t.x) + '" cy="' + r1a(t.y) + '" r="' + (t.fatta ? 4.2 : 3.2) + '" class="' + col[0] + '" fill="' + (t.fatta ? col[1] : "none") + '" stroke="' + col[1] + '" stroke-width="1.4"' + (t.fatta ? "" : ' fill-opacity="0"') + '/>');
+    });
+    if (G.punto) s.push('<circle cx="' + r1a(G.punto.x) + '" cy="' + r1a(G.punto.y) + '" r="6.5" class="t-viola" fill="#6d3fc0"/>');
+  }
+  // nodi
+  for (k in pos) {
+    var p = pos[k], st2 = STILE_NODO[(opz.stato || {})[k] || "normale"];
+    s.push('<circle cx="' + r1a(p.x) + '" cy="' + r1a(p.y) + '" r="' + R + '" class="' + st2[0] + '" fill="' + st2[1] + '" stroke="' + st2[2] + '" stroke-width="1.6"/>');
+    var et = T.nodi[k].v, fs = et.length > 2 ? 12.5 : 15;
+    s.push('<text x="' + r1a(p.x) + '" y="' + r1a(p.y + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="' + st2[3] + '" fill="' + st2[4] + '">' + escA(et) + '</text>');
+    if (opz.ordine && opz.ordine[k] !== undefined) {
+      s.push('<circle cx="' + r1a(p.x + R * 0.85) + '" cy="' + r1a(p.y - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1a(p.x + R * 0.85) + '" y="' + r1a(p.y - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.ordine[k] + '</text>');
+    }
+    if (opz.indici && T.nodi[k].pos !== undefined) {
+      s.push('<text x="' + r1a(p.x - R - 3) + '" y="' + r1a(p.y - R + 4) + '" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">' + T.nodi[k].pos + '</text>');
+    }
+  }
+  // etichette con freccia
+  (opz.etichette || []).forEach(function (e) {
+    var p = pos[e.id], col = e.col === "arancio" ? ["t-arancio", "#b4500f"] : e.col === "verde" ? ["t-verde", "#17803d"] : e.col === "rosso" ? ["t-rosso", "#b42318"] : e.col === "viola" ? ["t-viola", "#6d3fc0"] : ["t-blu", "#2f52c4"];
+    var lx, ly, ax, ay, anc;
+    if (e.lato === "sx") { lx = p.x - R - 44; ly = p.y + 4; ax = p.x - R - 3; ay = p.y; anc = "end"; }
+    else if (e.lato === "sopra") { lx = p.x + R + 14; ly = p.y - R - 6; ax = p.x + R * 0.6; ay = p.y - R * 0.8; anc = "start"; }
+    else if (e.lato === "sotto") { lx = p.x; ly = p.y + R + 30; ax = p.x; ay = p.y + R + 3; anc = "middle"; }
+    else { lx = p.x + R + 44; ly = p.y + 4; ax = p.x + R + 3; ay = p.y; anc = "start"; }
+    var righe = String(e.testo).split("\n");
+    righe.forEach(function (rg, j) { s.push('<text x="' + r1a(lx + (anc === "start" ? 4 : anc === "end" ? -4 : 0)) + '" y="' + r1a(ly + j * 14 + (e.lato === "sotto" ? 0 : -(righe.length - 1) * 7)) + '" font-size="12.5" font-weight="600" text-anchor="' + anc + '" class="' + col[0] + '" fill="' + col[1] + '">' + rg + '</text>'); });
+    var sx0 = e.lato === "sx" ? lx : e.lato === "sotto" ? lx : lx, sy0 = e.lato === "sotto" ? ly - 12 : e.lato === "sopra" ? ly - 4 : ly - 4;
+    if (e.lato === "sopra") sx0 = lx;
+    var ang = Math.atan2(ay - sy0, ax - sx0);
+    s.push('<line x1="' + r1a(sx0) + '" y1="' + r1a(sy0) + '" x2="' + r1a(ax - 4 * Math.cos(ang)) + '" y2="' + r1a(ay - 4 * Math.sin(ang)) + '" class="' + col[0].replace("t-", "l-") + '" stroke="' + col[1] + '" stroke-width="1.3"/>');
+    s.push('<path d="M' + r1a(ax) + ' ' + r1a(ay) + ' l' + r1a(-8 * Math.cos(ang - 0.42)) + ' ' + r1a(-8 * Math.sin(ang - 0.42)) + ' l' + r1a(8 * Math.cos(ang - 0.42) - 8 * Math.cos(ang + 0.42)) + ' ' + r1a(8 * Math.sin(ang - 0.42) - 8 * Math.sin(ang + 0.42)) + ' z" class="' + col[0] + '" fill="' + col[1] + '"/>');
+  });
+  s.push('</g></svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- visite
+function preordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; out.push(id); preordine(T, T.nodi[id].sx, out); preordine(T, T.nodi[id].dx, out); return out; }
+function inordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; inordine(T, T.nodi[id].sx, out); out.push(id); inordine(T, T.nodi[id].dx, out); return out; }
+function postordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; postordine(T, T.nodi[id].sx, out); postordine(T, T.nodi[id].dx, out); out.push(id); return out; }
+function ampiezza(T) { var out = [], C = T.radice === null ? [] : [T.radice]; while (C.length) { var n = C.shift(); out.push(n); if (T.nodi[n].sx !== null) C.push(T.nodi[n].sx); if (T.nodi[n].dx !== null) C.push(T.nodi[n].dx); } return out; }
+function valori(T, ids) { return ids.map(function (id) { return T.nodi[id].v; }); }
+
+// Il giro intorno all'albero: un percorso che parte a sinistra della radice e gira in senso antiorario,
+// con una tacca a sinistra (pre), sotto (in) e a destra (post) di ogni nodo.
+function giroAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, d = (opz.r || 17) + 9, pts = [], tacche = [];
+  function punto(x, y, tipo, id) { pts.push({ x: x, y: y }); if (tipo) tacche.push({ x: x, y: y, tipo: tipo, id: id, i: pts.length - 1 }); }
+  function giro(id) {
+    var p = pos[id], n = T.nodi[id];
+    punto(p.x - d, p.y, "pre", id);
+    if (n.sx !== null) giro(n.sx);
+    else punto(p.x - d * 0.75, p.y + d * 0.75);
+    punto(p.x, p.y + d, "in", id);
+    if (n.dx !== null) giro(n.dx);
+    else punto(p.x + d * 0.75, p.y + d * 0.75);
+    punto(p.x + d, p.y, "post", id);
+  }
+  if (T.radice !== null) {
+    var r = pos[T.radice];
+    punto(r.x - d * 0.6, r.y - d * 1.25);
+    giro(T.radice);
+    punto(r.x + d * 0.6, r.y - d * 1.25);
+  }
+  return { punti: pts, tacche: tacche };
+}
+
+// Eventi delle visite iterative (con la coda o con la pila), come nel codice della lavagna dell'anno scorso.
+// Ogni evento: { riga, testo, S: [id|null...], corrente, visitati: [id...], nullStato }
+var CODICE_VISITE = {
+  coda: ["<b>ALGORITMO</b> visitaInAmpiezza(AlberoBinario r)", "  C ← coda vuota", "  C.enqueue(r)", "  <b>WHILE NOT</b> (C.isEmpty()) <b>DO</b>", "    n ← C.dequeue()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      C.enqueue(n.sx)", "      C.enqueue(n.dx)"],
+  pila: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  P ← pila vuota", "  P.push(r)", "  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>", "    n ← P.pop()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      P.push(n.dx)", "      P.push(n.sx)"]
+};
+function eventiVisita(T, tipo) {
+  var ev = [], S = [], vis = [], cor = null, X = tipo === "coda" ? "C" : "P";
+  var ins = tipo === "coda" ? "C.enqueue" : "P.push", est = tipo === "coda" ? "C.dequeue()" : "P.pop()";
+  function nome(id) { return id === null ? "null" : "il nodo " + escA(T.nodi[id].v); }
+  function scatta(riga, testo) { ev.push({ riga: riga, testo: testo, S: S.slice(), corrente: cor, visitati: vis.slice() }); }
+  scatta(0, "Chiamata della visita sulla radice, " + nome(T.radice) + ".");
+  scatta(1, (tipo === "coda" ? "Si crea una coda vuota C." : "Si crea una pila vuota P."));
+  S.push(T.radice); scatta(2, ins + "(r): " + (tipo === "coda" ? "la radice entra nella coda." : "la radice entra nella pila."));
+  var giri = 0;
+  while (giri++ < 200) {
+    if (!S.length) { cor = null; scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " è vuota: il ciclo finisce. Ordine di visita: <b>" + valori(T, vis).join(" ") + "</b>."); break; }
+    scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " non è vuota: si entra nel ciclo.");
+    var n = tipo === "coda" ? S.shift() : S.pop();
+    cor = n;
+    scatta(4, "n ← " + est + ": si toglie " + nome(n) + (tipo === "coda" ? ", il primo della coda." : ", quello in cima alla pila."));
+    if (n === null) { scatta(5, "n = null: non c'è nessun nodo da visitare, si torna al WHILE."); continue; }
+    scatta(5, "n ≠ null: è un nodo vero.");
+    vis.push(n); scatta(6, "Si visita il nodo " + escA(T.nodi[n].v) + ": è il " + vis.length + "° visitato.");
+    var a = tipo === "coda" ? T.nodi[n].sx : T.nodi[n].dx, b = tipo === "coda" ? T.nodi[n].dx : T.nodi[n].sx;
+    S.push(a); scatta(7, ins + "(n." + (tipo === "coda" ? "sx" : "dx") + "): entra " + (a === null ? "null (il figlio " + (tipo === "coda" ? "sinistro" : "destro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "sinistro, " : "destro, ") + escA(T.nodi[a].v)) + ".");
+    S.push(b); scatta(8, ins + "(n." + (tipo === "coda" ? "dx" : "sx") + "): entra " + (b === null ? "null (il figlio " + (tipo === "coda" ? "destro" : "sinistro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "destro, " : "sinistro, ") + escA(T.nodi[b].v)) + "." + (tipo === "pila" && b !== null ? " È in cima: sarà il prossimo a uscire." : ""));
+  }
+  return ev;
+}
+
+// Eventi della visita ricorsiva: ordine "pre" | "in" | "post".
+var CODICE_RIC = {
+  pre: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visita la radice", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)"],
+  "in": ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visita la radice", "    visitaInProfondità(r.dx)"],
+  post: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)", "    visita la radice"]
+};
+function eventiRicorsiva(T, ordine) {
+  var ev = [], pila = [], out = [];
+  var righe = ordine === "pre" ? { vis: 2, sx: 3, dx: 4 } : ordine === "in" ? { sx: 2, vis: 3, dx: 4 } : { sx: 2, dx: 3, vis: 4 };
+  function nome(id) { return id === null ? "null" : escA(T.nodi[id].v); }
+  function scatta(riga, testo, extra) {
+    var e = { riga: riga, testo: testo, pila: pila.map(function (r) { return { id: r.id, lato: r.lato }; }), out: out.slice(), corrente: pila.length ? pila[pila.length - 1].id : null };
+    if (extra) for (var q in extra) e[q] = extra[q];
+    ev.push(e);
+  }
+  function chiama(id, lato) {
+    pila.push({ id: id, lato: lato });
+    scatta(0, "Chiamata visitaInProfondità(" + nome(id) + ")" + (lato ? ", sul sottoalbero " + (lato === "sx" ? "sinistro" : "destro") + " del nodo " + nome(pila[pila.length - 2].id) : ", sulla radice") + ". Nella pila delle chiamate entra un record.");
+    if (id === null) {
+      scatta(1, "r = null: l'albero è vuoto, non c'è niente da fare. La chiamata finisce subito.");
+      pila.pop();
+      return;
+    }
+    scatta(1, "r ≠ null: si esegue il corpo dell'IF.");
+    var passi = [["vis", righe.vis], ["sx", righe.sx], ["dx", righe.dx]].sort(function (a, b) { return a[1] - b[1]; });
+    passi.forEach(function (ps) {
+      if (ps[0] === "vis") { out.push(id); scatta(ps[1], "Si visita la radice di questo sottoalbero: " + nome(id) + ". Ordine finora: <b>" + valori(T, out).join(" ") + "</b>.", { visitaOra: id }); }
+      else {
+        scatta(ps[1], "Chiamata ricorsiva sul figlio " + (ps[0] === "sx" ? "sinistro" : "destro") + " di " + nome(id) + ": " + nome(T.nodi[id][ps[0]]) + ".");
+        chiama(T.nodi[id][ps[0]], ps[0]);
+        scatta(ps[1], "Torniamo alla chiamata su " + nome(id) + ": il sottoalbero " + (ps[0] === "sx" ? "sinistro" : "destro") + " è finito.");
+      }
+    });
+    pila.pop();
+  }
+  chiama(T.radice, null);
+  ev.push({ riga: 0, testo: "La prima chiamata è finita: la pila delle chiamate è vuota. Ordine di visita: <b>" + valori(T, out).join(" ") + "</b>.", pila: [], out: out.slice(), corrente: null, fine: true });
+  return ev;
+}
+
+// Notazione polacca inversa: valuta con una pila. Restituisce i passi.
+function passiRPN(tokens) {
+  var P = [], passi = [{ j: -1, pila: [], testo: "Si leggono i simboli da sinistra a destra, con una pila vuota." }], err = null;
+  for (var j = 0; j < tokens.length && !err; j++) {
+    var t = tokens[j];
+    if (/^-?\d+(\.\d+)?$/.test(t)) { P.push(Number(t)); passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un numero: push(" + t + ")." }); }
+    else if ("+-−*×/:".indexOf(t) >= 0 && t.length === 1) {
+      if (P.length < 2) { err = "«" + t + "» è un operatore, ma nella pila ci sono meno di due numeri: l'espressione è sbagliata."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); break; }
+      var b = P.pop(), a = P.pop(), v;
+      if (t === "+") v = a + b; else if (t === "-" || t === "−") v = a - b; else if (t === "*" || t === "×") v = a * b; else v = b === 0 ? NaN : a / b;
+      v = Math.round(v * 1e6) / 1e6;
+      P.push(v);
+      passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un operatore: pop() dà " + b + " (il secondo operando), pop() dà " + a + " (il primo). Si calcola " + a + " " + t + " " + b + " = " + v + " e si fa push(" + v + ").", tolti: [a, b] });
+    } else { err = "Simbolo non riconosciuto: «" + escA(t) + "»."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); }
+  }
+  if (!err) {
+    if (P.length === 1) passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli: nella pila resta un solo numero, <b>" + P[0] + "</b>. È il valore dell'espressione.", fine: true });
+    else passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli, ma nella pila restano " + P.length + " numeri: l'espressione è sbagliata (mancano operatori).", errore: true, fine: true });
+  }
+  return passi;
+}
+// HTML di una pila verticale di "chip" (cima in alto) e di una coda orizzontale
+function htmlPilaChip(els, fmt, opz) {
+  opz = opz || {};
+  var h = '<div class="pilachip">';
+  if (!els.length) h += '<div class="chip zero">vuota</div>';
+  els.forEach(function (e, j) { h += '<div class="chip' + (e === null ? " zero" : "") + (j === els.length - 1 ? " cima" : "") + '">' + fmt(e) + (j === els.length - 1 ? ' <span class="lab-cima">← cima</span>' : '') + '</div>'; });
+  return h + '</div>';
+}
+function htmlCodaChip(els, fmt) {
+  var h = '<div class="codachip"><span class="lab-coda">primo →</span>';
+  if (!els.length) h += '<span class="chip zero">vuota</span>';
+  els.forEach(function (e) { h += '<span class="chip' + (e === null ? " zero" : "") + '">' + fmt(e) + '</span>'; });
+  return h + '<span class="lab-coda">← ultimo</span></div>';
+}
+
+// ---- heap.js
+// Heap su vettore posizionale (pacchi 13 e 14): radice in A[0], figli di A[i] in A[2i+1] e A[2i+2].
+// tipo "max" (ogni nodo ≥ figli) o "min" (ogni nodo ≤ figli).
+if (typeof STILE_NODO !== "undefined") STILE_NODO.buco = ["r-giallo", "#fff1a8", "#b4500f", "t-muted", "#5b6270"];
+function sopraH(tipo) { return tipo === "min" ? function (a, b) { return a < b; } : function (a, b) { return a > b; }; }
+function nomeFiglio(i) { return i % 2 === 1 ? "sinistro" : "destro"; }
+function figliDi(i, l) { var f = []; if (2 * i + 1 < l) f.push(2 * i + 1); if (2 * i + 2 < l) f.push(2 * i + 2); return f; }
+function eHeap(A, l, tipo) {
+  var meglio = sopraH(tipo);
+  for (var i = 1; i < l; i++) if (meglio(A[i], A[(i - 1) >> 1])) return false;
+  return true;
+}
+
+// risistema "grosso": restituisce le mosse livello per livello e modifica A.
+// mossa: { cosa: "inizio"|"sale"|"fermo"|"foglia"|"colloca", v, u, x, cfr (confronti di questa mossa), A (copia dopo la mossa) }
+function risistemaMosse(A, r, l, tipo) {
+  var meglio = sopraH(tipo), mosse = [], v = r, x = A[r];
+  mosse.push({ cosa: "inizio", v: v, x: x, cfr: 0, A: A.slice(0, l) });
+  while (true) {
+    var f = figliDi(v, l);
+    if (!f.length) { mosse.push({ cosa: "foglia", v: v, x: x, cfr: 0, A: A.slice(0, l) }); break; }
+    var u = f[0], c = 0;
+    if (f.length === 2) { c++; if (meglio(A[f[1]], A[f[0]])) u = f[1]; }
+    c++;
+    if (meglio(A[u], x)) { A[v] = A[u]; mosse.push({ cosa: "sale", v: v, u: u, x: x, figli: f, cfr: c, A: A.slice(0, l) }); v = u; }
+    else { mosse.push({ cosa: "fermo", v: v, u: u, x: x, figli: f, cfr: c, A: A.slice(0, l) }); break; }
+  }
+  A[v] = x;
+  mosse.push({ cosa: "colloca", v: v, x: x, cfr: 0, A: A.slice(0, l) });
+  return mosse;
+}
+function confrontiDi(mosse) { return mosse.reduce(function (s, m) { return s + m.cfr; }, 0); }
+
+// creaHeap dal basso (Codice 6.3 / 6.6): i nodi dall'ultimo alla radice.
+function creaHeap(A, tipo) {
+  var c = 0;
+  for (var i = A.length - 1; i >= 0; i--) c += confrontiDi(risistemaMosse(A, i, A.length, tipo));
+  return c;
+}
+// heapSort in loco (Codice 6.5): restituisce le fotografie dell'array dopo ogni scambio.
+function heapSortInLoco(A, tipo) {
+  var foto = [], c = creaHeap(A, tipo);
+  foto.push({ dopo: "creaHeap", A: A.slice(), cfr: c });
+  for (var l = A.length - 1; l >= 1; l--) {
+    var t = A[0]; A[0] = A[l]; A[l] = t;
+    foto.push({ dopo: "scambio", l: l, messo: t, A: A.slice() });
+    c += confrontiDi(risistemaMosse(A, 0, l, tipo));
+    foto.push({ dopo: "risistema", l: l, A: A.slice(), cfr: c });
+  }
+  return foto;
+}
+
+// creaHeap ricorsivo (Codice 6.2) su vettore posizionale: prima i due sottoalberi, poi la radice
+function creaHeapRic(A, i, tipo, ordine) {
+  if (i >= A.length) return;
+  creaHeapRic(A, 2 * i + 1, tipo, ordine);
+  creaHeapRic(A, 2 * i + 2, tipo, ordine);
+  risistemaMosse(A, i, A.length, tipo);
+  if (ordine) ordine.push(i);
+}
+
+// ---------------------------------------------------------------- alberi qualsiasi (esercizio 5.11)
+// T come in alberi.js: { radice, nodi: { id: { v, sx, dx } } }; valori numerici in v (stringhe)
+function risistemaAlbero(T, id) {
+  var v = id, x = Number(T.nodi[id].v);
+  while (true) {
+    var n = T.nodi[v], f = [n.sx, n.dx].filter(function (c) { return c !== null; });
+    if (!f.length) break;
+    var u = f[0];
+    if (f.length === 2 && Number(T.nodi[f[1]].v) > Number(T.nodi[f[0]].v)) u = f[1];
+    if (Number(T.nodi[u].v) > x) { n.v = T.nodi[u].v; v = u; } else break;
+  }
+  T.nodi[v].v = String(x);
+}
+function creaHeapAlbero(T) {
+  // per profondità decrescente, da destra a sinistra
+  var livelli = [];
+  (function giu(id, d) { if (id === null) return; (livelli[d] = livelli[d] || []).push(id); giu(T.nodi[id].sx, d + 1); giu(T.nodi[id].dx, d + 1); })(T.radice, 0);
+  for (var d = livelli.length - 1; d >= 0; d--) for (var j = livelli[d].length - 1; j >= 0; j--) risistemaAlbero(T, livelli[d][j]);
+  return T;
+}
+
+// ---------------------------------------------------------------- disegno di array (pacco 14)
+// opz: { cls: fn(i) → classi della cella, f: fn(i) → testo sopra, idx: false per non scrivere gli indici, stacco: [i...] (spazio prima di i), mini, base: 0|1 }
+function htmlArray(A, opz) {
+  opz = opz || {};
+  var h = '<div class="array qs' + (opz.mini ? ' mini' : '') + '">';
+  A.forEach(function (v, i) {
+    if (opz.stacco && opz.stacco.indexOf(i) >= 0) h += '<div class="stacco"></div>';
+    h += '<div class="cella' + (opz.cls && opz.cls(i) ? ' ' + opz.cls(i) : '') + '"><div class="f">' + (opz.f ? (opz.f(i) || '') : '') + '</div><div class="v">' + v + '</div><div class="i">' + (opz.idx === false ? '' : i + (opz.base || 0)) + '</div></div>';
+  });
+  return h + '</div>';
+}
+// heapSort in loco con eventi "grossi" (scambi visibili), per i riquadri.
+// evento: { fase: "crea"|"ordina"|"fine", riga, A, l (elementi nello heap), i (creaHeap), v, su, scambio: [0, l], messo, cfr, testo }
+function eventiInLoco(A0, tipo) {
+  var A = A0.slice(), n = A.length, ev = [], cfr = 0, l = n, meglio = sopraH(tipo), fase = "crea", curI = null;
+  var piu = tipo === "min" ? "più piccolo" : "più grande";
+  function sc(o) { o.A = A.slice(); o.l = l; o.cfr = cfr; o.fase = fase; o.i = curI; ev.push(o); }
+  function scendi(r, riga) {
+    var v = r, giri = 0;
+    while (giri++ < 40) {
+      if (2 * v + 1 >= l) { sc({ riga: riga, v: v, testo: "Posizione " + v + ": 2·" + v + " + 1 = " + (2 * v + 1) + " ≥ " + l + ", quindi è una foglia dello heap: " + A[v] + " si ferma qui." }); return; }
+      var u = 2 * v + 1, c = 0, due = u + 1 < l;
+      if (due) { c++; if (meglio(A[u + 1], A[u])) u = u + 1; }
+      c++; cfr += c;
+      var desc = due ? "I figli di " + A[v] + " (posizione " + v + ") sono in " + (2 * v + 1) + " e " + (2 * v + 2) + ": " + A[2 * v + 1] + " e " + A[2 * v + 2] + "; il " + (tipo === "min" ? "minore" : "maggiore") + " è " + A[u] : "Il figlio di " + A[v] + " (posizione " + v + ") è solo in " + u + " (" + u + " + 1 = " + l + " è già fuori dallo heap): " + A[u];
+      if (meglio(A[u], A[v])) {
+        var x = A[v]; A[v] = A[u]; A[u] = x;
+        sc({ riga: riga, v: u, su: v, testo: desc + ", " + piu + " di " + x + " (" + c + (c === 1 ? " confronto" : " confronti") + "): si scambiano. " + x + " scende in posizione " + u + "." });
+        v = u;
+      } else { sc({ riga: riga, v: v, testo: desc + ", e " + A[v] + " non è " + (tipo === "min" ? "più grande" : "più piccolo") + " (" + c + (c === 1 ? " confronto" : " confronti") + "): resta in posizione " + v + "." }); return; }
+    }
+  }
+  sc({ riga: 0, testo: "L'array di partenza, n = " + n + ". Prima si chiama creaHeap, che lo trasforma in un " + (tipo === "min" ? "min-heap" : "max-heap") + "." });
+  for (var i = Math.floor(n / 2); i >= 0; i--) {
+    curI = i;
+    if (2 * i + 1 >= n) { sc({ riga: 8, inizio: true, v: i, testo: "i = " + i + (i === Math.floor(n / 2) ? " (cioè ⌊n/2⌋ = ⌊" + n + "/2⌋)" : "") + ": risistema(A, " + i + ", " + n + "). La posizione " + i + " è una foglia (2·" + i + " + 1 = " + (2 * i + 1) + " ≥ " + n + "), quindi non succede niente." }); continue; }
+    sc({ riga: 8, inizio: true, v: i, testo: "i = " + i + (i === Math.floor(n / 2) ? " (cioè ⌊n/2⌋ = ⌊" + n + "/2⌋)" : "") + ": risistema(A, " + i + ", " + n + "), sul sottoalbero con radice in posizione " + i + ", che contiene " + A[i] + ". I sottoalberi dei suoi figli sono già heap." });
+    scendi(i, 8);
+  }
+  curI = null;
+  sc({ riga: 1, finitoCrea: true, testo: "creaHeap è finito: l'array è un " + (tipo === "min" ? "min-heap" : "max-heap") + ": <b>" + A.join(" ") + "</b>. Confronti: " + cfr + "." });
+  fase = "ordina";
+  for (var ll = n - 1; ll >= 1; ll--) {
+    var t = A[0]; A[0] = A[ll]; A[ll] = t;
+    l = ll;
+    sc({ riga: 3, scambio: [0, ll], messo: t, testo: "ℓ = " + ll + ": scambia A[0] e A[" + ll + "]. " + t + ", il " + (tipo === "min" ? "minimo" : "massimo") + " dello heap, va in posizione " + ll + ", la sua posizione definitiva; " + A[0] + " (l'ultima foglia) va nella radice. Ora lo heap è A[0.." + (ll - 1) + "]: " + ll + (ll === 1 ? " elemento." : " elementi.") });
+    if (ll > 1) { sc({ riga: 4, v: 0, testo: "risistema(A, 0, " + ll + "): " + A[0] + " deve scendere al suo posto, dentro le prime " + ll + " posizioni." }); scendi(0, 4); }
+    else sc({ riga: 4, testo: "risistema(A, 0, 1): lo heap ha un solo elemento, non c'è niente da fare." });
+  }
+  l = 0; fase = "fine";
+  sc({ riga: 2, testo: "Il FOR è finito: l'array è ordinato in modo " + (tipo === "min" ? "decrescente" : "crescente") + ": <b>" + A.join(" ") + "</b>. Confronti in tutto: <b>" + cfr + "</b>." });
+  return ev;
+}
+
+// ---------------------------------------------------------------- operazioni sugli heap (pacco 16)
+// Tutte lavorano su A (array, heap nelle prime A.length posizioni) e restituiscono i passi «grossi» (con scambi visibili).
+// passo: { cosa, A (copia), v, su, testo, cfr }
+function scendiPassi(A, v, tipo, passi) {
+  var l = A.length, meglio = sopraH(tipo), giri = 0;
+  while (giri++ < 60) {
+    var f = figliDi(v, l);
+    if (!f.length) { passi.push({ cosa: "foglia", A: A.slice(), v: v, testo: A[v] + " è in una foglia: si ferma." }); return v; }
+    var u = f[0], c = 0;
+    if (f.length === 2) { c++; if (meglio(A[f[1]], A[f[0]])) u = f[1]; }
+    c++;
+    var desc = f.length === 2 ? "I figli di " + A[v] + " sono " + A[f[0]] + " e " + A[f[1]] + ": il " + (tipo === "min" ? "minore" : "maggiore") + " è " + A[u] : "L'unico figlio di " + A[v] + " è " + A[u];
+    if (meglio(A[u], A[v])) { var x = A[v]; A[v] = A[u]; A[u] = x; passi.push({ cosa: "scende", A: A.slice(), v: u, su: v, cfr: c, testo: desc + ", " + (tipo === "min" ? "più piccolo" : "più grande") + " di " + x + ": si scambiano, " + x + " scende." }); v = u; }
+    else { passi.push({ cosa: "fermo", A: A.slice(), v: v, cfr: c, testo: desc + ", e " + A[v] + " non deve scendere: si ferma." }); return v; }
+  }
+  return v;
+}
+function salePassi(A, v, tipo, passi) {
+  var meglio = sopraH(tipo), giri = 0;
+  while (giri++ < 60) {
+    if (v === 0) { passi.push({ cosa: "radice", A: A.slice(), v: v, testo: A[v] + " è arrivato nella radice: si ferma." }); return v; }
+    var p = (v - 1) >> 1;
+    if (meglio(A[v], A[p])) { var x = A[v]; A[v] = A[p]; A[p] = x; passi.push({ cosa: "sale", A: A.slice(), v: p, su: v, cfr: 1, testo: "Il padre di " + x + " è " + A[v] + ", " + (tipo === "min" ? "più grande" : "più piccolo") + ": si scambiano, " + x + " sale in posizione " + p + "." }); v = p; }
+    else { passi.push({ cosa: "fermo", A: A.slice(), v: v, cfr: 1, testo: "Il padre di " + A[v] + " è " + A[p] + ", che non è " + (tipo === "min" ? "più grande" : "più piccolo") + ": " + A[v] + " si ferma." }); return v; }
+  }
+  return v;
+}
+function opTogliRadice(A0, tipo) {
+  var A = A0.slice(), passi = [];
+  if (!A.length) return { A: A, passi: [{ cosa: "vuoto", A: [], testo: "Lo heap è vuoto." }] };
+  var r = A[0], ult = A.pop();
+  if (!A.length) { passi.push({ cosa: "via", A: [], testo: "Si toglie " + r + ", l'unico elemento: lo heap è vuoto." }); return { A: A, passi: passi, tolto: r }; }
+  A[0] = ult;
+  passi.push({ cosa: "via", A: A.slice(), v: 0, testo: "Si toglie la radice, " + r + " (il " + (tipo === "min" ? "minimo" : "massimo") + "). Al suo posto va l'ultima foglia, " + ult + ", e la foglia sparisce. Poi risistema." });
+  scendiPassi(A, 0, tipo, passi);
+  return { A: A, passi: passi, tolto: r };
+}
+function opInserisci(A0, x, tipo) {
+  var A = A0.slice(), passi = [];
+  A.push(x);
+  passi.push({ cosa: "nuova", A: A.slice(), v: A.length - 1, testo: "Si aggiunge " + x + " come nuova foglia, nella prima posizione libera (posizione " + (A.length - 1) + "). Poi risistemaDalBasso." });
+  salePassi(A, A.length - 1, tipo, passi);
+  return { A: A, passi: passi };
+}
+function opCancella(A0, pos, tipo) {
+  var A = A0.slice(), passi = [], x = A[pos], meglio = sopraH(tipo), f = A.pop();
+  if (pos === A.length) { passi.push({ cosa: "via", A: A.slice(), testo: x + " era l'ultima foglia: basta toglierla." }); return { A: A, passi: passi }; }
+  A[pos] = f;
+  if (f === x) { passi.push({ cosa: "via", A: A.slice(), v: pos, testo: "Al posto di " + x + " va l'ultima foglia, " + f + ", che ha la stessa chiave: non c'è altro da fare." }); return { A: A, passi: passi }; }
+  var giu = meglio(x, f);
+  passi.push({ cosa: "via", A: A.slice(), v: pos, testo: "Al posto di " + x + " (posizione " + pos + ") va l'ultima foglia, f = " + f + ", che sparisce. f " + (f < x ? "&lt;" : "&gt;") + " x = " + x + ": " + (giu ? "f può essere fuori posto rispetto ai figli, quindi si usa risistema (verso il basso)." : "f può essere fuori posto rispetto al padre, quindi si usa risistemaDalBasso (verso l'alto).") });
+  if (giu) scendiPassi(A, pos, tipo, passi); else salePassi(A, pos, tipo, passi);
+  return { A: A, passi: passi };
+}
+function opCambia(A0, pos, nuova, tipo) {
+  var A = A0.slice(), passi = [], vecchia = A[pos], meglio = sopraH(tipo);
+  A[pos] = nuova;
+  if (nuova === vecchia) { passi.push({ cosa: "cambia", A: A.slice(), v: pos, testo: "La chiave non cambia." }); return { A: A, passi: passi }; }
+  var giu = meglio(vecchia, nuova);
+  passi.push({ cosa: "cambia", A: A.slice(), v: pos, testo: "La chiave " + vecchia + " diventa " + nuova + ": " + (nuova < vecchia ? "diminuisce" : "aumenta") + ". " + (giu ? "In un " + (tipo === "min" ? "min" : "max") + "-heap può finire fuori posto rispetto ai figli: risistema verso il basso." : "In un " + (tipo === "min" ? "min" : "max") + "-heap può finire fuori posto rispetto al padre: risistemaDalBasso.") });
+  if (giu) scendiPassi(A, pos, tipo, passi); else salePassi(A, pos, tipo, passi);
+  return { A: A, passi: passi };
+}
+
+// ---- ordina.js
+// Pacco 15: albero di decisione per n = 3, bucketSort, radixSort.
+function escO(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+// L'albero di decisione delle slide per n = 3. Nodo interno: { q: [i, j], si, no }; foglia: { f: [a, b, c] } (indici 1..3)
+var ALB3 = { q: [1, 2],
+  si: { q: [2, 3], si: { f: [1, 2, 3] }, no: { q: [1, 3], si: { f: [1, 3, 2] }, no: { f: [3, 1, 2] } } },
+  no: { q: [1, 3], si: { f: [2, 1, 3] }, no: { q: [2, 3], si: { f: [2, 3, 1] }, no: { f: [3, 2, 1] } } } };
+// percorso per i valori x = [x1, x2, x3]: lista di nodi visitati, con l'esito di ogni domanda
+function percorso3(x) {
+  var n = ALB3, p = [];
+  while (!n.f) { var r = x[n.q[0] - 1] <= x[n.q[1] - 1]; p.push({ nodo: n, esito: r }); n = r ? n.si : n.no; }
+  p.push({ nodo: n });
+  return p;
+}
+// disegno: foglie in fila, nodi interni sopra la media dei figli
+function svgDecisione(evid) {
+  evid = evid || [];
+  var foglie = [], LW = 96, top = 26, dy = 74, s = [];
+  (function giro(n, d) { n.d = d; if (n.f) { n.x = 50 + foglie.length * LW; foglie.push(n); return; } giro(n.si, d + 1); giro(n.no, d + 1); n.x = (n.si.x + n.no.x) / 2; })(ALB3, 0);
+  var W = 100 + (foglie.length - 1) * LW, H = top + 3 * dy + 40;
+  function inPercorso(n) { for (var k = 0; k < evid.length; k++) if (evid[k].nodo === n) return evid[k]; return null; }
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" style="min-width:520px" role="img" aria-label="Albero di decisione per ordinare tre elementi" font-family="system-ui, sans-serif">');
+  (function archi(n) {
+    if (n.f) return;
+    [["si", "sì"], ["no", "no"]].forEach(function (lr) {
+      var c = n[lr[0]], e = inPercorso(n), on = e && ((lr[0] === "si") === e.esito);
+      var x1 = n.x, y1 = top + n.d * dy + 14, x2 = c.x, y2 = top + c.d * dy - 14;
+      s.push('<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="' + (on ? "l-verde" : "l-muted") + '" stroke="' + (on ? "#17803d" : "#5b6270") + '" stroke-width="' + (on ? 3 : 1.3) + '"/>');
+      var mx = (x1 + x2) / 2 + (lr[0] === "si" ? -12 : 12), my = (y1 + y2) / 2;
+      s.push('<text x="' + mx + '" y="' + my + '" font-size="12" text-anchor="middle" class="' + (on ? "t-verde" : "t-muted") + '" fill="' + (on ? "#17803d" : "#5b6270") + '" font-weight="' + (on ? 700 : 400) + '">' + lr[1] + '</text>');
+      archi(c);
+    });
+  })(ALB3);
+  (function nodi(n) {
+    var e = inPercorso(n), y = top + n.d * dy;
+    if (n.f) {
+      var tf = n.f.map(function (i) { return "x" + i; }).join(", ");
+      s.push('<rect x="' + (n.x - 44) + '" y="' + (y - 14) + '" width="88" height="28" rx="6" class="' + (e ? "r-verde" : "r-rosso") + '" fill="' + (e ? "#e6f5ea" : "#fdecea") + '" stroke="' + (e ? "#17803d" : "#b42318") + '" stroke-width="' + (e ? 2.4 : 1.3) + '"/>');
+      s.push('<text x="' + n.x + '" y="' + (y + 5) + '" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + tf.replace(/x(\d)/g, "x<tspan font-size=\"9.5\" dy=\"3\">$1</tspan><tspan dy=\"-3\"></tspan>") + '</text>');
+      return;
+    }
+    s.push('<rect x="' + (n.x - 40) + '" y="' + (y - 14) + '" width="80" height="28" rx="14" class="' + (e ? "r-giallo" : "r-blu") + '" fill="' + (e ? "#fff1a8" : "#e8edfc") + '" stroke="' + (e ? "#b4500f" : "#2f52c4") + '" stroke-width="' + (e ? 2 : 1.3) + '"/>');
+    s.push('<text x="' + n.x + '" y="' + (y + 5) + '" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x<tspan font-size="9.5" dy="3">' + n.q[0] + '</tspan><tspan dy="-3"> ≤ x</tspan><tspan font-size="9.5" dy="3">' + n.q[1] + '</tspan><tspan dy="-3">?</tspan></text>');
+    nodi(n.si); nodi(n.no);
+  })(ALB3);
+  s.push('</svg>');
+  return s.join("");
+}
+// log2(n!) come somma di logaritmi
+function log2Fatt(n) { var s = 0; for (var i = 2; i <= n; i++) s += Math.log2(i); return s; }
+function fattoriale(n) { var f = 1n; for (var i = 2; i <= n; i++) f *= BigInt(i); return f; }
+
+// bucketSort su record { k, nome }: eventi passo per passo
+// passi: [{ chiave: fn(rec) → intero, nome: "giorno" }...] (più passaggi per radixSort/compleanno)
+function eventiBucket(A0, b, chiave, etichetta) {
+  var A = A0.slice(), Y = [], ev = [], j = 0;
+  for (var i = 0; i < b; i++) Y.push([]);
+  function sc(o) { o.A = A.slice(); o.Y = Y.map(function (q) { return q.slice(); }); o.j = j; ev.push(o); }
+  sc({ fase: "inizio", testo: "Si preparano " + b + " code vuote, Y[0] … Y[" + (b - 1) + "], una per ogni valore possibile della " + etichetta + "." });
+  for (i = 0; i < A.length; i++) {
+    var x = chiave(A[i]);
+    Y[x].push(A[i]);
+    sc({ fase: "dentro", i: i, x: x, testo: "A[" + i + "] ha " + etichetta + " " + x + ": va in fondo alla coda Y[" + x + "] (enqueue)." });
+  }
+  var B = new Array(A.length).fill(null);
+  A = B;
+  sc({ fase: "svuota0", testo: "Tutti gli elementi sono nelle code. Ora si svuotano le code in ordine, da Y[0] a Y[" + (b - 1) + "], riempiendo A da sinistra." });
+  for (i = 0; i < b; i++) {
+    while (Y[i].length) {
+      var r = Y[i].shift(); A[j] = r; j++;
+      sc({ fase: "fuori", q: i, pos: j - 1, testo: "Y[" + i + "].dequeue() esce il primo della coda, che va in A[" + (j - 1) + "]." });
+    }
+  }
+  sc({ fase: "fine", testo: "Le code sono vuote: A è ordinato secondo la " + etichetta + "." });
+  return ev;
+}
+function cifra(x, b, t) { return Math.floor(x / Math.pow(b, t)) % b; }
+// radixSort in base b: un evento per «distribuisci» e uno per «raccogli» a ogni passo
+function eventiRadix(A0, b) {
+  var A = A0.slice(), ev = [], t = 0;
+  ev.push({ fase: "inizio", t: -1, A: A.slice(), Y: null, testo: "L'array di partenza. radixSort lo ordina cifra per cifra, partendo dalla cifra meno significativa (le unità, t = 0)." });
+  while (A.some(function (k) { return Math.floor(k / Math.pow(b, t)) !== 0; }) && t < 40) {
+    var Y = []; for (var i = 0; i < b; i++) Y.push([]);
+    A.forEach(function (x) { Y[cifra(x, b, t)].push(x); });
+    ev.push({ fase: "distribuisci", t: t, A: A.slice(), Y: Y.map(function (q) { return q.slice(); }), testo: "Passo t = " + t + ": ogni numero va nella coda della sua cifra di posizione " + t + " (in evidenza), nell'ordine in cui compare nell'array." });
+    A = []; Y.forEach(function (q) { A = A.concat(q); });
+    ev.push({ fase: "raccogli", t: t, A: A.slice(), Y: Y.map(function (q) { return q.slice(); }), testo: "Si svuotano le code da Y[0] a Y[" + (b - 1) + "]: l'array ora è ordinato secondo le ultime " + (t + 1) + (t === 0 ? " cifra" : " cifre") + "." });
+    t++;
+  }
+  ev.push({ fase: "fine", t: t, A: A.slice(), Y: null, testo: "Nessun numero ha una cifra in posizione " + t + " (per tutti ⌊k/" + b + "<sup>" + t + "</sup>⌋ = 0): il WHILE finisce. L'array è ordinato, con " + t + (t === 1 ? " passo" : " passi") + " di bucketSort." });
+  return ev;
+}
+
+// ---- w15.js
+// Riquadri interattivi del pacco 15.
+function $(id) { return document.getElementById(id); }
+function fmtN(x) { return String(x).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f"); }
+function num(x, d) { return x.toFixed(d).replace(".", ","); }
+
+// ---------------------------------------------------------------- 1. l'albero di decisione per n = 3
+(function () {
+  if (!$("dt-corpo")) return;
+  var P = [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]];
+  $("dt-corpo").innerHTML = '<div class="controlli"><label>x<sub>1</sub> = <input type="number" id="dt-a" value="5" style="width:70px"></label><label>x<sub>2</sub> = <input type="number" id="dt-b" value="10" style="width:70px"></label><label>x<sub>3</sub> = <input type="number" id="dt-c" value="7" style="width:70px"></label></div>' +
+    '<div class="controlli"><span class="piccolo">Oppure prova un ordine:</span> ' + P.map(function (p, k) { return '<button data-k="' + k + '">' + p.join(" ") + '</button>'; }).join("") + '</div>' +
+    '<div class="figura" id="dt-fig" style="margin:6px 0"></div><div class="narrazione" id="dt-txt"></div>';
+  function mostra() {
+    var x = [Number($("dt-a").value), Number($("dt-b").value), Number($("dt-c").value)];
+    var p = percorso3(x);
+    $("dt-fig").innerHTML = svgDecisione(p);
+    var righe = p.slice(0, -1).map(function (e) {
+      var i = e.nodo.q[0], j = e.nodo.q[1];
+      return "x<sub>" + i + "</sub> ≤ x<sub>" + j + "</sub>? " + x[i - 1] + " ≤ " + x[j - 1] + ": <b>" + (e.esito ? "sì" : "no") + "</b>";
+    });
+    var f = p[p.length - 1].nodo.f;
+    $("dt-txt").innerHTML = righe.join(" → ") + ".<br>Foglia: <b>" + f.map(function (i) { return "x<sub>" + i + "</sub>"; }).join(", ") + "</b>, cioè " + f.map(function (i) { return x[i - 1]; }).join(" ≤ ") + ". Confronti fatti: <b>" + righe.length + "</b>.";
+  }
+  [].forEach.call($("dt-corpo").querySelectorAll("button[data-k]"), function (b) { b.onclick = function () { var q = P[Number(b.getAttribute("data-k"))]; $("dt-a").value = q[0]; $("dt-b").value = q[1]; $("dt-c").value = q[2]; mostra(); }; });
+  $("dt-a").oninput = mostra; $("dt-b").oninput = mostra; $("dt-c").oninput = mostra;
+  mostra();
+})();
+
+// ---------------------------------------------------------------- 2. il limite: log2(n!)
+(function () {
+  if (!$("lb-corpo")) return;
+  $("lb-corpo").innerHTML = '<div class="controlli"><label>n = <input type="number" id="lb-n" value="10" min="1" max="100000" style="width:110px"></label></div><div class="narrazione" id="lb-txt"></div>';
+  function mostra() {
+    var n = Math.floor(Number($("lb-n").value));
+    if (!(n >= 1 && n <= 100000)) { $("lb-txt").innerHTML = '<span class="errore">Scegli n tra 1 e 100.000.</span>'; return; }
+    var L = log2Fatt(n), nl = n * Math.log2(n), st = n > 1 ? Math.log2(Math.sqrt(2 * Math.PI * n)) + n * Math.log2(n / Math.E) : 0;
+    var f = n <= 25 ? fmtN(fattoriale(n).toString()) : "un numero con " + fmtN(Math.floor(L * Math.log10(2)) + 1) + " cifre";
+    $("lb-txt").innerHTML = "n! = " + f + " ordini possibili.<br>" +
+      "log<sub>2</sub>(n!) ≈ <b>" + num(L, 2) + "</b>: qualsiasi algoritmo basato su confronti, nel caso peggiore, fa <b>almeno " + fmtN(Math.ceil(L - 1e-9)) + "</b> confronti.<br>" +
+      "Con l'approssimazione di Stirling: ≈ " + num(st, 2) + ". E n log<sub>2</sub> n = " + num(nl, 2) + (n > 1 ? ": il rapporto log<sub>2</sub>(n!) / (n log<sub>2</sub> n) è " + num(L / nl, 3) + ", e si avvicina a 1 al crescere di n." : ".");
+  }
+  $("lb-n").oninput = mostra;
+  mostra();
+})();
+
+// ---------------------------------------------------------------- 3. bucketSort con le code
+(function () {
+  if (!$("bs-corpo")) return;
+  var M = ["", "gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"];
+  var PERS = [["Alberto", 22, 1], ["Anna", 9, 12], ["Claudia", 27, 4], ["Franco", 31, 5], ["Lorenzo", 15, 1], ["Lucia", 14, 12], ["Paolo", 12, 1], ["Sara", 9, 6]];
+  var ES = [
+    { nome: "Lavagna, pagina 4: gli animali", dati: [[1, "gatto"], [0, "cavallo"], [4, "gallina"], [2, "topo"], [0, "orso"], [2, "cane"]], passi: [{ b: 5, k: function (r) { return r[0]; }, et: "chiave" }], mostra: function (r) { return r[0] + " " + r[1]; } },
+    { nome: "Lavagna, pagine 8–10: i compleanni (giorno, poi mese)", dati: PERS, passi: [{ b: 32, k: function (r) { return r[1]; }, et: "chiave «giorno»" }, { b: 13, k: function (r) { return r[2]; }, et: "chiave «mese»" }], mostra: function (r) { return r[0] + " " + r[1] + " " + M[r[2]]; } },
+    { nome: "I compleanni, ma prima il mese e poi il giorno (sbagliato)", dati: PERS, passi: [{ b: 13, k: function (r) { return r[2]; }, et: "chiave «mese»" }, { b: 32, k: function (r) { return r[1]; }, et: "chiave «giorno»" }], mostra: function (r) { return r[0] + " " + r[1] + " " + M[r[2]]; } }
+  ];
+  $("bs-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="bs-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e.nome + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><button class="primario" id="bs-passo">Passo →</button><button id="bs-fase">Fino alla fine di questa fase</button><button id="bs-fine">Fino alla fine</button><button id="bs-reset">Ricomincia</button></div>' +
+    '<div id="bs-A"></div><div class="etich-array" id="bs-ytit">Le code</div><div id="bs-Y"></div><div class="narrazione" id="bs-txt"></div>';
+  var V = { ev: [], k: 0, e: null };
+  function prepara() {
+    var e = ES[Number($("bs-es").value)], dati = e.dati.slice(), ev = [];
+    e.passi.forEach(function (p, j) {
+      var parz = eventiBucket(dati, p.b, p.k, p.et);
+      parz.forEach(function (x) { x.passo = j; x.tot = e.passi.length; x.chiave = p.k; x.b = p.b; });
+      ev = ev.concat(parz);
+      dati = parz[parz.length - 1].A.slice();
+    });
+    V.ev = ev; V.k = 0; V.e = e; mostra();
+  }
+  function mostra() {
+    var e = V.ev[V.k], es = V.e, h = '<div class="etich-array">L\'array A' + (e.tot > 1 ? " (passaggio " + (e.passo + 1) + " di " + e.tot + ")" : "") + '</div><div class="array qs">';
+    e.A.forEach(function (r, i) {
+      var cls = r === null ? "oltre" : (e.fase === "dentro" && i === e.i) ? "attiva" : (e.fase === "fuori" && i === e.pos) ? "attiva" : (e.fase === "dentro" && i < e.i) ? "fuori" : "";
+      h += '<div class="cella ' + cls + '" style="width:76px"><div class="f">' + (r === null ? "" : e.chiave(r)) + '</div><div class="v" style="font-size:12px;line-height:1.15;display:flex;align-items:center;justify-content:center">' + (r === null ? "" : es.mostra(r).replace(" ", "<br>")) + '</div><div class="i">' + i + '</div></div>';
+    });
+    $("bs-A").innerHTML = h + '</div>';
+    var y = "";
+    e.Y.forEach(function (q, i) {
+      if (!q.length && e.b > 8) return;
+      y += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0"><span class="piccolo" style="min-width:46px">Y[' + i + ']</span>' + (q.length ? q.map(function (r, j) { return '<span class="chip' + ((e.fase === "dentro" && i === e.x && j === q.length - 1) ? " cima" : "") + '">' + es.mostra(r) + '</span>'; }).join('<span class="piccolo">→</span>') : '<span class="chip zero">vuota</span>') + '</div>';
+    });
+    $("bs-ytit").textContent = e.b > 8 ? "Le code (quelle vuote non sono disegnate)" : "Le code (il primo a sinistra esce per primo)";
+    $("bs-Y").innerHTML = y || '<p class="piccolo">tutte vuote</p>';
+    $("bs-txt").innerHTML = "<b>Passo " + (V.k + 1) + " di " + V.ev.length + ".</b> " + e.testo + '<br><span class="piccolo">Sopra ogni cella, in blu, la chiave usata in questo passaggio.</span>';
+    var fine = V.k >= V.ev.length - 1;
+    $("bs-passo").disabled = fine; $("bs-fine").disabled = fine; $("bs-fase").disabled = fine;
+  }
+  $("bs-passo").onclick = function () { if (V.k < V.ev.length - 1) { V.k++; mostra(); } };
+  $("bs-fase").onclick = function () { var k = V.k + 1; while (k < V.ev.length - 1 && ["svuota0", "fine"].indexOf(V.ev[k].fase) < 0) k++; V.k = k; mostra(); };
+  $("bs-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("bs-reset").onclick = function () { V.k = 0; mostra(); };
+  $("bs-es").onchange = prepara;
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 4. radixSort cifra per cifra
+(function () {
+  if (!$("rx-corpo")) return;
+  var ES = [["Lavagna, pagine 11–12", "1234 37 224 5131 41 48 4237"], ["Esercizio 6.1 del foglio", "2222 4512 27 890 345 1234 9876 1236 2345 231 234 543"], ["Esercizio 6.2 del foglio", "4567 8776 2324 3434 9876 123 876 1232 234 975 654 444"], ["Scrivi tu", null]];
+  $("rx-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="rx-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label>' +
+    '<label>Base <select id="rx-b" style="width:auto"><option value="10">10</option><option value="2">2</option><option value="16">16</option></select></label></div>' +
+    '<div class="controlli"><label>Numeri <input type="text" id="rx-in" style="width:260px;max-width:100%"></label></div>' +
+    '<div class="controlli"><button class="primario" id="rx-passo">Passo →</button><button id="rx-fine">Fino alla fine</button><button id="rx-reset">Ricomincia</button></div>' +
+    '<div id="rx-A"></div><div id="rx-Y"></div><div class="narrazione" id="rx-txt"></div>';
+  var V = { ev: [], k: 0, b: 10, L: 1 };
+  function scrivi(x, b) { return x.toString(b).toUpperCase(); }
+  function prepara() {
+    var A = $("rx-in").value.trim().split(/[\s,;]+/).filter(function (t) { return t !== ""; });
+    if (!A.length || A.length > 16 || A.some(function (x) { return !/^\d{1,6}$/.test(x); })) { $("rx-txt").innerHTML = '<span class="errore">Scrivi da 1 a 16 numeri interi non negativi (al massimo 6 cifre).</span>'; return; }
+    A = A.map(Number); V.b = Number($("rx-b").value);
+    V.L = Math.max.apply(null, A.map(function (x) { return scrivi(x, V.b).length; }));
+    V.ev = eventiRadix(A, V.b); V.k = 0; mostra();
+  }
+  function numHTML(x, t) {
+    var s = scrivi(x, V.b), pad = V.L - s.length, h = "";
+    for (var c = 0; c < V.L; c++) {
+      var pos = V.L - 1 - c, ch = c < pad ? "0" : s[c - pad], z = c < pad;
+      h += (pos === t ? '<mark>' : '') + (z ? '<span class="piccolo">' + ch + '</span>' : ch) + (pos === t ? '</mark>' : '');
+    }
+    return h;
+  }
+  function mostra() {
+    var e = V.ev[V.k], tEv = e.fase === "inizio" ? 0 : e.fase === "raccogli" ? e.t + 1 : e.t;
+    var tit = e.fase === "distribuisci" ? "L'array, prima del passo t = " + e.t : e.fase === "raccogli" ? "L'array dopo il passo t = " + e.t : e.fase === "fine" ? "L'array ordinato" : "L'array di partenza";
+    $("rx-A").innerHTML = '<div class="etich-array">' + tit + (V.b !== 10 ? " (numeri scritti in base " + V.b + ")" : "") + '</div><div class="sequenza" style="font-family:ui-monospace,monospace">' + e.A.map(function (x) { return '<span class="el">' + numHTML(x, e.fase === "fine" ? -1 : tEv) + '</span>'; }).join("") + '</div>';
+    var y = "";
+    if (e.Y) e.Y.forEach(function (q, i) { if (!q.length && V.b > 10) return; y += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:2px 0"><span class="piccolo" style="min-width:46px">Y[' + scrivi(i, V.b) + ']</span>' + (q.length ? q.map(function (x) { return '<span class="chip" style="font-family:ui-monospace,monospace">' + numHTML(x, e.t) + '</span>'; }).join("") : '<span class="chip zero">vuota</span>') + '</div>'; });
+    $("rx-Y").innerHTML = e.Y ? '<div class="etich-array">Le code del passo t = ' + e.t + '</div>' + y : "";
+    $("rx-txt").innerHTML = "<b>Passo " + (V.k + 1) + " di " + V.ev.length + ".</b> " + e.testo + '<br><span class="piccolo">In evidenza la cifra usata nel prossimo passo (o in quello in corso); gli zeri grigi a sinistra servono solo ad allineare le cifre.</span>';
+    var fine = V.k >= V.ev.length - 1;
+    $("rx-passo").disabled = fine; $("rx-fine").disabled = fine;
+  }
+  $("rx-passo").onclick = function () { if (V.k < V.ev.length - 1) { V.k++; mostra(); } };
+  $("rx-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("rx-reset").onclick = function () { V.k = 0; mostra(); };
+  $("rx-es").onchange = function () { var e = ES[Number($("rx-es").value)]; if (e[1] !== null) $("rx-in").value = e[1]; prepara(); };
+  $("rx-in").onchange = function () { $("rx-es").value = String(ES.length - 1); prepara(); };
+  $("rx-b").onchange = prepara;
+  $("rx-in").value = ES[0][1];
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 5. la cifra di posizione t in base b
+(function () {
+  if (!$("cf-corpo")) return;
+  $("cf-corpo").innerHTML = '<div class="controlli"><label>x = <input type="number" id="cf-x" value="9999" min="0" style="width:110px"></label><label>base b = <input type="number" id="cf-b" value="16" min="2" max="1024" style="width:80px"></label><label>posizione t = <input type="number" id="cf-t" value="2" min="0" max="20" style="width:70px"></label></div><div class="narrazione" id="cf-txt"></div><pre class="binario" id="cf-bin" style="display:none"></pre>';
+  function mostra() {
+    var x = Math.floor(Number($("cf-x").value)), b = Math.floor(Number($("cf-b").value)), t = Math.floor(Number($("cf-t").value));
+    if (!(x >= 0 && x <= 1e12 && b >= 2 && b <= 1024 && t >= 0 && t <= 20)) { $("cf-txt").innerHTML = '<span class="errore">Scegli x ≥ 0, b tra 2 e 1024, t tra 0 e 20.</span>'; $("cf-bin").style.display = "none"; return; }
+    var bt = Math.pow(b, t), q = Math.floor(x / bt), c = q % b;
+    var cifre = [], y = x; do { cifre.unshift(y % b); y = Math.floor(y / b); } while (y > 0);
+    var rap = cifre.map(function (d, j) { var pos = cifre.length - 1 - j, s = b <= 36 ? d.toString(b).toUpperCase() : "(" + d + ")"; return pos === t ? "<mark>" + s + "</mark>" : s; }).join(b <= 36 ? "" : " ");
+    $("cf-txt").innerHTML = "b<sup>t</sup> = " + b + "<sup>" + t + "</sup> = " + fmtN(bt) + ". Divisione intera: x / b<sup>t</sup> = " + fmtN(x) + " / " + fmtN(bt) + " = " + fmtN(q) + ". Resto della divisione per b: " + fmtN(q) + " MOD " + b + " = <b>" + c + "</b>." +
+      "<br>Infatti x in base " + b + " si scrive " + rap + (t >= cifre.length ? " e non ha una cifra in posizione " + t + ": la cifra è 0" : ", e la cifra in posizione " + t + " (contando da 0 a destra) è quella evidenziata") + ".";
+    var k = Math.log2(b);
+    if (Number.isInteger(k) && x < Math.pow(2, 40)) {
+      var nb = Math.max(k * (t + 1), Math.ceil(Math.log2(x + 1) / k) * k, k), bin = x.toString(2).padStart(nb, "0");
+      function gruppi(s) { var r = []; for (var i = s.length; i > 0; i -= k) r.unshift(s.slice(Math.max(0, i - k), i)); return r.join(" "); }
+      var sh = (x >> 0 === x && k * t < 31) ? (x >>> (k * t)) : q;
+      var lin = [], e = function (z) { return z.replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;"); };
+      function riga(lab, bits, com) { return e(lab.padEnd(12, " ")) + "= " + gruppi(bits.padStart(nb, "0")) + '   <span class="com">' + com + '</span>'; }
+      lin.push(riga("x", bin, "(" + x + " in binario, a gruppi di " + k + " bit: ogni gruppo è una cifra in base " + b + ")"));
+      lin.push(riga("x >> " + (k * t), sh.toString(2), "(spostare a destra di " + k + "·" + t + " = " + (k * t) + " bit vuol dire dividere per " + b + "<sup>" + t + "</sup>)"));
+      lin.push(riga("AND " + "1".repeat(k), (sh & (b - 1)).toString(2), "(tenere solo gli ultimi " + k + " bit vuol dire fare MOD " + b + ")"));
+      $("cf-bin").innerHTML = lin.join("\n");
+      $("cf-bin").style.display = "";
+    } else $("cf-bin").style.display = "none";
+  }
+  $("cf-x").oninput = mostra; $("cf-b").oninput = mostra; $("cf-t").oninput = mostra;
+  mostra();
+})();
+})();
+</script>
+</body>
+</html>

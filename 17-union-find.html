@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Union-find</title>
+<link rel="stylesheet" href="stile.css?v=6">
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 17 · lezioni 18 e 19 (lavagne del 3 e del 5 novembre 2025)</span>
+</div>
+
+<h1>Union-find: insiemi disgiunti che si uniscono</h1>
+<p class="sottotitolo">Un problema nuovo: tenere una collezione di insiemi disgiunti, con due operazioni, unire due insiemi (UNION) e dire in quale insieme sta un elemento (FIND). Ogni insieme diventa un albero. Il prof presenta quattro soluzioni, sempre più furbe: QuickFind, QuickFind con bilanciamento, QuickUnion, QuickUnion con unione bilanciata; e infine la compressione dei cammini, che rende FIND quasi costante. Union-find tornerà nell'algoritmo di Kruskal, nei grafi.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>I riquadri <b>«Attrezzo»</b> spiegano da zero un pezzo di matematica che serve in quel punto.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Nelle figure le frecce vanno dal figlio al padre: ogni nodo conosce solo suo padre.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: «lavagna del 3 novembre, pagina N» è la lezione 18, «lavagna del 5 novembre, pagina N» la lezione 19. Su union-find non ci sono slide: la fonte è solo la lavagna.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Le due lezioni in sei domande</span>
+  <ol>
+    <li><b>Qual è il problema?</b> Rappresentare una partizione di un insieme in parti disgiunte, ognuna con un nome, con MAKESET, UNION e FIND.</li>
+    <li><b>Come si rappresenta?</b> Ogni parte è un albero, i nodi sono gli elementi, la radice dà il nome; la partizione è una foresta.</li>
+    <li><b>QuickFind?</b> Alberi alti 1: FIND costa O(1), UNION O(n). Con il bilanciamento (si sposta sempre l'insieme più piccolo) UNION costa O(log n) ammortizzato.</li>
+    <li><b>QuickUnion?</b> UNION attacca una radice sotto l'altra, O(1); FIND risale l'albero, O(altezza), che può arrivare a n − 1.</li>
+    <li><b>Union by rank?</b> Si attacca l'albero più basso sotto quello più alto. Un albero di rank r ha almeno 2<sup>r</sup> nodi, quindi l'altezza è al più log<sub>2</sub> n e FIND costa O(log n).</li>
+    <li><b>E la compressione dei cammini?</b> FIND, mentre risale, attacca tutti i nodi del cammino direttamente alla radice. Il costo ammortizzato di FIND diventa O(log* n): in pratica al più 5.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#partizioni">Le partizioni</a></li>
+    <li><a href="#problema">Il problema union-find</a></li>
+    <li><a href="#idea">L'idea comune: un albero per ogni insieme</a></li>
+    <li><a href="#quickfind">QuickFind</a></li>
+    <li><a href="#qfb">QuickFind con bilanciamento</a></li>
+    <li><a href="#quickunion">QuickUnion</a></li>
+    <li><a href="#rank">QuickUnion con unione bilanciata (union by rank)</a></li>
+    <li><a href="#lemma">Perché gli alberi restano bassi: il lemma</a></li>
+    <li><a href="#compressione">La compressione dei cammini</a></li>
+    <li><a href="#logstar">Il logaritmo iterato</a></li>
+    <li><a href="#tabella">Il riepilogo e un riquadro per provare tutto</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti (foglio 7)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="partizioni"><span class="num">1</span>Le partizioni</h2>
+<p class="in-questa"><b>In questa sezione:</b> cos'è una partizione di un insieme (lavagna del 3 novembre, pagine 12–14).</p>
+<div class="box def">
+  <span class="etichetta">Partizione (lavagna del 3 novembre, pagina 13)</span>
+  <p>Una <strong>partizione</strong> di un insieme 𝒜 è una famiglia di sottoinsiemi A<sub>1</sub>, A<sub>2</sub>, …, A<sub>k</sub> ⊆ 𝒜 tali che:</p>
+  <ul>
+    <li>per i = 1, …, k: A<sub>i</sub> ≠ ∅ (nessuna parte è vuota);</li>
+    <li>per i, j = 1, …, k, se i ≠ j allora A<sub>i</sub> ∩ A<sub>j</sub> = ∅ (le parti non si sovrappongono);</li>
+    <li>A<sub>1</sub> ∪ A<sub>2</sub> ∪ … ∪ A<sub>k</sub> = 𝒜 (insieme coprono tutto).</li>
+  </ul>
+  <p>A<sub>1</sub>, A<sub>2</sub>, …, A<sub>k</sub> si chiamano le <strong>parti</strong>.</p>
+</div>
+<p>In parole: si divide 𝒜 in gruppi, e ogni elemento sta in uno e un solo gruppo. Come una classe divisa in squadre: nessuno è in due squadre, nessuno è senza squadra, nessuna squadra è vuota. Esempio: 𝒜 = {1, 2, 3, 4, 5, 6}, divisa in {1}, {4} e {2, 3, 5, 6}.</p>
+<p>Nel problema della lezione gli elementi sono una collezione S di elementi tutti diversi, per esempio gli interi da 1 a n (lavagna, pagina 14). Si parte con n insiemi da un elemento solo, {1}, {2}, …, {n}, e ogni insieme ha un <strong>nome</strong>: all'inizio il nome di {i} è i.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Partizione: parti non vuote, disgiunte, che coprono tutto. Ogni elemento sta in esattamente una parte.</li>
+    <li>Ogni parte ha un nome; all'inizio ogni elemento è da solo e dà il nome al suo insieme.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="problema"><span class="num">2</span>Il problema union-find</h2>
+<p class="in-questa"><b>In questa sezione:</b> le tre operazioni (lavagna del 3 novembre, pagina 15) e l'esempio della pagina 16.</p>
+<div class="box def">
+  <span class="etichetta">Il problema UNION-FIND (lavagna del 3 novembre, pagina 15)</span>
+  <p>Rappresentare una collezione di insiemi disgiunti, con le operazioni:</p>
+  <ul>
+    <li><strong>UNION(A, B)</strong>: unisce gli insiemi A e B in un unico insieme, di nome A;</li>
+    <li><strong>FIND(x)</strong>: restituisce il nome dell'insieme che contiene l'elemento x;</li>
+    <li><strong>MAKESET(x)</strong>: crea un nuovo insieme {x}, di nome x, con x elemento nuovo.</li>
+  </ul>
+</div>
+<p>Attenzione ai tipi: gli argomenti di UNION sono <em>nomi di insiemi</em>, quello di FIND è un <em>elemento</em>. Dopo UNION(A, B) l'insieme B non esiste più come insieme a sé: i suoi elementi stanno nell'insieme A. La Figura 1 è l'esempio della lavagna, pagina 16.</p>
+<div class="figura">
+<div class="tabella-wrap"><table><tr><th>operazione</th><th>la partizione dopo l'operazione</th><th>risposta</th></tr><tr><td>MAKESET(1), …, MAKESET(6)</td><td>{1} {2} {3} {4} {5} {6}</td><td></td></tr><tr><td>FIND(2)</td><td></td><td>2</td></tr><tr><td>UNION(3, 2)</td><td>{1} <b>{2, 3}</b> {4} {5} {6}</td><td></td></tr><tr><td>UNION(5, 6)</td><td>{1} {2, 3} {4} <b>{5, 6}</b></td><td></td></tr><tr><td>FIND(2)</td><td></td><td>3</td></tr><tr><td>UNION(5, 3)</td><td>{1} {4} <b>{2, 3, 5, 6}</b></td><td></td></tr><tr><td>FIND(2)</td><td></td><td>5</td></tr></table></div>
+<div class="didascalia"><b>Figura 1.</b> Lavagna del 3 novembre, pagina 16. Dopo UNION(3, 2) l'insieme {2, 3} si chiama 3, quindi FIND(2) risponde 3; dopo UNION(5, 3) l'insieme {2, 3, 5, 6} si chiama 5, e FIND(2) risponde 5. Alla fine la partizione è {1}, {4}, {2, 3, 5, 6}.</div>
+</div>
+<p>A cosa serve? Per esempio a sapere se due elementi stanno «nello stesso gruppo» (FIND(x) = FIND(y)?) mentre i gruppi si fondono: città collegate da strade che si costruiscono una alla volta, pixel della stessa macchia di colore, e soprattutto l'algoritmo di Kruskal per l'albero ricoprente minimo, che si vedrà con i grafi.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>MAKESET(x): nuovo insieme {x} di nome x. UNION(A, B): unisce A e B, il nome resta A. FIND(x): il nome dell'insieme di x.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="idea"><span class="num">3</span>L'idea comune: un albero per ogni insieme</h2>
+<p class="in-questa"><b>In questa sezione:</b> la rappresentazione che usano tutte le soluzioni (lavagna del 3 novembre, pagina 17).</p>
+<p>Il prof divide le soluzioni in «elementari» ed «evolute», ma in tutte (lavagna, pagina 17):</p>
+<ul>
+  <li>ogni insieme (parte) è rappresentato da un <strong>albero con radice</strong>: i <strong>nodi</strong> sono gli elementi dell'insieme, la <strong>radice</strong> dà il nome all'insieme;</li>
+  <li>i puntatori vanno <strong>verso l'alto</strong>: ogni nodo ha un riferimento a suo padre, la radice no;</li>
+  <li>la partizione è quindi una <strong>foresta</strong> di alberi.</li>
+</ul>
+<p>Sono alberi diversi da quelli binari: un nodo può avere quanti figli vuole, e non si scende mai dalla radice verso i figli. Si sale soltanto: da un elemento, seguendo i padri, si arriva alla radice, e lì si legge il nome. Le soluzioni differiscono nella forma che danno agli alberi.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Un albero per insieme; radice = nome; puntatori dal figlio al padre; la partizione è una foresta.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="quickfind"><span class="num">4</span>QuickFind</h2>
+<p class="in-questa"><b>In questa sezione:</b> la prima soluzione (lavagna del 3 novembre, pagine 18 e 19): alberi alti 1, dove FIND è immediata ma UNION può costare tanto.</p>
+<div class="box def">
+  <span class="etichetta">Algoritmi QuickFind (lavagna, pagina 18)</span>
+  <ul>
+    <li>Alberi di <strong>altezza 1</strong>.</li>
+    <li>Elementi dell'insieme ↔ <strong>foglie</strong>.</li>
+    <li>Nome dell'insieme ↔ <strong>radice</strong>.</li>
+  </ul>
+</div>
+<p>La radice qui non è un elemento: è un nodo in più che contiene solo il nome (il prof la disegna quadrata). Ogni elemento è una foglia, figlia diretta della radice (Figura 2).</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">{2, 5, 7} e {1, 9}</div><svg viewBox="0 0 250 108" width="250" height="108" role="img" aria-label="QuickFind: due insiemi" font-family="system-ui, sans-serif"><line x1="45.9" y1="70.5" x2="68.9" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M68.9 37.2 l-1.6 7.8 l-5.1 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="78" y1="68" x2="78" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M78 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="110.1" y1="70.5" x2="87.1" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M87.1 37.2 l6.7 4.3 l-5.1 3.5 z" class="t-muted" fill="#5b6270"/><line x1="176.6" y1="68.8" x2="186.8" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M186.8 39.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="207.4" y1="68.8" x2="197.2" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M197.2 39.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><circle cx="38" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="78" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="118" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="118" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="64" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="172" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="172" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="212" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="212" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="178" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="192" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text></svg></div><div><div class="nome-mat">{1, 2, 3}, {4, 5} e {6}</div><svg viewBox="0 0 304 108" width="304" height="108" role="img" aria-label="QuickFind: tre insiemi" font-family="system-ui, sans-serif"><line x1="45.9" y1="70.5" x2="68.9" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M68.9 37.2 l-1.6 7.8 l-5.1 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="78" y1="68" x2="78" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M78 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="110.1" y1="70.5" x2="87.1" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M87.1 37.2 l6.7 4.3 l-5.1 3.5 z" class="t-muted" fill="#5b6270"/><line x1="176.6" y1="68.8" x2="186.8" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M186.8 39.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="207.4" y1="68.8" x2="197.2" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M197.2 39.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="266" y1="68" x2="266" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M266 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><circle cx="38" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="78" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="118" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="118" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="64" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="172" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="172" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="212" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="212" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="178" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="192" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="266" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="266" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="252" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="266" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text></svg></div></div>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagina 18. A sinistra {2, 5, 7}, di nome 2, e {1, 9}, di nome 9: l'elemento 2 compare due volte, come nome nella radice quadrata e come foglia. A destra {1, 2, 3} di nome 1, {4, 5} di nome 5 e {6}.</div>
+</div>
+<p>Le operazioni (lavagna, pagina 19):</p>
+<ul>
+  <li><strong>MAKESET(e)</strong>: si crea una radice di nome e con una sola foglia e. Tempo <strong>O(1)</strong>.</li>
+  <li><strong>FIND(e)</strong>: dalla foglia e si sale di un passo alla radice, e si legge il nome. Tempo <strong>O(1)</strong>: da qui il nome «QuickFind».</li>
+  <li><strong>UNION(A, B)</strong>: tutte le foglie di B diventano figlie della radice A (si cambia il puntatore di ognuna), e la radice B si elimina. Tempo proporzionale al numero di elementi di B: nel caso peggiore B contiene n − 1 foglie, e il tempo è <strong>O(n)</strong>.</li>
+</ul>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">prima</div><svg viewBox="0 0 250 108" width="250" height="108" role="img" aria-label="prima di UNION(2, 9)" font-family="system-ui, sans-serif"><line x1="45.9" y1="70.5" x2="68.9" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M68.9 37.2 l-1.6 7.8 l-5.1 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="78" y1="68" x2="78" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M78 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="110.1" y1="70.5" x2="87.1" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M87.1 37.2 l6.7 4.3 l-5.1 3.5 z" class="t-muted" fill="#5b6270"/><line x1="176.6" y1="68.8" x2="186.8" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M186.8 39.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="207.4" y1="68.8" x2="197.2" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M197.2 39.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><circle cx="38" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="78" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="118" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="118" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="64" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="172" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="172" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="212" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="212" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="178" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="192" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text></svg></div><div><div class="nome-mat">dopo UNION(2, 9)</div><svg viewBox="0 0 236 108" width="236" height="108" role="img" aria-label="dopo UNION(2, 9)" font-family="system-ui, sans-serif"><line x1="49.3" y1="73.8" x2="105" y2="33.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M105 33.4 l-4.1 6.8 l-3.7 -5 z" class="t-muted" fill="#5b6270"/><line x1="85.9" y1="70.5" x2="108.9" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.9 37.2 l-1.6 7.8 l-5.1 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="118" y1="68" x2="118" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M118 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="150.1" y1="70.5" x2="127.1" y2="37.2" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M127.1 37.2 l6.7 4.3 l-5.1 3.5 z" class="t-verde" fill="#17803d"/><line x1="186.7" y1="73.8" x2="131" y2="33.4" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M131 33.4 l7.8 1.8 l-3.7 5 z" class="t-verde" fill="#17803d"/><circle cx="38" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="78" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="118" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="118" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="158" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="158" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="198" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="198" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="104" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="118" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text></svg></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 19: UNION(2, 9). Le foglie 1 e 9 passano sotto la radice 2 (frecce verdi); la radice 9 sparisce.</div>
+</div>
+<p>Lo spazio è <strong>O(n)</strong>: una foglia per elemento e al più una radice per elemento.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>QuickFind: alberi alti 1, foglie = elementi, radice = nome.</li>
+    <li>MAKESET O(1), FIND O(1), UNION O(n) (si spostano tutte le foglie di B).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="qfb"><span class="num">5</span>QuickFind con bilanciamento</h2>
+<p class="in-questa"><b>In questa sezione:</b> un'idea semplice per spostare meno foglie (lavagna del 3 novembre, pagine 20–23): spostare sempre quelle dell'insieme più piccolo. UNION resta O(n) nel caso peggiore, ma diventa O(log n) ammortizzato.</p>
+<p>Se B è più grande di A (il prof scrive #B &gt; #A, «numero di elementi di B»), invece di spostare le foglie di B sotto A conviene spostare quelle di A sotto B, e poi <strong>rinominare la radice</strong> di B come A: il nome dell'unione deve essere A (lavagna, pagina 20).</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">prima: A ha 2 elementi, B ne ha 5</div><svg viewBox="0 0 330 108" width="330" height="108" role="img" aria-label="A piccolo, B grande" font-family="system-ui, sans-serif"><line x1="42.6" y1="68.8" x2="52.8" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M52.8 39.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="73.4" y1="68.8" x2="63.2" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M63.2 39.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="143.3" y1="73.8" x2="199" y2="33.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M199 33.4 l-4.1 6.8 l-3.7 -5 z" class="t-muted" fill="#5b6270"/><line x1="179.9" y1="70.5" x2="202.9" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M202.9 37.2 l-1.6 7.8 l-5.1 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="212" y1="68" x2="212" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M212 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="244.1" y1="70.5" x2="221.1" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M221.1 37.2 l6.7 4.3 l-5.1 3.5 z" class="t-muted" fill="#5b6270"/><line x1="280.7" y1="73.8" x2="225" y2="33.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M225 33.4 l7.8 1.8 l-3.7 5 z" class="t-muted" fill="#5b6270"/><circle cx="38" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">a1</text><circle cx="78" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">a2</text><rect x="44" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="58" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="132" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="132" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b1</text><circle cx="172" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="172" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b2</text><circle cx="212" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="212" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b3</text><circle cx="252" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="252" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b4</text><circle cx="292" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="292" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b5</text><rect x="198" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="212" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text></svg></div><div><div class="nome-mat">dopo: le foglie di A sotto la radice di B, rinominata A</div><svg viewBox="0 0 316 108" width="316" height="108" role="img" aria-label="unione bilanciata" font-family="system-ui, sans-serif"><line x1="50.6" y1="75.9" x2="143.6" y2="31" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M143.6 31 l-5.3 6 l-2.7 -5.6 z" class="t-muted" fill="#5b6270"/><line x1="89.3" y1="73.8" x2="145" y2="33.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M145 33.4 l-4.1 6.8 l-3.7 -5 z" class="t-muted" fill="#5b6270"/><line x1="125.9" y1="70.5" x2="148.9" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M148.9 37.2 l-1.6 7.8 l-5.1 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="158" y1="68" x2="158" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M158 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="190.1" y1="70.5" x2="167.1" y2="37.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M167.1 37.2 l6.7 4.3 l-5.1 3.5 z" class="t-muted" fill="#5b6270"/><line x1="226.7" y1="73.8" x2="171" y2="33.4" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M171 33.4 l7.8 1.8 l-3.7 5 z" class="t-verde" fill="#17803d"/><line x1="265.4" y1="75.9" x2="172.4" y2="31" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M172.4 31 l8 0.4 l-2.7 5.6 z" class="t-verde" fill="#17803d"/><circle cx="38" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b1</text><circle cx="78" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b2</text><circle cx="118" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="118" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b3</text><circle cx="158" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="158" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b4</text><circle cx="198" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="198" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b5</text><circle cx="238" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="238" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">a1</text><circle cx="278" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="278" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">a2</text><rect x="144" y="10" width="28" height="28" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="158" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text></svg></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagine 20 e 22. A ha 2 elementi, B ne ha 5. Invece di spostare 5 foglie, si spostano le 2 di A sotto la radice di B, che prende il nome A; la vecchia radice A sparisce.</div>
+</div>
+<p>Per sapere quale insieme è più grande, nella radice si memorizza il numero di elementi dell'insieme, il <strong>size</strong> (lavagna, pagina 21). MAKESET(e) crea la radice con size 1; FIND non cambia. UNION diventa (lavagna, pagina 22):</p>
+<pre class="pseudo"><b>UNION</b>(nome A, nome B)
+  <b>IF</b> size(A) ≥ size(B) <b>THEN</b>
+    sposta i puntatori delle foglie di B ad A
+    rimuovi la radice B
+  <b>ELSE</b>
+    sposta i puntatori delle foglie di A a B
+    rinomina la radice di B come A
+    rimuovi la vecchia radice A
+  size(A) ← size(A) + size(B)</pre>
+<p>Il caso peggiore di una singola UNION resta <strong>O(n)</strong>: quando A e B hanno n/2 elementi ciascuno, se ne spostano n/2 (lavagna, pagina 20). Ma il prof aggiunge (pagina 23): <em>si può dimostrare</em> che, effettuando una sequenza di n MAKESET e O(n) UNION e FIND, il tempo totale è <strong>O(n log n)</strong>. Quindi il costo «ammortizzato» di UNION è <strong>O(log n)</strong>.</p>
+<div class="box def">
+  <span class="etichetta">Attrezzo: costo ammortizzato</span>
+  <p>Il costo ammortizzato di un'operazione è il costo totale di una sequenza di operazioni diviso per il numero di operazioni. Una singola UNION può costare O(n), ma in qualsiasi sequenza le UNION costose sono poche, e in media ognuna costa O(log n). (È lo stesso concetto del contatore binario della lezione precedente: un incremento può costare n, ma k incrementi costano al più 2k.)</p>
+</div>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: perché il totale è O(n log n)</summary>
+  <div class="soluzione">
+    <p>Alla lavagna c'è solo «si può dimostrare»; ecco il ragionamento. Il costo di una UNION è il numero di foglie spostate. Segui un elemento x: quando la sua foglia viene spostata, x stava nell'insieme <em>più piccolo</em> dei due, quindi finisce in un insieme grande almeno il doppio di quello in cui stava. Partendo da 1 elemento e raddoppiando ogni volta, dopo m spostamenti l'insieme di x ha almeno 2<sup>m</sup> elementi; ma non può averne più di n, quindi m ≤ log<sub>2</sub> n. Ogni elemento viene spostato al più log<sub>2</sub> n volte, e gli elementi sono n: in tutto al più n log<sub>2</sub> n spostamenti, qualunque sia la sequenza di UNION.</p>
+  </div>
+</details>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Con il bilanciamento si spostano le foglie dell'insieme più piccolo (size nella radice); se serve, la radice si rinomina.</li>
+    <li>UNION O(n) nel caso peggiore, ma O(log n) ammortizzato; MAKESET e FIND restano O(1).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="quickunion"><span class="num">6</span>QuickUnion</h2>
+<p class="in-questa"><b>In questa sezione:</b> il rovescio di QuickFind (lavagna del 3 novembre, pagine 24–27, e del 5 novembre, pagine 3–6): UNION costa O(1), ma FIND deve risalire l'albero, che può diventare una catena.</p>
+<div class="box def">
+  <span class="etichetta">Algoritmi QuickUnion (lavagna, pagina 24)</span>
+  <ul>
+    <li>Alberi di <strong>varie altezze</strong>.</li>
+    <li>Elementi dell'insieme ↔ <strong>nodi</strong>.</li>
+    <li>Elemento che dà il nome all'insieme ↔ <strong>radice</strong>.</li>
+  </ul>
+</div>
+<p>Qui non ci sono nodi in più: ogni elemento è un nodo, e il nome dell'insieme è l'elemento che sta nella radice (Figura 5).</p>
+<div class="figura">
+<svg viewBox="0 0 398 166" width="398" height="166" role="img" aria-label="QuickUnion: quattro alberi" font-family="system-ui, sans-serif"><line x1="42.6" y1="68.8" x2="52.8" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M52.8 39.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="73.4" y1="68.8" x2="63.2" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M63.2 39.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="136.6" y1="126.8" x2="146.8" y2="97.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M146.8 97.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="167.4" y1="126.8" x2="157.2" y2="97.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M157.2 97.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="161.1" y1="71.4" x2="191.6" y2="36.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M191.6 36.1 l-2.5 7.6 l-4.7 -4.1 z" class="t-muted" fill="#5b6270"/><line x1="209.6" y1="68.2" x2="204.7" y2="39.8" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M204.7 39.8 l4.3 6.7 l-6.1 1.1 z" class="t-muted" fill="#5b6270"/><line x1="242.9" y1="71.4" x2="212.4" y2="36.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M212.4 36.1 l7.2 3.5 l-4.7 4.1 z" class="t-muted" fill="#5b6270"/><circle cx="38" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="78" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="58" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="58" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="132" cy="140" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="132" y="145" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="172" cy="140" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="172" y="145" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="152" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="152" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="212" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="212" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="252" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="252" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="202" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="202" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="306" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="306" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="360" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="360" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text></svg>
+<div class="didascalia"><b>Figura 5.</b> Lavagna, pagina 24. Quattro insiemi: {1, 2, 3} di nome 1; {7, 8, 4, 11, 5, 6} di nome 6; {9}; {10}. Le frecce vanno dal figlio al padre.</div>
+</div>
+<p>Le operazioni (lavagna, pagine 25 e 27):</p>
+<ul>
+  <li><strong>MAKESET(e)</strong>: un nodo da solo, che è radice. <strong>O(1)</strong>.</li>
+  <li><strong>UNION(A, B)</strong>: la radice B diventa figlia della radice A (un solo puntatore da cambiare). <strong>O(1)</strong>: da qui «QuickUnion».</li>
+  <li><strong>FIND(e)</strong>: si risale da e fino alla radice; il numero di passi è al più l'altezza dell'albero. Nel caso peggiore <strong>O(n)</strong>.</li>
+</ul>
+<div class="figura">
+<svg viewBox="0 0 384 166" width="384" height="166" role="img" aria-label="dopo UNION(6, 1)" font-family="system-ui, sans-serif"><line x1="42.6" y1="126.8" x2="52.8" y2="97.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M52.8 97.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="73.4" y1="126.8" x2="63.2" y2="97.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M63.2 97.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="69.3" y1="73.8" x2="125" y2="33.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M125 33.4 l-4.1 6.8 l-3.7 -5 z" class="t-muted" fill="#5b6270"/><line x1="122.6" y1="68.8" x2="132.8" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M132.8 39.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="153.4" y1="68.8" x2="143.2" y2="39.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M143.2 39.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="202.6" y1="126.8" x2="212.8" y2="97.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M212.8 97.1 l0.5 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="233.4" y1="126.8" x2="223.2" y2="97.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M223.2 97.1 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="206.7" y1="73.8" x2="151" y2="33.4" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M151 33.4 l7.8 1.8 l-3.7 5 z" class="t-verde" fill="#17803d"/><circle cx="38" cy="140" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="38" y="145" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="78" cy="140" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="78" y="145" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="58" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="58" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="118" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="118" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="158" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="158" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="198" cy="140" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="198" y="145" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="238" cy="140" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="238" y="145" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="218" cy="82" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="218" y="87" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="138" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="138" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="292" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="292" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="346" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="346" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text></svg>
+<div class="didascalia"><b>Figura 6.</b> Lavagna, pagina 25: UNION(6, 1). La radice 1, con tutto il suo albero, diventa figlia della radice 6 (freccia verde). FIND(8), per esempio, ora risale 8 → 4 → 6: due passi (lavagna, pagina 27).</div>
+</div>
+<h3>L'albero peggiore</h3>
+<p>Perché FIND costa O(n)? Lavagna, pagina 26: MAKESET(1), …, MAKESET(n), poi UNION(n − 1, n), UNION(n − 2, n − 1), …, UNION(1, 2). Ogni UNION mette tutto l'albero costruito fin lì sotto un nodo nuovo: si ottiene una catena, un albero di <strong>altezza n − 1</strong> (Figura 7). FIND(n) deve risalire tutti gli n − 1 archi.</p>
+<div class="figura">
+<svg viewBox="0 0 80 270" width="80" height="270" role="img" aria-label="l'albero peggiore: una catena" font-family="system-ui, sans-serif"><line x1="40" y1="230" x2="40" y2="216" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M40 216 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="40" y1="186" x2="40" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M40 172 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="40" y1="142" x2="40" y2="128" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M40 128 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="40" y1="98" x2="40" y2="84" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M40 84 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="40" y1="54" x2="40" y2="40" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M40 40 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><circle cx="40" cy="244" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="40" y="249" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="40" cy="200" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="40" y="205" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="40" cy="156" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="40" y="161" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="40" cy="112" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="40" y="117" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="40" cy="68" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="40" y="73" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="40" cy="24" r="14" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="40" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text></svg>
+<div class="didascalia"><b>Figura 7.</b> Lavagna, pagina 26, con n = 6: dopo UNION(5, 6), UNION(4, 5), …, UNION(1, 2) l'albero è una catena di altezza 5.</div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>QuickUnion: nodi = elementi, radice = nome. UNION O(1) (una radice sotto l'altra); FIND O(altezza).</li>
+    <li>L'altezza può arrivare a n − 1: FIND O(n) nel caso peggiore.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="rank"><span class="num">7</span>QuickUnion con unione bilanciata (union by rank)</h2>
+<p class="in-questa"><b>In questa sezione:</b> come evitare le catene (lavagna del 3 novembre, pagina 28, e del 5 novembre, pagine 7–9): si attacca sempre l'albero più basso sotto quello più alto. Con il trucco dello scambio dei contenuti, per tenere il nome giusto.</p>
+<p>L'idea (lavagna, pagina 28): nella UNION <strong>si attacca la radice dell'albero più basso sotto quella dell'albero più alto</strong>. Così l'altezza cresce solo quando i due alberi sono alti uguali. L'altezza di un albero si chiama <strong>rank</strong>, e si memorizza nella radice (lavagna del 5 novembre, pagina 8).</p>
+<p>C'è un problema: se l'albero più alto è B, la sua radice resta radice, ma il nome dell'unione deve essere A. Il prof lo risolve scambiando i contenuti dei due nodi radice («scambio radici», lavagna, pagina 28): la radice dell'albero di B riceve l'elemento A, e il nodo che era la radice di A riceve l'elemento B.</p>
+<p class="titolo-codice">Lavagna del 5 novembre, pagina 8</p>
+<pre class="pseudo"><b>UNION</b>(nome A, nome B)
+  <b>IF</b> rank(A) &gt; rank(B) <b>THEN</b>
+    rendi la radice di B figlia di quella di A
+  <b>ELSE IF</b> rank(B) &gt; rank(A) <b>THEN</b>
+    rendi la radice di A figlia di quella di B
+    scambia i contenuti dei nodi A e B
+  <b>ELSE</b>
+    rendi la radice di B figlia di quella di A
+    rank(A) ← rank(A) + 1</pre>
+<ul>
+  <li><b>rank(A) &gt; rank(B)</b>: B, più basso, va sotto A. L'altezza di A non cambia (B è alto al più rank(A) − 1, e attaccato sotto la radice arriva al più a rank(A)).</li>
+  <li><b>rank(B) &gt; rank(A)</b>: A va sotto B, poi lo scambio dei contenuti rimette il nome A nella radice. Il rank della radice resta rank(B).</li>
+  <li><b>ranghi uguali</b>: B va sotto A, e l'albero cresce di 1.</li>
+</ul>
+<p>Costo di UNION: <strong>O(1)</strong>. MAKESET deve solo memorizzare nella radice che il rank è 0. FIND è come prima: si risale, e il tempo è O(altezza massima degli alberi) (lavagna, pagina 9). La Figura 8 mostra i tre casi su un pezzo dell'esercizio 7.1 del foglio.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) prima di UNION(9, 7)</div><svg viewBox="0 0 118 99" width="118" height="99" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="35" y1="61" x2="35" y2="39" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M35 39 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><circle cx="35" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="35" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="35" cy="24" r="13" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="35" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="83" cy="24" r="13" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="83" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text></svg></div><div><div class="nome-mat">(b) dopo UNION(9, 7)</div><svg viewBox="0 0 104 99" width="104" height="99" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="39.2" y1="61.7" x2="47.2" y2="38.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.2 38.2 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="64.8" y1="61.7" x2="56.8" y2="38.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M56.8 38.2 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><circle cx="35" cy="74" r="13" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="35" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="69" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="69" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="52" cy="24" r="13" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="52" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text></svg></div></div><div class="affianco"><div><div class="nome-mat">(c) dopo UNION(10, 9) e UNION(10, 5)</div><svg viewBox="0 0 288 149" width="288" height="149" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="39.2" y1="61.7" x2="47.2" y2="38.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.2 38.2 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="64.8" y1="61.7" x2="56.8" y2="38.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M56.8 38.2 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="121.2" y1="111.7" x2="129.2" y2="88.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M129.2 88.2 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="146.8" y1="111.7" x2="138.8" y2="88.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M138.8 88.2 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="144" y1="65.6" x2="182" y2="33.7" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M182 33.7 l-3.6 7.1 l-4 -4.8 z" class="t-muted" fill="#5b6270"/><line x1="187.2" y1="61.2" x2="191" y2="38.8" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M191 38.8 l1.8 7.8 l-6.1 -1 z" class="t-muted" fill="#5b6270"/><line x1="213.1" y1="62.4" x2="200.3" y2="37.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M200.3 37.4 l6.1 5.1 l-5.6 2.8 z" class="t-muted" fill="#5b6270"/><line x1="243" y1="65.6" x2="205" y2="33.7" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M205 33.7 l7.6 2.4 l-4 4.8 z" class="t-muted" fill="#5b6270"/><circle cx="35" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="35" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="69" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="69" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="52" cy="24" r="13" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="52" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="117" cy="124" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="129" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="151" cy="124" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="151" y="129" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="134" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="134" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="185" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="185" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="219" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="219" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="253" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="253" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="193.5" cy="24" r="13" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="193.5" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text></svg></div><div><div class="nome-mat">(d) dopo UNION(1, 10)</div><svg viewBox="0 0 274 149" width="274" height="149" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="39.2" y1="111.7" x2="47.2" y2="88.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.2 88.2 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="64.8" y1="111.7" x2="56.8" y2="88.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M56.8 88.2 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="63.2" y1="67.4" x2="124.1" y2="31.6" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M124.1 31.6 l-4.8 6.4 l-3.2 -5.4 z" class="t-muted" fill="#5b6270"/><line x1="110.3" y1="63.2" x2="128.6" y2="36.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M128.6 36.4 l-1.6 7.8 l-5.2 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="137" y1="61" x2="137" y2="39" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M137 39 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="163.7" y1="63.2" x2="145.4" y2="36.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M145.4 36.4 l6.7 4.3 l-5.2 3.5 z" class="t-muted" fill="#5b6270"/><line x1="209.2" y1="111.7" x2="217.2" y2="88.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M217.2 88.2 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="234.8" y1="111.7" x2="226.8" y2="88.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M226.8 88.2 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="210.8" y1="67.4" x2="149.9" y2="31.6" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M149.9 31.6 l7.9 1.1 l-3.2 5.4 z" class="t-muted" fill="#5b6270"/><circle cx="35" cy="124" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="35" y="129" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="69" cy="124" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="69" y="129" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="52" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="52" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="103" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="103" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="137" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="137" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="171" cy="74" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="171" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="205" cy="124" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="129" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="239" cy="124" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="239" y="129" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="222" cy="74" r="13" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="222" y="79" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="137" cy="24" r="13" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="137" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text></svg></div></div>
+<div class="didascalia"><b>Figura 8.</b> Union by rank. (a) 9 è da solo (rank 0); 7 ha il figlio 8 (rank 1). (b) UNION(9, 7): rank(7) &gt; rank(9), quindi il nodo di 9 va sotto la radice di 7, e i due nodi si scambiano i contenuti (in giallo): ora la radice contiene 9, e l'insieme si chiama 9. (c) Dopo UNION(10, 9) (stesso caso) e UNION(10, 5) (ranghi uguali: la radice 5 va sotto 10, e rank(10) diventa 2); a sinistra l'albero di 1. (d) UNION(1, 10): rank(10) = 2 &gt; rank(1) = 1, quindi l'albero di 1 va sotto la radice di 10 e i contenuti si scambiano: la radice contiene 1, e il nodo che conteneva 1 (con i figli 2 e 3) ora contiene 10.</div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Union by rank: l'albero con rank minore va sotto l'altro; a parità, B sotto A e rank(A) + 1. Se il più alto è B, si scambiano i contenuti delle radici per tenere il nome A.</li>
+    <li>MAKESET, UNION: O(1). FIND: O(altezza), che ora è piccola (sezione 8).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="lemma"><span class="num">8</span>Perché gli alberi restano bassi: il lemma</h2>
+<p class="in-questa"><b>In questa sezione:</b> il lemma della lavagna del 5 novembre, pagine 10–12, con la dimostrazione per induzione: un albero di rank r ha almeno 2<sup>r</sup> nodi. Da qui, FIND costa O(log n).</p>
+<div class="dim">
+  <div class="dim-tit">Lemma (lavagna del 5 novembre, pagina 10)</div>
+  <p class="enunciato">Ogni albero QuickUnion costruito effettuando operazioni di UNION bilanciate contiene almeno 2<sup>rank(x)</sup> nodi, dove x è la radice: #nodi(x) ≥ 2<sup>rank(x)</sup>.</p>
+  <p>Sia k il numero di operazioni di UNION con cui l'albero di radice x è stato ottenuto. Si procede per induzione su k (induzione completa: si suppone il lemma vero per tutti gli alberi ottenuti con meno di k UNION).</p>
+  <div class="parte prima">Base: k = 0</div>
+  <p>Senza UNION l'albero è un nodo solo: #nodi(x) = 1 e rank(x) = 0. E 1 ≥ 2<sup>0</sup> = 1.</p>
+  <div class="parte">Passo: da meno di k a k</div>
+  <p>Sia UNION(A, B) l'ultima operazione con cui è stato ottenuto l'albero di x. Gli alberi di A e di B sono stati ottenuti con meno di k UNION, quindi per ipotesi induttiva:</p>
+  <p class="riga-ip"><b>Ipotesi</b> #nodi(A) ≥ 2<sup>rank(A)</sup> e #nodi(B) ≥ 2<sup>rank(B)</sup></p>
+  <p>E in ogni caso #nodi(x) = #nodi(A) + #nodi(B). Tre casi (lavagna, pagina 11):</p>
+  <div class="mat-blocco"><span class="casi"><span class="casi-sx">rank(x) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">rank(A)</span><span class="cond">se rank(A) &gt; rank(B)</span><span class="val">rank(B)</span><span class="cond">se rank(B) &gt; rank(A)</span><span class="val">rank(A) + 1</span><span class="cond">se rank(A) = rank(B)</span></span></span></div>
+  <p><b>Caso rank(A) &gt; rank(B).</b></p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">#nodi(x)</span><span class="rel">=</span><span class="dx">#nodi(A) + #nodi(B)</span><span class="perche"></span><span class="sx"></span><span class="rel">≥</span><span class="dx">#nodi(A)</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">≥</span><span class="dx">2<sup>rank(A)</sup> = 2<sup>rank(x)</sup></span><span class="perche"><span class="rif">2</span></span></span></div>
+  <p><b>Caso rank(B) &gt; rank(A).</b> Come prima, scambiando i ruoli di A e B: #nodi(x) ≥ #nodi(B) ≥ 2<sup>rank(B)</sup> = 2<sup>rank(x)</sup>.</p>
+  <p><b>Caso rank(A) = rank(B).</b></p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">#nodi(x)</span><span class="rel">=</span><span class="dx">#nodi(A) + #nodi(B)</span><span class="perche"></span><span class="sx"></span><span class="rel">≥</span><span class="dx">2<sup>rank(A)</sup> + 2<sup>rank(B)</sup></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2 · 2<sup>rank(A)</sup></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>rank(A)+1</sup> = 2<sup>rank(x)</sup></span><span class="perche"></span></span></div>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>#nodi(B) ≥ 1, quindi togliendolo la somma non aumenta.</p>
+    <p><span class="rif">2</span>Ipotesi induttiva.</p>
+    <p><span class="rif">3</span>rank(A) = rank(B), quindi i due termini sono uguali.</p>
+  </div>
+</div>
+<p>La conseguenza (lavagna, pagina 12): da #nodi(x) ≥ 2<sup>rank(x)</sup>, prendendo il logaritmo, <strong>rank(x) ≤ log<sub>2</sub> #nodi(x)</strong>. Se ci sono n elementi, nessun albero ha più di n nodi, quindi l'altezza è al massimo <strong>log<sub>2</sub> n</strong>, e FIND costa <strong>T(n) = O(log n)</strong>.</p>
+<p>Esempio: con un milione di elementi, nessuna FIND fa più di 19 passi (2<sup>20</sup> &gt; 1 000 000). Senza bilanciamento potevano essere 999 999.</p>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Lemma: con union by rank, #nodi(x) ≥ 2<sup>rank(x)</sup> (induzione sul numero di UNION, tre casi).</li>
+    <li>Quindi rank ≤ log<sub>2</sub> n: l'altezza è O(log n), e FIND costa O(log n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="compressione"><span class="num">9</span>La compressione dei cammini</h2>
+<p class="in-questa"><b>In questa sezione:</b> un ultimo miglioramento, tutto dentro FIND (lavagna del 5 novembre, pagine 14–19): mentre risale, FIND attacca alla radice tutti i nodi che incontra. Le FIND successive diventano velocissime.</p>
+<p>Una FIND che risale un cammino lungo ha già fatto la fatica di scoprire qual è la radice. L'idea: approfittarne, e attaccare <strong>direttamente alla radice</strong> tutti i nodi del cammino. La prossima FIND su uno di loro, o su un loro discendente, farà molti meno passi. La Figura 9 è l'esempio della lavagna, pagine 14–17.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) l'albero; FIND(15) risale 15 → 8 → 5 → 3</div><svg viewBox="0 0 308 257" width="308" height="257" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="39" y1="115.6" x2="47.3" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.3 90.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="65" y1="115.6" x2="56.7" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M56.7 90.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="62.3" y1="68.1" x2="108.1" y2="33.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.1 33.1 l-4 7 l-3.8 -4.9 z" class="t-muted" fill="#5b6270"/><line x1="114.1" y1="121.2" x2="175.2" y2="83.8" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M175.2 83.8 l-4.7 6.5 l-3.3 -5.3 z" class="t-muted" fill="#5b6270"/><line x1="141" y1="219.6" x2="149.3" y2="194.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M149.3 194.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="167" y1="219.6" x2="158.7" y2="194.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M158.7 194.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="161.1" y1="169.1" x2="179.8" y2="140.6" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M179.8 140.6 l-1.4 7.9 l-5.2 -3.4 z" class="t-muted" fill="#5b6270"/><line x1="209" y1="219.6" x2="217.3" y2="194.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M217.3 194.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="235" y1="219.6" x2="226.7" y2="194.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M226.7 194.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="214.9" y1="169.1" x2="196.2" y2="140.6" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M196.2 140.6 l6.6 4.5 l-5.2 3.4 z" class="t-verde" fill="#17803d"/><line x1="188" y1="115" x2="188" y2="91" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M188 91 l3.1 7.4 l-6.2 0 z" class="t-verde" fill="#17803d"/><line x1="261.9" y1="121.2" x2="200.8" y2="83.8" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M200.8 83.8 l7.9 1.2 l-3.3 5.3 z" class="t-muted" fill="#5b6270"/><line x1="177.7" y1="68.1" x2="131.9" y2="33.1" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M131.9 33.1 l7.7 2 l-3.8 4.9 z" class="t-verde" fill="#17803d"/><circle cx="35" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="35" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="69" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="69" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="52" cy="76" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="52" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="103" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="103" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="137" cy="232" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="137" y="237" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><circle cx="171" cy="232" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="171" y="237" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="154" cy="180" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="185" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="205" cy="232" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="237" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><circle cx="239" cy="232" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="239" y="237" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="222" cy="180" r="13" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="222" y="185" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="188" cy="128" r="13" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="188" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="273" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="273" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="188" cy="76" r="13" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="188" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="120" cy="24" r="13" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="120" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text></svg></div><div><div class="nome-mat">(b) dopo FIND(15): 15 e 8 sono figli della radice</div><svg viewBox="0 0 308 205" width="308" height="205" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="39" y1="115.6" x2="47.3" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.3 90.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="65" y1="115.6" x2="56.7" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M56.7 90.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="63.6" y1="70.1" x2="140.6" y2="30.8" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M140.6 30.8 l-5.1 6.1 l-2.8 -5.6 z" class="t-muted" fill="#5b6270"/><line x1="107" y1="115.6" x2="115.3" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115.3 90.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="133" y1="115.6" x2="124.7" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M124.7 90.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="127.1" y1="65.1" x2="145.8" y2="36.6" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M145.8 36.6 l-1.4 7.9 l-5.2 -3.4 z" class="t-muted" fill="#5b6270"/><line x1="175" y1="167.6" x2="183.3" y2="142.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M183.3 142.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="201" y1="167.6" x2="192.7" y2="142.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M192.7 142.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="188" y1="115" x2="188" y2="91" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188 91 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="180.9" y1="65.1" x2="162.2" y2="36.6" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M162.2 36.6 l6.6 4.5 l-5.2 3.4 z" class="t-verde" fill="#17803d"/><line x1="243" y1="115.6" x2="251.3" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M251.3 90.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="269" y1="115.6" x2="260.7" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M260.7 90.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="244.4" y1="70.1" x2="167.4" y2="30.8" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M167.4 30.8 l8 0.6 l-2.8 5.6 z" class="t-verde" fill="#17803d"/><circle cx="35" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="35" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="69" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="69" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="52" cy="76" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="52" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="103" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="103" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="137" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="137" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="120" cy="76" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="120" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="171" cy="180" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="171" y="185" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><circle cx="205" cy="180" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="185" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="188" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="188" cy="76" r="13" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="188" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="239" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="239" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><circle cx="273" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="273" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="256" cy="76" r="13" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="256" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="154" cy="24" r="13" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text></svg></div></div><div class="affianco"><div><div class="nome-mat">(c) dopo FIND(13): anche 13 è figlio della radice</div><svg viewBox="0 0 308 205" width="308" height="205" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="39" y1="115.6" x2="47.3" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.3 90.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="65" y1="115.6" x2="56.7" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M56.7 90.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="63.8" y1="70.5" x2="148.9" y2="30.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M148.9 30.4 l-5.3 6 l-2.7 -5.6 z" class="t-muted" fill="#5b6270"/><line x1="107" y1="115.6" x2="115.3" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115.3 90.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="133" y1="115.6" x2="124.7" y2="90.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M124.7 90.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="128.2" y1="65.9" x2="153" y2="35.6" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M153 35.6 l-2.3 7.7 l-4.8 -3.9 z" class="t-muted" fill="#5b6270"/><line x1="175" y1="167.6" x2="183.3" y2="142.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M183.3 142.3 l0.7 8 l-5.9 -1.9 z" class="t-muted" fill="#5b6270"/><line x1="201" y1="167.6" x2="192.7" y2="142.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M192.7 142.3 l5.3 6 l-5.9 1.9 z" class="t-muted" fill="#5b6270"/><line x1="188" y1="115" x2="188" y2="91" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M188 91 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="182.3" y1="64.3" x2="169.1" y2="37.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M169.1 37.5 l6 5.2 l-5.6 2.7 z" class="t-muted" fill="#5b6270"/><line x1="239" y1="115" x2="239" y2="91" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M239 91 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="228.2" y1="68.7" x2="174.9" y2="32.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M174.9 32.4 l7.8 1.6 l-3.5 5.2 z" class="t-muted" fill="#5b6270"/><line x1="261.2" y1="70.5" x2="176.1" y2="30.4" class="l-verde" stroke="#17803d" stroke-width="2.6"/><path d="M176.1 30.4 l8 0.3 l-2.7 5.6 z" class="t-verde" fill="#17803d"/><circle cx="35" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="35" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="69" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="69" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="52" cy="76" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="52" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="103" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="103" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="137" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="137" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="120" cy="76" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="120" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="171" cy="180" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="171" y="185" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><circle cx="205" cy="180" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="185" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="188" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="188" cy="76" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="188" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="239" cy="128" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="239" y="133" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="239" cy="76" r="13" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="239" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="273" cy="76" r="13" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="273" y="81" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><circle cx="162.5" cy="24" r="13" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="162.5" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text></svg></div></div>
+<div class="didascalia"><b>Figura 9.</b> Lavagna del 5 novembre, pagine 14–17. (a) FIND(15) risale 15 → 8 → 5 → 3 (in giallo), e trova la radice 3. (b) La compressione rende 15 e 8 figli diretti di 3 (5 lo era già); i loro sottoalberi vengono con loro. (c) FIND(13) risale 13 → 15 → 3, e anche 13 viene attaccato direttamente a 3.</div>
+</div>
+<p>In generale (lavagna, pagina 18): se FIND(x) risale il cammino x = u<sub>1</sub>, u<sub>2</sub>, …, u<sub>ℓ</sub>, dove u<sub>ℓ</sub> è la radice, alla fine tutti i nodi u<sub>1</sub>, …, u<sub>ℓ−1</sub> sono figli diretti di u<sub>ℓ</sub>, ognuno con il suo sottoalbero. Si può fare con due giri: il primo trova la radice, il secondo ripercorre il cammino e cambia i padri. Per esempio così:</p>
+<p class="titolo-codice">FIND con compressione (non viene dalla lezione: traduce il disegno della pagina 18)</p>
+<pre class="pseudo"><b>FUNZIONE</b> find(elemento x) → nome
+  r ← x
+  <b>WHILE</b> r non è una radice <b>DO</b> r ← padre(r)      <span class="com">// 1° giro: trova la radice</span>
+  <b>WHILE</b> x ≠ r <b>DO</b>                                <span class="com">// 2° giro: compressione</span>
+    y ← padre(x)
+    padre(x) ← r
+    x ← y
+  <b>RETURN</b> r</pre>
+<p>Il prezzo: FIND fa circa il doppio del lavoro sul cammino che percorre. Il guadagno si vede sulle operazioni successive.</p>
+<div class="box def">
+  <span class="etichetta">Il risultato (lavagna del 5 novembre, pagina 19)</span>
+  <p>Con QuickUnion bilanciata e compressione dei cammini, si può dimostrare che, effettuando una sequenza di n MAKESET e O(n) UNION e FIND, il tempo totale è <strong>O(n log* n)</strong>. Quindi il costo ammortizzato di FIND è <strong>O(log* n)</strong>.</p>
+</div>
+<p>log* n è il «logaritmo iterato», una funzione che cresce in modo incredibilmente lento: la prossima sezione la spiega.</p>
+<div class="box attenzione">
+  <span class="etichetta">Attenzione: il rank dopo la compressione</span>
+  <p>(Questa osservazione non è alla lavagna.) La compressione può abbassare un albero, ma il rank memorizzato nella radice non viene aggiornato. Da quel momento il rank non è più l'altezza esatta: è un limite superiore all'altezza. Per union by rank va bene lo stesso, e il lemma della sezione 8 continua a valere, perché la compressione non cambia il numero di nodi né i rank.</p>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Compressione: FIND(x) attacca tutti i nodi del cammino da x alla radice direttamente alla radice.</li>
+    <li>Con union by rank e compressione: n MAKESET e O(n) UNION e FIND costano O(n log* n); FIND costa O(log* n) ammortizzato.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="logstar"><span class="num">10</span>Il logaritmo iterato</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione di log* n (lavagna del 5 novembre, pagina 20) e i suoi valori: per tutti i numeri che si usano in pratica vale al più 5.</p>
+<div class="box def">
+  <span class="etichetta">Logaritmo iterato (lavagna, pagina 20)</span>
+  <p>log<sup>(i)</sup> n = log<sub>2</sub> log<sub>2</sub> … log<sub>2</sub> n, con il logaritmo applicato i volte.</p>
+  <p><strong>log* n = min { i | log<sup>(i)</sup> n ≤ 1 }</strong>: quante volte bisogna applicare log<sub>2</sub> partendo da n per arrivare a un numero ≤ 1.</p>
+</div>
+<p>Esempi della lavagna:</p>
+<ul>
+  <li>log* 1 = 0 (1 è già ≤ 1); log* 2 = 1 (log<sub>2</sub> 2 = 1);</li>
+  <li>log* 3 = 2 (log<sub>2</sub> 3 ≈ 1,58, poi log<sub>2</sub> 1,58 ≈ 0,66); log* 4 = 2 (4 → 2 → 1);</li>
+  <li>log* 5 = 3 (5 → 2,32 → 1,22 → 0,29); … log* 16 = 3 (16 → 4 → 2 → 1);</li>
+  <li>log* 17 = 4; e log* x = 4 per tutti gli x con 16 &lt; x ≤ 2<sup>16</sup> = 65 536;</li>
+  <li>log* x = 5 per 2<sup>16</sup> &lt; x ≤ 2<sup>65 536</sup>.</li>
+</ul>
+<p>2<sup>65 536</sup> è un numero con quasi 20 000 cifre: molto più grande del numero di atomi nell'universo osservabile (circa 10<sup>80</sup>). Per qualsiasi n che si possa usare in pratica, log* n ≤ 5: per questo il prof scrive accanto alla tabella «≤ 5 per valori usati nella pratica». Però log* n <strong>tende a infinito</strong> (lavagna, pagina 21): cresce, solo lentissimamente. Quindi O(log* n) non è O(1), anche se in pratica si comporta come una costante.</p>
+<div class="widget" id="w-ls">
+  <h4>Calcola log* n</h4>
+  <div id="ls-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>log* n = quante volte si applica log<sub>2</sub> per scendere a ≤ 1.</li>
+    <li>log* 16 = 3, log* 65 536 = 4, log* 2<sup>65 536</sup> = 5. Tende a infinito, ma in pratica è al più 5.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 11 -->
+<h2 id="tabella"><span class="num">11</span>Il riepilogo e un riquadro per provare tutto</h2>
+<p class="in-questa"><b>In questa sezione:</b> la tabella finale della lavagna del 5 novembre (pagine 13 e 21) e un riquadro che esegue qualsiasi sequenza di operazioni con le cinque soluzioni.</p>
+<div class="tabella-wrap"><table>
+  <tr><th>soluzione</th><th>MAKESET</th><th>UNION</th><th>FIND</th></tr>
+  <tr><td>QuickFind</td><td>O(1)</td><td>O(n)</td><td>O(1)</td></tr>
+  <tr><td>QuickFind bilanciato</td><td>O(1)</td><td>O(log n) ammortizzato</td><td>O(1)</td></tr>
+  <tr><td>QuickUnion</td><td>O(1)</td><td>O(1)</td><td>O(n)</td></tr>
+  <tr><td>QuickUnion bilanciato</td><td>O(1)</td><td>O(1)</td><td>O(log n)</td></tr>
+  <tr><td>QuickUnion bilanciato con compressione dei cammini</td><td>O(1)</td><td>O(1)</td><td>O(log* n) ammortizzato</td></tr>
+</table></div>
+<p>Nel riquadro scegli un esempio e un algoritmo, e esegui le operazioni una alla volta. In alto i contatori: per le UNION il numero di puntatori cambiati, per le FIND il numero di passi di risalita. Prova l'esempio «L'albero peggiore» con QuickUnion e poi con union by rank: con il primo la FIND(8) fa 7 passi; con il secondo l'albero resta basso e largo, e ne fa uno solo. L'esempio «Unioni sempre tra insiemi uguali» è invece il caso peggiore per union by rank: l'altezza arriva a 3 = log<sub>2</sub> 8, e il lemma della sezione 8 dice che più di così non si può.</p>
+<div class="widget" id="w-uf">
+  <h4>Union-find: le cinque soluzioni</h4>
+  <div id="uf-corpo"></div>
+</div>
+
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>QuickFind: FIND veloce, UNION lenta. QuickUnion: il contrario. Il bilanciamento rende tutto logaritmico; con la compressione FIND diventa quasi costante.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 12 -->
+<h2 id="riassunto"><span class="num">12</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Problema</b>: partizione in insiemi disgiunti con nome; MAKESET(x), UNION(A, B) (nome A), FIND(x).</li>
+    <li><b>Rappresentazione</b>: un albero per insieme, puntatori verso il padre, radice = nome; la partizione è una foresta.</li>
+    <li><b>QuickFind</b>: alberi alti 1; FIND O(1), UNION O(n). <b>Bilanciato</b>: si spostano le foglie dell'insieme più piccolo; UNION O(log n) ammortizzato.</li>
+    <li><b>QuickUnion</b>: UNION O(1), FIND O(n) (catene). <b>Union by rank</b>: il più basso sotto il più alto, scambio dei contenuti per tenere il nome; lemma #nodi ≥ 2<sup>rank</sup>, quindi FIND O(log n).</li>
+    <li><b>Compressione dei cammini</b>: FIND attacca il cammino alla radice; costo ammortizzato O(log* n), in pratica ≤ 5.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Allo scritto union-find compare dentro l'esercizio sui grafi: l'algoritmo di Kruskal usa FIND per sapere se due vertici sono già collegati e UNION per collegarli, e il suo costo dipende dalla soluzione scelta. Serve sapere a memoria la tabella della sezione 11.</li>
+    <li>All'orale: le cinque soluzioni con i costi, la regola di union by rank (con lo scambio dei contenuti), la dimostrazione del lemma, la compressione dei cammini e cosa vuol dire log* n.</li>
+    <li>L'esercizio 7.1 del foglio (disegnare la struttura dopo una sequenza di operazioni) è un ottimo allenamento: lo trovi risolto nella sezione 13 e nel riquadro della sezione 11.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 13 -->
+<h2 id="esercizi"><span class="num">13</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'esercizio 7.1 del foglio 7 con tutte e cinque le soluzioni, e qualche domanda di verifica. Tutte le strutture sono state calcolate eseguendo le operazioni. Prova prima da solo, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 7.1 del foglio 7: la stessa sequenza con cinque soluzioni</summary>
+  <p>A partire da una struttura vuota: makeSet(1), …, makeSet(10), union(1,2), union(1,3), union(5,4), union(5,6), union(7,8), union(9,7), union(10,9), union(10,5), find(7), union(1,10), find(4). Disegnate la struttura finale con QuickFind, QuickFind con bilanciamento, QuickUnion, QuickUnion con union by rank, e QuickUnion con union by rank e compressione.</p>
+  <div class="soluzione">
+    <p>Gli insiemi si formano così (uguale per tutte le soluzioni): {1, 2, 3} di nome 1; {4, 5, 6} di nome 5; {7, 8} di nome 7; con union(9, 7) l'insieme {7, 8, 9} prende il nome 9; con union(10, 9) diventa {7, 8, 9, 10} di nome 10; union(10, 5) dà {4, …, 10} di nome 10; find(7) risponde 10; union(1, 10) unisce tutto, con nome 1; find(4) risponde 1.</p>
+    <div class="figura">
+<div class="affianco"><div><div class="nome-mat">QuickFind</div><svg viewBox="0 0 356 96" width="356" height="96" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="45.4" y1="68.2" x2="164.7" y2="28.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M164.7 28.4 l-6 5.3 l-2 -5.9 z" class="t-muted" fill="#5b6270"/><line x1="77" y1="67.3" x2="165.1" y2="29.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M165.1 29.5 l-5.5 5.8 l-2.5 -5.7 z" class="t-muted" fill="#5b6270"/><line x1="108.3" y1="65.8" x2="166" y2="31.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M166 31.2 l-4.7 6.5 l-3.2 -5.3 z" class="t-muted" fill="#5b6270"/><line x1="138.5" y1="63.5" x2="168.1" y2="33.9" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168.1 33.9 l-3 7.4 l-4.4 -4.4 z" class="t-muted" fill="#5b6270"/><line x1="165.8" y1="60.6" x2="173.6" y2="37.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M173.6 37.3 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="190.2" y1="60.6" x2="182.4" y2="37.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M182.4 37.3 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="217.5" y1="63.5" x2="187.9" y2="33.9" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M187.9 33.9 l7.4 3 l-4.4 4.4 z" class="t-muted" fill="#5b6270"/><line x1="247.7" y1="65.8" x2="190" y2="31.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M190 31.2 l7.9 1.1 l-3.2 5.3 z" class="t-muted" fill="#5b6270"/><line x1="279" y1="67.3" x2="190.9" y2="29.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M190.9 29.5 l8 0 l-2.5 5.7 z" class="t-muted" fill="#5b6270"/><line x1="310.6" y1="68.2" x2="191.3" y2="28.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M191.3 28.4 l8 -0.6 l-2 5.9 z" class="t-muted" fill="#5b6270"/><circle cx="34" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="34" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="66" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="66" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="98" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="98" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="130" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="130" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="162" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="162" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="194" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="194" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="226" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="226" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="258" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="258" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="290" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="290" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="322" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="322" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="166" y="12" width="24" height="24" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="178" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text></svg></div></div><div class="affianco"><div><div class="nome-mat">QuickFind con bilanciamento</div><svg viewBox="0 0 356 96" width="356" height="96" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="45.4" y1="68.2" x2="164.7" y2="28.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M164.7 28.4 l-6 5.3 l-2 -5.9 z" class="t-muted" fill="#5b6270"/><line x1="77" y1="67.3" x2="165.1" y2="29.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M165.1 29.5 l-5.5 5.8 l-2.5 -5.7 z" class="t-muted" fill="#5b6270"/><line x1="108.3" y1="65.8" x2="166" y2="31.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M166 31.2 l-4.7 6.5 l-3.2 -5.3 z" class="t-muted" fill="#5b6270"/><line x1="138.5" y1="63.5" x2="168.1" y2="33.9" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168.1 33.9 l-3 7.4 l-4.4 -4.4 z" class="t-muted" fill="#5b6270"/><line x1="165.8" y1="60.6" x2="173.6" y2="37.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M173.6 37.3 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="190.2" y1="60.6" x2="182.4" y2="37.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M182.4 37.3 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="217.5" y1="63.5" x2="187.9" y2="33.9" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M187.9 33.9 l7.4 3 l-4.4 4.4 z" class="t-muted" fill="#5b6270"/><line x1="247.7" y1="65.8" x2="190" y2="31.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M190 31.2 l7.9 1.1 l-3.2 5.3 z" class="t-muted" fill="#5b6270"/><line x1="279" y1="67.3" x2="190.9" y2="29.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M190.9 29.5 l8 0 l-2.5 5.7 z" class="t-muted" fill="#5b6270"/><line x1="310.6" y1="68.2" x2="191.3" y2="28.4" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M191.3 28.4 l8 -0.6 l-2 5.9 z" class="t-muted" fill="#5b6270"/><circle cx="34" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="34" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="66" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="66" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="98" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="98" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="130" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="130" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="162" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="162" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="194" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="194" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="226" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="226" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="258" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="258" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="290" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="290" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="322" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="322" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="166" y="12" width="24" height="24" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="178" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text></svg></div></div><div class="affianco"><div><div class="nome-mat">QuickUnion</div><svg viewBox="0 0 196 240" width="196" height="240" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="42.8" y1="63.9" x2="75.7" y2="33.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M75.7 33.5 l-3.3 7.3 l-4.2 -4.6 z" class="t-muted" fill="#5b6270"/><line x1="70.6" y1="60.9" x2="80.6" y2="36.9" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M80.6 36.9 l0 8 l-5.8 -2.4 z" class="t-muted" fill="#5b6270"/><line x1="101.8" y1="156.6" x2="109.6" y2="133.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M109.6 133.3 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="126.2" y1="156.6" x2="118.4" y2="133.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M118.4 133.3 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="119.4" y1="109.3" x2="131.7" y2="84.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M131.7 84.5 l-0.5 8 l-5.6 -2.8 z" class="t-muted" fill="#5b6270"/><line x1="162" y1="204" x2="162" y2="182" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M162 182 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="162" y1="156" x2="162" y2="134" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M162 134 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="156.6" y1="109.3" x2="144.3" y2="84.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M144.3 84.5 l6.1 5.2 l-5.6 2.8 z" class="t-muted" fill="#5b6270"/><line x1="129.2" y1="63.9" x2="96.3" y2="33.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M96.3 33.5 l7.5 2.7 l-4.2 4.6 z" class="t-muted" fill="#5b6270"/><circle cx="34" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="34" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="66" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="66" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="98" cy="168" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="98" y="173" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="130" cy="168" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="130" y="173" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="114" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="114" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="162" cy="216" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="162" y="221" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="162" cy="168" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="162" y="173" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="162" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="162" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="138" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="138" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="86" cy="24" r="12" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="86" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text></svg></div></div><div class="affianco"><div><div class="nome-mat">QuickUnion con union by rank</div><svg viewBox="0 0 260 144" width="260" height="144" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="37.8" y1="108.6" x2="45.6" y2="85.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M45.6 85.3 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="62.2" y1="108.6" x2="54.4" y2="85.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M54.4 85.3 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="60.3" y1="65.8" x2="118" y2="31.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M118 31.2 l-4.7 6.5 l-3.2 -5.3 z" class="t-muted" fill="#5b6270"/><line x1="104.7" y1="62" x2="122.2" y2="35.6" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M122.2 35.6 l-1.5 7.9 l-5.2 -3.5 z" class="t-muted" fill="#5b6270"/><line x1="130" y1="60" x2="130" y2="38" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M130 38 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="155.3" y1="62" x2="137.8" y2="35.6" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M137.8 35.6 l6.7 4.4 l-5.2 3.5 z" class="t-muted" fill="#5b6270"/><line x1="197.8" y1="108.6" x2="205.6" y2="85.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M205.6 85.3 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="222.2" y1="108.6" x2="214.4" y2="85.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M214.4 85.3 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="199.7" y1="65.8" x2="142" y2="31.2" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M142 31.2 l7.9 1.1 l-3.2 5.3 z" class="t-muted" fill="#5b6270"/><circle cx="34" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="34" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="66" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="66" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="50" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="50" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="98" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="98" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="130" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="130" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="162" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="162" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="194" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="194" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="226" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="226" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="210" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="210" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="130" cy="24" r="12" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="130" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text></svg></div></div><div class="affianco"><div><div class="nome-mat">QuickUnion con union by rank e compressione</div><svg viewBox="0 0 260 144" width="260" height="144" role="img" aria-label="una foresta di alberi" font-family="system-ui, sans-serif"><line x1="44.5" y1="66.3" x2="109.7" y2="30.7" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M109.7 30.7 l-5 6.3 l-3 -5.5 z" class="t-muted" fill="#5b6270"/><line x1="66" y1="108" x2="66" y2="86" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M66 86 l3.1 7.4 l-6.2 0 z" class="t-muted" fill="#5b6270"/><line x1="75.1" y1="64.2" x2="111.4" y2="33.1" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M111.4 33.1 l-3.6 7.2 l-4.1 -4.7 z" class="t-muted" fill="#5b6270"/><line x1="103.4" y1="61.3" x2="115.7" y2="36.5" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115.7 36.5 l-0.5 8 l-5.6 -2.8 z" class="t-muted" fill="#5b6270"/><line x1="128" y1="60.2" x2="124.3" y2="37.8" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M124.3 37.8 l4.3 6.8 l-6.1 1 z" class="t-muted" fill="#5b6270"/><line x1="154.3" y1="62.8" x2="131" y2="34.8" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M131 34.8 l7.1 3.7 l-4.8 4 z" class="t-muted" fill="#5b6270"/><line x1="197.8" y1="108.6" x2="205.6" y2="85.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M205.6 85.3 l0.6 8 l-5.9 -2 z" class="t-muted" fill="#5b6270"/><line x1="222.2" y1="108.6" x2="214.4" y2="85.3" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M214.4 85.3 l5.3 6 l-5.9 2 z" class="t-muted" fill="#5b6270"/><line x1="199.5" y1="66.3" x2="134.3" y2="30.7" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M134.3 30.7 l8 0.8 l-3 5.5 z" class="t-muted" fill="#5b6270"/><circle cx="34" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="34" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="66" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="66" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="66" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="66" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="98" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="98" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="130" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="130" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="162" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="162" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="194" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="194" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="226" cy="120" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="226" y="125" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="210" cy="72" r="12" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="210" y="77" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="122" cy="24" r="12" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="122" y="29" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text></svg></div></div>
+    <div class="didascalia"><b>Figura 10.</b> La struttura finale con le cinque soluzioni.</div>
+    </div>
+    <ul>
+      <li><b>QuickFind</b> e <b>QuickFind con bilanciamento</b>: la struttura finale è la stessa, una radice quadrata di nome 1 con tutte e 10 le foglie (cambia solo l'ordine in cui sono disegnate). Cambia il lavoro: senza bilanciamento le UNION spostano 20 foglie in tutto (l'ultima, union(1, 10), ne sposta 7); con il bilanciamento 13 (union(9, 7) sposta solo 9 e rinomina la radice; union(1, 10) sposta 1, 2 e 3 sotto la radice di 10 e la rinomina 1).</li>
+      <li><b>QuickUnion</b>: ogni union mette la radice del secondo sotto quella del primo. Alla fine: 1 con figli 2, 3 e 10; 10 con figli 5 e 9; 5 con figli 4 e 6; 9 con figlio 7; 7 con figlio 8. Altezza 4: find(4) fa 3 passi (4 → 5 → 10 → 1).</li>
+      <li><b>Union by rank</b>: union(1,2), union(5,4), union(7,8) sono tra ranghi uguali (0): le radici 1, 5, 7 salgono a rank 1. union(9, 7): rank(7) = 1 &gt; 0, quindi 9 va sotto 7 e i contenuti si scambiano (la radice ora contiene 9, e 7 diventa una foglia accanto a 8). union(10, 9): stesso caso. union(10, 5): ranghi uguali (1), 5 va sotto 10, rank(10) = 2. union(1, 10): rank(10) = 2 &gt; rank(1) = 1, l'albero di 1 va sotto e i contenuti si scambiano. Alla fine la radice contiene 1, con figli 5, 7, 8, 9 e 10; 5 ha figli 4 e 6; 10 ha figli 2 e 3. Altezza 2 ≤ log<sub>2</sub> 10.</li>
+      <li><b>Con la compressione</b>: find(7) trova 7 già figlio della radice, e non cambia niente. find(4) risale 4 → 5 → 1 e attacca 4 direttamente alla radice. Alla fine la radice 1 ha figli 4, 5, 7, 8, 9, 10; 5 ha il figlio 6; 10 ha figli 2 e 3.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Quanto può essere alto un albero con union by rank?</summary>
+  <p>Con union by rank e 1000 elementi, quanti passi fa al massimo una FIND? E quanti elementi servono, come minimo, per avere un albero di rank 5?</p>
+  <div class="soluzione">
+    <p>Per il lemma l'altezza è al più log<sub>2</sub> 1000 ≈ 9,97, quindi al più <b>9 passi</b>. Per avere rank 5 servono almeno 2<sup>5</sup> = <b>32</b> elementi; e 32 bastano: si fanno unioni sempre tra alberi di rank uguale (16 coppie, poi 8 coppie di coppie, e così via), come nell'esempio «Unioni sempre tra insiemi uguali» del riquadro della sezione 11.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Perché in QuickFind l'elemento che dà il nome compare due volte?</summary>
+  <div class="soluzione">
+    <p>In QuickFind la radice non è un elemento: è un nodo che contiene solo il nome. Gli elementi sono tutti foglie, compreso quello che dà il nome. Così ogni elemento è sempre a un passo dalla radice, e FIND costa O(1). In QuickUnion invece la radice è un elemento, e il nome è lei stessa: non serve un nodo in più, ma gli elementi possono stare a molti passi dalla radice.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Quanto vale log* 10<sup>80</sup>?</summary>
+  <div class="soluzione">
+    <p>log<sub>2</sub> 10<sup>80</sup> ≈ 265,8; log<sub>2</sub> 265,8 ≈ 8,05; log<sub>2</sub> 8,05 ≈ 3,01; log<sub>2</sub> 3,01 ≈ 1,59; log<sub>2</sub> 1,59 ≈ 0,67. Cinque logaritmi: <b>log* 10<sup>80</sup> = 5</b>. Anche per un numero grande quanto gli atomi dell'universo.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 14 -->
+<h2 id="approfondimenti"><span class="num">14</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> una cosa che non viene dalla lezione e non serve per lo scritto. Si apre con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: union-find in un array</summary>
+  <div class="soluzione">
+    <p>Se gli elementi sono gli interi da 1 a n, la foresta di QuickUnion si tiene in un array padre[1..n]: padre[x] è il padre di x, e una radice ha padre[x] = x. MAKESET(x) è padre[x] ← x; FIND risale con x ← padre[x] finché padre[x] ≠ x; UNION(A, B) con A e B radici è padre[B] ← A. Il rank si tiene in un secondo array. Niente puntatori, niente nodi: è la versione che si usa nei programmi veri, per esempio dentro l'algoritmo di Kruskal.</p>
+    <p>Un dettaglio: con lo «scambio dei contenuti» della lavagna, in un array il nodo e l'elemento coincidono, quindi non si possono scambiare. Nelle implementazioni con l'array si accetta che il nome dell'unione sia la radice dell'albero più alto, A o B che sia; oppure si tiene un secondo array con il nome di ogni radice.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="16-code-priorita.html">← Pacco 16: code con priorità</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="18-grafi.html">Pacco 18: grafi →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- uf.js
+// Union-find (pacco 17): simulazione delle cinque versioni e disegno delle foreste.
+// Un albero da disegnare: { v: etichetta, c: [figli], q: true se la radice va disegnata quadrata }
+function escU(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+// stili: chiave → [classe cerchio, fill, stroke, classe testo, colore testo]
+var STILE_UF = {
+  n: ["r-nodo", "#ffffff", "#2f52c4", "t-testo", "#1f2328"],
+  rad: ["r-blu", "#e8edfc", "#2f52c4", "t-testo", "#1f2328"],
+  giallo: ["r-giallo", "#fff1a8", "#b4500f", "t-testo", "#1f2328"],
+  verde: ["r-verde", "#e6f5ea", "#17803d", "t-testo", "#1f2328"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f", "t-testo", "#1f2328"],
+  rosso: ["r-rosso", "#fdecea", "#b42318", "t-testo", "#1f2328"]
+};
+// opz: { slot, dy, r, evid: { etichetta: stile }, archiEvid: { "figlio>padre": true }, aria, nomi: true (scrive «nome» sopra la radice quadrata) }
+function svgForesta(alberi, opz) {
+  opz = opz || {};
+  var slot = opz.slot || 40, dy = opz.dy || 58, R = opz.r || 14, top = (opz.top || 24) + (opz.sopra || 0), x = 18, nodi = [], archi = [], maxd = 0;
+  function piazza(t, d, padre) {
+    var n = { v: t.v, q: !!t.q && d === 0, d: d, y: top + d * dy };
+    maxd = Math.max(maxd, d);
+    if (!t.c || !t.c.length) { n.x = x + slot / 2; x += slot; }
+    else { var xs = t.c.map(function (c) { return piazza(c, d + 1, n).x; }); n.x = (xs[0] + xs[xs.length - 1]) / 2; }
+    nodi.push(n); if (padre) archi.push([n, padre]);
+    return n;
+  }
+  alberi.forEach(function (t, k) { piazza(t, 0, null); x += (opz.spazio === undefined ? 14 : opz.spazio); });
+  var W = Math.max(x + 4, opz.minW || 0), H = top + maxd * dy + R + 12, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escU(opz.aria || "una foresta di alberi") + '" font-family="system-ui, sans-serif">');
+  archi.forEach(function (a) {
+    var f = a[0], p = a[1], dx = p.x - f.x, dyy = p.y - f.y, l = Math.sqrt(dx * dx + dyy * dyy), ev = opz.archiEvid && opz.archiEvid[f.v + ">" + p.v];
+    var x1 = f.x + dx / l * R, y1 = f.y + dyy / l * R, x2 = p.x - dx / l * (R + 2), y2 = p.y - dyy / l * (R + 2), col = ev ? ["l-verde", "#17803d", "t-verde"] : ["l-muted", "#5b6270", "t-muted"];
+    s.push('<line x1="' + r1u(x1) + '" y1="' + r1u(y1) + '" x2="' + r1u(x2) + '" y2="' + r1u(y2) + '" class="' + col[0] + '" stroke="' + col[1] + '" stroke-width="' + (ev ? 2.6 : 1.4) + '"/>');
+    var ang = Math.atan2(y2 - y1, x2 - x1);
+    s.push('<path d="M' + r1u(x2) + ' ' + r1u(y2) + ' l' + r1u(-8 * Math.cos(ang - 0.4)) + ' ' + r1u(-8 * Math.sin(ang - 0.4)) + ' l' + r1u(8 * Math.cos(ang - 0.4) - 8 * Math.cos(ang + 0.4)) + ' ' + r1u(8 * Math.sin(ang - 0.4) - 8 * Math.sin(ang + 0.4)) + ' z" class="' + col[2] + '" fill="' + col[1] + '"/>');
+  });
+  nodi.forEach(function (n) {
+    var st = STILE_UF[(opz.evid && opz.evid[n.v]) || (n.d === 0 ? "rad" : "n")], et = escU(n.v), fs = et.length > 2 ? 12 : 14;
+    if (n.q) s.push('<rect x="' + r1u(n.x - R) + '" y="' + r1u(n.y - R) + '" width="' + 2 * R + '" height="' + 2 * R + '" rx="3" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    else s.push('<circle cx="' + r1u(n.x) + '" cy="' + r1u(n.y) + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    s.push('<text x="' + r1u(n.x) + '" y="' + r1u(n.y + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="' + st[3] + '" fill="' + st[4] + '">' + et + '</text>');
+    if (opz.etich && opz.etich[n.v] !== undefined && n.d === 0) s.push('<text x="' + r1u(n.x) + '" y="' + r1u(n.y - R - 6) + '" font-size="11" text-anchor="middle" class="t-viola" fill="#6d3fc0">' + escU(opz.etich[n.v]) + '</text>');
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+function r1u(v) { return Math.round(v * 10) / 10; }
+
+// ---------------------------------------------------------------- simulatori
+// tipo: "qf" QuickFind, "qfb" QuickFind bilanciato, "qu" QuickUnion, "qur" QuickUnion by rank, "qurc" by rank + compressione
+function UF(tipo) {
+  this.tipo = tipo;
+  this.insiemi = {};   // QuickFind: nome → elementi (in ordine di disegno)
+  this.nome = {};      // QuickFind: elemento → nome
+  this.par = {}; this.el = {}; this.nodo = {}; this.rank = {}; this.ordine = []; this.prossimo = 0;   // QuickUnion: nodi numerati
+}
+UF.prototype.qf = function () { return this.tipo === "qf" || this.tipo === "qfb"; };
+UF.prototype.esiste = function (e) { return this.qf() ? this.nome[e] !== undefined : this.nodo[e] !== undefined; };
+UF.prototype.eNome = function (A) { if (this.qf()) return this.insiemi[A] !== undefined; var n = this.nodo[A]; return n !== undefined && this.par[n] === n; };
+UF.prototype.makeSet = function (e) {
+  if (this.esiste(e)) return { ok: false, testo: "L'elemento " + e + " esiste già: MAKESET vuole un elemento nuovo." };
+  if (this.qf()) { this.insiemi[e] = [e]; this.nome[e] = e; }
+  else { var n = this.prossimo++; this.par[n] = n; this.el[n] = e; this.nodo[e] = n; this.rank[n] = 0; this.ordine.push(n); }
+  return { ok: true, passi: 1, testo: "MAKESET(" + e + "): nasce l'insieme {" + e + "}, di nome " + e + ". Costo O(1)." };
+};
+UF.prototype.find = function (e) {
+  if (!this.esiste(e)) return { ok: false, testo: "L'elemento " + e + " non esiste." };
+  if (this.qf()) return { ok: true, passi: 1, ris: this.nome[e], testo: "FIND(" + e + "): si sale dalla foglia " + e + " alla radice in un passo: il nome è " + this.nome[e] + ". Costo O(1)." };
+  var n = this.nodo[e], cam = [n];
+  while (this.par[n] !== n) { n = this.par[n]; cam.push(n); }
+  var self = this, r = n, testo = "FIND(" + e + "): si risale " + cam.map(function (k) { return self.el[k]; }).join(" → ") + ": " + (cam.length - 1) + (cam.length - 1 === 1 ? " passo" : " passi") + ". Il nome è " + this.el[r] + ".", cambiati = [];
+  if (this.tipo === "qurc") {
+    cam.slice(0, -1).forEach(function (k) { if (self.par[k] !== r) { self.par[k] = r; cambiati.push(self.el[k]); } });
+    testo += cambiati.length ? " Compressione: " + cambiati.join(", ") + (cambiati.length === 1 ? " diventa figlio diretto" : " diventano figli diretti") + " della radice." : " Compressione: il cammino è già corto, non cambia niente.";
+  }
+  return { ok: true, passi: cam.length - 1, ris: this.el[r], cammino: cam.map(function (k) { return self.el[k]; }), cambiati: cambiati, testo: testo };
+};
+UF.prototype.union = function (A, B) {
+  if (A === B) return { ok: false, testo: "UNION vuole due insiemi diversi." };
+  if (!this.eNome(A) || !this.eNome(B)) return { ok: false, testo: "UNION(" + A + ", " + B + "): " + (!this.eNome(A) ? A : B) + " non è il nome di un insieme. Gli argomenti di UNION sono nomi di insiemi (le radici)." };
+  if (this.qf()) {
+    var a = this.insiemi[A], b = this.insiemi[B], self = this, mossi, testo;
+    if (this.tipo === "qfb" && a.length < b.length) {
+      mossi = a.length; this.insiemi[A] = b.concat(a); delete this.insiemi[B];
+      this.insiemi[A].forEach(function (x) { self.nome[x] = A; });
+      testo = "UNION(" + A + ", " + B + ") con bilanciamento: B ha più elementi (" + b.length + " contro " + a.length + "), quindi si spostano sotto la radice di B le " + a.length + " foglie di A, e la radice di B si rinomina " + A + ". Puntatori cambiati: " + mossi + ".";
+    } else {
+      mossi = b.length; this.insiemi[A] = a.concat(b); delete this.insiemi[B];
+      b.forEach(function (x) { self.nome[x] = A; });
+      testo = "UNION(" + A + ", " + B + "): le " + b.length + (b.length === 1 ? " foglia" : " foglie") + " di " + B + " si spostano sotto la radice " + A + ", e la radice " + B + " sparisce" + (this.tipo === "qfb" ? " (A ha almeno tanti elementi quanti B)" : "") + ". Puntatori cambiati: " + mossi + ".";
+    }
+    return { ok: true, passi: mossi, testo: testo };
+  }
+  var ra = this.nodo[A], rb = this.nodo[B];
+  if (this.tipo === "qu") { this.par[rb] = ra; return { ok: true, passi: 1, testo: "UNION(" + A + ", " + B + "): la radice " + B + " diventa figlia della radice " + A + ". Costo O(1)." }; }
+  if (this.rank[ra] > this.rank[rb]) { this.par[rb] = ra; return { ok: true, passi: 1, testo: "UNION(" + A + ", " + B + "): rank(" + A + ") = " + this.rank[ra] + " &gt; rank(" + B + ") = " + this.rank[rb] + ": la radice di " + B + " diventa figlia di quella di " + A + ". Il rank non cambia." }; }
+  if (this.rank[rb] > this.rank[ra]) {
+    this.par[ra] = rb;
+    var t = this.el[ra]; this.el[ra] = this.el[rb]; this.el[rb] = t; this.nodo[this.el[ra]] = ra; this.nodo[this.el[rb]] = rb;
+    return { ok: true, passi: 1, scambio: true, testo: "UNION(" + A + ", " + B + "): rank(" + B + ") = " + this.rank[rb] + " &gt; rank(" + A + ") = " + this.rank[ra] + ": la radice di " + A + " diventa figlia di quella di " + B + ", e i due nodi si scambiano il contenuto, così la radice contiene " + A + " e l'insieme si chiama ancora " + A + "." };
+  }
+  this.par[rb] = ra; this.rank[ra]++;
+  return { ok: true, passi: 1, testo: "UNION(" + A + ", " + B + "): i rank sono uguali (" + (this.rank[ra] - 1) + "): la radice di " + B + " diventa figlia di quella di " + A + ", e rank(" + A + ") sale a " + this.rank[ra] + "." };
+};
+UF.prototype.foresta = function () {
+  var self = this;
+  if (this.qf()) return Object.keys(this.insiemi).map(Number).sort(function (a, b) { return a - b; }).map(function (A) { return { v: A, q: true, c: self.insiemi[A].map(function (x) { return { v: x }; }) }; });
+  var figli = {};
+  this.ordine.forEach(function (n) { if (self.par[n] !== n) (figli[self.par[n]] = figli[self.par[n]] || []).push(n); });
+  function costruisci(n) { return { v: self.el[n], c: (figli[n] || []).slice().sort(function (a, b) { return self.el[a] - self.el[b]; }).map(costruisci) }; }
+  return this.ordine.filter(function (n) { return self.par[n] === n; }).sort(function (a, b) { return self.el[a] - self.el[b]; }).map(costruisci);
+};
+UF.prototype.altezze = function () {
+  if (this.qf()) return 1;
+  var self = this, h = 0;
+  this.ordine.forEach(function (n) { var d = 0, k = n; while (self.par[k] !== k) { k = self.par[k]; d++; } h = Math.max(h, d); });
+  return h;
+};
+UF.prototype.rankDi = function (A) { return this.rank[this.nodo[A]]; };
+// esegue una lista di comandi testuali; restituisce gli esiti
+function leggiComandi(testo) {
+  var out = [], err = null;
+  testo.split(/[\n;]+/).forEach(function (riga) {
+    var r = riga.trim(); if (!r) return;
+    var m = r.match(/^(makeset|union|find)\s*\(\s*(-?\d+)\s*(?:,\s*(-?\d+)\s*)?\)$/i);
+    if (!m) { err = err || "Non capisco «" + r + "». Scrivi per esempio makeSet(3), union(1,2), find(7)."; return; }
+    var op = m[1].toLowerCase();
+    if ((op === "union") !== (m[3] !== undefined)) { err = err || "«" + r + "»: union vuole due argomenti, makeSet e find uno."; return; }
+    out.push({ op: op, a: Number(m[2]), b: m[3] === undefined ? null : Number(m[3]) });
+  });
+  return { cmd: out, err: err };
+}
+function eseguiCmd(uf, c) {
+  if (c.op === "makeset") return uf.makeSet(c.a);
+  if (c.op === "find") return uf.find(c.a);
+  return uf.union(c.a, c.b);
+}
+function testoCmd(c) { return c.op === "makeset" ? "makeSet(" + c.a + ")" : c.op === "find" ? "find(" + c.a + ")" : "union(" + c.a + "," + c.b + ")"; }
+// log iterato
+function logStella(x) { var i = 0, s = [x]; while (x > 1 && i < 10) { x = Math.log2(x); s.push(x); i++; } return { k: i, seq: s }; }
+
+// ---- w17.js
+// Riquadri interattivi del pacco 17.
+function $(id) { return document.getElementById(id); }
+
+// ---------------------------------------------------------------- 1. il simulatore union-find
+(function () {
+  if (!$("uf-corpo")) return;
+  function ms(n) { var r = []; for (var i = 1; i <= n; i++) r.push("makeSet(" + i + ")"); return r; }
+  var ES = [["Lavagna del 3 novembre, pagina 16", ms(6).concat(["find(2)", "union(3,2)", "union(5,6)", "find(2)", "union(5,3)", "find(2)"])],
+    ["Esercizio 7.1 del foglio", ms(10).concat(["union(1,2)", "union(1,3)", "union(5,4)", "union(5,6)", "union(7,8)", "union(9,7)", "union(10,9)", "union(10,5)", "find(7)", "union(1,10)", "find(4)"])],
+    ["L'albero peggiore (n = 8), poi find(8)", ms(8).concat(["union(7,8)", "union(6,7)", "union(5,6)", "union(4,5)", "union(3,4)", "union(2,3)", "union(1,2)", "find(8)", "find(8)"])],
+    ["Unioni sempre tra insiemi uguali (n = 8)", ms(8).concat(["union(1,2)", "union(3,4)", "union(5,6)", "union(7,8)", "union(1,3)", "union(5,7)", "union(1,5)", "find(8)"])],
+    ["Scrivi tu", null]];
+  var TIPI = [["qf", "QuickFind"], ["qfb", "QuickFind con bilanciamento"], ["qu", "QuickUnion"], ["qur", "QuickUnion con union by rank"], ["qurc", "union by rank e compressione dei cammini"]];
+  $("uf-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="uf-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label>Algoritmo <select id="uf-tipo" style="width:auto;max-width:100%">' + TIPI.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label style="width:100%">Operazioni (una per riga) <textarea id="uf-in" rows="4" style="width:100%;font-family:ui-monospace,monospace;font-size:14px"></textarea></label></div>' +
+    '<div class="controlli"><button class="primario" id="uf-passo">Prossima operazione →</button><button id="uf-fine">Tutte</button><button id="uf-reset">Ricomincia</button></div>' +
+    '<div class="contatori" id="uf-cont"></div><div class="figura" id="uf-fig" style="margin:6px 0"></div><div class="narrazione" id="uf-txt"></div>';
+  var V = { cmd: [], k: 0, uf: null, ultimo: null, costoU: 0, costoF: 0 };
+  function prepara() {
+    var L = leggiComandi($("uf-in").value);
+    if (L.err) { $("uf-txt").innerHTML = '<span class="errore">' + L.err + '</span>'; return; }
+    if (L.cmd.length > 80) { $("uf-txt").innerHTML = '<span class="errore">Al massimo 80 operazioni.</span>'; return; }
+    V.cmd = L.cmd; V.k = 0; V.uf = new UF($("uf-tipo").value); V.ultimo = null; V.costoU = 0; V.costoF = 0; mostra();
+  }
+  function avanti() {
+    if (V.k >= V.cmd.length) return;
+    var c = V.cmd[V.k], r = eseguiCmd(V.uf, c);
+    if (r.ok && c.op === "union") V.costoU += r.passi;
+    if (r.ok && c.op === "find") V.costoF += r.passi;
+    V.ultimo = { c: c, r: r }; V.k++;
+  }
+  function mostra() {
+    var u = V.ultimo, ev = {}, ar = {};
+    if (u && u.r.ok && u.c.op === "find" && u.r.cammino) { u.r.cammino.forEach(function (x) { ev[x] = "giallo"; }); (u.r.cambiati || []).forEach(function (x) { ev[x] = "verde"; }); }
+    if (u && u.r.ok && u.c.op === "union") { ev[u.c.a] = "giallo"; }
+    var F = V.uf.foresta();
+    $("uf-fig").innerHTML = F.length ? svgForesta(F, { slot: 34, dy: 50, r: 13, evid: ev, aria: "la foresta che rappresenta la partizione" }) : '<p class="piccolo" style="text-align:center">nessun insieme</p>';
+    $("uf-cont").innerHTML = '<span>operazioni: <b>' + V.k + '</b> di ' + V.cmd.length + '</span><span>costo delle union: <b>' + V.costoU + '</b></span><span>passi delle find: <b>' + V.costoF + '</b></span><span>altezza massima: <b>' + (F.length ? V.uf.altezze() : 0) + '</b></span>';
+    $("uf-txt").innerHTML = u ? "<b>" + testoCmd(u.c) + "</b>. " + (u.r.ok ? u.r.testo : '<span class="errore">' + u.r.testo + '</span>') : "Nessuna operazione ancora. Le frecce vanno dal figlio al padre; la radice (in azzurro) dà il nome all'insieme" + ($("uf-tipo").value.indexOf("qf") === 0 ? " ed è disegnata quadrata." : ".");
+    $("uf-passo").disabled = V.k >= V.cmd.length; $("uf-fine").disabled = V.k >= V.cmd.length;
+  }
+  $("uf-passo").onclick = function () { avanti(); mostra(); };
+  $("uf-fine").onclick = function () { while (V.k < V.cmd.length) avanti(); mostra(); };
+  $("uf-reset").onclick = prepara;
+  $("uf-tipo").onchange = prepara;
+  $("uf-es").onchange = function () { var e = ES[Number($("uf-es").value)]; if (e[1] !== null) $("uf-in").value = e[1].join("\n"); prepara(); };
+  $("uf-in").onchange = function () { $("uf-es").value = String(ES.length - 1); prepara(); };
+  $("uf-in").value = ES[0][1].join("\n");
+  prepara();
+})();
+
+// ---------------------------------------------------------------- 2. il logaritmo iterato
+(function () {
+  if (!$("ls-corpo")) return;
+  $("ls-corpo").innerHTML = '<div class="controlli"><label>n = <input type="text" id="ls-n" value="65536" style="width:150px"></label><span class="piccolo">(anche nella forma 2^k, per esempio 2^65536)</span></div><div class="narrazione" id="ls-txt"></div>';
+  function mostra() {
+    var t = $("ls-n").value.trim().replace(/\s+/g, ""), m = t.match(/^2\^(\d+(\.\d+)?)$/), seq = [], k = 0, x;
+    if (m) { seq.push("2<sup>" + m[1] + "</sup>"); x = Number(m[1]); k = 1; seq.push(fmt(x)); }
+    else { x = Number(t); if (!(x >= 1) || !isFinite(x)) { $("ls-txt").innerHTML = '<span class="errore">Scrivi un numero ≥ 1, oppure 2^k.</span>'; return; } seq.push(fmt(x)); }
+    while (x > 1 && k < 12) { x = Math.log2(x); k++; seq.push(fmt(x)); }
+    $("ls-txt").innerHTML = "Logaritmi successivi: " + seq.join(" → ") + ".<br>Ci vogliono <b>" + k + "</b> logaritmi per arrivare a un numero ≤ 1: <b>log* n = " + k + "</b>.";
+  }
+  function fmt(x) { return Number.isInteger(x) ? String(x).replace(/\B(?=(\d{3})+(?!\d))/g, " ") : x.toFixed(3).replace(".", ","); }
+  $("ls-n").oninput = mostra;
+  mostra();
+})();
+})();
+</script>
+</body>
+</html>

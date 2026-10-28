@@ -96,6 +96,42 @@
     <div class="d">Radice, foglie, livelli, altezza, e com'è fatto un albero in memoria. Le visite: in ampiezza con una coda, in profondità con una pila e con la ricorsione, nei tre ordini anticipato, simmetrico e posticipato, con il trucco del giro intorno all'albero. Gli alberi delle espressioni e la notazione polacca inversa calcolata con una pila. In fondo, il foglio di esercizi 4 e le visite dei temi d'esame (vettore posizionale), con un riquadro per allenarsi.</div>
     <div class="l">Lezioni 13–14 (26 ottobre 2026) · Lavagna13-14 · lavagna 2025 della lezione 14 · esercizi 4 · temi d'esame</div>
   </a>
+  <a class="pacco" href="13-heap.html">
+    <div class="n">PACCO 13</div>
+    <div class="t">Heap e creaHeap</div>
+    <div class="d">Quanti nodi può avere un albero di altezza h, gli alberi quasi completi e perché sono alti solo ⌊log₂ n⌋. Lo heap, con il massimo nella radice; come si toglie il massimo e si rimette a posto l'albero con risistema, in Θ(log n); creaHeap dall'alto con la ricorsione e dal basso, e perché costa solo Θ(n). heapSort sull'albero, Θ(n log n). In fondo gli esercizi dei fogli 4 e 5 e le trasformazioni in max-heap e min-heap dei temi d'esame, con un riquadro per allenarsi.</div>
+    <div class="l">Lezione 15 · lavagna del 27 ottobre 2025 (anno scorso) · slide 6-OrdHeapSort · esercizi 4 e 5 · temi d'esame</div>
+  </a>
+  <a class="pacco" href="14-heapsort-in-loco.html">
+    <div class="n">PACCO 14</div>
+    <div class="t">heapSort in loco</div>
+    <div class="d">Il vettore posizionale (figli in 2i + 1 e 2i + 2, padre in ⌊(i − 1)/2⌋, e perché), lo heap e la parte ordinata nello stesso array, risistema e creaHeap con gli indici (il controllo u + 1 &lt; ℓ, perché si parte da ⌊n/2⌋), heapSort completo giro per giro. Memoria Θ(1), Θ(n log n) confronti, non stabile; il min-heap per l'ordine decrescente. Le due domande dello scritto, con la trappola di «immediatamente dopo lo scambio», tutti i temi risolti e un allenamento con esercizi nuovi a caso. In fondo il codice in C e in Go.</div>
+    <div class="l">Lezione 16 · lavagna del 29 ottobre 2025 (anno scorso), pagine 1–14 · slide 6-OrdHeapSort · esercizi 5 · temi d'esame</div>
+  </a>
+  <a class="pacco" href="15-limite-e-radixsort.html">
+    <div class="n">PACCO 15</div>
+    <div class="t">Limite n log n e ordinare senza confrontare</div>
+    <div class="d">Il problema dell'ordinamento scritto con precisione e la tabella di tutti gli algoritmi visti. Perché nessun ordinamento basato su confronti può fare meno di log₂(n!) = Θ(n log n) confronti: gli alberi di decisione e Stirling. Poi integerSort, bucketSort con le code (stabile, Θ(b + n)), i compleanni ordinati con due passaggi, radixSort cifra per cifra, la scelta della base e come si prende una cifra con shift e AND. In fondo il foglio 6, con i sette algoritmi applicati alla stessa sequenza.</div>
+    <div class="l">Lezione 16 (seconda parte) e 17 · lavagne del 29 e 31 ottobre 2025 (anno scorso) · slide 7-OrdinamentoRiepilogo e 8-RadixSort · esercizi 6</div>
+  </a>
+  <a class="pacco" href="16-code-priorita.html">
+    <div class="n">PACCO 16</div>
+    <div class="t">Operazioni sugli heap, code con priorità, analisi ammortizzata</div>
+    <div class="d">Togliere la radice, inserire con risistemaDalBasso, cancellare un elemento qualsiasi e cambiargli la chiave: quando scende e quando sale, sempre in Θ(log n). Le code con priorità (findMin, deleteMin, insert, delete, changeKey) fatte con un min-heap, con l'array posizione. Le domande d'esame su deleteMin e changeKey, con la trappola delle direzioni nel min-heap. Infine l'analisi ammortizzata con il contatore binario: k incrementi costano al più 2k. Con un riquadro per provare tutte le operazioni.</div>
+    <div class="l">Lezioni 17 (fine) e 18 (inizio) · lavagne del 31 ottobre e 3 novembre 2025 (anno scorso) · slide 9-CodePriorita · esercizi 5 · temi d'esame</div>
+  </a>
+  <a class="pacco" href="17-union-find.html">
+    <div class="n">PACCO 17</div>
+    <div class="t">Union-find</div>
+    <div class="d">Partizioni in insiemi disgiunti con MAKESET, UNION e FIND, ogni insieme un albero con i puntatori verso il padre. QuickFind (alberi alti 1) e il suo bilanciamento, con UNION O(log n) ammortizzato; QuickUnion e l'albero peggiore; union by rank con lo scambio dei contenuti e il lemma #nodi ≥ 2^rank dimostrato per induzione; la compressione dei cammini e il logaritmo iterato log* n. L'esercizio 7.1 del foglio con tutte e cinque le soluzioni, e un simulatore per provare qualsiasi sequenza di operazioni.</div>
+    <div class="l">Lezioni 18 e 19 · lavagne del 3 e 5 novembre 2025 (anno scorso) · esercizi 7</div>
+  </a>
+  <a class="pacco" href="18-grafi.html">
+    <div class="n">PACCO 18</div>
+    <div class="t">Grafi: parole, rappresentazioni, alberi e visite</div>
+    <div class="d">G = (V, E) orientato e non orientato; incidente, adiacente, grado e la somma 2m; cammini, cicli, catene, circuiti; connesso e fortemente connesso, sottografi indotti, componenti fortemente connesse; circuiti hamiltoniani ed euleriani, con i ponti di Königsberg. Lista di archi, liste di adiacenza e di incidenza, matrici di adiacenza (M^k e i cammini) e di incidenza. Gli alberi come grafi (n − 1 archi, con le dimostrazioni) e gli alberi ricoprenti, chiesti allo scritto. Le visite in ampiezza e in profondità, con un riquadro passo per passo. In fondo il foglio 8.</div>
+    <div class="l">Lezioni 19 (fine) e 20 · lavagne del 5 e 7 novembre 2025 (anno scorso) · slide 10-VisiteGrafi · esercizi 8 · temi d'esame</div>
+  </a>
 </div>
 
 <h2>Come funziona</h2>
