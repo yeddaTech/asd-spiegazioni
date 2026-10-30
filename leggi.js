@@ -45,14 +45,15 @@
     else if (/alice|federica|luca|emma|elsa|isabella|diego|cosimo|giuseppe/.test(n)) p = 60;
     return p + (/^it[-_]it/i.test(v.lang) ? 1 : 0);
   }
-  function aggiornaVoci() {
+  function trovaVoci() {
     var tutte = sint.getVoices() || [];
     voci = tutte.filter(function (v) { return /^it([-_]|$)/i.test(v.lang); });
     voci.sort(function (a, b) { return punteggio(b) - punteggio(a); });
-    riempiSceltaVoce();
   }
+  function aggiornaVoci() { trovaVoci(); riempiSceltaVoce(); }
+  // Chrome dà l'elenco delle voci solo dopo un po' (evento voiceschanged): fino ad allora voci è vuoto.
   function voceAttuale() {
-    if (!voci.length) aggiornaVoci();
+    if (!voci.length) trovaVoci();
     for (var i = 0; i < voci.length; i++) if (voci[i].name === pref.voce) return voci[i];
     return voci[0] || null;
   }
