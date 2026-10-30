@@ -17,6 +17,8 @@
   var premuto = false;
   var ultimoScrollUtente = 0;
   var attesa = 0;
+  var sentita = false;    // almeno una frase è partita davvero: il browser parla
+  var controlloVoce = 0;
 
   function carica() {
     var p = { voce: "", vel: 1 };
@@ -80,6 +82,7 @@
     ".leggi-barra label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted, #5b6270); min-width: 0; }",
     ".leggi-barra select { font: 14px system-ui, sans-serif; width: auto; max-width: 42vw; padding: 4px 6px; border-radius: 8px;",
     "  border: 1px solid var(--border, #e4ddcf); background: var(--bg, #fbf8f1); color: var(--fg, #1f2328); }",
+    ".leggi-avviso { flex-basis: 100%; max-width: 34em; text-align: center; color: var(--red, #b42318); }",
     ".leggi-btn[hidden], .leggi-barra[hidden], .leggi-barra [hidden] { display: none; }"
   ].join("\n");
   document.head.appendChild(stile);
@@ -120,7 +123,11 @@
   etVel.append("Velocità", selVel);
   var etVoce = document.createElement("label");
   etVoce.append("Voce", selVoce);
-  barra.append(ferma, etVel, etVoce);
+  var avviso = document.createElement("span");
+  avviso.className = "leggi-avviso";
+  avviso.textContent = "La voce non parte. Chiudi del tutto il browser e riaprilo (su Linux succede se il servizio delle voci è stato riavviato).";
+  avviso.hidden = true;
+  barra.append(ferma, etVel, etVoce, avviso);
 
   function monta() { document.body.append(btn, barra); }
   if (document.body) monta(); else document.addEventListener("DOMContentLoaded", monta);
@@ -361,7 +368,8 @@
     var v = voceAttuale();
     if (v) { u.voice = v; u.lang = v.lang; } else u.lang = "it-IT";
     u.rate = pref.vel;
-    u.onend = function () { if (stato && stato.gen === gen) { stato.i++; prossimo(); } };
+    u.onstart = function () { sentita = true; avviso.hidden = true; };
+    u.onend = function () { sentita = true; if (stato && stato.gen === gen) { stato.i++; prossimo(); } };
     u.onerror = function (ev) {
       if (!stato || stato.gen !== gen || ev.error === "interrupted" || ev.error === "canceled") return;
       stato.i++; prossimo();
@@ -369,6 +377,9 @@
     stato.u = u; // senza un riferimento Chrome a volte butta via la frase e onend non arriva
     evidenzia(p);
     sint.speak(u);
+    // Se dopo qualche secondo non è partito niente, il browser non sta parlando: lo diciamo.
+    clearTimeout(controlloVoce);
+    if (!sentita) controlloVoce = setTimeout(function () { if (stato && !sentita) avviso.hidden = false; }, 6000);
   }
 
   // Cambiare voce o velocità riparte dalla frase corrente.
@@ -384,6 +395,8 @@
     stato = null;
     sint.cancel();
     barra.hidden = true;
+    avviso.hidden = true;
+    clearTimeout(controlloVoce);
     if (window.CSS && CSS.highlights) CSS.highlights.delete("leggi");
   }
 
