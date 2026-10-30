@@ -1390,5 +1390,62 @@ VF.archi = {
   }
 };
 
+// ================================================================ pacco 14: da dove cominciano le foglie
+VF.foglieheap = {
+  titolo: "Perché le foglie cominciano da ⌊n/2⌋",
+  parametri: [{ id: "n", nome: "n", valori: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], val: 10 }],
+  legenda: "In alto l'albero, in basso lo stesso albero nell'array. In verde le foglie. Le celle tratteggiate dopo la fine non esistono: ci finirebbero i figli che non ci sono.",
+  passi: function (P) {
+    var n = P.n, f = Math.floor(n / 2), pari = n % 2 === 0, S = [];
+    var W = 420, q = Math.min(24, Math.floor(380 / (n + 2))), xa = (W - (n + 2) * q) / 2, ya = 196, H = 250;
+    function xc(i) { return xa + i * q + (q - 2) / 2; }
+    function liv(i) { return Math.floor(vfLog2(i + 1)); }
+    function xt(i) { var p = liv(i), slot = (W - 40) / Math.pow(2, p); return 20 + (i - Math.pow(2, p) + 1 + 0.5) * slot; }
+    function arco(D, i, j, col) {
+      var x1 = xc(i), x2 = xc(j), h = Math.min(60, 14 + (x2 - x1) * 0.35);
+      D.grezzo('<path d="M' + r1(x1) + ' ' + (ya - 2) + 'C' + r1(x1) + ' ' + r1(ya - h) + ' ' + r1(x2) + ' ' + r1(ya - h) + ' ' + r1(x2) + ' ' + (ya - 5) + '" fill="none" stroke="' + VF_TRATTO[col][1] + '" stroke-width="2" style="stroke:var(' + VF_TRATTO[col][0] + ')"' + (j >= n ? ' stroke-dasharray="4 3"' : "") + '/>');
+      D.grezzo('<path d="M' + r1(x2) + ' ' + (ya - 2) + 'l-4 -7h8z" fill="' + VF_TRATTO[col][1] + '" style="fill:var(' + VF_TRATTO[col][0] + ')"/>');
+    }
+    function disegno(o) {
+      var D = new Disegno(W, H, "albero e array con " + n + " posizioni"), i;
+      for (i = 1; i < n; i++) D.linea(xt((i - 1) >> 1), 20 + liv((i - 1) >> 1) * 34, xt(i), 20 + liv(i) * 34, "muted", { opacita: 0.5, w: 1.2 });
+      for (i = 0; i < n; i++) {
+        var col = o.col ? o.col(i) : (i >= f ? "verde" : "blu");
+        D.cerchio(xt(i), 20 + liv(i) * 34, 11, col);
+        D.testo(xt(i), 24 + liv(i) * 34, i, { size: 10.5 });
+        D.rett(xa + i * q, ya, q - 2, q - 2, col, { rx: 3 });
+        D.testo(xc(i), ya + q / 2 + 3, i, { size: Math.min(11, q - 8) });
+      }
+      for (i = n; i < n + 2; i++) { D.rett(xa + i * q, ya, q - 2, q - 2, "vuoto"); D.testo(xc(i), ya + q / 2 + 3, i, { size: Math.min(10, q - 9), col: "muted" }); }
+      D.linea(xa + n * q - 1, ya - 4, xa + n * q - 1, ya + q + 2, "rosso", { w: 2 });
+      D.testo(xa + n * q + 2, ya + q + 14, "fine dell'array", { anc: "start", size: 10.5, col: "rosso" });
+      (o.archi || []).forEach(function (a) { arco(D, a[0], a[1], a[2]); });
+      (o.graffe || []).forEach(function (g) { D.graffa(xa + g[0] * q, xa + (g[1] + 1) * q - 2, ya + q + 3 + (g[3] || 0) * 24, g[2], { anc: g[4] }); });
+      return D.svg(1.2);
+    }
+    S.push({ tit: "Foglia vuol dire: il figlio sinistro sarebbe fuori", dove: "Primo punto, con n = " + n,
+      formula: "i è una foglia  ⟺  " + c3("2i + 1 ≥ n"),
+      testo: "Una foglia non ha figli. Nell'array il figlio sinistro di i starebbe in 2i + 1: se quella cella è oltre la fine (l'ultima è n − 1 = " + (n - 1) + "), il figlio non c'è. E se manca il sinistro manca anche il destro, che viene dopo. In verde le foglie: guarda dove cominciano.",
+      disegno: disegno({}) });
+    S.push({ tit: "Metà arrotondata, poi raddoppiata", dove: "Secondo punto: ⌊n/2⌋ è n/2 oppure (n − 1)/2",
+      formula: c1("2⌊n/2⌋") + " = " + (pari ? c1("n") + " (n è pari)" : c1("n − 1") + " (n è dispari)"),
+      testo: "⌊n/2⌋ = " + f + " è la metà di n arrotondata per difetto. Raddoppiandola: " + (pari ? "n è pari, non si è arrotondato niente, e si torna a n = " + n + "." : "n è dispari, arrotondando si è perso mezzo, e si torna a n − 1 = " + (n - 1) + ": resta fuori una cella (l'ultima).") + " Le due graffe sono le due metà da " + f + ".",
+      disegno: disegno({ col: function (i) { return i < f ? "blu" : i < 2 * f ? "viola" : "box"; }, graffe: [[0, f - 1, "⌊n/2⌋ = " + f], [f, 2 * f - 1, "altre " + f]] }) });
+    S.push({ tit: "Più 1: si esce dall'array", dove: "Secondo punto: 2⌊n/2⌋ + 1 ≥ n",
+      formula: "2⌊n/2⌋ + 1 = " + c2(pari ? "n + 1" : "n") + " ≥ n",
+      testo: "Il figlio sinistro di ⌊n/2⌋ = " + f + " starebbe in 2 · " + f + " + 1 = " + (2 * f + 1) + ": " + (pari ? "una cella oltre n" : "proprio n") + ", oltre la fine (freccia tratteggiata). Quindi " + f + " è una foglia. Vale sempre: n + 1 se n è pari, n se è dispari, e tutti e due sono ≥ n.",
+      disegno: disegno({ col: function (i) { return i === f ? "arancio" : i > f ? "verde" : "blu"; }, archi: [[f, 2 * f + 1, "arancio"]] }) });
+    S.push({ tit: "Quella prima ha ancora un figlio", dove: "Perché ⌊n/2⌋ è la prima foglia",
+      formula: "2(⌊n/2⌋ − 1) + 1 = 2⌊n/2⌋ − 1 = " + c1(pari ? "n − 1" : "n − 2") + " < n",
+      testo: "La posizione appena prima, ⌊n/2⌋ − 1 = " + (f - 1) + ", ha il figlio sinistro in " + (2 * f - 1) + ", " + (pari ? "l'ultima cella" : "la penultima cella") + ": dentro l'array (freccia piena). Quindi non è una foglia: è l'ultimo nodo con figli. Per questo le foglie cominciano proprio da ⌊n/2⌋.",
+      disegno: disegno({ col: function (i) { return i === f - 1 ? "giallo" : i === 2 * f - 1 ? "blu" : i >= f ? "verde" : "box"; }, archi: [[f - 1, 2 * f - 1, "blu"], [f, 2 * f + 1, "arancio"]] }) });
+    S.push({ tit: "Da lì alla fine, tutte foglie", dove: "Terzo punto",
+      formula: c3("da ⌊n/2⌋ a n − 1") + ": n − ⌊n/2⌋ = " + (n - f) + " foglie su " + n,
+      testo: "Andando avanti, i cresce e 2i + 1 cresce ancora di più: resta fuori. Quindi tutte le posizioni da ⌊n/2⌋ = " + f + " a n − 1 = " + (n - 1) + " sono foglie: n − ⌊n/2⌋ = " + (n - f) + ", la metà arrotondata per eccesso. Le foglie sono già heap, quindi creaHeap non ha bisogno di chiamare risistema su di loro.",
+      disegno: disegno({ graffe: [[f, n - 1, (n - f) + " foglie", 0, "start"]] }) });
+    return S;
+  }
+};
+
 [].forEach.call(document.querySelectorAll("[data-vf]"), vfMonta);
 })();

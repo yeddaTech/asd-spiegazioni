@@ -6,6 +6,7 @@
 <title>heapSort in loco</title>
 <link rel="stylesheet" href="stile.css?v=6">
 <script src="leggi.js?v=3" defer></script>
+<script src="formule.js?v=2" defer></script>
 </head>
 <body>
 <div class="pagina">
@@ -247,6 +248,8 @@
   <li>quindi tutte le posizioni da ⌊n/2⌋ a n − 1 sono foglie, circa metà dell'array.</li>
 </ul>
 <p>(Anche ⌊n/2⌋ è una foglia: si potrebbe partire da ⌊n/2⌋ − 1, l'ultimo nodo con figli. Partire da ⌊n/2⌋, come nelle slide, costa una chiamata inutile, che non fa niente. Allo scritto il risultato è lo stesso.)</p>
+
+<div class="widget" data-vf="foglieheap"></div>
 
 <h3>L'esempio delle slide</h3>
 <p>Le slide partono dall'array 6 1 2 10 4 19 26 11 8 5 (n = 10, quindi i va da 5 a 0). La Figura 6 mostra l'array dopo ogni chiamata di risistema; in giallo le posizioni cambiate.</p>
