@@ -34,6 +34,7 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 - **Offline:** scarica la repo (*Code → Download ZIP*), estraila e apri `index.html`. Funziona anche senza internet, perché non usa librerie esterne.
 - Ogni pagina comincia con una mappa della lezione e finisce con il riassunto, i consigli per l'esame e gli esercizi con la soluzione nascosta.
 - I riquadri viola «Dai tuoi appunti» rispondono ai dubbi scritti negli appunti di chi ha creato la repo.
+- **Lettura ad alta voce:** seleziona un pezzo di testo e premi «Leggi». La voce è quella del dispositivo (le più naturali: Edge, Chrome, telefono, Safari); le formule vengono dette per esteso.
 
 ## Nota
 

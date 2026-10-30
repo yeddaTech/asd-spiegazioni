@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Heap e creaHeap</title>
 <link rel="stylesheet" href="stile.css?v=6">
+<script src="leggi.js?v=1" defer></script>
 </head>
 <body>
 <div class="pagina">
@@ -160,16 +161,24 @@
   <div class="dim-tit">Nodi e altezza di un albero quasi completo (lavagna, pagina 7)</div>
   <p class="enunciato">Un albero quasi completo di altezza h ha n nodi con 2<sup>h</sup> ≤ n ≤ 2<sup>h+1</sup> − 1. Di conseguenza h = ⌊log<sub>2</sub> n⌋.</p>
   <div class="parte prima">Il minimo</div>
-  <p>L'albero è completo fino alla profondità h − 1: per l'attrezzo della sezione 1 (con h − 1 al posto di h), i livelli 0, …, h − 1 contengono 1 + 2 + … + 2<sup>h−1</sup> = 2<sup>h</sup> − 1 nodi. In più, a profondità h c'è almeno un nodo, altrimenti l'altezza sarebbe h − 1. Quindi n ≥ 2<sup>h</sup> − 1 + 1 = 2<sup>h</sup>.</p>
+  <p>Si contano i nodi in due pezzi: i livelli pieni, da 0 a h − 1, e l'ultimo livello, h.</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">n</span><span class="rel">=</span><span class="dx">(nodi dei livelli 0, …, h − 1) + (nodi del livello h)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">(2<sup>0</sup> + 2<sup>1</sup> + … + 2<sup>h−1</sup>) + (nodi del livello h)</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(2<sup>h</sup> − 1) + (nodi del livello h)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">≥</span><span class="dx">(2<sup>h</sup> − 1) + 1</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>h</sup></span><span class="perche"></span></span></div>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>«Quasi completo» vuol dire completo fino al penultimo livello, e se l'altezza è h il penultimo livello è h − 1: i livelli 0, 1, …, h − 1 sono tutti pieni. In un livello pieno ogni nodo del livello precedente ha due figli, quindi i nodi raddoppiano a ogni livello: il livello p ha 2<sup>p</sup> nodi.</p>
+    <p><span class="rif">2</span>La somma delle potenze di 2 della sezione 1 dice: sommando le potenze di 2 da 2<sup>0</sup> fino a una certa potenza, si ottiene la potenza successiva meno 1. Qui l'ultima potenza è 2<sup>h−1</sup>, la successiva è 2<sup>h</sup>, e la somma vale 2<sup>h</sup> − 1.</p>
+    <p><span class="rif">3</span>Al livello h c'è almeno un nodo. L'altezza è la profondità del nodo più profondo: se il livello h fosse vuoto, il nodo più profondo starebbe al più a profondità h − 1, e l'altezza sarebbe h − 1, non h.</p>
+  </div>
+  <p>È il caso della Figura 4 a sinistra, con h = 3: i livelli 0, 1 e 2 sono pieni, e nell'ultimo livello c'è un solo nodo, quello arancione.</p>
   <div class="parte">Il massimo</div>
   <p>Al massimo l'ultimo livello è pieno anche lui: l'albero è completo, con 2<sup>h+1</sup> − 1 nodi.</p>
   <div class="parte">L'altezza</div>
-  <div class="mat-blocco"><span class="catena"><span class="sx">2<sup>h</sup></span><span class="rel">≤</span><span class="dx">n ≤ 2<sup>h+1</sup> − 1</span><span class="perche"></span><span class="sx">2<sup>h</sup></span><span class="rel">≤</span><span class="dx">n &lt; 2<sup>h+1</sup></span><span class="perche"><span class="rif">1</span></span><span class="sx">h</span><span class="rel">≤</span><span class="dx">log<sub>2</sub> n &lt; h + 1</span><span class="perche"><span class="rif">2</span></span><span class="sx">h</span><span class="rel">=</span><span class="dx">⌊log<sub>2</sub> n⌋</span><span class="perche"><span class="rif">3</span></span></span></div>
+  <div class="mat-blocco"><span class="catena"><span class="sx">2<sup>h</sup></span><span class="rel">≤</span><span class="dx">n ≤ 2<sup>h+1</sup> − 1</span><span class="perche"></span><span class="sx">2<sup>h</sup></span><span class="rel">≤</span><span class="dx">n &lt; 2<sup>h+1</sup></span><span class="perche"><span class="rif">4</span></span><span class="sx">h</span><span class="rel">≤</span><span class="dx">log<sub>2</sub> n &lt; h + 1</span><span class="perche"><span class="rif">5</span></span><span class="sx">h</span><span class="rel">=</span><span class="dx">⌊log<sub>2</sub> n⌋</span><span class="perche"><span class="rif">6</span></span></span></div>
   <div class="spiega">
     <div class="spiega-tit">I passaggi spiegati</div>
-    <p><span class="rif">1</span>n è un numero intero: «n ≤ 2<sup>h+1</sup> − 1» e «n &lt; 2<sup>h+1</sup>» dicono la stessa cosa.</p>
-    <p><span class="rif">2</span>Si prende il logaritmo in base 2 di tutti e tre i membri. Il logaritmo è crescente, quindi i versi restano gli stessi; e log<sub>2</sub> 2<sup>h</sup> = h, log<sub>2</sub> 2<sup>h+1</sup> = h + 1.</p>
-    <p><span class="rif">3</span>h è un numero intero e log<sub>2</sub> n sta tra h (compreso) e h + 1 (escluso): arrotondando log<sub>2</sub> n per difetto si ottiene proprio h (vedi l'attrezzo che segue).</p>
+    <p><span class="rif">4</span>n è un numero intero: «n ≤ 2<sup>h+1</sup> − 1» e «n &lt; 2<sup>h+1</sup>» dicono la stessa cosa.</p>
+    <p><span class="rif">5</span>Si prende il logaritmo in base 2 di tutti e tre i membri. Il logaritmo è crescente, quindi i versi restano gli stessi; e log<sub>2</sub> 2<sup>h</sup> = h, log<sub>2</sub> 2<sup>h+1</sup> = h + 1.</p>
+    <p><span class="rif">6</span>h è un numero intero e log<sub>2</sub> n sta tra h (compreso) e h + 1 (escluso): arrotondando log<sub>2</sub> n per difetto si ottiene proprio h (vedi l'attrezzo che segue).</p>
   </div>
 </div>
 
@@ -359,7 +368,7 @@
 
 <!-- ============================================================ 7 -->
 <h2 id="dallalto"><span class="num">7</span>Costruire uno heap dall'alto, con la ricorsione</h2>
-<p class="in-questa"><b>In questa sezione:</b> il problema della lavagna, pagina 14 (da un albero quasi completo con chiavi qualsiasi a uno heap) e la prima soluzione, con la tecnica divide et impera (pagine 15 e 16, Codice 6.2). Funziona, ma usa la pila delle chiamate.</p>
+<p class="in-questa"><b>In questa sezione:</b> il problema della lavagna, pagina 14 (da un albero quasi completo con chiavi qualsiasi a uno heap) e la prima soluzione, con la tecnica divide et impera (pagine 15 e 16, Codice 6.2). Perché creaHeap non è un semplice risistema. La soluzione funziona, ma usa la pila delle chiamate.</p>
 <p>Per usare heapSort serve prima uno heap. Il problema, alla lavagna, pagina 14: «dato un albero binario quasi completo contenente gli elementi da ordinare, come posso trasformarlo in uno heap?» La forma va già bene; bisogna solo spostare le chiavi. Il prof presenta due soluzioni:</p>
 <ul>
   <li>Soluzione 1: tecnica divide et impera (strategia <em>top-down</em>, dall'alto in basso);</li>
@@ -382,6 +391,22 @@
 <div class="didascalia"><b>Figura 9.</b> Lavagna, pagina 16. (a) L'albero di partenza; in viola il sottoalbero sinistro, in arancione il destro. (b) Le due chiamate ricorsive li hanno trasformati in heap; la radice 18 è ancora da sistemare. (c) risistema sulla radice: 18 è più piccolo di 32, che sale; poi 18 è maggiore di 9 e di 1, e si ferma.</div>
 </div>
 <p>Come è diventato heap il sottoalbero sinistro, quello con radice 7? Con la stessa procedura, applicata a lui. Prima i suoi due sottoalberi: quello di 14 (figli 25 e 8) diventa 25 con figli 14 e 8; quello di 11 (figlio 12) diventa 12 con figlio 11. Poi risistema su 7: sale 25, poi sale 14, e 7 finisce in una foglia. Risultato: 25 / 14 12 / 7 8 11. Il sottoalbero destro, 9 con figli 32 e 1, diventa 32 con figli 9 e 1. Lo heap finale è 32 / 25 18 / 14 12 9 1 / 7 8 11.</p>
+
+<div class="box domanda">
+  <span class="etichetta">Un dubbio</span>
+  <p class="citazione">«Ma creaHeap non fa semplicemente risistema? Lo heap non lo sistema già risistema?»</p>
+  <p>Dentro, creaHeap fa davvero solo chiamate a risistema. La differenza sta in <strong>quante</strong> chiamate fa e <strong>su quali nodi</strong>.</p>
+  <ul>
+    <li><strong>risistema</strong> ripara <em>un solo</em> errore, nella radice, e funziona solo se il resto dell'albero è già uno heap. Fa scendere la chiave della radice lungo un cammino e si ferma appena la chiave è maggiore o uguale dei figli: il resto dell'albero non lo guarda. In heapSort questa condizione c'è sempre: lo heap era giusto, ed è cambiata solo la radice.</li>
+    <li><strong>creaHeap</strong> parte da chiavi messe a caso: gli errori possono essere dappertutto, anche in basso. Per questo chiama risistema su <em>ogni</em> nodo, prima sui sottoalberi e poi sulla loro radice. Così, a ogni chiamata, sotto il nodo è già tutto a posto, che è proprio la condizione di cui risistema ha bisogno.</li>
+  </ul>
+  <p>La Figura 10 mostra che un solo risistema sulla radice non basta. L'esempio non viene dalla lezione.</p>
+</div>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) risistema sulla sola radice</div><svg viewBox="0 0 188 160" width="188" height="160" role="img" aria-label="risistema sulla radice 5: si ferma subito, 9 resta sotto 1" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="85.1" y1="34.1" x2="62.9" y2="63.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="102.9" y1="34.1" x2="125.1" y2="63.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="48.8" y1="90.1" x2="39.2" y2="115.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="94" cy="22" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="94" y="27" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="54" cy="76" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="54" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="34" cy="130" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="34" y="135" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="134" cy="76" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="134" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text></g></svg></div><div><div class="nome-mat">(b) creaHeap: prima il nodo 1</div><svg viewBox="0 0 188 160" width="188" height="160" role="img" aria-label="9 sale sopra 1" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="85.1" y1="34.1" x2="62.9" y2="63.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="102.9" y1="34.1" x2="125.1" y2="63.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="48.8" y1="90.1" x2="39.2" y2="115.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="94" cy="22" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="27" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="54" cy="76" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="54" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="34" cy="130" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="34" y="135" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="134" cy="76" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="134" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text></g></svg></div><div><div class="nome-mat">(c) poi la radice</div><svg viewBox="0 0 188 160" width="188" height="160" role="img" aria-label="9 sale nella radice: lo heap 9 5 3 1" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="85.1" y1="34.1" x2="62.9" y2="63.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="102.9" y1="34.1" x2="125.1" y2="63.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="48.8" y1="90.1" x2="39.2" y2="115.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="94" cy="22" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="94" y="27" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="54" cy="76" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="54" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="34" cy="130" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="34" y="135" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="134" cy="76" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="134" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text></g></svg></div></div>
+<div class="didascalia"><b>Figura 10.</b> (a) risistema sulla sola radice. I figli di 5 sono 1 e 3, il maggiore è 3, e 3 è più piccolo di 5: risistema si ferma subito. L'albero non cambia e non è uno heap, perché 9, il massimo, resta in fondo, sotto 1 (in rosso). (b) creaHeap comincia dal basso: risistema sul nodo 1, che ha il solo figlio 9. 9 è più grande di 1, quindi sale. (c) Poi risistema sulla radice: il figlio maggiore di 5 adesso è 9, che sale; sotto 5 resta solo 1, più piccolo, e 5 si ferma. Adesso è uno heap.</div>
+</div>
+
 <h3>Il difetto: la pila delle chiamate</h3>
 <p>Alla lavagna, pagina 16, il prof scrive in grigio: «uso stack». Ogni chiamata ricorsiva lascia un record nella pila delle chiamate finché non è finita. Le chiamate aperte nello stesso momento formano un cammino dalla radice verso il basso, quindi la pila arriva all'altezza dell'albero più uno: <strong>Θ(log n) memoria in più</strong>. Le slide: «abbandoniamo questa strada in quanto utilizza memoria aggiuntiva per la ricorsione». La soluzione 2 fa lo stesso lavoro con un ciclo, senza pila.</p>
 
@@ -413,10 +438,10 @@
 </div>
 
 <h3>L'esempio della lavagna</h3>
-<p>Alla lavagna, pagina 17, il prof usa lo stesso albero della sezione 7. La Figura 10 mostra in che ordine creaHeap tocca i nodi.</p>
+<p>Alla lavagna, pagina 17, il prof usa lo stesso albero della sezione 7. La Figura 11 mostra in che ordine creaHeap tocca i nodi.</p>
 <div class="figura">
 <svg viewBox="0 0 412 214" width="412" height="214" role="img" aria-label="l'ordine in cui creaHeap dal basso tocca i nodi" font-family="system-ui, sans-serif"><g transform="translate(64,0)"><text x="-58" y="26" font-size="12" class="t-muted" fill="#5b6270">livello 0</text><line x1="-6" y1="22" x2="342" y2="22" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="80" font-size="12" class="t-muted" fill="#5b6270">livello 1</text><line x1="-6" y1="76" x2="342" y2="76" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="134" font-size="12" class="t-muted" fill="#5b6270">livello 2</text><line x1="-6" y1="130" x2="342" y2="130" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="188" font-size="12" class="t-muted" fill="#5b6270">livello 3</text><line x1="-6" y1="184" x2="342" y2="184" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><line x1="161.6" y1="30.4" x2="106.4" y2="67.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="186.4" y1="30.4" x2="241.6" y2="67.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="85.1" y1="88.1" x2="62.9" y2="117.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="102.9" y1="88.1" x2="125.1" y2="117.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="48.8" y1="144.1" x2="39.2" y2="169.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="59.2" y1="144.1" x2="68.8" y2="169.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="128.8" y1="144.1" x2="119.2" y2="169.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="245.1" y1="88.1" x2="222.9" y2="117.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="262.9" y1="88.1" x2="285.1" y2="117.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="174" cy="22" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="174" y="27" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><circle cx="186.8" cy="9.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="186.8" y="12.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">10</text><circle cx="94" cy="76" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="106.8" cy="63.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="106.8" y="66.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">9</text><circle cx="54" cy="130" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="54" y="135" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="66.8" cy="117.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="66.8" y="120.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">7</text><circle cx="34" cy="184" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="34" y="189" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="46.8" cy="171.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="46.8" y="174.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">3</text><circle cx="74" cy="184" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="74" y="189" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="86.8" cy="171.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="86.8" y="174.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">2</text><circle cx="134" cy="130" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="134" y="135" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="146.8" cy="117.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="146.8" y="120.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">6</text><circle cx="114" cy="184" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="114" y="189" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="126.8" cy="171.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="126.8" y="174.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">1</text><circle cx="254" cy="76" r="15" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="254" y="81" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="266.8" cy="63.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="266.8" y="66.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">8</text><circle cx="214" cy="130" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="214" y="135" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">32</text><circle cx="226.8" cy="117.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="226.8" y="120.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">5</text><circle cx="294" cy="130" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="294" y="135" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="306.8" cy="117.3" r="8.5" class="t-viola" fill="#6d3fc0"/><text x="306.8" y="120.9" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">4</text></g></svg>
-<div class="didascalia"><b>Figura 10.</b> Lavagna, pagina 17: il numero viola è l'ordine in cui creaHeap tocca i nodi, dal basso in alto e, in ogni livello, da destra a sinistra. I nodi da 1 a 5 (in verde) sono foglie: lì risistema non fa niente.</div>
+<div class="didascalia"><b>Figura 11.</b> Lavagna, pagina 17: il numero viola è l'ordine in cui creaHeap tocca i nodi, dal basso in alto e, in ogni livello, da destra a sinistra. I nodi da 1 a 5 (in verde) sono foglie: lì risistema non fa niente.</div>
 </div>
 <ol>
   <li>Nodi 1–5: 12, 8, 25, 1, 32 sono foglie. Niente da fare.</li>
@@ -459,71 +484,130 @@
 
 <!-- ============================================================ 9 -->
 <h2 id="conti"><span class="num">9</span>Quanti confronti fa creaHeap</h2>
-<p class="in-questa"><b>In questa sezione:</b> le due analisi della lavagna (pagine 20–22). Quella «immediata» dà O(n log n); quella «migliorata» guarda quanto può scendere ogni nodo e dà Θ(n). Servono due somme, spiegate in due attrezzi, una delle quali dimostrata per induzione.</p>
+<p class="in-questa"><b>In questa sezione:</b> le due analisi della lavagna (pagine 20–22). Quella «immediata» dà O(n log n). Quella «migliorata» conta quanto può scendere davvero ogni nodo e dà Θ(n): il conto è fatto passo per passo, con le due somme che servono, una delle quali dimostrata per induzione. Poi, facoltativa, una dimostrazione più corta che non viene dalla lezione.</p>
 <h3>L'analisi immediata</h3>
 <p>Lavagna, pagina 20. creaHeap chiama risistema una volta per ogni nodo: n chiamate. Ogni chiamata lavora su un sottoalbero di altezza h′ ≤ h e fa O(h′) confronti, quindi al più O(h). In tutto al più n · O(h) confronti, e siccome h = ⌊log<sub>2</sub> n⌋:</p>
 <div class="formula">confronti di creaHeap ≤ n · O(h) = O(n log n)</div>
 <p>È giusto, ma pessimista: fa finta che ogni nodo possa scendere di h livelli, mentre solo la radice può farlo. Un nodo vicino al fondo scende al massimo di pochi livelli, e i nodi vicini al fondo sono la maggior parte.</p>
 
-<h3>L'analisi migliorata</h3>
-<p>Lavagna, pagina 22. Prendiamo il caso peggiore, l'albero completo di altezza h, e contiamo livello per livello (Figura 11):</p>
+<h3>L'analisi migliorata: cosa si conta</h3>
+<p>Lavagna, pagina 22. L'analisi immediata dà a ogni nodo le h discese della radice. Quella migliorata dà a ogni nodo solo le discese che può fare davvero. Prendiamo il caso peggiore, l'albero completo di altezza h.</p>
 <ul>
-  <li>a profondità p ci sono <strong>2<sup>p</sup> nodi</strong> (sezione 1);</li>
-  <li>il sottoalbero di un nodo a profondità p ha altezza <strong>h − p</strong> (dal nodo all'ultimo livello ci sono h − p livelli), quindi risistema su di lui fa Θ(h − p) confronti: al più h − p discese, ognuna con al più 2 confronti;</li>
-  <li>tutti i nodi di profondità p insieme fanno 2<sup>p</sup> · Θ(h − p) confronti.</li>
+  <li><strong>Si contano le discese.</strong> Una discesa è un giro del ciclo di risistema: la chiave scende di un livello. Ogni discesa costa al più 2 confronti, uno tra i due figli e uno tra il figlio maggiore e la chiave. Quindi, se le discese sono al più S, i confronti sono al più 2S.</li>
+  <li><strong>Quanto può scendere un nodo.</strong> Un nodo a profondità p può scendere solo fino all'ultimo livello, che è a profondità h: al più <strong>h − p</strong> discese. La radice (p = 0) al più h, le foglie (p = h) nessuna.</li>
+  <li><strong>Quanti nodi ci sono a profondità p.</strong> Nell'albero completo i nodi raddoppiano a ogni livello: a profondità p ce ne sono <strong>2<sup>p</sup></strong>.</li>
+  <li>Quindi i nodi a profondità p fanno, tutti insieme, al più <strong>2<sup>p</sup> · (h − p)</strong> discese.</li>
 </ul>
 <div class="figura">
 <svg viewBox="0 0 632 200" width="632" height="200" role="img" aria-label="albero completo di altezza 3: a profondità p ci sono 2 alla p nodi che scendono al più di h − p livelli" font-family="system-ui, sans-serif"><g transform="translate(64,0)"><text x="-58" y="24" font-size="12" class="t-muted" fill="#5b6270">livello 0</text><line x1="-6" y1="20" x2="262" y2="20" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="74" font-size="12" class="t-muted" fill="#5b6270">livello 1</text><line x1="-6" y1="70" x2="262" y2="70" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="124" font-size="12" class="t-muted" fill="#5b6270">livello 2</text><line x1="-6" y1="120" x2="262" y2="120" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><text x="-58" y="174" font-size="12" class="t-muted" fill="#5b6270">livello 3</text><line x1="-6" y1="170" x2="262" y2="170" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/><line x1="125.5" y1="27" x2="82.5" y2="63" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="142.5" y1="27" x2="185.5" y2="63" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="68.3" y1="79.4" x2="49.7" y2="110.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="79.7" y1="79.4" x2="98.3" y2="110.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="40.8" y1="130.5" x2="32.2" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="47.2" y1="130.5" x2="55.8" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="100.8" y1="130.5" x2="92.2" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="107.2" y1="130.5" x2="115.8" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="188.3" y1="79.4" x2="169.7" y2="110.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="199.7" y1="79.4" x2="218.3" y2="110.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="160.8" y1="130.5" x2="152.2" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="167.2" y1="130.5" x2="175.8" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="220.8" y1="130.5" x2="212.2" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="227.2" y1="130.5" x2="235.8" y2="159.5" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="134" cy="20" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="134" y="25" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="74" cy="70" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="74" y="75" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="44" cy="120" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="44" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="29" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="29" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="59" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="59" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="104" cy="120" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="104" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="89" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="89" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="119" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="119" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="194" cy="70" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="194" y="75" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="164" cy="120" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="164" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="149" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="149" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="179" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="179" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="224" cy="120" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="224" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="209" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="209" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><circle cx="239" cy="170" r="11" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="239" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328"></text><text x="276" y="25" font-size="12.5" font-weight="600" class="t-blu" fill="#2f52c4">p = 0: 1 nodo × al più 3 discese = 3</text><text x="276" y="75" font-size="12.5" font-weight="600" class="t-blu" fill="#2f52c4">p = 1: 2 nodi × al più 2 discese = 4</text><text x="276" y="125" font-size="12.5" font-weight="600" class="t-blu" fill="#2f52c4">p = 2: 4 nodi × al più 1 discesa = 4</text><text x="276" y="175" font-size="12.5" font-weight="600" class="t-verde" fill="#17803d">p = 3: 8 foglie × 0 discese = 0</text></g></svg>
-<div class="didascalia"><b>Figura 11.</b> Lavagna, pagina 22, con h = 3. Più un nodo è in alto, più può scendere, ma meno nodi ci sono a quel livello. Le foglie (metà dei nodi) non scendono mai. In tutto al più 3 + 4 + 4 + 0 = 11 discese, con 15 nodi.</div>
+<div class="didascalia"><b>Figura 12.</b> Lavagna, pagina 22, con h = 3. Più un nodo è in alto, più può scendere, ma meno nodi ci sono a quel livello. Le foglie (più di metà dei nodi) non scendono mai. In tutto al più 3 + 4 + 4 + 0 = 11 discese, con 15 nodi.</div>
 </div>
-<p>Sommando su tutte le profondità, i confronti sono Θ della somma</p>
-<div class="formula">Σ<sub>p=0</sub><sup>h</sup> 2<sup>p</sup> (h − p)</div>
+<p>Sommando i contributi di tutte le profondità, da 0 a h, le discese sono al più</p>
+<div class="formula">S = h · 2<sup>0</sup> + (h − 1) · 2<sup>1</sup> + (h − 2) · 2<sup>2</sup> + … + 1 · 2<sup>h−1</sup> + 0 · 2<sup>h</sup></div>
+<p>Il termine con 2<sup>p</sup> è il contributo della profondità p. Il suo coefficiente è h − p: vale h per la radice e cala di 1 a ogni livello, fino a 0 per le foglie. Con il simbolo di somma: S = Σ<sub>p=0</sub><sup>h</sup> 2<sup>p</sup>(h − p).</p>
 
 <div class="box def">
   <span class="etichetta">Attrezzo matematico: il simbolo Σ</span>
-  <p>Σ<sub>p=0</sub><sup>h</sup> f(p) vuol dire f(0) + f(1) + … + f(h): si calcola f per ogni valore di p da 0 a h e si somma tutto. Per esempio, con h = 3, Σ<sub>p=0</sub><sup>3</sup> 2<sup>p</sup>(3 − p) = 1·3 + 2·2 + 4·1 + 8·0 = 11, che è il conto della Figura 11.</p>
-  <p>Due regole: la somma di una differenza è la differenza delle somme, Σ (a<sub>p</sub> − b<sub>p</sub>) = Σ a<sub>p</sub> − Σ b<sub>p</sub>; e un fattore che non dipende da p si può portare fuori: Σ h · 2<sup>p</sup> = h · Σ 2<sup>p</sup>.</p>
+  <p>Σ<sub>p=0</sub><sup>h</sup> f(p) vuol dire f(0) + f(1) + … + f(h): si calcola f per ogni valore di p da 0 a h e si somma tutto. Per esempio, con h = 3, Σ<sub>p=0</sub><sup>3</sup> 2<sup>p</sup>(3 − p) = 1·3 + 2·2 + 4·1 + 8·0 = 11, che è il conto della Figura 12.</p>
 </div>
+
+<p>Il resto della sezione calcola S. Il risultato è</p>
+<div class="formula grande">S = 2<sup>h+1</sup> − h − 2 = n − h − 1 &lt; n</div>
+<p>cioè: le discese sono meno dei nodi.</p>
+
+<h3>Il calcolo di S, come alla lavagna</h3>
+<p>L'idea del prof è spezzare ogni termine in due:</p>
+<div class="formula">(h − p) · 2<sup>p</sup> = h · 2<sup>p</sup> − p · 2<sup>p</sup></div>
+<p>Ecco cosa vuol dire. <strong>Prima si danno a ogni nodo h discese</strong>, come nell'analisi immediata: per la profondità p sono h · 2<sup>p</sup>. <strong>Poi si tolgono quelle date in più.</strong> Un nodo a profondità p fa al più h − p discese, quindi gliene sono state date p di troppo: per tutta la profondità p sono p · 2<sup>p</sup>. Sommando su tutte le profondità:</p>
+<div class="formula">S = h · (2<sup>0</sup> + 2<sup>1</sup> + … + 2<sup>h</sup>) − (0 · 2<sup>0</sup> + 1 · 2<sup>1</sup> + … + h · 2<sup>h</sup>)</div>
+<ul>
+  <li>La prima parentesi è il numero dei nodi. Per la somma delle potenze di 2 della sezione 1 (sommando le potenze di 2 da 2<sup>0</sup> fino a una certa potenza, si ottiene la potenza successiva meno 1) vale <strong>2<sup>h+1</sup> − 1</strong>. Moltiplicata per h, dà le discese dell'analisi immediata.</li>
+  <li>La seconda parentesi è il totale delle discese date in più. Per calcolarla serve un'altra somma, quella dell'attrezzo «la seconda somma»: vale <strong>(h − 1) · 2<sup>h+1</sup> + 2</strong>.</li>
+</ul>
+
+<div class="box domanda">
+  <span class="etichetta">Un dubbio</span>
+  <p class="citazione">«Perché p diventa h − 1?»</p>
+  <p>Non diventa h − 1: nessuna lettera viene sostituita. Nella somma 0 · 2<sup>0</sup> + 1 · 2<sup>1</sup> + … + h · 2<sup>h</sup> ogni termine ha la sua p: 0 nel primo, 1 nel secondo, e così via fino a h nell'ultimo. La formula (h − 1) · 2<sup>h+1</sup> + 2 dà il valore del <em>totale</em>, quando tutti i termini sono già stati sommati. Il totale dipende solo da dove finisce la somma, cioè da h, e per questo nella formula c'è solo h.</p>
+  <p>Con la somma di Gauss succede la stessa cosa: in 1 + 2 + … + k = k(k + 1)/2 i termini sono tutti diversi, ma il totale si scrive solo con k. Che la formula sia giusta lo dimostra la «Verifica per induzione» che segue l'attrezzo.</p>
+</div>
+
 <div class="box def">
   <span class="etichetta">Attrezzo matematico: la seconda somma (lavagna, pagina 21)</span>
-  <p>Per ogni n ≥ 0: <strong>Σ<sub>i=0</sub><sup>n</sup> i · 2<sup>i</sup> = (n − 1) · 2<sup>n+1</sup> + 2</strong>.</p>
-  <p>Prova con n = 3: 0·1 + 1·2 + 2·4 + 3·8 = 0 + 2 + 8 + 24 = 34, e (3 − 1) · 2<sup>4</sup> + 2 = 2 · 16 + 2 = 34. Il prof la verifica per induzione su n.</p>
+  <p>Per ogni k ≥ 0: <strong>0 · 2<sup>0</sup> + 1 · 2<sup>1</sup> + 2 · 2<sup>2</sup> + … + k · 2<sup>k</sup> = (k − 1) · 2<sup>k+1</sup> + 2</strong>. Con il simbolo di somma: Σ<sub>i=0</sub><sup>k</sup> i · 2<sup>i</sup> = (k − 1) · 2<sup>k+1</sup> + 2.</p>
+  <p>Alla lavagna la lettera è n. Qui usiamo k, perché in questa pagina n è il numero dei nodi. Nel calcolo di S si usa con k = h.</p>
+  <p>Prova con k = 3: 0 + 2 + 8 + 24 = 34, e (3 − 1) · 2<sup>4</sup> + 2 = 32 + 2 = 34.</p>
 </div>
 <div class="dim">
   <div class="dim-tit">Verifica per induzione (lavagna, pagina 21)</div>
-  <p class="enunciato">Σ<sub>i=0</sub><sup>n</sup> i · 2<sup>i</sup> = (n − 1) · 2<sup>n+1</sup> + 2, per ogni n ≥ 0.</p>
-  <div class="parte prima">Base: n = 0</div>
+  <p class="enunciato">Σ<sub>i=0</sub><sup>k</sup> i · 2<sup>i</sup> = (k − 1) · 2<sup>k+1</sup> + 2, per ogni k ≥ 0.</p>
+  <div class="parte prima">Base: k = 0</div>
   <p>A sinistra c'è un solo termine, 0 · 2<sup>0</sup> = 0. A destra (0 − 1) · 2<sup>1</sup> + 2 = −2 + 2 = 0. Sono uguali.</p>
-  <div class="parte">Passo: da n − 1 a n (con n ≥ 1)</div>
-  <p class="riga-ip"><b>Ipotesi</b> Σ<sub>i=0</sub><sup>n−1</sup> i · 2<sup>i</sup> = (n − 2) · 2<sup>n</sup> + 2 &nbsp;(la formula con n − 1 al posto di n)</p>
-  <p class="riga-ip"><b>Tesi</b> Σ<sub>i=0</sub><sup>n</sup> i · 2<sup>i</sup> = (n − 1) · 2<sup>n+1</sup> + 2</p>
-  <div class="mat-blocco"><span class="catena"><span class="sx">Σ<sub>i=0</sub><sup>n</sup> i · 2<sup>i</sup></span><span class="rel">=</span><span class="dx">Σ<sub>i=0</sub><sup>n−1</sup> i · 2<sup>i</sup> + n · 2<sup>n</sup></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(n − 2) · 2<sup>n</sup> + 2 + n · 2<sup>n</sup></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n · 2<sup>n</sup> − 2<sup>n+1</sup> + 2 + n · 2<sup>n</sup></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">n · 2<sup>n+1</sup> − 2<sup>n+1</sup> + 2</span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(n − 1) · 2<sup>n+1</sup> + 2</span><span class="perche"><span class="rif">5</span></span></span></div>
+  <div class="parte">Passo: da k − 1 a k (con k ≥ 1)</div>
+  <p class="riga-ip"><b>Ipotesi</b> Σ<sub>i=0</sub><sup>k−1</sup> i · 2<sup>i</sup> = (k − 2) · 2<sup>k</sup> + 2 &nbsp;(la formula con k − 1 al posto di k)</p>
+  <p class="riga-ip"><b>Tesi</b> Σ<sub>i=0</sub><sup>k</sup> i · 2<sup>i</sup> = (k − 1) · 2<sup>k+1</sup> + 2</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">Σ<sub>i=0</sub><sup>k</sup> i · 2<sup>i</sup></span><span class="rel">=</span><span class="dx">Σ<sub>i=0</sub><sup>k−1</sup> i · 2<sup>i</sup> + k · 2<sup>k</sup></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(k − 2) · 2<sup>k</sup> + 2 + k · 2<sup>k</sup></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">k · 2<sup>k</sup> − 2<sup>k+1</sup> + 2 + k · 2<sup>k</sup></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">k · 2<sup>k+1</sup> − 2<sup>k+1</sup> + 2</span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(k − 1) · 2<sup>k+1</sup> + 2</span><span class="perche"><span class="rif">5</span></span></span></div>
   <p class="qed">□</p>
   <div class="spiega">
     <div class="spiega-tit">I passaggi spiegati</div>
-    <p><span class="rif">1</span>Si stacca l'ultimo termine della somma, quello con i = n.</p>
-    <p><span class="rif">2</span>Si usa l'ipotesi induttiva sulla somma fino a n − 1.</p>
-    <p><span class="rif">3</span>(n − 2) · 2<sup>n</sup> = n · 2<sup>n</sup> − 2 · 2<sup>n</sup>, e 2 · 2<sup>n</sup> = 2<sup>n+1</sup>.</p>
-    <p><span class="rif">4</span>n · 2<sup>n</sup> + n · 2<sup>n</sup> = 2n · 2<sup>n</sup> = n · 2<sup>n+1</sup>.</p>
-    <p><span class="rif">5</span>Si raccoglie 2<sup>n+1</sup>: n · 2<sup>n+1</sup> − 2<sup>n+1</sup> = (n − 1) · 2<sup>n+1</sup>.</p>
+    <p><span class="rif">1</span>Si stacca l'ultimo termine della somma, quello con i = k.</p>
+    <p><span class="rif">2</span>Si usa l'ipotesi induttiva sulla somma fino a k − 1.</p>
+    <p><span class="rif">3</span>(k − 2) · 2<sup>k</sup> = k · 2<sup>k</sup> − 2 · 2<sup>k</sup>, e 2 · 2<sup>k</sup> = 2<sup>k+1</sup>.</p>
+    <p><span class="rif">4</span>k · 2<sup>k</sup> + k · 2<sup>k</sup> = 2k · 2<sup>k</sup> = k · 2<sup>k+1</sup>.</p>
+    <p><span class="rif">5</span>Si raccoglie 2<sup>k+1</sup>: k · 2<sup>k+1</sup> − 2<sup>k+1</sup> = (k − 1) · 2<sup>k+1</sup>.</p>
   </div>
 </div>
 
-<p>Ora il conto della lavagna, pagina 22. Si usano le due somme con h al posto di n: Σ<sub>p=0</sub><sup>h</sup> 2<sup>p</sup> = 2<sup>h+1</sup> − 1 (sezione 1) e Σ<sub>p=0</sub><sup>h</sup> p · 2<sup>p</sup> = (h − 1) · 2<sup>h+1</sup> + 2.</p>
+<p>Adesso si mettono insieme i pezzi.</p>
 <div class="dim">
   <div class="dim-tit">La somma delle discese (lavagna, pagina 22)</div>
-  <div class="mat-blocco"><span class="catena"><span class="sx">Σ<sub>p=0</sub><sup>h</sup> 2<sup>p</sup> (h − p)</span><span class="rel">=</span><span class="dx">h · Σ<sub>p=0</sub><sup>h</sup> 2<sup>p</sup> − Σ<sub>p=0</sub><sup>h</sup> p · 2<sup>p</sup></span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">h · (2<sup>h+1</sup> − 1) − ((h − 1) · 2<sup>h+1</sup> + 2)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">h · 2<sup>h+1</sup> − h − h · 2<sup>h+1</sup> + 2<sup>h+1</sup> − 2</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>h+1</sup> − h − 2</span><span class="perche"><span class="rif">4</span></span></span></div>
+  <p class="enunciato">S = Σ<sub>p=0</sub><sup>h</sup> 2<sup>p</sup>(h − p) = 2<sup>h+1</sup> − h − 2</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">S</span><span class="rel">=</span><span class="dx">h · (2<sup>0</sup> + 2<sup>1</sup> + … + 2<sup>h</sup>) − (0 · 2<sup>0</sup> + 1 · 2<sup>1</sup> + … + h · 2<sup>h</sup>)</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">h · (2<sup>h+1</sup> − 1) − ((h − 1) · 2<sup>h+1</sup> + 2)</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">h · 2<sup>h+1</sup> − h − h · 2<sup>h+1</sup> + 2<sup>h+1</sup> − 2</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>h+1</sup> − h − 2</span><span class="perche"><span class="rif">4</span></span></span></div>
   <div class="spiega">
     <div class="spiega-tit">I passaggi spiegati</div>
-    <p><span class="rif">1</span>2<sup>p</sup>(h − p) = h · 2<sup>p</sup> − p · 2<sup>p</sup>; la somma di una differenza è la differenza delle somme, e h, che non dipende da p, esce dalla prima somma.</p>
-    <p><span class="rif">2</span>Le due somme degli attrezzi, con h al posto di n.</p>
-    <p><span class="rif">3</span>Si moltiplica: h · (2<sup>h+1</sup> − 1) = h · 2<sup>h+1</sup> − h; e il meno davanti alla parentesi cambia i segni: −(h − 1) · 2<sup>h+1</sup> − 2 = −h · 2<sup>h+1</sup> + 2<sup>h+1</sup> − 2.</p>
+    <p><span class="rif">1</span>Ogni termine (h − p) · 2<sup>p</sup> si spezza in h · 2<sup>p</sup> − p · 2<sup>p</sup>. Da una parte si raccolgono tutti gli h · 2<sup>p</sup>: h è lo stesso in tutti, quindi si mette in evidenza. Dall'altra si raccolgono tutti i p · 2<sup>p</sup>.</p>
+    <p><span class="rif">2</span>Prima parentesi: la somma delle potenze di 2 della sezione 1. Seconda parentesi: la seconda somma, con k = h.</p>
+    <p><span class="rif">3</span>Si tolgono le parentesi. h · (2<sup>h+1</sup> − 1) = h · 2<sup>h+1</sup> − h. Il meno davanti alla seconda parentesi cambia il segno di tutto quello che contiene: (h − 1) · 2<sup>h+1</sup> = h · 2<sup>h+1</sup> − 2<sup>h+1</sup> diventa −h · 2<sup>h+1</sup> + 2<sup>h+1</sup>, e +2 diventa −2.</p>
     <p><span class="rif">4</span>h · 2<sup>h+1</sup> e −h · 2<sup>h+1</sup> si cancellano.</p>
   </div>
 </div>
-<p>Controllo con h = 3: 2<sup>4</sup> − 3 − 2 = 11, come nella Figura 11.</p>
-<p>Ora mettiamo n al posto di h. L'albero completo ha n = 2<sup>h+1</sup> − 1 nodi, quindi 2<sup>h+1</sup> = n + 1 e</p>
-<div class="formula">discese al più 2<sup>h+1</sup> − h − 2 = n − h − 1 &lt; n</div>
+<p>Controllo con h = 3: 2<sup>4</sup> − 3 − 2 = 11, come nella Figura 12.</p>
+
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: un'altra dimostrazione, più corta, che non usa la seconda somma (non viene dalla lezione)</summary>
+  <div class="soluzione">
+    <p>Si calcola S con lo stesso trucco della somma delle potenze di 2 della sezione 1: si scrive S, si scrive 2S e si sottrae. Vale sempre 2S − S = S, quindi quello che esce da 2S − S è proprio S.</p>
+    <p><b>Perché moltiplicare per 2.</b> I coefficienti h, h − 1, h − 2, … danno fastidio: se fossero tutti 1, S sarebbe una somma di potenze di 2, che sappiamo calcolare. Moltiplicando per 2, ogni potenza diventa la successiva (2<sup>p</sup> · 2 = 2<sup>p+1</sup>) e il suo coefficiente la segue: ogni coefficiente si sposta di un posto verso destra. Sotto ogni potenza di 2 finiscono così due coefficienti consecutivi, uno di S e uno di 2S, che differiscono di 1. Con un altro numero non funzionerebbe: 3 · 2<sup>p</sup> non è una potenza di 2, e non si allineerebbe con nessun termine di S.</p>
+    <p>La tabella mette in colonna i coefficienti di ogni potenza di 2:</p>
+    <div class="tabella-wrap"><table>
+      <tr><th></th><th>2<sup>0</sup></th><th>2<sup>1</sup></th><th>2<sup>2</sup></th><th>…</th><th>2<sup>h−1</sup></th><th>2<sup>h</sup></th></tr>
+      <tr><th>S</th><td>h</td><td>h − 1</td><td>h − 2</td><td>…</td><td>1</td><td>0</td></tr>
+      <tr><th>2S</th><td>—</td><td>h</td><td>h − 1</td><td>…</td><td>2</td><td>1</td></tr>
+      <tr><th>2S − S</th><td>−h</td><td>1</td><td>1</td><td>…</td><td>1</td><td>1</td></tr>
+    </table></div>
+    <div class="mat-blocco"><span class="catena"><span class="sx">S</span><span class="rel">=</span><span class="dx">2S − S</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">−h + 2<sup>1</sup> + 2<sup>2</sup> + … + 2<sup>h</sup></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">−h + (2<sup>h+1</sup> − 2)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>h+1</sup> − h − 2</span><span class="perche"></span></span></div>
+    <div class="spiega">
+      <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>2S − S = S, per qualunque numero S.</p>
+    <p><span class="rif">2</span>Si sottrae colonna per colonna, cioè tra termini con la stessa potenza di 2. Sotto 2<sup>0</sup> c'è solo il termine di S, h · 2<sup>0</sup>: in 2S ogni termine contiene almeno un fattore 2, quindi 2S non ha termini con 2<sup>0</sup>, e resta −h. Sotto ogni altra potenza 2<sup>q</sup>, con 1 ≤ q ≤ h, i coefficienti sono h − q + 1 in 2S e h − q in S: la differenza è 1. L'ultimo termine di 2S, 0 · 2<sup>h+1</sup>, vale 0.</p>
+    <p><span class="rif">3</span>2<sup>0</sup> + 2<sup>1</sup> + … + 2<sup>h</sup> = 2<sup>h+1</sup> − 1 (sezione 1). Senza il primo termine, 2<sup>0</sup> = 1, resta 2<sup>h+1</sup> − 2.</p>
+    </div>
+    <p><b>Attenzione: si accoppiano le stesse potenze, non le stesse posizioni.</b> Il primo termine di 2S è 2 · h · 2<sup>0</sup> = h · 2<sup>1</sup>: va sotto 2<sup>1</sup>, insieme a (h − 1) · 2<sup>1</sup>, non sotto h · 2<sup>0</sup>. Se si sottraessero i termini nella stessa posizione (il primo di 2S meno il primo di S, e così via), ogni differenza ridarebbe il termine di S, e alla fine si otterrebbe solo S = S.</p>
+  </div>
+</details>
+
+<h3>Da S al costo di creaHeap</h3>
+<p>Resta da scrivere S usando n, il numero dei nodi. L'albero completo di altezza h ha 2<sup>p</sup> nodi a ogni profondità p, quindi, per la somma delle potenze di 2:</p>
+<div class="formula">n = 2<sup>0</sup> + 2<sup>1</sup> + … + 2<sup>h</sup> = 2<sup>h+1</sup> − 1, &nbsp;cioè&nbsp; 2<sup>h+1</sup> = n + 1</div>
+<p>Si mette n + 1 al posto di 2<sup>h+1</sup>:</p>
+<div class="formula">S = 2<sup>h+1</sup> − h − 2 = (n + 1) − h − 2 = n − h − 1 &lt; n</div>
+
+<div class="box domanda">
+  <span class="etichetta">Un dubbio</span>
+  <p class="citazione">«Ma 2<sup>h+1</sup> non diventa 2n?»</p>
+  <p>No: nell'albero completo 2<sup>h+1</sup> è il numero dei nodi <em>più 1</em>, non il doppio. Con 2n c'è invece una disuguaglianza: in un albero quasi completo 2<sup>h</sup> ≤ n (sezione 3), quindi 2<sup>h+1</sup> = 2 · 2<sup>h</sup> ≤ 2n. È vera, ma è un ≤ e non un =, e serve per gli alberi quasi completi, alla fine di questa sezione.</p>
+</div>
+
 <p>Le discese sono meno di n, e ogni discesa costa al più 2 confronti: <strong>creaHeap fa meno di 2n confronti</strong>, cioè O(n). E non può farne meno di un numero lineare: ogni nodo che non è una foglia (circa metà dei nodi) fa almeno un confronto. Le slide lo dicono così: con meno di un numero lineare di confronti non riusciremmo nemmeno a guardare tutte le chiavi. Quindi:</p>
 <div class="formula grande">creaHeap fa Θ(n) confronti</div>
 <p>(La lavagna, pagina 22, conclude: «h ≈ log<sub>2</sub> n, #cfr = Θ(n)».)</p>
@@ -540,10 +624,11 @@
 <div class="box riassunto">
   <span class="etichetta">In breve</span>
   <ul>
-    <li>Analisi immediata: n chiamate × O(log n) = O(n log n). Giusta, ma pessimista.</li>
-    <li>Analisi migliorata: a profondità p ci sono 2<sup>p</sup> nodi che scendono al più di h − p livelli. Σ 2<sup>p</sup>(h − p) = 2<sup>h+1</sup> − h − 2 = n − h − 1 &lt; n.</li>
-    <li>creaHeap fa meno di 2n confronti: <strong>Θ(n)</strong>.</li>
-    <li>Due somme: Σ 2<sup>i</sup> = 2<sup>n+1</sup> − 1 e Σ i 2<sup>i</sup> = (n − 1)2<sup>n+1</sup> + 2 (per induzione).</li>
+    <li>Analisi immediata: n chiamate × O(log n) = O(n log n). Giusta, ma pessimista: dà a tutti i nodi le discese della radice.</li>
+    <li>Analisi migliorata: a profondità p ci sono 2<sup>p</sup> nodi, e ognuno scende al più di h − p livelli. Le discese sono al più S = Σ<sub>p=0</sub><sup>h</sup> 2<sup>p</sup>(h − p).</li>
+    <li>Calcolo: si danno a tutti h discese, h · (2<sup>h+1</sup> − 1), e si tolgono quelle date in più, (h − 1) · 2<sup>h+1</sup> + 2. Resta S = 2<sup>h+1</sup> − h − 2.</li>
+    <li>2<sup>h+1</sup> = n + 1, quindi S = n − h − 1 &lt; n: creaHeap fa meno di 2n confronti, <strong>Θ(n)</strong>.</li>
+    <li>Le due somme: 2<sup>0</sup> + … + 2<sup>k</sup> = 2<sup>k+1</sup> − 1 e 0 · 2<sup>0</sup> + 1 · 2<sup>1</sup> + … + k · 2<sup>k</sup> = (k − 1) · 2<sup>k+1</sup> + 2 (per induzione).</li>
   </ul>
 </div>
 
@@ -610,7 +695,7 @@
     <li><b>Heap</b>: quasi completo + ogni nodo ≥ figli (min-heap: ≤). Il massimo sta nella radice. Non è ordinato.</li>
     <li><b>Togliere il massimo</b>: l'ultima foglia va nella radice e scende (non far salire i figli: resterebbe un buco).</li>
     <li><b>risistema</b>: x scende; il figlio maggiore sale nel posto libero finché è &gt; x. Al più 2 confronti per livello: <b>Θ(log n)</b>.</li>
-    <li><b>creaHeap</b> ricorsivo (sottoalberi, poi risistema la radice; usa la pila) o <b>dal basso</b> (risistema su ogni nodo, dall'ultimo alla radice). Costo <b>Θ(n)</b>: Σ 2<sup>p</sup>(h − p) = n − h − 1.</li>
+    <li><b>creaHeap</b>: risistema ripara un solo errore, nella radice, quando il resto è già uno heap; creaHeap lo chiama su <em>ogni</em> nodo, prima i sottoalberi e poi la loro radice. Ricorsivo (usa la pila) o <b>dal basso</b> (dall'ultimo nodo alla radice). Costo <b>Θ(n)</b>: le discese sono al più Σ 2<sup>p</sup>(h − p) = n − h − 1.</li>
     <li><b>heapSort</b>: creaHeap, poi n volte «togli il massimo»: <b>Θ(n log n)</b> confronti.</li>
   </ul>
 </div>
@@ -712,13 +797,13 @@
 
 <details class="esercizio">
   <summary>Esercizio 5.11 del foglio 5: creaHeap su un albero che non è quasi completo</summary>
-  <p>Applicate creaHeap all'albero (a) della Figura 12: radice 24; figli 6 e 19; 6 ha figli 55 (con figli 12 e 3) e 33; 19 ha figli 17 (che ha solo il figlio destro 16, con figli 27 e 4) e 14. L'albero che si ottiene è uno heap? In generale, cosa si ottiene applicando creaHeap a un albero binario qualsiasi?</p>
+  <p>Applicate creaHeap all'albero (a) della Figura 13: radice 24; figli 6 e 19; 6 ha figli 55 (con figli 12 e 3) e 33; 19 ha figli 17 (che ha solo il figlio destro 16, con figli 27 e 4) e 14. L'albero che si ottiene è uno heap? In generale, cosa si ottiene applicando creaHeap a un albero binario qualsiasi?</p>
   <div class="figura">
 <div class="affianco"><div><div class="nome-mat">(a) l'albero dell'esercizio</div><svg viewBox="0 0 604 250" width="604" height="250" role="img" aria-label="albero dell'esercizio 5.11" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="288.8" y1="24.6" x2="171.2" y2="65.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="315.2" y1="24.6" x2="432.8" y2="65.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="146.5" y1="78" x2="97.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="169.5" y1="78" x2="218.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="77.8" y1="131.4" x2="58.2" y2="158.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="94.2" y1="131.4" x2="113.8" y2="158.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="434.5" y1="78" x2="385.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="457.5" y1="78" x2="506.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="382.2" y1="131.4" x2="401.8" y2="158.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="405.3" y1="183.2" x2="396.7" y2="206.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="414.7" y1="183.2" x2="423.3" y2="206.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="302" cy="20" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="302" y="25" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">24</text><circle cx="158" cy="70" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="158" y="75" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="86" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="86" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">55</text><circle cx="50" cy="170" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="50" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="122" cy="170" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="122" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="230" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="230" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">33</text><circle cx="446" cy="70" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="446" y="75" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><circle cx="374" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="374" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><circle cx="410" cy="170" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="410" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="392" cy="220" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="392" y="225" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="428" cy="220" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="428" y="225" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="518" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="518" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text></g></svg></div><div><div class="nome-mat">(b) dopo creaHeap</div><svg viewBox="0 0 604 250" width="604" height="250" role="img" aria-label="dopo creaHeap" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="288.8" y1="24.6" x2="171.2" y2="65.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="315.2" y1="24.6" x2="432.8" y2="65.4" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="146.5" y1="78" x2="97.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="169.5" y1="78" x2="218.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="77.8" y1="131.4" x2="58.2" y2="158.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="94.2" y1="131.4" x2="113.8" y2="158.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="434.5" y1="78" x2="385.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="457.5" y1="78" x2="506.5" y2="112" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="382.2" y1="131.4" x2="401.8" y2="158.6" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="405.3" y1="183.2" x2="396.7" y2="206.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="414.7" y1="183.2" x2="423.3" y2="206.8" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="302" cy="20" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="302" y="25" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">55</text><circle cx="158" cy="70" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="158" y="75" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">33</text><circle cx="86" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="86" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="50" cy="170" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="50" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="122" cy="170" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="122" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="230" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="230" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">24</text><circle cx="446" cy="70" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="446" y="75" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="374" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="374" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><circle cx="410" cy="170" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="410" y="175" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><circle cx="392" cy="220" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="392" y="225" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="428" cy="220" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="428" y="225" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="518" cy="120" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="518" y="125" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text></g></svg></div></div>
-  <div class="didascalia"><b>Figura 12.</b> (a) L'albero dell'esercizio 5.11. (b) Lo stesso albero dopo creaHeap.</div>
+  <div class="didascalia"><b>Figura 13.</b> (a) L'albero dell'esercizio 5.11. (b) Lo stesso albero dopo creaHeap.</div>
   </div>
   <div class="soluzione">
-    <p>Si procede per profondità decrescente, da destra a sinistra. Profondità 4: 27 e 4 sono foglie. Profondità 3: 12 e 3 foglie; 16 (figli 27 e 4) → sale 27. Profondità 2: 55 (figli 12 e 3) resta; 33 foglia; 17 (solo il figlio 27) → sale 27, e 17 resta sopra 16 e 4; 14 foglia. Profondità 1: 6 (figli 55 e 33) → sale 55, poi 6 è sotto 12 e 3: sale 12; 19 (figli 27 e 14) → sale 27, poi 19 ha il solo figlio 17, più piccolo: resta. Profondità 0: 24 (figli 55 e 27) → sale 55, poi 24 ha figli 12 e 33: sale 33, e 24 è in una foglia. Il risultato è la Figura 12 (b).</p>
+    <p>Si procede per profondità decrescente, da destra a sinistra. Profondità 4: 27 e 4 sono foglie. Profondità 3: 12 e 3 foglie; 16 (figli 27 e 4) → sale 27. Profondità 2: 55 (figli 12 e 3) resta; 33 foglia; 17 (solo il figlio 27) → sale 27, e 17 resta sopra 16 e 4; 14 foglia. Profondità 1: 6 (figli 55 e 33) → sale 55, poi 6 è sotto 12 e 3: sale 12; 19 (figli 27 e 14) → sale 27, poi 19 ha il solo figlio 17, più piccolo: resta. Profondità 0: 24 (figli 55 e 27) → sale 55, poi 24 ha figli 12 e 33: sale 33, e 24 è in una foglia. Il risultato è la Figura 13 (b).</p>
     <p><b>Non è uno heap</b>: ogni nodo è maggiore o uguale dei suoi figli, ma la forma è la stessa di prima, e non è quasi completa (l'altezza è 4, quindi il livello 3 dovrebbe essere pieno, con 8 nodi, e invece ne ha 3; per esempio 19, a profondità 2, ha un figlio solo). creaHeap sposta le chiavi, non i nodi: non può cambiare la forma.</p>
     <p><b>In generale</b>: risistema e creaHeap funzionano su qualsiasi albero binario (usano solo «è una foglia» e «il figlio di valore massimo»), e il ragionamento della sezione 8 non usa la forma. Quindi si ottiene sempre un albero con la stessa forma in cui ogni nodo è maggiore o uguale dei figli: il massimo è nella radice. È uno heap solo se la forma era già quasi completa. E il costo dipende dall'altezza: su un albero alto e stretto risistema può costare molto più di log n.</p>
   </div>
@@ -1263,6 +1348,70 @@ function eventiInLoco(A0, tipo) {
   l = 0; fase = "fine";
   sc({ riga: 2, testo: "Il FOR è finito: l'array è ordinato in modo " + (tipo === "min" ? "decrescente" : "crescente") + ": <b>" + A.join(" ") + "</b>. Confronti in tutto: <b>" + cfr + "</b>." });
   return ev;
+}
+
+// ---------------------------------------------------------------- operazioni sugli heap (pacco 16)
+// Tutte lavorano su A (array, heap nelle prime A.length posizioni) e restituiscono i passi «grossi» (con scambi visibili).
+// passo: { cosa, A (copia), v, su, testo, cfr }
+function scendiPassi(A, v, tipo, passi) {
+  var l = A.length, meglio = sopraH(tipo), giri = 0;
+  while (giri++ < 60) {
+    var f = figliDi(v, l);
+    if (!f.length) { passi.push({ cosa: "foglia", A: A.slice(), v: v, testo: A[v] + " è in una foglia: si ferma." }); return v; }
+    var u = f[0], c = 0;
+    if (f.length === 2) { c++; if (meglio(A[f[1]], A[f[0]])) u = f[1]; }
+    c++;
+    var desc = f.length === 2 ? "I figli di " + A[v] + " sono " + A[f[0]] + " e " + A[f[1]] + ": il " + (tipo === "min" ? "minore" : "maggiore") + " è " + A[u] : "L'unico figlio di " + A[v] + " è " + A[u];
+    if (meglio(A[u], A[v])) { var x = A[v]; A[v] = A[u]; A[u] = x; passi.push({ cosa: "scende", A: A.slice(), v: u, su: v, cfr: c, testo: desc + ", " + (tipo === "min" ? "più piccolo" : "più grande") + " di " + x + ": si scambiano, " + x + " scende." }); v = u; }
+    else { passi.push({ cosa: "fermo", A: A.slice(), v: v, cfr: c, testo: desc + ", e " + A[v] + " non deve scendere: si ferma." }); return v; }
+  }
+  return v;
+}
+function salePassi(A, v, tipo, passi) {
+  var meglio = sopraH(tipo), giri = 0;
+  while (giri++ < 60) {
+    if (v === 0) { passi.push({ cosa: "radice", A: A.slice(), v: v, testo: A[v] + " è arrivato nella radice: si ferma." }); return v; }
+    var p = (v - 1) >> 1;
+    if (meglio(A[v], A[p])) { var x = A[v]; A[v] = A[p]; A[p] = x; passi.push({ cosa: "sale", A: A.slice(), v: p, su: v, cfr: 1, testo: "Il padre di " + x + " è " + A[v] + ", " + (tipo === "min" ? "più grande" : "più piccolo") + ": si scambiano, " + x + " sale in posizione " + p + "." }); v = p; }
+    else { passi.push({ cosa: "fermo", A: A.slice(), v: v, cfr: 1, testo: "Il padre di " + A[v] + " è " + A[p] + ", che non è " + (tipo === "min" ? "più grande" : "più piccolo") + ": " + A[v] + " si ferma." }); return v; }
+  }
+  return v;
+}
+function opTogliRadice(A0, tipo) {
+  var A = A0.slice(), passi = [];
+  if (!A.length) return { A: A, passi: [{ cosa: "vuoto", A: [], testo: "Lo heap è vuoto." }] };
+  var r = A[0], ult = A.pop();
+  if (!A.length) { passi.push({ cosa: "via", A: [], testo: "Si toglie " + r + ", l'unico elemento: lo heap è vuoto." }); return { A: A, passi: passi, tolto: r }; }
+  A[0] = ult;
+  passi.push({ cosa: "via", A: A.slice(), v: 0, testo: "Si toglie la radice, " + r + " (il " + (tipo === "min" ? "minimo" : "massimo") + "). Al suo posto va l'ultima foglia, " + ult + ", e la foglia sparisce. Poi risistema." });
+  scendiPassi(A, 0, tipo, passi);
+  return { A: A, passi: passi, tolto: r };
+}
+function opInserisci(A0, x, tipo) {
+  var A = A0.slice(), passi = [];
+  A.push(x);
+  passi.push({ cosa: "nuova", A: A.slice(), v: A.length - 1, testo: "Si aggiunge " + x + " come nuova foglia, nella prima posizione libera (posizione " + (A.length - 1) + "). Poi risistemaDalBasso." });
+  salePassi(A, A.length - 1, tipo, passi);
+  return { A: A, passi: passi };
+}
+function opCancella(A0, pos, tipo) {
+  var A = A0.slice(), passi = [], x = A[pos], meglio = sopraH(tipo), f = A.pop();
+  if (pos === A.length) { passi.push({ cosa: "via", A: A.slice(), testo: x + " era l'ultima foglia: basta toglierla." }); return { A: A, passi: passi }; }
+  A[pos] = f;
+  if (f === x) { passi.push({ cosa: "via", A: A.slice(), v: pos, testo: "Al posto di " + x + " va l'ultima foglia, " + f + ", che ha la stessa chiave: non c'è altro da fare." }); return { A: A, passi: passi }; }
+  var giu = meglio(x, f);
+  passi.push({ cosa: "via", A: A.slice(), v: pos, testo: "Al posto di " + x + " (posizione " + pos + ") va l'ultima foglia, f = " + f + ", che sparisce. f " + (f < x ? "&lt;" : "&gt;") + " x = " + x + ": " + (giu ? "f può essere fuori posto rispetto ai figli, quindi si usa risistema (verso il basso)." : "f può essere fuori posto rispetto al padre, quindi si usa risistemaDalBasso (verso l'alto).") });
+  if (giu) scendiPassi(A, pos, tipo, passi); else salePassi(A, pos, tipo, passi);
+  return { A: A, passi: passi };
+}
+function opCambia(A0, pos, nuova, tipo) {
+  var A = A0.slice(), passi = [], vecchia = A[pos], meglio = sopraH(tipo);
+  A[pos] = nuova;
+  if (nuova === vecchia) { passi.push({ cosa: "cambia", A: A.slice(), v: pos, testo: "La chiave non cambia." }); return { A: A, passi: passi }; }
+  var giu = meglio(vecchia, nuova);
+  passi.push({ cosa: "cambia", A: A.slice(), v: pos, testo: "La chiave " + vecchia + " diventa " + nuova + ": " + (nuova < vecchia ? "diminuisce" : "aumenta") + ". " + (giu ? "In un " + (tipo === "min" ? "min" : "max") + "-heap può finire fuori posto rispetto ai figli: risistema verso il basso." : "In un " + (tipo === "min" ? "min" : "max") + "-heap può finire fuori posto rispetto al padre: risistemaDalBasso.") });
+  if (giu) scendiPassi(A, pos, tipo, passi); else salePassi(A, pos, tipo, passi);
+  return { A: A, passi: passi };
 }
 
 // ---- w13.js
