@@ -6,6 +6,7 @@
 <title>Union-find</title>
 <link rel="stylesheet" href="stile.css?v=6">
 <script src="leggi.js?v=3" defer></script>
+<script src="formule.js?v=1" defer></script>
 </head>
 <body>
 <div class="pagina">
@@ -307,6 +308,7 @@
     <p><span class="rif">3</span>rank(A) = rank(B), quindi i due termini sono uguali.</p>
   </div>
 </div>
+<div class="widget" data-vf="rank"></div>
 <p>La conseguenza (lavagna, pagina 12): da #nodi(x) ≥ 2<sup>rank(x)</sup>, prendendo il logaritmo, <strong>rank(x) ≤ log<sub>2</sub> #nodi(x)</strong>. Se ci sono n elementi, nessun albero ha più di n nodi, quindi l'altezza è al massimo <strong>log<sub>2</sub> n</strong>, e FIND costa <strong>T(n) = O(log n)</strong>.</p>
 <p>Esempio: con un milione di elementi, nessuna FIND fa più di 19 passi (2<sup>20</sup> &gt; 1 000 000). Senza bilanciamento potevano essere 999 999.</p>
 

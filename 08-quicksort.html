@@ -6,6 +6,7 @@
 <title>QuickSort: ordinare intorno a un perno</title>
 <link rel="stylesheet" href="stile.css?v=6">
 <script src="leggi.js?v=3" defer></script>
+<script src="formule.js?v=1" defer></script>
 </head>
 <body>
 <div class="pagina">
@@ -603,6 +604,7 @@
   <p><span class="rif">5</span>La somma 1 + 2 + … + n vale n(n + 1)/2 (vedi l'attrezzo «La somma di Gauss»). La nostra somma parte da 2, quindi le manca il termine 1: n(n + 1)/2 − 1.</p>
   <p><span class="rif">6</span>n(n + 1)/2 − 1 = n²/2 + n/2 − 1. Per n grande conta il termine n²/2, e la funzione cresce come n² (vedi l'attrezzo «Θ in due righe»).</p>
 </div>
+<div class="widget" data-vf="peggiore"></div>
 
 <div class="box def">
   <span class="etichetta">Attrezzo: il simbolo Σ</span>
@@ -665,6 +667,7 @@
   <p><span class="rif">4</span>Ci si ferma quando il pezzo ha 1 elemento: n/2<sup>j</sup> = 1, cioè 2<sup>j</sup> = n, cioè j = log<sub>2</sub> n (vedi l'attrezzo «Il logaritmo in base 2», subito dopo).</p>
   <p><span class="rif">5</span>C<sub>b</sub>(1) = 0.</p>
 </div>
+<div class="widget" data-vf="migliore"></div>
 
 <div class="box def">
   <span class="etichetta">Attrezzo: il logaritmo in base 2</span>
@@ -753,6 +756,7 @@
   <tr><td>2</td><td>C(2)</td><td>1</td><td>C(1)</td></tr>
   <tr><td>3</td><td>C(3)</td><td>0</td><td>C(0)</td></tr>
 </table></div>
+<div class="widget" data-vf="medio"></div>
 
 <div class="box def">
   <span class="etichetta">Attrezzo: regole delle somme</span>
@@ -881,6 +885,7 @@
   </div>
   <p class="piccolo">Il caso n = 2 va bene anche lui: la somma da 2 a 1 è vuota e vale 0, e tutti i passaggi restano veri (C(2) = 2 ≤ 4 ln 2 ≈ 2,77).</p>
 </div>
+<div class="widget" data-vf="integrale"></div>
 
 <h3>11.5 Da ln a log<sub>2</sub></h3>
 <div class="box def">
