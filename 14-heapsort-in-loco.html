@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>heapSort in loco</title>
 <link rel="stylesheet" href="stile.css?v=6">
-<script src="leggi.js?v=2" defer></script>
+<script src="leggi.js?v=3" defer></script>
 </head>
 <body>
 <div class="pagina">
@@ -91,15 +91,20 @@
 <div class="array qs"><div class="cella zsx"><div class="f">liv. 0</div><div class="v">26</div><div class="i">0</div></div><div class="cella zdx"><div class="f">liv. 1</div><div class="v">11</div><div class="i">1</div></div><div class="cella zdx"><div class="f"></div><div class="v">19</div><div class="i">2</div></div><div class="cella posto"><div class="f">liv. 2</div><div class="v">10</div><div class="i">3</div></div><div class="cella posto"><div class="f"></div><div class="v">5</div><div class="i">4</div></div><div class="cella posto"><div class="f"></div><div class="v">6</div><div class="i">5</div></div><div class="cella posto"><div class="f"></div><div class="v">2</div><div class="i">6</div></div><div class="cella mossa"><div class="f">liv. 3</div><div class="v">1</div><div class="i">7</div></div><div class="cella mossa"><div class="f"></div><div class="v">8</div><div class="i">8</div></div><div class="cella mossa"><div class="f"></div><div class="v">4</div><div class="i">9</div></div></div>
 <div class="didascalia"><b>Figura 3.</b> Lo stesso array, colorato per livello: azzurro il livello 0, arancione il livello 1, verde il livello 2, viola il livello 3 (che qui ha solo 3 nodi su 8 posti).</div>
 </div>
-<p>Da qui viene la formula dei figli. Prendiamo il nodo in posizione i; sta al livello p ed è il k-esimo del suo livello contando da 0, cioè i = 2<sup>p</sup> − 1 + k. Se ha dei figli, tutti i k nodi alla sua sinistra nel livello p hanno due figli (l'ultimo livello si riempie da sinistra), e i loro 2k figli vengono, nel livello p + 1, prima dei suoi.</p>
+<p>Da qui viene la formula dei figli. Prima di leggere il conto, guardala succedere: nel riquadro qui sotto scegli un nodo e premi «Avanti». A ogni passo si colora, sull'albero e sull'array insieme, il pezzo di cui parla il testo.</p>
+<div class="widget" id="w-fs">
+  <h4>Perché il figlio sinistro sta in 2i + 1</h4>
+  <div id="fs-corpo"></div>
+</div>
+<p>Ora lo stesso ragionamento con le lettere: è il modo «con i livelli» del riquadro. Prendiamo il nodo in posizione i. Sta al livello p, e nel suo livello ha k nodi alla sua sinistra (k = 0 se è il primo). Il livello p comincia nella posizione 2<sup>p</sup> − 1, quindi i = 2<sup>p</sup> − 1 + k (passo 2 del riquadro). Se il nodo ha figli, anche i k nodi alla sua sinistra hanno due figli ciascuno, perché l'ultimo livello si riempie da sinistra; e i loro 2k figli vengono, nel livello p + 1, prima dei suoi (passo 4).</p>
 <div class="dim">
   <div class="dim-tit">Dove sta il figlio sinistro</div>
   <div class="mat-blocco"><span class="catena"><span class="sx">posizione del figlio sinistro</span><span class="rel">=</span><span class="dx">(inizio del livello p + 1) + 2k</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>p+1</sup> − 1 + 2k</span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>p+1</sup> − 1 + 2(i − 2<sup>p</sup> + 1)</span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2<sup>p+1</sup> − 1 + 2i − 2<sup>p+1</sup> + 2</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2i + 1</span><span class="perche"></span></span></div>
   <div class="spiega">
     <div class="spiega-tit">I passaggi spiegati</div>
-    <p><span class="rif">1</span>Nel livello p + 1 vengono prima i 2k figli dei k nodi alla sinistra del nostro; il suo figlio sinistro è il successivo.</p>
-    <p><span class="rif">2</span>Il livello p + 1 comincia nella posizione 2<sup>p+1</sup> − 1.</p>
-    <p><span class="rif">3</span>Da i = 2<sup>p</sup> − 1 + k si ricava k = i − 2<sup>p</sup> + 1.</p>
+    <p><span class="rif">1</span>Nel livello p + 1 vengono prima i 2k figli dei k nodi alla sinistra del nostro; il suo figlio sinistro è il successivo (passi 4 e 5 del riquadro).</p>
+    <p><span class="rif">2</span>Il livello p + 1 comincia nella posizione 2<sup>p+1</sup> − 1, perché prima di lui ci sono i livelli da 0 a p, pieni (passo 3).</p>
+    <p><span class="rif">3</span>Da i = 2<sup>p</sup> − 1 + k si ricava k = i − 2<sup>p</sup> + 1: si mette questo al posto di k. Poi 2 · 2<sup>p</sup> = 2<sup>p+1</sup>, che si cancella con − 2<sup>p+1</sup>, e restano −1 + 2 = 1 (passo 6).</p>
   </div>
 </div>
 <p>Il figlio destro viene subito dopo il sinistro: 2i + 2. E la formula del padre è il conto al contrario: se j = 2i + 1 oppure j = 2i + 2, allora (j − 1)/2 vale i oppure i + 1/2, e arrotondando per difetto si ottiene i in tutti e due i casi: ⌊(j − 1)/2⌋ = i.</p>
@@ -1137,6 +1142,70 @@ function eventiInLoco(A0, tipo) {
   return ev;
 }
 
+// ---------------------------------------------------------------- operazioni sugli heap (pacco 16)
+// Tutte lavorano su A (array, heap nelle prime A.length posizioni) e restituiscono i passi «grossi» (con scambi visibili).
+// passo: { cosa, A (copia), v, su, testo, cfr }
+function scendiPassi(A, v, tipo, passi) {
+  var l = A.length, meglio = sopraH(tipo), giri = 0;
+  while (giri++ < 60) {
+    var f = figliDi(v, l);
+    if (!f.length) { passi.push({ cosa: "foglia", A: A.slice(), v: v, testo: A[v] + " è in una foglia: si ferma." }); return v; }
+    var u = f[0], c = 0;
+    if (f.length === 2) { c++; if (meglio(A[f[1]], A[f[0]])) u = f[1]; }
+    c++;
+    var desc = f.length === 2 ? "I figli di " + A[v] + " sono " + A[f[0]] + " e " + A[f[1]] + ": il " + (tipo === "min" ? "minore" : "maggiore") + " è " + A[u] : "L'unico figlio di " + A[v] + " è " + A[u];
+    if (meglio(A[u], A[v])) { var x = A[v]; A[v] = A[u]; A[u] = x; passi.push({ cosa: "scende", A: A.slice(), v: u, su: v, cfr: c, testo: desc + ", " + (tipo === "min" ? "più piccolo" : "più grande") + " di " + x + ": si scambiano, " + x + " scende." }); v = u; }
+    else { passi.push({ cosa: "fermo", A: A.slice(), v: v, cfr: c, testo: desc + ", e " + A[v] + " non deve scendere: si ferma." }); return v; }
+  }
+  return v;
+}
+function salePassi(A, v, tipo, passi) {
+  var meglio = sopraH(tipo), giri = 0;
+  while (giri++ < 60) {
+    if (v === 0) { passi.push({ cosa: "radice", A: A.slice(), v: v, testo: A[v] + " è arrivato nella radice: si ferma." }); return v; }
+    var p = (v - 1) >> 1;
+    if (meglio(A[v], A[p])) { var x = A[v]; A[v] = A[p]; A[p] = x; passi.push({ cosa: "sale", A: A.slice(), v: p, su: v, cfr: 1, testo: "Il padre di " + x + " è " + A[v] + ", " + (tipo === "min" ? "più grande" : "più piccolo") + ": si scambiano, " + x + " sale in posizione " + p + "." }); v = p; }
+    else { passi.push({ cosa: "fermo", A: A.slice(), v: v, cfr: 1, testo: "Il padre di " + A[v] + " è " + A[p] + ", che non è " + (tipo === "min" ? "più grande" : "più piccolo") + ": " + A[v] + " si ferma." }); return v; }
+  }
+  return v;
+}
+function opTogliRadice(A0, tipo) {
+  var A = A0.slice(), passi = [];
+  if (!A.length) return { A: A, passi: [{ cosa: "vuoto", A: [], testo: "Lo heap è vuoto." }] };
+  var r = A[0], ult = A.pop();
+  if (!A.length) { passi.push({ cosa: "via", A: [], testo: "Si toglie " + r + ", l'unico elemento: lo heap è vuoto." }); return { A: A, passi: passi, tolto: r }; }
+  A[0] = ult;
+  passi.push({ cosa: "via", A: A.slice(), v: 0, testo: "Si toglie la radice, " + r + " (il " + (tipo === "min" ? "minimo" : "massimo") + "). Al suo posto va l'ultima foglia, " + ult + ", e la foglia sparisce. Poi risistema." });
+  scendiPassi(A, 0, tipo, passi);
+  return { A: A, passi: passi, tolto: r };
+}
+function opInserisci(A0, x, tipo) {
+  var A = A0.slice(), passi = [];
+  A.push(x);
+  passi.push({ cosa: "nuova", A: A.slice(), v: A.length - 1, testo: "Si aggiunge " + x + " come nuova foglia, nella prima posizione libera (posizione " + (A.length - 1) + "). Poi risistemaDalBasso." });
+  salePassi(A, A.length - 1, tipo, passi);
+  return { A: A, passi: passi };
+}
+function opCancella(A0, pos, tipo) {
+  var A = A0.slice(), passi = [], x = A[pos], meglio = sopraH(tipo), f = A.pop();
+  if (pos === A.length) { passi.push({ cosa: "via", A: A.slice(), testo: x + " era l'ultima foglia: basta toglierla." }); return { A: A, passi: passi }; }
+  A[pos] = f;
+  if (f === x) { passi.push({ cosa: "via", A: A.slice(), v: pos, testo: "Al posto di " + x + " va l'ultima foglia, " + f + ", che ha la stessa chiave: non c'è altro da fare." }); return { A: A, passi: passi }; }
+  var giu = meglio(x, f);
+  passi.push({ cosa: "via", A: A.slice(), v: pos, testo: "Al posto di " + x + " (posizione " + pos + ") va l'ultima foglia, f = " + f + ", che sparisce. f " + (f < x ? "&lt;" : "&gt;") + " x = " + x + ": " + (giu ? "f può essere fuori posto rispetto ai figli, quindi si usa risistema (verso il basso)." : "f può essere fuori posto rispetto al padre, quindi si usa risistemaDalBasso (verso l'alto).") });
+  if (giu) scendiPassi(A, pos, tipo, passi); else salePassi(A, pos, tipo, passi);
+  return { A: A, passi: passi };
+}
+function opCambia(A0, pos, nuova, tipo) {
+  var A = A0.slice(), passi = [], vecchia = A[pos], meglio = sopraH(tipo);
+  A[pos] = nuova;
+  if (nuova === vecchia) { passi.push({ cosa: "cambia", A: A.slice(), v: pos, testo: "La chiave non cambia." }); return { A: A, passi: passi }; }
+  var giu = meglio(vecchia, nuova);
+  passi.push({ cosa: "cambia", A: A.slice(), v: pos, testo: "La chiave " + vecchia + " diventa " + nuova + ": " + (nuova < vecchia ? "diminuisce" : "aumenta") + ". " + (giu ? "In un " + (tipo === "min" ? "min" : "max") + "-heap può finire fuori posto rispetto ai figli: risistema verso il basso." : "In un " + (tipo === "min" ? "min" : "max") + "-heap può finire fuori posto rispetto al padre: risistemaDalBasso.") });
+  if (giu) scendiPassi(A, pos, tipo, passi); else salePassi(A, pos, tipo, passi);
+  return { A: A, passi: passi };
+}
+
 // ---- w14.js
 // Riquadri interattivi del pacco 14.
 function $(id) { return document.getElementById(id); }
@@ -1174,6 +1243,180 @@ function leggiNumeri(s, max) {
     $("vp-txt").innerHTML = testo + '<br><span class="piccolo">In giallo la posizione scelta, in azzurro i figli, in arancione il padre.</span>';
   }
   $("vp-base").onchange = mostra;
+  mostra();
+})();
+
+// ---------------------------------------------------------------- 1b. perché il figlio sinistro sta in 2i + 1
+// Albero pieno di 4 livelli (posizioni 0..14) e il suo array; ogni passo colora sull'uno e sull'altro il pezzo di cui parla.
+(function () {
+  if (!$("fs-corpo")) return;
+  var W = 410, X0 = 52, R = 15, N = 15, YL = [26, 80, 134, 188], YA = 230, CW = 24, CH = 26, GAP = 8;
+  var CLASSE = { i: "r-giallo", sx: "r-arancio", fsx: "r-viola", prima: "r-blu", figlio: "r-verde" };
+  var TRATTO = { arancio: "--orange", verde: "--green", viola: "--violet" };
+  var RIPIEGO = { arancio: "#b4500f", verde: "#17803d", viola: "#6d3fc0" };
+  var V = { i: 5, modo: "a", passo: 0 };
+  function due(e) { return Math.pow(2, e); }
+  function liv(i) { return Math.floor(Math.log2(i + 1)); }
+  function xNodo(i) { var p = liv(i), slot = (W - X0 - 4) / due(p); return X0 + (i - due(p) + 1 + 0.5) * slot; }
+  function xCella(i) { return (W - (N * CW + 3 * GAP)) / 2 + i * CW + liv(i) * GAP; }
+  function ap(e) { return '<tspan baseline-shift="super" font-size="8">' + e + '</tspan>'; }
+  function da(a, b) { var r = []; for (var x = a; x <= b; x++) r.push(x); return r; }
+  function elenco(v) { return v.length === 1 ? String(v[0]) : v.slice(0, -1).join(", ") + " e " + v[v.length - 1]; }
+
+  function linea(a, b, col) {
+    var x1 = xNodo(a), y1 = YL[liv(a)], x2 = xNodo(b), y2 = YL[liv(b)], d = Math.hypot(x2 - x1, y2 - y1);
+    var ux = (x2 - x1) / d, uy = (y2 - y1) / d;
+    var c = 'x1="' + r1a(x1 + ux * R) + '" y1="' + r1a(y1 + uy * R) + '" x2="' + r1a(x2 - ux * R) + '" y2="' + r1a(y2 - uy * R) + '"';
+    if (!col) return '<line ' + c + ' class="l-muted" stroke="#5b6270" stroke-width="1.5" style="opacity:.45"/>';
+    return '<line ' + c + ' stroke="' + RIPIEGO[col] + '" style="stroke:var(' + TRATTO[col] + ');stroke-width:2.8"/>';
+  }
+
+  function svg(st) {
+    var h = [], H = YA + CH + 76, i, L;
+    h.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + Math.round(W * 1.35) + '" height="' + Math.round(H * 1.35) + '" role="img" aria-label="Albero di 15 nodi con le posizioni, e sotto lo stesso albero scritto nell\'array">');
+    for (L = 0; L < 4; L++) {
+      var b = st.bande[L];
+      if (b) h.push('<rect x="' + (X0 - 6) + '" y="' + (YL[L] - 22) + '" width="' + (W - X0 + 4) + '" height="44" rx="10" fill="#e8edfc" style="fill:var(' + (b === "giallo" ? "--hl" : "--accent-soft") + ')"/>');
+      h.push('<text x="2" y="' + (YL[L] + 4) + '" font-size="11" class="t-muted" fill="#5b6270">livello ' + L + '</text>');
+    }
+    for (i = 1; i < N; i++) h.push(linea((i - 1) >> 1, i, null));
+    st.archi.forEach(function (a) { h.push(linea(a[0], a[1], a[2])); });
+    for (i = 0; i < N; i++) {
+      var c = CLASSE[st.ruolo[i]] || "r-box", forte = i === V.i ? ' font-weight="700"' : "";
+      h.push('<g' + (i < 7 ? ' data-i="' + i + '" style="cursor:pointer"' : "") + '><circle cx="' + r1a(xNodo(i)) + '" cy="' + YL[liv(i)] + '" r="' + R + '" class="' + c + '" fill="#fff" stroke="#5b6270"/>' +
+        '<text x="' + r1a(xNodo(i)) + '" y="' + (YL[liv(i)] + 4.5) + '" text-anchor="middle" font-size="13"' + forte + ' class="t-testo" fill="#1f2328">' + i + '</text></g>');
+    }
+    for (i = 0; i < N; i++) {
+      var x = xCella(i), cc = CLASSE[st.ruolo[i]] || "r-box";
+      h.push('<rect x="' + x + '" y="' + YA + '" width="' + CW + '" height="' + CH + '" class="' + cc + '" fill="#fff" stroke="#5b6270"/>');
+      h.push('<text x="' + (x + CW / 2) + '" y="' + (YA + 17) + '" text-anchor="middle" font-size="12"' + (i === V.i ? ' font-weight="700"' : "") + ' class="t-testo" fill="#1f2328">' + i + '</text>');
+      if (st.sopra[i]) h.push('<text x="' + (x + CW / 2) + '" y="' + (YA - 6) + '" text-anchor="middle" font-size="10.5" font-weight="700" class="t-testo" fill="#1f2328">' + st.sopra[i] + '</text>');
+    }
+    for (L = 0; L < 4; L++) {
+      var a0 = xCella(due(L) - 1), a1 = xCella(due(L + 1) - 2) + CW;
+      h.push('<text x="' + r1a((a0 + a1) / 2) + '" y="' + (YA + CH + 13) + '" text-anchor="middle" font-size="10" class="t-muted" fill="#5b6270">' + (L === 0 ? "liv. 0" : "livello " + L) + '</text>');
+    }
+    st.graffe.forEach(function (g) {
+      var x1 = xCella(g.da) + 2, x2 = xCella(g.a) + CW - 2, y = YA + CH + 22 + (g.riga || 0) * 27, m = (x1 + x2) / 2;
+      var anc = "middle", tx = m;
+      if (m < 70) { anc = "start"; tx = x1; } else if (m > W - 70) { anc = "end"; tx = x2; }
+      h.push('<path d="M' + x1 + ' ' + y + 'v6H' + x2 + 'v-6" fill="none" stroke="#5b6270" class="l-muted"/>');
+      h.push('<text x="' + r1a(tx) + '" y="' + (y + 19) + '" text-anchor="' + anc + '" font-size="11" class="t-testo" fill="#1f2328">' + g.testo + '</text>');
+    });
+    h.push('</svg>');
+    return h.join("");
+  }
+
+  // Ogni passo: { tit, testo, ruolo: {pos: ruolo}, archi: [[da, a, colore]], bande: {livello: colore}, graffe, sopra }
+  function nuovo() { return { ruolo: {}, archi: [], bande: {}, graffe: [], sopra: {} }; }
+  function passiLivelli(i) {
+    var p = liv(i), ini = due(p) - 1, k = i - ini, ini1 = due(p + 1) - 1, f = 2 * i + 1;
+    var sx = da(ini, i - 1), fsx = da(ini1, ini1 + 2 * k - 1), P = [], s;
+    function base() { var t = nuovo(); t.ruolo[i] = "i"; t.sopra[i] = "i"; return t; }
+    s = base();
+    s.tit = "Il nodo i";
+    s.testo = "Il nodo scelto è in posizione <b>i = " + i + "</b> (in giallo, nell'albero e nell'array). Vogliamo capire perché il suo figlio sinistro sta proprio in posizione 2i + 1, guardando solo come sono messi i nodi.";
+    P.push(s);
+    s = base(); s.bande[p] = "giallo";
+    sx.forEach(function (x) { s.ruolo[x] = "sx"; });
+    if (k) s.graffe.push({ da: ini, a: i - 1, testo: "k = " + k });
+    s.tit = "Il suo livello p e il suo posto k";
+    s.testo = "Il nodo sta al <b>livello p = " + p + "</b> (la riga evidenziata). " +
+      (k ? "Nel suo livello, alla sua sinistra, ci sono <b>k = " + k + "</b> " + (k === 1 ? "nodo" : "nodi") + ": " + elenco(sx) + " (in arancione). " : "Nel suo livello è il primo: alla sua sinistra non c'è nessuno, quindi <b>k = 0</b>. ") +
+      "Il livello " + p + " comincia nella posizione " + ini + ", e il nostro nodo sta " + k + " posti più avanti: " + i + " = " + ini + " + " + k + ". Con le lettere: <b>i = 2<sup>p</sup> − 1 + k</b>.";
+    P.push(s);
+    s = base();
+    for (var L = 0; L <= p; L++) s.bande[L] = "blu";
+    da(0, ini1 - 1).forEach(function (x) { if (x !== i) s.ruolo[x] = "prima"; });
+    s.graffe.push({ da: 0, a: ini1 - 1, testo: ini1 + (ini1 === 1 ? " cella" : " celle") + " = 2" + ap(p + 1) + " − 1" });
+    s.tit = "Dove comincia il livello p + 1";
+    s.testo = "I figli stanno nel livello sotto, il <b>livello p + 1 = " + (p + 1) + "</b>. Prima di lui, nell'array, ci sono tutti i livelli da 0 a " + p + ", e sono pieni (in azzurro): " +
+      da(0, p).map(due).join(" + ") + " = " + ini1 + (ini1 === 1 ? " nodo" : " nodi") + ". Quindi il livello " + (p + 1) + " comincia nella posizione <b>" + ini1 + "</b>. Con le lettere: <b>2<sup>p+1</sup> − 1</b>. <span class=\"piccolo\">(È la nota 2 del conto qui sotto.)</span>";
+    P.push(s);
+    s = base(); s.bande[p + 1] = "blu";
+    sx.forEach(function (x) { s.ruolo[x] = "sx"; s.archi.push([x, 2 * x + 1, "arancio"], [x, 2 * x + 2, "arancio"]); });
+    fsx.forEach(function (x) { s.ruolo[x] = "fsx"; });
+    if (k) s.graffe.push({ da: ini1, a: ini1 + 2 * k - 1, testo: "2k = " + 2 * k });
+    s.tit = "I figli di chi sta a sinistra";
+    s.testo = k ? "I " + (k === 1 ? "il nodo arancione ha" : k + " nodi arancioni hanno") + " due figli ciascuno: <b>2k = " + 2 * k + "</b> figli in tutto (in viola). Li hanno davvero tutti e due: il nostro nodo ha figli, e l'ultimo livello si riempie da sinistra, quindi chi sta alla sua sinistra è già pieno. Nell'array i figli seguono l'ordine dei padri, quindi questi " + 2 * k + " vengono, nel livello " + (p + 1) + ", <b>prima</b> dei figli del nostro nodo: posizioni da " + ini1 + " a " + (ini1 + 2 * k - 1) + ". <span class=\"piccolo\">(Nota 1.)</span>"
+      : "Il nostro nodo è il primo del suo livello (k = 0): alla sua sinistra non c'è nessuno, quindi nel livello " + (p + 1) + " nessun figlio «di altri» viene prima dei suoi. <span class=\"piccolo\">(Nota 1, con 2k = 0.)</span>";
+    s.testo = s.testo.replace("I il nodo", "Il nodo");
+    P.push(s);
+    s = JSON.parse(JSON.stringify(s));
+    s.ruolo[f] = "figlio"; s.ruolo[f + 1] = "figlio"; s.sopra[f] = "2i+1";
+    s.archi.push([i, f, "verde"], [i, f + 1, "verde"]);
+    s.graffe = [{ da: ini1, a: f - 1 >= ini1 ? f - 1 : ini1, testo: k ? "2k = " + 2 * k : "" }].filter(function (g) { return k; });
+    s.tit = "Il figlio sinistro";
+    s.testo = "Il figlio sinistro del nostro nodo (in verde) viene subito dopo " + (k ? "i " + 2 * k + " viola" : "l'inizio del livello") + ": posizione " + ini1 + " + " + 2 * k + " = <b>" + f + "</b>; il destro è il successivo, " + (f + 1) + ". Con le lettere: (inizio del livello p + 1) + 2k = <b>2<sup>p+1</sup> − 1 + 2k</b>. È la prima riga del conto.";
+    P.push(s);
+    s = JSON.parse(JSON.stringify(s));
+    s.graffe = [];
+    s.tit = "Perché viene proprio 2i + 1";
+    s.testo = "Confronta il livello del nodo con quello dei figli:<br>• il livello " + (p + 1) + " comincia in " + ini1 + " = 2 · " + ini + " + 1: <b>il doppio</b> dell'inizio del livello " + p + ", più 1 (ha il doppio dei posti, e prima ci sono 2<sup>p+1</sup> − 1 nodi);<br>• il figlio sta " + 2 * k + " posti dopo l'inizio del suo livello, il nostro nodo " + k + ": <b>il doppio</b> anche qui.<br>Quindi figlio sinistro = 2 · " + ini + " + 1 + 2 · " + k + " = 2 · (" + ini + " + " + k + ") + 1 = <b>2 · " + i + " + 1</b>. Il conto qui sotto fa la stessa cosa con le lettere: la nota 3 mette i al posto di k.";
+    P.push(s);
+    return P;
+  }
+  function passiCoppie(i) {
+    var P = [], s, f = 2 * i + 1, prima = da(0, i - 1);
+    function base() { var t = nuovo(); t.ruolo[i] = "i"; t.sopra[i] = "i"; return t; }
+    s = base();
+    s.tit = "Il nodo i";
+    s.testo = "Un altro modo di vederlo, senza livelli (è un'aggiunta, non è sulla lavagna). Il nodo scelto è in posizione <b>i = " + i + "</b>. Contiamo quanti nodi vengono, nell'array, prima del suo figlio sinistro.";
+    P.push(s);
+    s = base();
+    prima.forEach(function (x) { s.ruolo[x] = "prima"; });
+    if (i) s.graffe.push({ da: 0, a: i - 1, testo: "i = " + i + (i === 1 ? " nodo" : " nodi") });
+    s.tit = "Chi viene prima di i";
+    s.testo = i ? "Prima del nostro nodo, nell'array, ci sono i nodi da 0 a " + (i - 1) + " (in azzurro): sono <b>i = " + i + "</b>. Ognuno di loro ha due figli: il nostro nodo ha figli, e chi viene prima di lui nell'array (più in alto, o più a sinistra nello stesso livello) è già pieno."
+      : "Il nostro nodo è la radice: prima di lui non c'è nessuno, quindi i = 0.";
+    P.push(s);
+    s = base(); s.ruolo[0] = s.ruolo[0] || "prima";
+    da(1, 2 * i).forEach(function (x) { if (x !== i) s.ruolo[x] = "fsx"; });
+    prima.forEach(function (x, j) {
+      s.archi.push([x, 2 * x + 1, "viola"], [x, 2 * x + 2, "viola"]);
+      s.graffe.push({ da: 2 * x + 1, a: 2 * x + 2, testo: "di " + x, riga: j % 2 });
+    });
+    s.tit = "I loro figli, a coppie";
+    s.testo = i ? "Ecco i loro figli (in viola, con le frecce dai padri). Nell'array stanno nello stesso ordine dei padri, a coppie: prima i due figli di 0, poi i due di 1, e così via fino ai due di " + (i - 1) + ". Occupano le posizioni da 1 a " + 2 * i + ": sono <b>2i = " + 2 * i + "</b> nodi." + (i > 1 ? " (Anche il nostro nodo è uno di loro: è figlio di " + ((i - 1) >> 1) + ".)" : "")
+      : "Prima della radice non c'è nessuno, quindi nessun figlio viola: 2i = 0.";
+    P.push(s);
+    s = JSON.parse(JSON.stringify(s));
+    s.ruolo[0] = i === 0 ? "i" : "prima"; s.ruolo[f] = "figlio"; s.ruolo[f + 1] = "figlio"; s.sopra[f] = "2i+1";
+    s.archi.push([i, f, "verde"], [i, f + 1, "verde"]);
+    s.graffe = [{ da: 0, a: 2 * i, testo: "1 + 2i = " + (2 * i + 1) + (2 * i + 1 === 1 ? " nodo" : " nodi") }];
+    s.tit = "Il figlio sinistro";
+    s.testo = "Prima del figlio sinistro del nostro nodo, quindi, ci sono la radice (posizione 0: l'unico nodo che non è figlio di nessuno) e i " + 2 * i + " figli viola: in tutto <b>1 + 2i = " + (2 * i + 1) + "</b> nodi, nelle posizioni da 0 a " + 2 * i + ". Il figlio sinistro è il successivo: posizione <b>2i + 1 = " + f + "</b> (in verde); il destro <b>2i + 2 = " + (f + 1) + "</b>.";
+    P.push(s);
+    return P;
+  }
+
+  var bottoni = "";
+  for (var q = 0; q < 7; q++) bottoni += '<button data-i="' + q + '" style="min-width:42px">' + q + '</button>';
+  $("fs-corpo").innerHTML = '<div class="controlli" id="fs-bott"><span class="piccolo">Il nodo i:</span> ' + bottoni + '</div>' +
+    '<div class="controlli"><label>Modo <select id="fs-modo" style="width:auto;max-width:100%"><option value="a">con i livelli (come il conto qui sotto)</option><option value="b">con le coppie di figli (un altro modo)</option></select></label></div>' +
+    '<div class="figura" id="fs-fig" style="margin:6px 0"></div>' +
+    '<div class="controlli"><button id="fs-ind">← Indietro</button><button class="primario" id="fs-av">Avanti →</button><span class="piccolo" id="fs-n"></span></div>' +
+    '<div class="narrazione" id="fs-txt" style="min-height:8em"></div>' +
+    '<p class="piccolo" style="margin:8px 0 0">In giallo il nodo i, in verde i suoi figli' + '<span id="fs-leg"></span>. Puoi anche toccare un nodo da 0 a 6 nell\'albero.</p>';
+  function mostra() {
+    var P = V.modo === "a" ? passiLivelli(V.i) : passiCoppie(V.i);
+    V.passo = Math.min(V.passo, P.length - 1);
+    var s = P[V.passo];
+    $("fs-fig").innerHTML = svg(s);
+    $("fs-txt").innerHTML = "<b>" + (V.passo + 1) + ". " + s.tit + ".</b> " + s.testo;
+    $("fs-n").textContent = "passo " + (V.passo + 1) + " di " + P.length;
+    $("fs-ind").disabled = V.passo === 0;
+    $("fs-av").disabled = V.passo === P.length - 1;
+    $("fs-leg").textContent = V.modo === "a" ? ", in arancione i nodi alla sua sinistra nel livello, in viola i loro figli, in azzurro i nodi che vengono prima"
+      : ", in azzurro i nodi che vengono prima di i, in viola i loro figli";
+    [].forEach.call($("fs-bott").querySelectorAll("button"), function (b) { b.className = Number(b.getAttribute("data-i")) === V.i ? "primario" : ""; });
+  }
+  function scegli(i) { V.i = i; mostra(); }
+  $("fs-bott").onclick = function (e) { var b = e.target.closest("button"); if (b) scegli(Number(b.getAttribute("data-i"))); };
+  $("fs-fig").onclick = function (e) { var g = e.target.closest("[data-i]"); if (g) scegli(Number(g.getAttribute("data-i"))); };
+  $("fs-modo").onchange = function () { V.modo = this.value; V.passo = 0; mostra(); };
+  $("fs-av").onclick = function () { V.passo++; mostra(); };
+  $("fs-ind").onclick = function () { V.passo = Math.max(0, V.passo - 1); mostra(); };
   mostra();
 })();
 
