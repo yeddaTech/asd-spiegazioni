@@ -6,6 +6,7 @@
 <title>Primi passi</title>
 <link rel="stylesheet" href="stile.css?v=6">
 <script src="leggi.js?v=3" defer></script>
+<script src="formule.js?v=1" defer></script>
 </head>
 <body>
 <div class="pagina">
@@ -327,6 +328,7 @@
   </div>
 </div>
 <p>Base e passo sono dimostrati: per il principio di induzione la formula vale per ogni n ≥ 1.</p>
+<div class="widget" data-vf="gauss"></div>
 
 <div class="box attenzione">
   <span class="etichetta">Il dubbio di tutti: «ma così uso quello che devo dimostrare!»</span>
@@ -424,6 +426,7 @@
   </div>
 </div>
 
+<div class="widget" data-vf="russa"></div>
 <h3>Quanto tempo: un giro per ogni cifra binaria di b</h3>
 <p>Chiamiamo m il numero di giri. Il prof l'ha calcolato con una tabellina: b = 0 → 0 giri, b = 1 → 1, b = 2 e 3 → 2, da 4 a 7 → 3, da 8 a 15 → 4. Ogni dimezzamento toglie a b la sua ultima cifra in binario, quindi i giri sono tanti quante le cifre binarie di b:</p>
 <div class="formula grande">m = ⌊log<sub>2</sub> b⌋ + 1 &nbsp;&nbsp;(b &gt; 0)</div>
@@ -551,6 +554,7 @@
   </div>
 </div>
 <p>È lo stesso ragionamento della definizione a casi qui sopra: l'algoritmo è corretto perché «copia» una formula vera.</p>
+<div class="widget" data-vf="potenza"></div>
 
 <h3>Quanto tempo</h3>
 <p>Ogni riga costa 1, e la riga 3 costa 1 più il tempo della chiamata ricorsiva. Con y = 0 si eseguono le righe 1 e 2: tempo 2. Con y &gt; 0 si eseguono le righe 1, 3, 4, 5 e 7 (5), la riga 6 al più una volta (≤ 1) e la riga 2 mai, più la chiamata ricorsiva. Ne viene un'<strong>equazione di ricorrenza</strong>:</p>
@@ -564,6 +568,7 @@
   <p><span class="rif">3</span>Mi fermo quando y/2<sup>k</sup> = 1, cioè per k = log<sub>2</sub> y (y = 2<sup>k</sup>). Poi T(x, 1) = 6 + T(x, 0), e T(x, 0) = 2 è il caso base.</p>
 </div>
 <p>Sostituendo k = log<sub>2</sub> y: <strong>T(x, y) ≤ 6 log<sub>2</sub> y + 8</strong>: crescita logaritmica. Per ogni y ≥ 1, y si dimezza ⌊log<sub>2</sub> y⌋ + 1 volte prima di arrivare a 0, quindi in generale T(x, y) ≤ 6⌊log<sub>2</sub> y⌋ + 8.</p>
+<div class="widget" data-vf="potenzacosto"></div>
 
 <h3>Quanto spazio: la pila</h3>
 <p>Ogni chiamata ancora aperta occupa un <strong>record di attivazione</strong> sulla pila (i suoi parametri e le sue variabili), come nel <a href="03-ricerca.html">pacco 3</a>. Lo spazio è l'altezza massima della pila, H:</p>
@@ -746,6 +751,7 @@
     <p><span class="rif">4</span>x<sup>k−1</sup> · x = x<sup>k</sup>: la x messa da parte alla riga 4 restituisce proprio il fattore perso togliendo 1 a y.</p>
   </div>
 </div>
+<div class="widget" data-vf="potrussa"></div>
 
 <h3>Quanto tempo e quanto spazio</h3>
 <p>Come alla russa per il prodotto: i giri sono m = ⌊log<sub>2</sub> y⌋ + 1 (y &gt; 0). Le righe 1 e 7 contano 2, le righe 3, 5 e 6 contano 3m, la riga 4 al più m, la riga 2 m + 1:</p>
@@ -785,6 +791,7 @@
   <p><span class="rif">1</span>Applico log<sub>2</sub> a tutti e tre i membri. log<sub>2</sub> è crescente, quindi ≤ e &lt; restano gli stessi; e log<sub>2</sub> 2<sup>k</sup> = k.</p>
   <p><span class="rif">2</span>log<sub>2</sub> n sta tra due interi consecutivi, k − 1 (compreso) e k (escluso), quindi la sua parte intera è k − 1. Per esempio n = 21: log<sub>2</sub> 21 ≈ 4,39 e ⌊4,39⌋ = 4 = k − 1, con k = 5 cifre.</p>
 </div>
+<div class="widget" data-vf="cifre"></div>
 <p>Stesso ragionamento in base 10: 10<sup>k−1</sup> ≤ n &lt; 10<sup>k</sup>, quindi <strong>k = ⌊log<sub>10</sub> n⌋ + 1</strong>. Con k = 5: 10000 = 10<sup>4</sup> e 99999 = 10<sup>5</sup> − 1.</p>
 
 <h3>Cambio di base</h3>
@@ -888,6 +895,7 @@
   </div>
 </div>
     <p>In binario è ovvio: n cifre 1 più 1 fa 1 seguito da n zeri, cioè 2<sup>n</sup>.</p>
+    <div class="widget" data-vf="potenze2"></div>
   </div>
 </details>
 

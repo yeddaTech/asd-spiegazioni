@@ -6,6 +6,7 @@
 <title>Quanto costa un algoritmo</title>
 <link rel="stylesheet" href="stile.css?v=6">
 <script src="leggi.js?v=3" defer></script>
+<script src="formule.js?v=1" defer></script>
 </head>
 <body>
 <div class="pagina">
@@ -194,6 +195,7 @@
 <p>Quindi il giro i costa Θ(i log x): il primo giro costa poco, l'ultimo costa x volte tanto. Sommando tutti i giri:</p>
 <div class="mat-blocco"><span class="catena"><span class="sx">T(x)</span><span class="rel">=</span><span class="dx">Σ<sub>i=1..x</sub> Θ(i log x)</span><span class="perche">il giro i costa Θ(i log x)</span><span class="sx"></span><span class="rel">=</span><span class="dx">Θ(log x · Σ<sub>i=1..x</sub> i)</span><span class="perche">log x non dipende da i: esce dalla somma</span><span class="sx"></span><span class="rel">=</span><span class="dx">Θ(log x · x(x+1)/2)</span><span class="perche">Gauss</span></span></div>
 <div class="formula grande"><mark>T(x) = Θ(x² log x)</mark></div>
+<div class="widget" data-vf="sommalog"></div>
 <p>Alla fine p contiene x<sup>x</sup>, che ha Θ(log x<sup>x</sup>) = Θ(x log x) bit: lo <strong>spazio</strong> è Θ(x log x).</p>
 
 <div class="box attenzione">
