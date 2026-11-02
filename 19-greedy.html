@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tecnica greedy</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 19 · seconda parte della lezione 21 (lavagna del 10 novembre 2025)</span>
+</div>
+
+<h1>Problemi di ottimizzazione e tecnica greedy</h1>
+<p class="sottotitolo">Molti problemi chiedono non una soluzione qualsiasi, ma la migliore: il cammino più corto, l'albero più leggero, lo zaino più pieno. Sono i problemi di ottimizzazione. Questa pagina spiega le parole per parlarne (soluzione ammissibile, soluzione ottima) e una prima tecnica per risolverli, la tecnica greedy («golosa»): a ogni passo si prende quello che sembra il pezzo migliore, e non si torna mai indietro. È veloce, ma non sempre trova l'ottimo: con gli esempi della lavagna vedrai quando sbaglia. Nel prossimo pacco la stessa tecnica, applicata agli alberi ricoprenti, funzionerà sempre.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue la lavagna dell'anno scorso: «lavagna, pagina N» è la lezione 21 (10 novembre 2025), dalla pagina 12 in poi. Le pagine 2–11 della stessa lezione (le visite dei grafi) sono nel pacco 18. Gli esercizi alla fine sono quelli del foglio 9.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in sei domande</span>
+  <ol>
+    <li><b>Cos'è un grafo pesato?</b> Un grafo con un numero, il peso, su ogni arco: una funzione w : E → ℝ.</li>
+    <li><b>Cos'è un problema di ottimizzazione?</b> Un problema in cui, tra tutte le soluzioni <em>ammissibili</em> (quelle che rispettano i vincoli), se ne cerca una <em>ottima</em> rispetto a un criterio: la più grande o la più piccola.</li>
+    <li><b>Che esempi ci sono?</b> Colorare un grafo con meno colori possibile; riempire uno zaino il più possibile; mettere in un sacco gli oggetti di valore massimo; dare il resto esatto con le monete disponibili.</li>
+    <li><b>Cos'è la tecnica greedy?</b> Si parte da una soluzione vuota; a ogni passo si prende il candidato che <em>al momento</em> sembra migliore, e lo si aggiunge se la soluzione resta ammissibile; le scelte non si disfano mai.</li>
+    <li><b>Funziona sempre?</b> No: sullo zaino e sul resto la lavagna mostra esempi in cui il greedy non trova l'ottimo. A volte invece funziona sempre, e va dimostrato (pacco 20).</li>
+    <li><b>Come si fa vedere che un greedy sbaglia?</b> Basta un esempio, un'istanza su cui la soluzione del greedy è peggiore di un'altra soluzione ammissibile.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#pesati">I grafi pesati</a></li>
+    <li><a href="#ottimizzazione">Problemi di ottimizzazione: soluzioni ammissibili e ottime</a></li>
+    <li><a href="#zaino">Lo zaino monodimensionale</a></li>
+    <li><a href="#greedy">La tecnica greedy</a></li>
+    <li><a href="#greedy-zaino">Il greedy sullo zaino</a></li>
+    <li><a href="#valori">Lo zaino con valori</a></li>
+    <li><a href="#resto">Il distributore di resto</a></li>
+    <li><a href="#quando">Quando ci si può fidare del greedy</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti (foglio 9)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="pesati"><span class="num">1</span>I grafi pesati</h2>
+<p class="in-questa"><b>In questa sezione:</b> cosa vuol dire mettere un peso sugli archi di un grafo (lavagna, pagine 13 e 14), e i tre problemi famosi sui grafi pesati.</p>
+<p>Un grafo G = (V, E) è un insieme V di vertici e un insieme E di archi; n è il numero dei vertici e m quello degli archi. In un <strong>grafo pesato</strong> (con i pesi sugli archi) ogni arco porta anche un numero (lavagna, pagina 13):</p>
+<div class="box def">
+  <span class="etichetta">Grafo pesato (lavagna, pagina 13)</span>
+  <p>G = (V, E) grafo, e <strong>w : E → ℝ</strong> funzione peso: a ogni arco e associa un numero reale w(e), il suo peso.</p>
+</div>
+<p>Il peso può essere una lunghezza in chilometri, un tempo, un costo. Nella Figura 1 ci sono i due grafi della lavagna: a sinistra uno orientato (gli archi hanno un verso: l'arco da 1 a 2 pesa 5, quello da 3 a 1 pesa 7, quello da 1 a 3 pesa 6), a destra uno non orientato.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">un grafo orientato pesato</div><svg viewBox="0 0 352.8 164.2" width="352.8" height="164.2" role="img" aria-label="grafo orientato pesato con vertici da 1 a 7" font-family="system-ui, sans-serif"><path d="M52 37 L110.2 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M110.2 37 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M142.2 37 L200.4 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M200.4 37 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M232.4 37 L290.6 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M290.6 37 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M98.9 112.7 Q87.8 69 51.4 46.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M51.4 46.1 l8.9 1.6 l-3.6 5.7 z" class="t-muted" fill="#5b6270"/><path d="M40.7 51.5 Q51.8 95.2 88.2 118.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M88.2 118.1 l-8.9 -1.6 l3.6 -5.7 z" class="t-muted" fill="#5b6270"/><path d="M205.6 46.3 L116 116.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116 116.7 l4.5 -7.8 l4.1 5.2 z" class="t-muted" fill="#5b6270"/><path d="M117.6 127.2 L216.8 127.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M216.8 127.2 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M298.1 48.6 L244.6 114" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M244.6 114 l2.7 -8.6 l5.2 4.2 z" class="t-muted" fill="#5b6270"/><path d="M248.8 127.2 L298.8 127.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M298.8 127.2 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M314.4 112.3 L309.1 53.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M309.1 53.9 l4.1 8 l-6.6 0.6 z" class="t-muted" fill="#5b6270"/><rect x="74.6" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="82.1" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="164.8" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="172.3" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="255" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="262.5" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="71.3" y="66.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="78.8" y="80" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">7</text><rect x="53.3" y="79.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="60.8" y="93.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="146.3" y="65.2" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="153.8" y="78.7" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">9</text><rect x="160.7" y="128.2" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="168.2" y="141.7" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><rect x="255.5" y="66.8" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="263" y="80.3" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="267.3" y="128.2" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="274.8" y="141.7" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="314.2" y="72.2" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="321.7" y="85.7" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><circle cx="37" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="127.2" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="127.2" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="102.6" cy="127.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="102.6" y="132.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="217.4" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="217.4" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="233.8" cy="127.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="233.8" y="132.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="315.8" cy="127.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="315.8" y="132.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><circle cx="307.6" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="307.6" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text></svg></div><div><div class="nome-mat">un grafo non orientato pesato</div><svg viewBox="0 0 317.2 226" width="317.2" height="226" role="img" aria-label="esagono pesato con vertici da A a F" font-family="system-ui, sans-serif"><path d="M47 101.9 L95.4 48.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47 124.1 L95.4 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M105.4 52 L105.4 174" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114 49.3 L203.2 176.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M120.4 189 L196.8 189" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M221.8 48.1 L270.2 101.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M120.4 37 L196.8 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M270.2 124.1 L221.8 177.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><rect x="71.1" y="72.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="78.6" y="86.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="56.3" y="148.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="63.8" y="162.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="87.9" y="104" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="95.4" y="117.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><rect x="142.9" y="109.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="150.4" y="123.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="151.1" y="190" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="158.6" y="203.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="231.1" y="72.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="238.6" y="86.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="151.1" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="158.6" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="231.1" y="135.3" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="238.6" y="148.8" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">1</text><circle cx="37" cy="113" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="118" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="105.4" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="105.4" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="105.4" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="105.4" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="211.8" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="211.8" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="280.2" cy="113" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="280.2" y="118" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="211.8" cy="189" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="211.8" y="194" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div></div>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagine 13 e 14. Il numero viola accanto a ogni arco è il suo peso. A sinistra un grafo orientato con i vertici da 1 a 7; a destra l'esagono non orientato con i vertici da A a F, che tornerà molte volte.</div>
+</div>
+<p>Sui grafi pesati ci sono tre problemi famosi (lavagna, pagina 14). Tutti e tre chiedono di trovare qualcosa di <em>minimo</em>:</p>
+<ul>
+  <li><b>Cammini minimi</b>: trovare il cammino di peso totale più piccolo tra due vertici. Nel grafo orientato della Figura 1, da 1 a 7 conviene 1 → 2 → 4 → 7, che pesa 5 + 3 + 2 = 10. Sono i pacchi 22 e 23.</li>
+  <li><b>Commesso viaggiatore</b>: trovare il giro più corto che passa da tutti i vertici una volta sola e torna al punto di partenza (un ciclo hamiltoniano di peso minimo). Non si conoscono algoritmi veloci per risolverlo.</li>
+  <li><b>Albero ricoprente minimo</b>, per i grafi non orientati: scegliere gli archi di un albero ricoprente (tutti i vertici, n − 1 archi, connesso e senza cicli) con il peso totale più piccolo. È il pacco 20.</li>
+</ul>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Grafo pesato: G = (V, E) più una funzione peso w : E → ℝ.</li>
+    <li>Tre problemi: cammini minimi, commesso viaggiatore, albero ricoprente minimo.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="ottimizzazione"><span class="num">2</span>Problemi di ottimizzazione: soluzioni ammissibili e ottime</h2>
+<p class="in-questa"><b>In questa sezione:</b> le parole che servono per tutti i problemi di ottimizzazione (lavagna, pagine 15–17): istanza, vincolo, obiettivo, soluzione ammissibile, soluzione ottima. L'esempio è la colorazione dei grafi.</p>
+<p>Il primo esempio della lavagna (pagina 15) è la <strong>colorazione di grafi</strong>. Un problema si descrive dicendo cosa si riceve, l'<em>istanza</em>, e cosa si deve trovare.</p>
+<div class="box def">
+  <span class="etichetta">Colorazione di grafi (lavagna, pagina 15)</span>
+  <p><b>Istanza</b>: un grafo non orientato G = (V, E).</p>
+  <p><b>Problema</b>: trovare il minimo numero di colori da attribuire ai vertici di G, in modo che vertici adiacenti abbiano colori differenti.</p>
+</div>
+<p>Pensa a una mappa: i vertici sono gli stati, un lato collega due stati confinanti, e stati confinanti devono avere colori diversi per distinguerli. La Figura 2 mostra i due esempi della lavagna.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) 3 colori</div><svg viewBox="0 0 298 214" width="298" height="214" role="img" aria-label="esagono colorato con 3 colori" font-family="system-ui, sans-serif"><path d="M47 95.9 L90 48.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47 118.1 L90 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 52 L100 162" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.6 49.3 L189.4 164.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115 177 L183 177" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M208 48.1 L251 95.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115 37 L183 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M251 118.1 L208 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="107" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="100" cy="37" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="100" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="100" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="198" cy="37" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="198" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="261" cy="107" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="261" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="198" cy="177" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="198" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(b) due archi in più: 4 colori</div><svg viewBox="0 0 298 214" width="298" height="214" role="img" aria-label="esagono con due archi in più, colorato con 4 colori" font-family="system-ui, sans-serif"><path d="M47 95.9 L90 48.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47 118.1 L90 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 52 L100 162" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.6 49.3 L189.4 164.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115 177 L183 177" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M208 48.1 L251 95.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115 37 L183 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M251 118.1 L208 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.6 164.7 L189.4 49.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M198 52 L198 162" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="107" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="100" cy="37" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="100" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="100" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="198" cy="37" r="15" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="198" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="261" cy="107" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="261" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="198" cy="177" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="198" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div></div>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagina 15. (a) L'esagono colorato con tre colori: B ed E rossi, A, D e F blu, C verde. Meno di tre non si può: B, C e F sono collegati a due a due (un triangolo), quindi servono tre colori diversi già solo per loro. (b) Con due archi in più, C–D e D–F, servono quattro colori: B, C, D e F sono tutti collegati tra loro.</div>
+</div>
+<p>Alla pagina 16 il prof scrive il problema in modo preciso. Una colorazione è una funzione che dà un colore a ogni vertice:</p>
+<div class="box def">
+  <span class="etichetta">Colorazione, scritta in formule (lavagna, pagina 16)</span>
+  <p><b>Colorazione</b>: c : V → Colori tale che <strong>(x, y) ∈ E ⇒ c(x) ≠ c(y)</strong>. Questa condizione è il <em>vincolo</em>.</p>
+  <p><b>Obiettivo</b>: minimizzare #Im(c), il numero di colori usati davvero (Im(c), l'immagine di c, è l'insieme dei colori che c assegna a qualche vertice).</p>
+  <p><b>Soluzione ammissibile</b>: una colorazione in cui vertici adiacenti hanno colori diversi.</p>
+  <p><b>Soluzione ottima</b>: una soluzione ammissibile con il numero di colori minimo.</p>
+</div>
+<p>Queste parole valgono per tutti i problemi di ottimizzazione (lavagna, pagina 17):</p>
+<div class="box def">
+  <span class="etichetta">Problema di ottimizzazione (lavagna, pagina 17)</span>
+  <p>Tra tutte le soluzioni <strong>ammissibili</strong>, cioè quelle che soddisfano i vincoli posti dal problema, vogliamo determinarne una <strong>ottima</strong> rispetto a un dato criterio: di solito una massimizzazione o una minimizzazione.</p>
+</div>
+<p>Due cose da notare. Una soluzione ottima è prima di tutto ammissibile: colorare tutto l'esagono di un solo colore usa pochissimi colori, ma non rispetta il vincolo, quindi non conta. E l'ottima non è sempre unica: l'esagono si può colorare con tre colori in molti modi diversi, e sono tutti ottimi.</p>
+<div class="widget" id="w-co">
+  <h4>Colora tu</h4>
+  <div id="co-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Un problema di ottimizzazione ha un'istanza, dei vincoli e un obiettivo (massimizzare o minimizzare).</li>
+    <li>Soluzione ammissibile: rispetta i vincoli. Soluzione ottima: ammissibile, e la migliore per l'obiettivo. Può non essere unica.</li>
+    <li>Colorazione: c : V → Colori con (x, y) ∈ E ⇒ c(x) ≠ c(y); obiettivo minimizzare #Im(c).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="zaino"><span class="num">3</span>Lo zaino monodimensionale</h2>
+<p class="in-questa"><b>In questa sezione:</b> il secondo esempio (lavagna, pagine 18 e 19), che sarà la palestra della tecnica greedy: riempire uno zaino il più possibile.</p>
+<div class="box def">
+  <span class="etichetta">Zaino monodimensionale (lavagna, pagina 18)</span>
+  <p><b>Istanza</b>: uno zaino di altezza h; k contenitori c<sub>1</sub>, c<sub>2</sub>, …, c<sub>k</sub> di altezze h<sub>1</sub>, h<sub>2</sub>, …, h<sub>k</sub>.</p>
+  <p><b>Problema</b>: scegliere quali contenitori collocare nello zaino, in modo da riempirlo il più possibile.</p>
+</div>
+<p>«Monodimensionale» vuol dire che conta una misura sola, l'altezza: i contenitori si impilano uno sopra l'altro, e la pila non deve superare l'altezza dello zaino. Una soluzione è un sottoinsieme S dei contenitori, quelli che si mettono dentro. Per scriverlo in formule serve l'altezza totale di S:</p>
+<div class="formula">f(S) = Σ<sub>c<sub>i</sub>∈S</sub> h<sub>i</sub></div>
+<p>cioè la somma delle altezze dei contenitori che stanno in S.</p>
+<div class="box def">
+  <span class="etichetta">Soluzioni (lavagna, pagina 18)</span>
+  <p><b>Soluzione ammissibile</b>: un sottoinsieme S ⊆ {c<sub>1</sub>, …, c<sub>k</sub>} tale che <strong>f(S) ≤ h</strong> (il vincolo: la pila entra nello zaino).</p>
+  <p><b>Soluzione ottima</b>: una soluzione ammissibile S* tale che <strong>f(S*) ≥ f(S) per ogni S ammissibile</strong> (nessuna pila che entra è più alta).</p>
+</div>
+<p>L'esempio della pagina 19: h = 6, k = 4, con h<sub>1</sub> = 1,5, h<sub>2</sub> = 2,5, h<sub>3</sub> = 3 e h<sub>4</sub> = 5. La Figura 3 disegna quattro sottoinsiemi.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">S1 = {c1, c4}: 6,5 > 6</div><svg viewBox="0 0 116 165" width="116" height="165" role="img" aria-label="S1 = {c1, c4}: 6,5 &gt; 6" font-family="system-ui, sans-serif"><rect x="55" y="124" width="54" height="33" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="82" y="145" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c1 1,5</text><rect x="55" y="14" width="54" height="110" rx="3" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.3"/><text x="82" y="73.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c4 5</text><path d="M52 25 L52 157 L112 157 L112 25" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="30" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 6</text><text x="47" y="157" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text><line x1="52" y1="25" x2="112" y2="25" class="l-rosso" stroke="#b42318" stroke-width="2" stroke-dasharray="4 3"/></svg><div class="piccolo" style="text-align:center"><span class="rosso">non ammissibile</span></div></div><div><div class="nome-mat">S2 = {c4}: 5</div><svg viewBox="0 0 116 154" width="116" height="154" role="img" aria-label="S2 = {c4}: 5" font-family="system-ui, sans-serif"><rect x="55" y="36" width="54" height="110" rx="3" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.3"/><text x="82" y="95.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c4 5</text><path d="M52 14 L52 146 L112 146 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 6</text><text x="47" y="146" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">ammissibile</div></div><div><div class="nome-mat">S3 = {c1, c3}: 4,5</div><svg viewBox="0 0 116 154" width="116" height="154" role="img" aria-label="S3 = {c1, c3}: 4,5" font-family="system-ui, sans-serif"><rect x="55" y="113" width="54" height="33" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="82" y="134" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c1 1,5</text><rect x="55" y="47" width="54" height="66" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.3"/><text x="82" y="84.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c3 3</text><path d="M52 14 L52 146 L112 146 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 6</text><text x="47" y="146" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">ammissibile</div></div><div><div class="nome-mat">S4 = {c2, c3}: 5,5</div><svg viewBox="0 0 116 154" width="116" height="154" role="img" aria-label="S4 = {c2, c3}: 5,5" font-family="system-ui, sans-serif"><rect x="55" y="91" width="54" height="55" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.3"/><text x="82" y="123" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c2 2,5</text><rect x="55" y="25" width="54" height="66" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.3"/><text x="82" y="62.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c3 3</text><path d="M52 14 L52 146 L112 146 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 6</text><text x="47" y="146" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center"><span class="ok">ammissibile, ottima</span></div></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 19: lo zaino (in blu) è alto 6. S<sub>1</sub> = {c<sub>1</sub>, c<sub>4</sub>} è alto 6,5 e sfora la riga tratteggiata: non è ammissibile. S<sub>2</sub>, S<sub>3</sub> e S<sub>4</sub> entrano; S<sub>4</sub> = {c<sub>2</sub>, c<sub>3</sub>}, alto 5,5, è ottimo. (Alla lavagna l'altezza di S<sub>2</sub> è scritta «f(S<sub>1</sub>) = 5»: è f(S<sub>2</sub>).)</div>
+</div>
+<p>Perché S<sub>4</sub> è ottimo? Non c'è un sottoinsieme alto esattamente 6: i contenitori sono 1,5, 2,5, 3 e 5, e controllando le somme si trova 1,5 + 2,5 = 4, 1,5 + 3 = 4,5, 2,5 + 3 = 5,5, 5 da solo, mentre 1,5 + 5 = 6,5 e 1,5 + 2,5 + 3 = 7 sono troppo alti. Il massimo che entra è 5,5.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Zaino monodimensionale: scegliere S ⊆ {c<sub>1</sub>, …, c<sub>k</sub>} con f(S) = Σ h<sub>i</sub> ≤ h, e f(S) il più grande possibile.</li>
+    <li>Ammissibile: f(S) ≤ h. Ottima: f(S*) ≥ f(S) per ogni S ammissibile.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="greedy"><span class="num">4</span>La tecnica greedy</h2>
+<p class="in-questa"><b>In questa sezione:</b> la tecnica greedy in generale (lavagna, pagine 20–22): la strategia, le sue tre caratteristiche e lo schema in pseudocodice.</p>
+<p>Il problema, visto in generale (lavagna, pagina 20): c'è un insieme C di <strong>candidati</strong> (i contenitori, gli archi, le monete…), e bisogna trovare un sottoinsieme <strong>S ⊆ C ottimo</strong>. Provare tutti i sottoinsiemi è troppo lento: con k candidati sono 2<sup>k</sup>, già con k = 50 più di un milione di miliardi. La tecnica greedy costruisce invece la soluzione un pezzo alla volta.</p>
+<div class="box def">
+  <span class="etichetta">Strategia greedy (lavagna, pagina 20)</span>
+  <ul>
+    <li>Inizialmente S ← ∅.</li>
+    <li>Ad ogni passo: si preleva da C l'elemento x «migliore»; se S ∪ {x} è ammissibile, si aggiunge x a S.</li>
+    <li>Si termina quando si sono esaminati tutti i candidati.</li>
+  </ul>
+</div>
+<p>«Greedy» in inglese vuol dire goloso, ingordo: come chi a tavola prende sempre il pezzo più grande senza pensare a dopo. Alla pagina 21 il prof elenca le tre caratteristiche della tecnica:</p>
+<ul>
+  <li><b>Espansione di una soluzione ammissibile</b>: la soluzione parziale S soddisfa sempre i vincoli del problema, e cresce un elemento alla volta.</li>
+  <li><b>Scelta dell'ottimo locale</b>: tra tutti i candidati disponibili, a ogni passo si sceglie quello che <em>al momento</em> appare migliore, senza guardare le conseguenze sui passi successivi.</li>
+  <li><b>Scelta irrevocabile</b>: le scelte fatte non vengono più messe in discussione. Un elemento preso resta in S; uno scartato non viene più riconsiderato.</li>
+</ul>
+<p>Lo schema in pseudocodice (lavagna, pagina 22):</p>
+<p class="titolo-codice">Lavagna, pagina 22</p>
+<pre class="pseudo"><b>ALGORITMO</b> greedy(insieme C) → soluzione
+  S ← ∅
+  <b>WHILE</b> C ≠ ∅ <b>DO</b>
+    x ← seleziona(C)          <span class="com">// l'elemento considerato migliore al momento</span>
+    C ← C \ {x}
+    <b>IF</b> S ∪ {x} è ammissibile <b>THEN</b>
+      S ← S ∪ {x}
+  <b>RETURN</b> S</pre>
+<ul>
+  <li>Ogni candidato viene guardato una volta sola, perché C ← C \ {x} lo toglie dai candidati in ogni caso, preso o scartato.</li>
+  <li>Tutta l'intelligenza è nella funzione <strong>seleziona</strong>: è lei che decide cosa vuol dire «migliore». Per usare la tecnica su un problema bisogna dire chi sono i candidati e come lavora seleziona.</li>
+  <li>Spesso seleziona prende il più grande (o il più piccolo) secondo un criterio. Allora conviene ordinare C una volta all'inizio, in tempo O(k log k), e poi seleziona prende semplicemente il prossimo dell'ordine.</li>
+</ul>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Greedy: S ← ∅; finché ci sono candidati, x ← seleziona(C), lo si toglie da C, e lo si aggiunge a S se S ∪ {x} resta ammissibile.</li>
+    <li>Tre caratteristiche: espansione di una soluzione ammissibile, scelta dell'ottimo locale, scelta irrevocabile.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="greedy-zaino"><span class="num">5</span>Il greedy sullo zaino</h2>
+<p class="in-questa"><b>In questa sezione:</b> la tecnica greedy applicata allo zaino monodimensionale (lavagna, pagine 23 e 24), con i tre esempi della lavagna: una volta trova l'ottimo, due volte no.</p>
+<p>Per lo zaino monodimensionale (lavagna, pagina 23): i <strong>candidati sono i contenitori</strong>, C = {c<sub>1</sub>, …, c<sub>k</sub>}. La strategia greedy scelta dal prof: si ispezionano i contenitori in ordine di altezza, dal più alto al più basso. Quindi <strong>seleziona sceglie il contenitore più alto</strong> tra quelli rimasti. L'idea: i contenitori alti riempiono di più, e i bassi servono a riempire gli spazi che restano.</p>
+<p>Gli esempi della pagina 24, tutti con h = 20:</p>
+<ul>
+  <li><b>Esempio 1</b>: altezze 8, 7, 6, 3, 2, 1. Si prende c<sub>1</sub> (8), poi c<sub>2</sub> (8 + 7 = 15). c<sub>3</sub> porterebbe a 21 &gt; 20: si scarta. c<sub>4</sub> porta a 18, c<sub>5</sub> a 20. c<sub>6</sub> porterebbe a 21: si scarta. Totale <strong>20</strong>: lo zaino è pieno, e <span class="ok">il greedy ha trovato l'ottimo</span>.</li>
+  <li><b>Esempio 2</b>: altezze 8, 7, 6, 3, 3, 1. Come prima c<sub>1</sub> e c<sub>2</sub> (15), si scarta c<sub>3</sub>, si prende c<sub>4</sub> (18), si scarta c<sub>5</sub> (21), si prende c<sub>6</sub> (19). Totale <strong>19</strong>. Ma {c<sub>2</sub>, c<sub>3</sub>, c<sub>4</sub>, c<sub>5</sub>, c<sub>6</sub>} = 7 + 6 + 3 + 3 + 1 = <strong>20</strong> entra ed è più alto: <span class="errore">il greedy non trova l'ottimo</span>.</li>
+  <li><b>Esempio 3</b>: altezze 10, 8, 8, 3, 3. Si prendono c<sub>1</sub> e c<sub>2</sub> (18), e poi niente entra più: 18 + 8 = 26, 18 + 3 = 21. Totale <strong>18</strong>. Ma {c<sub>2</sub>, c<sub>3</sub>, c<sub>4</sub>} = 8 + 8 + 3 = <strong>19</strong>: di nuovo <span class="errore">il greedy sbaglia</span>.</li>
+</ul>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">Esempio 1: greedy, 20</div><svg viewBox="0 0 116 182" width="116" height="182" role="img" aria-label="greedy: 20" font-family="system-ui, sans-serif"><rect x="55" y="110" width="54" height="64" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="82" y="146.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c1 8</text><rect x="55" y="54" width="54" height="56" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.3"/><text x="82" y="86.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c2 7</text><rect x="55" y="30" width="54" height="24" rx="3" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.3"/><text x="82" y="46.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c4 3</text><rect x="55" y="14" width="54" height="16" rx="3" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.3"/><text x="82" y="26.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c5 2</text><path d="M52 14 L52 174 L112 174 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 20</text><text x="47" y="174" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">{c1, c2, c4, c5}</div></div><div><div class="nome-mat">un ottimo, 20</div><svg viewBox="0 0 116 182" width="116" height="182" role="img" aria-label="ottimo" font-family="system-ui, sans-serif"><rect x="55" y="110" width="54" height="64" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="82" y="146.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c1 8</text><rect x="55" y="54" width="54" height="56" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.3"/><text x="82" y="86.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c2 7</text><rect x="55" y="30" width="54" height="24" rx="3" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.3"/><text x="82" y="46.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c4 3</text><rect x="55" y="14" width="54" height="16" rx="3" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.3"/><text x="82" y="26.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c5 2</text><path d="M52 14 L52 174 L112 174 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 20</text><text x="47" y="174" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">{c1, c2, c4, c5}</div></div></div><div class="affianco"><div><div class="nome-mat">Esempio 2: greedy, 19</div><svg viewBox="0 0 116 182" width="116" height="182" role="img" aria-label="greedy: 19" font-family="system-ui, sans-serif"><rect x="55" y="110" width="54" height="64" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="82" y="146.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c1 8</text><rect x="55" y="54" width="54" height="56" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.3"/><text x="82" y="86.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c2 7</text><rect x="55" y="30" width="54" height="24" rx="3" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.3"/><text x="82" y="46.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c4 3</text><rect x="55" y="22" width="54" height="8" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.3"/><path d="M52 14 L52 174 L112 174 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 20</text><text x="47" y="174" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">{c1, c2, c4, c6}</div></div><div><div class="nome-mat">un ottimo, 20</div><svg viewBox="0 0 116 182" width="116" height="182" role="img" aria-label="ottimo" font-family="system-ui, sans-serif"><rect x="55" y="118" width="54" height="56" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.3"/><text x="82" y="150.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c2 7</text><rect x="55" y="70" width="54" height="48" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.3"/><text x="82" y="98.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c3 6</text><rect x="55" y="46" width="54" height="24" rx="3" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.3"/><text x="82" y="62.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c4 3</text><rect x="55" y="22" width="54" height="24" rx="3" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.3"/><text x="82" y="38.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c5 3</text><rect x="55" y="14" width="54" height="8" rx="3" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.3"/><path d="M52 14 L52 174 L112 174 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 20</text><text x="47" y="174" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">{c2, c3, c4, c5, c6}</div></div></div><div class="affianco"><div><div class="nome-mat">Esempio 3: greedy, 18</div><svg viewBox="0 0 116 182" width="116" height="182" role="img" aria-label="greedy: 18" font-family="system-ui, sans-serif"><rect x="55" y="94" width="54" height="80" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.3"/><text x="82" y="138.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c1 10</text><rect x="55" y="30" width="54" height="64" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.3"/><text x="82" y="66.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c2 8</text><path d="M52 14 L52 174 L112 174 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 20</text><text x="47" y="174" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">{c1, c2}</div></div><div><div class="nome-mat">un ottimo, 19</div><svg viewBox="0 0 116 182" width="116" height="182" role="img" aria-label="ottimo" font-family="system-ui, sans-serif"><rect x="55" y="110" width="54" height="64" rx="3" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.3"/><text x="82" y="146.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c2 8</text><rect x="55" y="46" width="54" height="64" rx="3" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.3"/><text x="82" y="82.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c3 8</text><rect x="55" y="22" width="54" height="24" rx="3" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.3"/><text x="82" y="38.5" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c4 3</text><path d="M52 14 L52 174 L112 174 L112 14" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2.2"/><text x="47" y="19" font-size="11.5" text-anchor="end" class="t-blu" fill="#2f52c4">h = 20</text><text x="47" y="174" font-size="11.5" text-anchor="end" class="t-muted" fill="#5b6270">0</text></svg><div class="piccolo" style="text-align:center">{c2, c3, c4}</div></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagina 24: i tre esempi, con h = 20. In ogni riga, a sinistra lo zaino riempito dal greedy, a destra una soluzione ottima. Nell'esempio 1 il greedy arriva a 20; negli esempi 2 e 3 si ferma a 19 e a 18, mentre si poteva arrivare a 20 e a 19. (Nell'esempio 2 esiste anche un altro ottimo, {c<sub>1</sub>, c<sub>3</sub>, c<sub>4</sub>, c<sub>5</sub>}.)</div>
+</div>
+<p>Dove sbaglia? Nell'esempio 3 la scelta di c<sub>1</sub>, alto 10, sembrava la migliore al momento (ottimo locale), ma ha lasciato uno spazio di 10 in cui entrano male gli altri contenitori: dopo c<sub>2</sub> restano 2 centimetri inutilizzabili. E la scelta è irrevocabile: il greedy non può tornare indietro e togliere c<sub>1</sub>. Anche l'esempio della pagina 19 (h = 6) inganna il greedy: prende c<sub>4</sub> (5), e poi niente altro entra; l'ottimo era 5,5. Provalo nel riquadro.</p>
+<div class="widget" id="w-zw">
+  <h4>Lo zaino con la strategia greedy</h4>
+  <div id="zw-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Zaino monodimensionale con il greedy: candidati = contenitori; seleziona = il più alto rimasto; lo si prende se entra.</li>
+    <li>Esempio 1: 20, ottimo. Esempi 2 e 3: 19 e 18, mentre l'ottimo è 20 e 19. Il greedy non trova sempre la soluzione ottima.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="valori"><span class="num">6</span>Lo zaino con valori</h2>
+<p class="in-questa"><b>In questa sezione:</b> una variante dello zaino in cui ogni oggetto ha anche un valore (lavagna, pagine 25–27). Il greedy che prende sempre l'oggetto più prezioso sbaglia anche qui.</p>
+<div class="box def">
+  <span class="etichetta">Zaino con valori, o sacco del ladro (lavagna, pagina 25)</span>
+  <p><b>Istanza</b>: un sacco che può portare al massimo il peso P; k oggetti c<sub>1</sub>, …, c<sub>k</sub> di peso p<sub>1</sub>, …, p<sub>k</sub> e valore v<sub>1</sub>, …, v<sub>k</sub>.</p>
+  <p><b>Problema</b>: scegliere quali oggetti collocare nel sacco, in modo da massimizzare il valore totale, evitando che il sacco si rompa.</p>
+  <p><b>Obiettivo</b>: guadagnare il più possibile. <b>Vincolo</b>: non superare la capacità del sacco.</p>
+</div>
+<p>Il ladro può portare via solo quello che sta nel sacco: deve scegliere gli oggetti più preziosi, ma senza superare il peso. Rispetto allo zaino monodimensionale ci sono due numeri per oggetto: il peso decide se si può prendere, il valore quanto conviene. In formule (lavagna, pagina 26), per un sottoinsieme S ⊆ C dei candidati C = {c<sub>1</sub>, …, c<sub>k</sub>}:</p>
+<div class="formula">val(S) = Σ<sub>c<sub>i</sub>∈S</sub> v<sub>i</sub></div>
+<div class="formula">peso(S) = Σ<sub>c<sub>i</sub>∈S</sub> p<sub>i</sub></div>
+<div class="box def">
+  <span class="etichetta">Soluzioni (lavagna, pagina 26)</span>
+  <p><b>Soluzione ammissibile</b>: S ⊆ C è ammissibile se <strong>peso(S) ≤ P</strong>.</p>
+  <p><b>Soluzione ottima</b>: S* ⊆ C è ottima se (1) S* è ammissibile e (2) per ogni S ammissibile, <strong>val(S) ≤ val(S*)</strong>.</p>
+</div>
+<p>La strategia greedy della pagina 27: si ispezionano gli oggetti in ordine di valore, quindi <strong>seleziona sceglie l'oggetto di maggior valore</strong>. L'esempio ha P = 20 e cinque oggetti (Figura 5).</p>
+<div class="figura">
+<div class="tabella-wrap"><table><tr><th>oggetto</th><th>peso</th><th>valore</th><th>il greedy (per valore)</th><th>la soluzione ottima</th></tr><tr><td>c1</td><td>12</td><td>100</td><td><span class="ok">✓</span></td><td>–</td></tr><tr><td>c2</td><td>3</td><td>80</td><td><span class="ok">✓</span></td><td><span class="ok">✓</span></td></tr><tr><td>c3</td><td>6</td><td>75</td><td>–</td><td><span class="ok">✓</span></td></tr><tr><td>c4</td><td>6</td><td>70</td><td>–</td><td><span class="ok">✓</span></td></tr><tr><td>c5</td><td>3</td><td>30</td><td><span class="ok">✓</span></td><td><span class="ok">✓</span></td></tr><tr><td colspan="3"><b>totale</b> (peso; valore)</td><td><b>18; 210</b></td><td><b>18; 255</b></td></tr></table></div>
+<div class="didascalia"><b>Figura 5.</b> Lavagna, pagina 27, con P = 20. Il greedy guarda gli oggetti in ordine di valore: c<sub>1</sub> (100) entra, peso 12; c<sub>2</sub> (80) entra, peso 15; c<sub>3</sub> (75) porterebbe a 21, si scarta; c<sub>4</sub> (70) porterebbe a 21, si scarta; c<sub>5</sub> (30) entra, peso 18. Valore 210. Invece {c<sub>2</sub>, c<sub>3</sub>, c<sub>4</sub>, c<sub>5</sub>} pesa ugualmente 18 e vale 255: è la soluzione ottima.</div>
+</div>
+<p>Il difetto è lo stesso dello zaino: c<sub>1</sub> vale tanto, ma pesa 12 e occupa più di metà del sacco. Prendendolo per primo (ottimo locale, irrevocabile) si rinuncia a c<sub>3</sub> e c<sub>4</sub>, che insieme pesano come c<sub>1</sub> e valgono 145. Nel riquadro della sezione 5 puoi scegliere l'esempio «Zaino con valori» e provare anche altri criteri per seleziona.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Zaino con valori: S ⊆ C con peso(S) ≤ P e val(S) massimo.</li>
+    <li>Greedy per valore: sull'esempio della lavagna trova 210, mentre l'ottimo è 255.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="resto"><span class="num">7</span>Il distributore di resto</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'ultimo esempio della lezione (lavagna, pagine 28–30): un distributore automatico deve dare il resto esatto con le monete che ha. È un problema di sì o no, e il greedy può rispondere «no» quando la risposta giusta è «sì».</p>
+<div class="box def">
+  <span class="etichetta">Distributore automatico di resto (lavagna, pagina 28)</span>
+  <p><b>Istanza</b>: la quantità di monete disponibili per ciascun taglio; il resto R da erogare. Le monete sono da 5, 10, 20 e 50 centesimi, e K<sub>5</sub>, K<sub>10</sub>, K<sub>20</sub>, K<sub>50</sub> ≥ 0 sono quante ce ne sono di ciascun taglio; R &gt; 0.</p>
+  <p><b>Problema</b>: è possibile dare il resto esatto?</p>
+</div>
+<p>In formule (lavagna, pagina 28): j<sub>5</sub> è il numero di monete da 5 che si danno, j<sub>10</sub> quelle da 10, e così via. La domanda diventa:</p>
+<div class="formula">esistono j<sub>5</sub>, j<sub>10</sub>, j<sub>20</sub>, j<sub>50</sub> ≥ 0 tali che j<sub>5</sub> ≤ K<sub>5</sub>, j<sub>10</sub> ≤ K<sub>10</sub>, j<sub>20</sub> ≤ K<sub>20</sub>, j<sub>50</sub> ≤ K<sub>50</sub> e 5 j<sub>5</sub> + 10 j<sub>10</sub> + 20 j<sub>20</sub> + 50 j<sub>50</sub> = R ?</div>
+<p>Le prime condizioni dicono che non si possono dare monete che non ci sono; l'ultima che la somma deve essere esattamente il resto. Per la tecnica greedy serve anche la soluzione <em>parziale</em> (lavagna, pagina 29), quella che si costruisce passo passo:</p>
+<div class="box def">
+  <span class="etichetta">Soluzione parziale ammissibile (lavagna, pagina 29)</span>
+  <p>Un vettore di interi (j<sub>5</sub>, j<sub>10</sub>, j<sub>20</sub>, j<sub>50</sub>) tale che j<sub>5</sub>, j<sub>10</sub>, j<sub>20</sub>, j<sub>50</sub> ≥ 0, j<sub>5</sub> ≤ K<sub>5</sub>, j<sub>10</sub> ≤ K<sub>10</sub>, j<sub>20</sub> ≤ K<sub>20</sub>, j<sub>50</sub> ≤ K<sub>50</sub> e <strong>5 j<sub>5</sub> + 10 j<sub>10</sub> + 20 j<sub>20</sub> + 50 j<sub>50</sub> ≤ R</strong>.</p>
+</div>
+<p>L'unica differenza è il ≤ al posto dell'=: mentre si costruisce, non si deve superare il resto. Un esempio della pagina 29: con 10 monete per ogni taglio e R = 85, vanno bene sia (1, 0, 4, 0), cioè una da 5 e quattro da 20, sia (1, 1, 1, 1), cioè una moneta per taglio: 5 + 10 + 20 + 50 = 85.</p>
+<p>La strategia greedy (lavagna, pagina 30): <strong>seleziona sceglie la moneta disponibile di maggior valore</strong>, e la si dà se non si supera il resto. È quello che fa una persona alla cassa. I due esempi della lavagna, con R = 85, sono nella Figura 6.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">Esempio 1: cinque monete da 5</div><div class="tabella-wrap"><table><tr><th>moneta</th><th>quantità</th><th>il greedy prende</th><th>soluzione esatta</th></tr><tr><td>50</td><td>10</td><td>1</td><td>1</td></tr><tr><td>20</td><td>10</td><td>1</td><td>1</td></tr><tr><td>10</td><td>0</td><td>0</td><td>0</td></tr><tr><td>5</td><td>5</td><td>3</td><td>3</td></tr><tr><td colspan="2"><b>totale</b></td><td><b>85 ✓</b></td><td><b>85</b></td></tr></table></div></div><div><div class="nome-mat">Esempio 2: due monete da 5</div><div class="tabella-wrap"><table><tr><th>moneta</th><th>quantità</th><th>il greedy prende</th><th>soluzione esatta</th></tr><tr><td>50</td><td>10</td><td>1</td><td>0</td></tr><tr><td>20</td><td>10</td><td>1</td><td>4</td></tr><tr><td>10</td><td>0</td><td>0</td><td>0</td></tr><tr><td>5</td><td>2</td><td>2</td><td>1</td></tr><tr><td colspan="2"><b>totale</b></td><td><b><span class="rosso">80 ✗</span></b></td><td><b>85</b></td></tr></table></div></div></div>
+<div class="didascalia"><b>Figura 6.</b> Lavagna, pagina 30, con R = 85 e nessuna moneta da 10. Esempio 1: il greedy dà una moneta da 50 (restano 35), una da 20 (restano 15), tre da 5: <span class="ok">85, giusto</span>. Esempio 2, con solo due monete da 5: 50, poi 20, poi le due da 5, e restano 5 centesimi che non si possono dare: il greedy arriva a 80 e risponderebbe «non si può». Invece quattro monete da 20 e una da 5 fanno 85.</div>
+</div>
+<p>Nell'esempio 2 la prima scelta, la moneta da 50, è quella che rovina tutto: dopo, servono 35 centesimi, e con le monete rimaste (molte da 20, due da 5, nessuna da 10) 35 non si può fare: 20 + 5 + 5 = 30, 20 + 20 = 40. Senza la moneta da 50 invece 85 = 20 + 20 + 20 + 20 + 5. Ma il greedy non torna indietro.</p>
+<div class="widget" id="w-rs">
+  <h4>Il distributore di resto</h4>
+  <div id="rs-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Resto: esistono j ≥ 0, j ≤ K per ogni taglio, con 5 j<sub>5</sub> + 10 j<sub>10</sub> + 20 j<sub>20</sub> + 50 j<sub>50</sub> = R? Soluzione parziale: la stessa cosa con ≤ R.</li>
+    <li>Greedy: si dà sempre la moneta più grande che non fa superare il resto. Con poche monete da 5 e nessuna da 10 può fallire anche se il resto esatto si può dare.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="quando"><span class="num">8</span>Quando ci si può fidare del greedy</h2>
+<p class="in-questa"><b>In questa sezione:</b> cosa insegnano gli esempi della lezione, messo in ordine: il greedy è veloce, ma va dimostrato che funziona; per far vedere che non funziona basta un esempio.</p>
+<p>Gli esempi della lezione portano tutti allo stesso punto. Il greedy ha due grandi pregi: è <strong>semplice</strong> (lo schema della sezione 4 è sempre lo stesso) e <strong>veloce</strong> (di solito si ordinano i candidati e si fa un solo giro, in tutto O(k log k)). Ma la scelta dell'ottimo locale e la scelta irrevocabile possono portarlo fuori strada: <strong>il greedy non sempre trova la soluzione ottima</strong>.</p>
+<p>Quindi, davanti a un algoritmo greedy, ci sono due casi:</p>
+<ul>
+  <li><b>Funziona sempre.</b> Allora va <em>dimostrato</em>: non basta provarlo su qualche esempio, perché un esempio che va bene non dice niente sugli altri. Nel pacco 20 lo vedrai per gli algoritmi di Kruskal e di Prim, che costruiscono l'albero ricoprente minimo con un greedy, e funzionano sempre.</li>
+  <li><b>Non funziona sempre.</b> Allora basta un <em>controesempio</em>: un'istanza del problema su cui la soluzione trovata dal greedy è peggiore di un'altra soluzione ammissibile. Gli esempi 2 e 3 della pagina 24, l'esempio della pagina 27 e l'esempio 2 della pagina 30 sono controesempi.</li>
+</ul>
+<div class="box esame">
+  <span class="etichetta">Metodo: trovare un controesempio per un greedy</span>
+  <ol>
+    <li>Capire su cosa si basa seleziona (il più alto, il più prezioso, la moneta più grande…).</li>
+    <li>Costruire un'istanza in cui il candidato scelto per primo «rovina» il resto: occupa tanto spazio (o tanto resto) e lascia un avanzo che gli altri riempiono male.</li>
+    <li>Eseguire il greedy passo per passo sull'istanza e scrivere la sua soluzione con il suo valore.</li>
+    <li>Scrivere un'altra soluzione ammissibile, migliore, e controllare che rispetti i vincoli.</li>
+  </ol>
+  <p>Esempio, per il greedy per valore del sacco del ladro con P = 10: oggetti (peso 10, valore 10), (peso 5, valore 9), (peso 5, valore 9). Il greedy prende il primo (valore 10) e poi niente entra più; gli altri due insieme pesano 10 e valgono 18.</p>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Il greedy è semplice e veloce, ma non sempre ottimo.</li>
+    <li>Che funziona sempre si dimostra (Kruskal, Prim); che non funziona si mostra con un controesempio.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Grafo pesato</b>: G = (V, E) con w : E → ℝ. Problemi: cammini minimi, commesso viaggiatore, albero ricoprente minimo.</li>
+    <li><b>Problema di ottimizzazione</b>: istanza, vincoli, obiettivo. Soluzione ammissibile = rispetta i vincoli; ottima = ammissibile e migliore di tutte le altre ammissibili.</li>
+    <li><b>Colorazione</b>: c : V → Colori, (x, y) ∈ E ⇒ c(x) ≠ c(y), minimizzare #Im(c).</li>
+    <li><b>Zaino monodimensionale</b>: S con f(S) = Σ h<sub>i</sub> ≤ h, f(S) massimo. <b>Zaino con valori</b>: peso(S) ≤ P, val(S) massimo. <b>Resto</b>: j ≤ K e 5 j<sub>5</sub> + 10 j<sub>10</sub> + 20 j<sub>20</sub> + 50 j<sub>50</sub> = R.</li>
+    <li><b>Greedy</b>: S ← ∅; WHILE C ≠ ∅: x ← seleziona(C); C ← C \ {x}; IF S ∪ {x} ammissibile THEN S ← S ∪ {x}. Espansione di una soluzione ammissibile, ottimo locale, scelte irrevocabili.</li>
+    <li>Il greedy sbaglia su zaino (esempi 2 e 3), sacco del ladro (210 invece di 255) e resto (80 invece di 85). Funziona sempre per l'albero ricoprente minimo (pacco 20).</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>All'orale: le definizioni di soluzione ammissibile e ottima, lo schema greedy con le sue tre caratteristiche, e un esempio in cui il greedy non trova l'ottimo.</li>
+    <li>Allo scritto la tecnica greedy arriva con l'albero ricoprente minimo (esercizio 3 di molti appelli, pacco 20). Gli esercizi del foglio 9 allenano a formalizzare un problema (vincoli e funzione obiettivo in formule) e a trovare controesempi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi risolti (foglio 9)</h2>
+<p class="in-questa"><b>In questa sezione:</b> i due esercizi del foglio 9 e due esercizi in più. Prova a risolverli da solo, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 9.1 del foglio 9: le scatole nella cassaforte</summary>
+  <p>Una cassaforte di altezza h; k scatole s<sub>1</sub>, …, s<sub>k</sub>: la scatola s<sub>i</sub> è alta h<sub>i</sub> e contiene un oggetto di valore v<sub>i</sub>. Le scatole si possono solo impilare, e la somma delle altezze supera h: non entrano tutte. Si vuole il massimo valore totale nella cassaforte. Per esempio, con h = 14 e tre scatole (h<sub>1</sub> = 10, v<sub>1</sub> = 8), (h<sub>2</sub> = 5, v<sub>2</sub> = 3), (h<sub>3</sub> = 6, v<sub>3</sub> = 6), la soluzione ottima è {s<sub>2</sub>, s<sub>3</sub>}; con una quarta scatola (h<sub>4</sub> = 4, v<sub>4</sub> = 6) diventa {s<sub>1</sub>, s<sub>4</sub>}.</p>
+  <ul>
+    <li>(a) Scrivete in formule i vincoli di ogni soluzione ammissibile e di ogni soluzione ottima, e la funzione obiettivo.</li>
+    <li>(b) Scrivete lo pseudocodice di un algoritmo greedy che sceglie le scatole selezionando di volta in volta quella di valore più grande.</li>
+    <li>(c) Con h = 20, definite 5 scatole su cui l'algoritmo trova la soluzione ottima.</li>
+    <li>(d) L'algoritmo trova sempre la soluzione ottima? Se no, presentate un'istanza su cui sbaglia.</li>
+  </ul>
+  <div class="soluzione">
+    <p>È lo zaino con valori della sezione 6, con le altezze al posto dei pesi.</p>
+    <p><b>(a)</b> Una soluzione è un sottoinsieme S ⊆ {s<sub>1</sub>, …, s<sub>k</sub>}, le scatole messe in cassaforte.</p>
+    <ul>
+      <li>S è <b>ammissibile</b> se Σ<sub>s<sub>i</sub>∈S</sub> h<sub>i</sub> ≤ h.</li>
+      <li>La <b>funzione obiettivo</b> è val(S) = Σ<sub>s<sub>i</sub>∈S</sub> v<sub>i</sub>, da massimizzare.</li>
+      <li>S* è <b>ottima</b> se è ammissibile e val(S*) ≥ val(S) per ogni S ammissibile.</li>
+    </ul>
+    <p><b>(b)</b> Seleziona prende la scatola di valore più grande: conviene ordinare le scatole per valore decrescente e scorrerle.</p>
+<pre class="pseudo"><b>ALGORITMO</b> cassaforte(scatole s<sub>1</sub>, …, s<sub>k</sub>, altezza h) → insieme
+  ordina le scatole per valore non crescente
+  S ← ∅
+  occupata ← 0
+  <b>FOR EACH</b> scatola s<sub>i</sub> secondo l'ordine <b>DO</b>
+    <b>IF</b> occupata + h<sub>i</sub> ≤ h <b>THEN</b>
+      S ← S ∪ {s<sub>i</sub>}
+      occupata ← occupata + h<sub>i</sub>
+  <b>RETURN</b> S</pre>
+    <p>È lo schema greedy: il FOR EACH secondo l'ordine fa da «seleziona» e da C ← C \ {x}; la variabile occupata serve a controllare in un passo se S ∪ {s<sub>i</sub>} è ammissibile. Il tempo è O(k log k) per l'ordinamento più O(k) per il ciclo.</p>
+    <p><b>(c)</b> Basta che le scatole più preziose siano anche quelle che riempiono bene. Per esempio cinque scatole tutte alte 5, con valori 10, 9, 8, 7 e 1: il greedy prende le prime quattro (altezza 20, valore 34), e la quinta non entra. Nessuna soluzione fa di meglio: in un'altezza di 20 entrano al massimo quattro scatole alte 5, e queste sono le quattro di valore più grande.</p>
+    <p><b>(d)</b> No. Lo mostra già l'esempio del testo: con h = 14 il greedy prende s<sub>1</sub> (valore 8, altezza 10); poi s<sub>3</sub> (altezza 16 &gt; 14) e s<sub>2</sub> (15 &gt; 14) non entrano. Valore 8, mentre {s<sub>2</sub>, s<sub>3</sub>} è alta 11 e vale 9. Puoi provarlo nel riquadro della sezione 5, esempio «Cassaforte dell'esercizio 9.1».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 9.2 del foglio 9: quante casseforti servono</summary>
+  <p>Variante dell'esercizio 9.1: le scatole devono stare <em>tutte</em> in cassaforte, quindi se non entrano in una si comprano altre casseforti (tutte alte h). Le casseforti costano molto: si vuole usarne il minor numero possibile.</p>
+  <ul>
+    <li>Individuate una strategia greedy per risolvere il problema.</li>
+    <li>La strategia fornisce sempre la soluzione ottima? Se no, presentate un'istanza su cui sbaglia.</li>
+  </ul>
+  <div class="soluzione">
+    <p><b>Una strategia greedy.</b> Si guardano le scatole dalla più alta alla più bassa (seleziona = la scatola più alta rimasta). Ogni scatola si mette nella prima cassaforte già aperta in cui c'è ancora posto; se non entra in nessuna, si apre una cassaforte nuova. L'idea: le scatole grandi sono le più difficili da sistemare, quindi si sistemano per prime, e le piccole riempiono gli spazi.</p>
+    <p><b>Non sempre è ottima.</b> Controesempio: h = 10 e sei scatole alte 6, 5, 3, 2, 2, 2.</p>
+    <ul>
+      <li>Il greedy: 6 nella cassaforte 1; 5 non entra (11), apre la cassaforte 2; 3 entra nella 1 (9); il primo 2 non entra nella 1 (11), entra nella 2 (7); il secondo 2 entra nella 2 (9); il terzo 2 non entra né nella 1 (11) né nella 2 (11): apre la cassaforte 3. <b>Tre casseforti</b>.</li>
+      <li>Invece {6, 2, 2} = 10 e {5, 3, 2} = 10: <b>due casseforti</b>, piene tutte e due. Di meno non si può, perché le scatole insieme sono alte 20.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Un'altra idea per seleziona</summary>
+  <p>Per il sacco del ladro qualcuno propone di selezionare l'oggetto con il rapporto valore/peso più grande, cioè quello che vale di più per ogni chilo. Sull'esempio della Figura 5 (P = 20) funziona? Funziona sempre?</p>
+  <div class="soluzione">
+    <p>I rapporti sono: c<sub>1</sub> 100/12 ≈ 8,3; c<sub>2</sub> 80/3 ≈ 26,7; c<sub>3</sub> 75/6 = 12,5; c<sub>4</sub> 70/6 ≈ 11,7; c<sub>5</sub> 30/3 = 10. Ordine: c<sub>2</sub>, c<sub>3</sub>, c<sub>4</sub>, c<sub>5</sub>, c<sub>1</sub>. Il greedy prende c<sub>2</sub> (3), c<sub>3</sub> (9), c<sub>4</sub> (15), c<sub>5</sub> (18), e c<sub>1</sub> non entra. Valore 255: <b>qui trova l'ottimo</b>.</p>
+    <p>Ma <b>non sempre</b>. Controesempio con P = 10: c<sub>1</sub> peso 1, valore 2 (rapporto 2); c<sub>2</sub> peso 10, valore 10 (rapporto 1). Il greedy prende c<sub>1</sub> e poi c<sub>2</sub> non entra più (11): valore 2. Prendendo solo c<sub>2</sub> si ha 10.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Il resto con monete senza limiti</summary>
+  <p>Nel distributore della sezione 7, supponete che le monete di ogni taglio siano infinite (K<sub>5</sub> = K<sub>10</sub> = K<sub>20</sub> = K<sub>50</sub> = ∞). Per quali resti R il greedy dà il resto esatto?</p>
+  <div class="soluzione">
+    <p>Per tutti gli R multipli di 5 (gli altri non si possono dare in nessun modo, perché tutte le monete sono multipli di 5). Il greedy dà monete da 50 finché il resto rimasto è almeno 50, poi da 20 finché è almeno 20, poi da 10, poi da 5. Ogni volta che passa a un taglio più piccolo, il resto rimasto è minore del taglio precedente ma ancora multiplo di 5; alla fine le monete da 5, che sono infinite, completano qualsiasi multiplo di 5. Nell'esempio 2 della lavagna il greedy sbagliava solo perché le monete da 5 erano due e quelle da 10 nessuna.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 11 -->
+<h2 id="approfondimenti"><span class="num">11</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per lo scritto. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: lo zaino si risolve con la programmazione dinamica</summary>
+  <div class="soluzione">
+    <p>Lo zaino con valori ha una soluzione esatta che non prova tutti i 2<sup>k</sup> sottoinsiemi: quando i pesi sono numeri interi, si riempie una tabella migliore[i][c] = il valore massimo che si ottiene con i primi i oggetti e capacità c. Ogni casella si calcola da due caselle della riga sopra (prendo l'oggetto i oppure no), e in tutto si fanno k · P passi. È la tecnica della programmazione dinamica, il pacco 21: risolve i problemi un pezzo alla volta come il greedy, ma senza scelte irrevocabili.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: lo zaino frazionario, dove il greedy funziona</summary>
+  <div class="soluzione">
+    <p>Se gli oggetti si possono tagliare (polvere d'oro, farina: se ne può prendere una parte, e vale in proporzione), il greedy per rapporto valore/peso dà sempre l'ottimo. Si prendono gli oggetti dal più «denso» al meno denso, e l'ultimo, quello che non entra intero, si taglia per riempire esattamente il sacco. Il controesempio dell'esercizio «Un'altra idea per seleziona» qui non funziona più: si prende c<sub>1</sub> e poi 9/10 di c<sub>2</sub>, valore 2 + 9 = 11.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: colorare è difficile</summary>
+  <div class="soluzione">
+    <p>Per la colorazione di grafi non si conosce nessun algoritmo veloce che trovi sempre il minimo numero di colori: per decidere se tre colori bastano, i metodi noti provano, nel caso peggiore, un numero di colorazioni che cresce esponenzialmente con n. Un greedy semplice (ogni vertice prende il primo colore non usato dai suoi vicini già colorati) dà sempre una colorazione ammissibile, ma a volte con più colori del necessario. Il riquadro della sezione 2 trova il minimo provando tutte le possibilità, e va bene solo perché i grafi sono piccoli.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="18-grafi.html">← Pacco 18: grafi</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="20-albero-ricoprente-minimo.html">Pacco 20: albero ricoprente minimo →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- pesati.js
+// Grafi pesati (pacchi 19, 20, 22, 23): dati della lavagna, disegno con i pesi, Kruskal, Prim.
+// Un grafo pesato: { nome, orientato, V: [...], pos: { v: [x, y] } (in «caselle»), E: [[u, v, w], ...], curve: { indice: k } }
+var GP = {
+  esagono: { nome: "L'esagono pesato della lavagna (A–F)", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    E: [["A", "B", 3], ["A", "C", 2], ["B", "C", 4], ["B", "F", 5], ["C", "F", 5], ["D", "E", 6], ["B", "D", 6], ["E", "F", 1]] },
+  sette: { nome: "Il grafo a 7 vertici della lavagna (Prim)", orientato: false, V: ["A", "B", "C", "D", "E", "F", "G"],
+    pos: { F: [0.6, 0], G: [1.8, 0], C: [0, 1.05], D: [1.2, 1.05], E: [2.4, 1.05], A: [0.6, 2.1], B: [1.8, 2.1] },
+    E: [["F", "G", 20], ["C", "F", 23], ["D", "F", 1], ["D", "G", 4], ["E", "G", 15], ["C", "D", 36], ["D", "E", 9], ["A", "C", 28], ["A", "D", 25], ["B", "D", 16], ["B", "E", 3], ["A", "B", 17]] },
+  orientato: { nome: "Il grafo orientato pesato della lavagna (1–7)", orientato: true, V: [1, 2, 3, 4, 5, 6, 7],
+    pos: { 1: [0, 0], 2: [1.1, 0], 4: [2.2, 0], 7: [3.3, 0], 3: [0.8, 1.1], 5: [2.4, 1.1], 6: [3.4, 1.1] },
+    E: [[1, 2, 5], [2, 4, 3], [4, 7, 2], [3, 1, 7], [1, 3, 6], [4, 3, 9], [3, 5, 4], [7, 5, 3], [5, 6, 2], [6, 7, 2]] },
+  esame14nov: { nome: "Il grafo dello scritto del 14 novembre 2025", orientato: false, V: ["v1", "v2", "v3", "v4", "v5", "v6"],
+    pos: { v1: [0, 1], v2: [0.9, 0], v6: [0.9, 2], v3: [2.3, 0], v4: [3.2, 1], v5: [2.3, 2] },
+    E: [["v1", "v2", 3], ["v1", "v6", 2], ["v2", "v6", 4], ["v2", "v5", 5], ["v5", "v6", 5], ["v3", "v4", 6], ["v2", "v3", 6], ["v4", "v5", 1]] },
+  esame20set: { nome: "Il grafo dello scritto del 20 settembre 2024", orientato: false, V: ["v1", "v2", "v3", "v4"],
+    pos: { v1: [0, 0], v4: [1.6, 0], v2: [0, 1.25], v3: [1.6, 1.25] },
+    E: [["v1", "v4", 2], ["v1", "v2", 5], ["v2", "v4", 4], ["v3", "v4", 2], ["v2", "v3", 7]] }
+};
+function escP(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1p(v) { return Math.round(v * 10) / 10; }
+function chiaveP(u, v, orientato) { return orientato ? u + ">" + v : [String(u), String(v)].sort().join("~"); }
+function cmpV(a, b) { return typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), "it", { numeric: true }); }
+// archi uscenti da u: [[v, w], ...] in ordine di vertice
+function adiacentiP(G, u) {
+  var r = [];
+  G.E.forEach(function (e) { if (e[0] === u) r.push([e[1], e[2]]); else if (!G.orientato && e[1] === u) r.push([e[0], e[2]]); });
+  return r.sort(function (a, b) { return cmpV(a[0], b[0]); });
+}
+function pesoTot(archi) { return archi.reduce(function (t, e) { return t + e[2]; }, 0); }
+var STILE_P = { n: ["r-nodo", "#ffffff", "#2f52c4"], giallo: ["r-giallo", "#fff1a8", "#b4500f"], verde: ["r-verde", "#e6f5ea", "#17803d"], blu: ["r-blu", "#e8edfc", "#2f52c4"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f"], rosso: ["r-rosso", "#fdecea", "#b42318"], viola: ["r-viola", "#f1ebfb", "#6d3fc0"], grigio: ["r-grigio", "#eef0f3", "#5b6270"] };
+var COL_A = { verde: ["l-verde", "#17803d", 3.4], arancio: ["l-arancio", "#b4500f", 3.4], rosso: ["l-rosso", "#b42318", 3.4], blu: ["l-blu", "#2f52c4", 3.4], viola: ["l-viola", "#6d3fc0", 3.4],
+  scartato: ["l-muted", "#5b6270", 1.2, "5 4"], tenue: ["l-muted", "#5b6270", 1, "2 4"] };
+// opz: { cella, r, evNodi: {v: stile}, evArchi: {chiave: colore}, etich: {v: testo}, etichPos: {v: "su"|"giu"|"sx"|"dx"}, numeri: {v: n}, aria, senzaPesi, margine }
+function svgPesato(G, opz) {
+  opz = opz || {};
+  var C = opz.cella || 90, R = opz.r || 15, m = R + (opz.margine || 22), s = [], xs = [], ys = [];
+  G.V.forEach(function (v) { xs.push(G.pos[v][0]); ys.push(G.pos[v][1]); });
+  var W = Math.max.apply(null, xs) * C + 2 * m, H = Math.max.apply(null, ys) * C + 2 * m;
+  function P(v) { return [m + G.pos[v][0] * C, m + G.pos[v][1] * C]; }
+  var esiste = {}; G.E.forEach(function (e) { esiste[e[0] + ">" + e[1]] = true; });
+  s.push('<svg viewBox="0 0 ' + r1p(W) + ' ' + r1p(H) + '" width="' + r1p(W) + '" height="' + r1p(H) + '" role="img" aria-label="' + escP(opz.aria || G.nome) + '" font-family="system-ui, sans-serif">');
+  var etichette = [];
+  G.E.forEach(function (e, k) {
+    var a = P(e[0]), b = P(e[1]), key = chiaveP(e[0], e[1], G.orientato), ev = opz.evArchi && opz.evArchi[key], c = ev ? COL_A[ev] : ["l-muted", "#5b6270", 1.4];
+    var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.sqrt(dx * dx + dy * dy), ux = dx / l, uy = dy / l;
+    var doppio = G.orientato && esiste[e[1] + ">" + e[0]];
+    var curva = (G.curve && G.curve[k]) || (doppio ? 0.2 : 0);
+    var x1 = a[0] + ux * R, y1 = a[1] + uy * R, x2 = b[0] - ux * (R + (G.orientato ? 2 : 0)), y2 = b[1] - uy * (R + (G.orientato ? 2 : 0)), d, ang, mx, my;
+    if (curva) {
+      var cx = (a[0] + b[0]) / 2 - uy * curva * l, cy = (a[1] + b[1]) / 2 + ux * curva * l;
+      var vx = cx - a[0], vy = cy - a[1], vl = Math.sqrt(vx * vx + vy * vy); x1 = a[0] + vx / vl * R; y1 = a[1] + vy / vl * R;
+      var wx = b[0] - cx, wy = b[1] - cy, wl = Math.sqrt(wx * wx + wy * wy); x2 = b[0] - wx / wl * (R + 2); y2 = b[1] - wy / wl * (R + 2);
+      d = "M" + r1p(x1) + " " + r1p(y1) + " Q" + r1p(cx) + " " + r1p(cy) + " " + r1p(x2) + " " + r1p(y2); ang = Math.atan2(wy, wx);
+      mx = 0.25 * a[0] + 0.5 * cx + 0.25 * b[0]; my = 0.25 * a[1] + 0.5 * cy + 0.25 * b[1];
+    } else { d = "M" + r1p(x1) + " " + r1p(y1) + " L" + r1p(x2) + " " + r1p(y2); ang = Math.atan2(dy, dx); mx = (a[0] + b[0]) / 2; my = (a[1] + b[1]) / 2; }
+    s.push('<path d="' + d + '" fill="none" class="' + c[0] + '" stroke="' + c[1] + '" stroke-width="' + c[2] + '"' + (c[3] ? ' stroke-dasharray="' + c[3] + '"' : '') + '/>');
+    if (G.orientato) s.push('<path d="M' + r1p(x2) + ' ' + r1p(y2) + ' l' + r1p(-9 * Math.cos(ang - 0.38)) + ' ' + r1p(-9 * Math.sin(ang - 0.38)) + ' l' + r1p(9 * Math.cos(ang - 0.38) - 9 * Math.cos(ang + 0.38)) + ' ' + r1p(9 * Math.sin(ang - 0.38) - 9 * Math.sin(ang + 0.38)) + ' z" class="' + c[0].replace("l-", "t-") + '" fill="' + c[1] + '"/>');
+    if (!opz.senzaPesi) {
+      // il peso sta un po' di lato rispetto al punto medio, dalla parte «esterna»
+      var nx = -uy, ny = ux, off = curva ? 0 : 10, tx = mx + nx * off, ty = my + ny * off, txt = String(e[2]), bw = 7 * txt.length + 8;
+      etichette.push('<rect x="' + r1p(tx - bw / 2) + '" y="' + r1p(ty - 9) + '" width="' + r1p(bw) + '" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/>' +
+        '<text x="' + r1p(tx) + '" y="' + r1p(ty + 4.5) + '" font-size="12.5" font-weight="700" text-anchor="middle" class="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[0].replace("l-", "t-") : "t-peso") + '" fill="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[1] : "#6d3fc0") + '">' + escP(txt) + '</text>');
+    }
+  });
+  s.push(etichette.join(""));
+  G.V.forEach(function (v) {
+    var p = P(v), st = STILE_P[(opz.evNodi && opz.evNodi[v]) || "n"], lab = escP(v), fs = lab.length > 2 ? 12 : 14;
+    s.push('<circle cx="' + r1p(p[0]) + '" cy="' + r1p(p[1]) + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    s.push('<text x="' + r1p(p[0]) + '" y="' + r1p(p[1] + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + lab + '</text>');
+    if (opz.numeri && opz.numeri[v] !== undefined) {
+      s.push('<circle cx="' + r1p(p[0] + R * 0.85) + '" cy="' + r1p(p[1] - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1p(p[0] + R * 0.85) + '" y="' + r1p(p[1] - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.numeri[v] + '</text>');
+    }
+    if (opz.etich && opz.etich[v] !== undefined && opz.etich[v] !== "") {
+      var pos = (opz.etichPos && opz.etichPos[v]) || (G.pos[v][1] <= 0.01 ? "su" : (G.pos[v][1] >= Math.max.apply(null, ys) - 0.01 ? "giu" : (G.pos[v][0] <= 0.01 ? "sx" : "dx")));
+      var ex = p[0], ey = p[1], an = "middle";
+      if (pos === "su") ey = p[1] - R - 7; else if (pos === "giu") ey = p[1] + R + 15; else if (pos === "sx") { ex = p[0] - R - 5; ey = p[1] - R + 2; an = "end"; } else { ex = p[0] + R + 5; ey = p[1] - R + 2; an = "start"; }
+      s.push('<text x="' + r1p(ex) + '" y="' + r1p(ey) + '" font-size="12" font-weight="700" text-anchor="' + an + '" class="t-arancio" fill="#b4500f">' + escP(opz.etich[v]) + '</text>');
+    }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+// archi scelti -> mappa per evArchi
+function evDa(archi, colore, G) { var r = {}; archi.forEach(function (e) { r[chiaveP(e[0], e[1], G.orientato)] = colore; }); return r; }
+
+// ---------------------------------------------------------------- Kruskal (Codice 11.2, con union-find)
+// spareggio: a parità di peso si segue l'ordine di G.E (come alla lavagna)
+function ordinaArchi(G) { return G.E.map(function (e, k) { return [e[0], e[1], e[2], k]; }).sort(function (a, b) { return a[2] - b[2] || a[3] - b[3]; }); }
+function eventiKruskal(G) {
+  var ord = ordinaArchi(G), padre = {}, ev = [], T = [], scart = [], nFind = 0, nUnion = 0;
+  G.V.forEach(function (v) { padre[v] = v; });
+  function find(x) { nFind++; while (padre[x] !== x) x = padre[x]; return x; }
+  function insiemi() { var g = {}; G.V.forEach(function (v) { var r = v; while (padre[r] !== r) r = padre[r]; (g[r] = g[r] || []).push(v); }); return Object.keys(g).map(function (k) { return g[k]; }); }
+  ev.push({ k: -1, testo: "Gli archi sono ordinati per peso; T non ha archi; ogni vertice è un insieme da solo (MAKESET).", T: [], scart: [], insiemi: insiemi(), nFind: 0, nUnion: 0, ord: ord });
+  ord.forEach(function (e, k) {
+    var tx = find(e[0]), ty = find(e[1]), ok = tx !== ty, testo;
+    if (ok) { padre[ty] = tx; nUnion++; T.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") ≠ FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " non sono connessi in T. UNION dei due insiemi; l'arco entra in T."; }
+    else { scart.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") = FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " sono già connessi in T. L'arco formerebbe un ciclo: si scarta."; }
+    ev.push({ k: k, preso: ok, testo: testo, T: T.slice(), scart: scart.slice(), insiemi: insiemi(), nFind: nFind, nUnion: nUnion, ord: ord });
+  });
+  return ev;
+}
+// ---------------------------------------------------------------- Prim (Codice 11.4, con d e vicino)
+function eventiPrim(G, s) {
+  var d = {}, vic = {}, inT = {}, VT = [], ET = [], ev = [];
+  G.V.forEach(function (v) { d[v] = Infinity; vic[v] = null; });
+  function foto(testo, y, cambiati) { var dd = {}, vv = {}; G.V.forEach(function (v) { dd[v] = d[v]; vv[v] = vic[v]; }); ev.push({ testo: testo, d: dd, vicino: vv, VT: VT.slice(), ET: ET.slice(), y: y, cambiati: cambiati || [] }); }
+  foto("All'inizio la struttura è vuota: d[v] = ∞ per ogni vertice, e vicino non è definito.", null);
+  var primo = true;
+  while (VT.length < G.V.length) {
+    var y = null;
+    if (primo && s !== undefined && s !== null) y = s;
+    else G.V.forEach(function (v) { if (!inT[v] && (y === null || d[v] < d[y])) y = v; });
+    var t;
+    inT[y] = true; VT.push(y);
+    if (d[y] !== Infinity) { ET.push([vic[y], y, d[y]]); t = "Tra i vertici fuori da T, " + y + " ha d minima (" + d[y] + "): entra in T con l'arco (" + vic[y] + ", " + y + ") di peso " + d[y] + "."; }
+    else t = "Prima iterazione: tutte le d valgono ∞, quindi si può prendere un vertice qualsiasi. Si sceglie " + y + ", che entra in T senza archi.";
+    var camb = [];
+    adiacentiP(G, y).forEach(function (p) { var z = p[0], w = p[1]; if (!inT[z] && w < d[z]) { d[z] = w; vic[z] = y; camb.push(z); } });
+    t += camb.length ? " Si guardano gli archi di " + y + ": migliorano " + camb.map(function (z) { return "d[" + z + "] = " + d[z]; }).join(", ") + " (con vicino " + y + ")." : " Nessun vertice fuori da T diventa più vicino passando da " + y + ".";
+    foto(t, y, camb);
+    primo = false;
+  }
+  return ev;
+}
+// tutti gli alberi ricoprenti (per grafi piccoli): restituisce [{archi, peso}]
+function tuttiAlberi(G) {
+  var n = G.V.length, m = G.E.length, r = [];
+  function rec(i, scelti) {
+    if (scelti.length === n - 1) { if (connessoCon(G, scelti)) r.push({ archi: scelti.slice(), peso: pesoTot(scelti) }); return; }
+    if (i >= m || m - i < n - 1 - scelti.length) return;
+    scelti.push(G.E[i]); rec(i + 1, scelti); scelti.pop(); rec(i + 1, scelti);
+  }
+  rec(0, []);
+  return r;
+}
+function connessoCon(G, archi) {
+  var p = {}; G.V.forEach(function (v) { p[v] = v; });
+  function f(x) { while (p[x] !== x) x = p[x]; return x; }
+  var c = G.V.length; archi.forEach(function (e) { var a = f(e[0]), b = f(e[1]); if (a !== b) { p[a] = b; c--; } });
+  return c === 1;
+}
+
+// ---- greedy.js
+// Tecnica greedy (pacco 19): zaino monodimensionale, zaino con valori, resto. Più le ricerche esaustive per l'ottimo.
+// oggetti: [{ nome, h (altezza o peso), v (valore, facoltativo) }]
+// criterio: "h" = dal più alto al più basso; "v" = dal valore più grande; "r" = dal rapporto valore/peso più grande
+function ordinaGreedy(ogg, criterio) {
+  return ogg.map(function (o, k) { return { o: o, k: k }; }).sort(function (a, b) {
+    var x = criterio === "h" ? b.o.h - a.o.h : criterio === "v" ? b.o.v - a.o.v : b.o.v / b.o.h - a.o.v / a.o.h;
+    return x || a.k - b.k;
+  }).map(function (p) { return p.k; });
+}
+// eventi dello schema greedy: ad ogni passo si seleziona il candidato migliore e lo si prende se resta ammissibile
+function eventiZaino(ogg, cap, criterio) {
+  var ord = ordinaGreedy(ogg, criterio), S = [], tot = 0, val = 0, ev = [], stato = ogg.map(function () { return "attesa"; });
+  ev.push({ x: null, stato: stato.slice(), S: [], tot: 0, val: 0, ord: ord });
+  ord.forEach(function (k) {
+    var o = ogg[k], ok = tot + o.h <= cap + 1e-9;
+    if (ok) { S.push(k); tot += o.h; val += (o.v || 0); stato[k] = "preso"; } else stato[k] = "scartato";
+    ev.push({ x: k, ok: ok, stato: stato.slice(), S: S.slice(), tot: tot, val: val, ord: ord });
+  });
+  return ev;
+}
+// ottimo per ricerca esaustiva: obiettivo "h" (riempire il più possibile) o "v" (valore massimo). Restituisce { best, sol: [[indici]...] }
+function ottimoZaino(ogg, cap, obiettivo) {
+  var n = ogg.length, best = -1, sol = [];
+  for (var mask = 0; mask < (1 << n); mask++) {
+    var h = 0, v = 0, S = [];
+    for (var i = 0; i < n; i++) if (mask & (1 << i)) { h += ogg[i].h; v += (ogg[i].v || 0); S.push(i); }
+    if (h > cap + 1e-9) continue;
+    var f = obiettivo === "v" ? v : h;
+    if (f > best + 1e-9) { best = f; sol = [S]; } else if (Math.abs(f - best) < 1e-9) sol.push(S);
+  }
+  return { best: best, sol: sol };
+}
+function fmtNum(x) { return (Math.round(x * 100) / 100).toString().replace(".", ","); }
+// resto: tagli [{ m: valore della moneta, q: quantità }] in ordine di valore decrescente; R = resto
+function eventiResto(tagli, R) {
+  var ord = tagli.map(function (t, k) { return k; }).sort(function (a, b) { return tagli[b].m - tagli[a].m; });
+  var resta = R, presi = tagli.map(function () { return 0; }), ev = [];
+  ev.push({ k: null, presi: presi.slice(), resta: resta });
+  ord.forEach(function (k) {
+    var t = tagli[k], quante = Math.min(t.q, Math.floor(resta / t.m));
+    presi[k] = quante; resta -= quante * t.m;
+    ev.push({ k: k, quante: quante, scartate: t.q - quante, presi: presi.slice(), resta: resta });
+  });
+  return ev;
+}
+// esiste un modo di dare il resto esatto? (ricerca esaustiva; restituisce un vettore di monete o null)
+function restoEsatto(tagli, R) {
+  var n = tagli.length, j = tagli.map(function () { return 0; }), trovato = null;
+  function rec(i, somma) {
+    if (trovato) return;
+    if (i === n) { if (somma === R) trovato = j.slice(); return; }
+    for (var c = 0; c <= tagli[i].q && somma + c * tagli[i].m <= R; c++) { j[i] = c; rec(i + 1, somma + c * tagli[i].m); }
+    j[i] = 0;
+  }
+  rec(0, 0);
+  return trovato;
+}
+// colorazione: numero minimo di colori (ricerca esaustiva, grafi piccoli)
+function colorazioneOttima(V, E) {
+  var n = V.length, idx = {}; V.forEach(function (v, i) { idx[v] = i; });
+  for (var k = 1; k <= n; k++) {
+    var c = V.map(function () { return -1; });
+    if ((function prova(i) {
+      if (i === n) return true;
+      for (var col = 0; col < k; col++) {
+        var ok = E.every(function (e) { var a = idx[e[0]], b = idx[e[1]]; return !((a === i && b < i && c[b] === col) || (b === i && a < i && c[a] === col)); });
+        if (ok) { c[i] = col; if (prova(i + 1)) return true; c[i] = -1; }
+      }
+      return false;
+    })(0)) return { k: k, colori: c };
+  }
+  return { k: n };
+}
+
+// ---- w19.js
+// Riquadri interattivi del pacco 19.
+function $(id) { return document.getElementById(id); }
+
+// ---------------------------------------------------------------- 1. colora tu (colorazione di grafi)
+(function () {
+  if (!$("co-corpo")) return;
+  var GR = [["l'esagono (Figura 2a)", { nome: "esagono", orientato: false, V: GP.esagono.V, pos: GP.esagono.pos, E: GP.esagono.E }],
+    ["l'esagono con due archi in più (Figura 2b)", { nome: "esagono con due archi in più", orientato: false, V: GP.esagono.V, pos: GP.esagono.pos, E: GP.esagono.E.concat([["C", "D", 0], ["D", "F", 0]]) }]];
+  var PAL = ["blu", "verde", "arancio", "viola", "rosso"], NOMI = { blu: "blu", verde: "verde", arancio: "arancione", viola: "viola", rosso: "rosso" };
+  $("co-corpo").innerHTML = '<div class="controlli"><label>Grafo <select id="co-g" style="width:auto;max-width:100%">' + GR.map(function (g, k) { return '<option value="' + k + '">' + g[0] + '</option>'; }).join("") + '</select></label>' +
+    '<button id="co-reset">Tutti dello stesso colore</button><button id="co-sol">Mostra una soluzione ottima</button></div>' +
+    '<p class="piccolo">Tocca un vertice (nel disegno o nei pulsanti) per cambiargli colore.</p>' +
+    '<div class="figura" id="co-fig" style="margin:6px 0"></div><div class="controlli" id="co-bott"></div><div class="contatori" id="co-cont"></div><div class="narrazione" id="co-txt"></div>';
+  var V = { g: 0, col: {} };
+  function G() { return GR[V.g][1]; }
+  function reset() { V.col = {}; G().V.forEach(function (v) { V.col[v] = 0; }); mostra(); }
+  function mostra() {
+    var g = G(), ev = {}, nod = {}, conf = [];
+    g.E.forEach(function (e) { if (V.col[e[0]] === V.col[e[1]]) { conf.push(e); ev[chiaveP(e[0], e[1], false)] = "rosso"; } });
+    g.V.forEach(function (v) { nod[v] = PAL[V.col[v]]; });
+    $("co-fig").innerHTML = svgPesato(g, { cella: 78, senzaPesi: true, evNodi: nod, evArchi: ev, aria: "il grafo da colorare" });
+    var svg = $("co-fig").querySelector("svg"), cs = svg.querySelectorAll("circle"), ts = svg.querySelectorAll("text");
+    g.V.forEach(function (v, i) { [cs[i], ts[i]].forEach(function (el) { if (!el) return; el.style.cursor = "pointer"; el.addEventListener("click", function () { gira(v); }); }); });
+    $("co-bott").innerHTML = g.V.map(function (v) { return '<button data-v="' + v + '">' + v + ': ' + NOMI[PAL[V.col[v]]] + '</button>'; }).join("");
+    Array.prototype.forEach.call($("co-bott").querySelectorAll("button"), function (b) { b.onclick = function () { gira(b.getAttribute("data-v")); }; });
+    var usati = {}; g.V.forEach(function (v) { usati[V.col[v]] = true; }); var k = Object.keys(usati).length, minimo = colorazioneOttima(g.V, g.E).k;
+    $("co-cont").innerHTML = '<span>colori usati: <b>' + k + '</b></span><span>archi con i due estremi dello stesso colore: <b>' + conf.length + '</b></span><span>minimo possibile: <b>' + minimo + '</b></span>';
+    var t;
+    if (conf.length) t = 'Colorazione <span class="errore">non ammissibile</span>: ' + conf.map(function (e) { return e[0] + "–" + e[1]; }).join(", ") + (conf.length === 1 ? " collega" : " collegano") + " due vertici dello stesso colore (in rosso). Il vincolo dice: (x, y) ∈ E ⇒ c(x) ≠ c(y).";
+    else if (k > minimo) t = 'Colorazione <span class="ok">ammissibile</span>: vertici adiacenti hanno colori diversi. Ma usa ' + k + ' colori, e ne bastano ' + minimo + ': non è ottima.';
+    else t = 'Colorazione <span class="ok">ammissibile e ottima</span>: vertici adiacenti hanno colori diversi, e con meno di ' + minimo + ' colori non si può fare' + (V.g === 0 ? " (B, C e F formano un triangolo: servono tre colori diversi già solo per loro)." : " (B, C, D e F sono tutti collegati tra loro: servono quattro colori diversi già solo per loro).");
+    $("co-txt").innerHTML = t;
+  }
+  function gira(v) { V.col[v] = (V.col[v] + 1) % PAL.length; mostra(); }
+  $("co-g").onchange = function () { V.g = Number($("co-g").value); reset(); };
+  $("co-reset").onclick = reset;
+  $("co-sol").onclick = function () { var g = G(), r = colorazioneOttima(g.V, g.E); g.V.forEach(function (v, i) { V.col[v] = r.colori[i]; }); mostra(); };
+  reset();
+})();
+
+// ---------------------------------------------------------------- 2. lo zaino con la strategia greedy
+(function () {
+  if (!$("zw-corpo")) return;
+  var ES = [["Lavagna, pagina 24, esempio 1 (h = 20)", "mono", "h", 20, "8\n7\n6\n3\n2\n1"],
+    ["Lavagna, pagina 24, esempio 2 (h = 20)", "mono", "h", 20, "8\n7\n6\n3\n3\n1"],
+    ["Lavagna, pagina 24, esempio 3 (h = 20)", "mono", "h", 20, "10\n8\n8\n3\n3"],
+    ["Lavagna, pagina 19 (h = 6)", "mono", "h", 6, "1.5\n2.5\n3\n5"],
+    ["Zaino con valori, lavagna, pagina 27 (P = 20)", "val", "v", 20, "12 100\n3 80\n6 75\n6 70\n3 30"],
+    ["Cassaforte dell'esercizio 9.1 (h = 14)", "val", "v", 14, "10 8\n5 3\n6 6"],
+    ["Scrivi tu", null]];
+  $("zw-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="zw-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label>Problema <select id="zw-tipo" style="width:auto;max-width:100%"><option value="mono">zaino monodimensionale: riempire il più possibile</option><option value="val">zaino con valori: valore massimo</option></select></label></div>' +
+    '<div class="controlli"><label>«seleziona» sceglie <select id="zw-crit" style="width:auto;max-width:100%"><option value="h">il più alto (o più pesante)</option><option value="v">quello di valore più grande</option><option value="r">valore/peso più grande (non alla lavagna)</option></select></label></div>' +
+    '<div class="controlli"><label>Capacità (h o P) <input type="text" id="zw-cap" style="width:80px"></label>' +
+    '<label style="width:100%">Oggetti, uno per riga: altezza (o peso), e per lo zaino con valori anche il valore <textarea id="zw-in" rows="4" style="width:100%;font-family:ui-monospace,monospace;font-size:14px"></textarea></label></div>' +
+    '<div class="controlli"><button class="primario" id="zw-passo">Passo →</button><button id="zw-fine">Fino alla fine</button><button id="zw-reset">Ricomincia</button></div>' +
+    '<div class="contatori" id="zw-cont"></div><div class="tabella-wrap" id="zw-tab"></div><div class="narrazione" id="zw-txt"></div>';
+  var V = { ogg: [], cap: 0, ev: [], k: 0, tipo: "mono" };
+  function leggi() {
+    var cap = Number($("zw-cap").value.replace(",", ".")), righe = $("zw-in").value.split("\n").map(function (r) { return r.trim(); }).filter(Boolean), ogg = [];
+    if (!(cap > 0)) return "La capacità deve essere un numero positivo.";
+    if (!righe.length) return "Scrivi almeno un oggetto.";
+    if (righe.length > 12) return "Al massimo 12 oggetti (l'ottimo si cerca provando tutti i sottoinsiemi).";
+    for (var i = 0; i < righe.length; i++) {
+      var p = righe[i].split(/[\s;]+/).map(function (x) { return Number(x.replace(",", ".")); });
+      if (!(p[0] > 0)) return "Riga " + (i + 1) + ": l'altezza (o il peso) deve essere un numero positivo.";
+      if (V.tipo === "val" && !(p[1] >= 0)) return "Riga " + (i + 1) + ": per lo zaino con valori scrivi anche il valore.";
+      ogg.push({ nome: "c" + (i + 1), h: p[0], v: V.tipo === "val" ? p[1] : p[0] });
+    }
+    V.ogg = ogg; V.cap = cap; return null;
+  }
+  function prepara() {
+    V.tipo = $("zw-tipo").value;
+    var err = leggi();
+    if (err) { $("zw-txt").innerHTML = '<span class="errore">' + err + '</span>'; $("zw-tab").innerHTML = ""; $("zw-cont").innerHTML = ""; return; }
+    V.ev = eventiZaino(V.ogg, V.cap, $("zw-crit").value); V.k = 0; mostra();
+  }
+  function mostra() {
+    var e = V.ev[V.k], val = V.tipo === "val", r = '<table><tr><th>ordine</th><th>oggetto</th><th>' + (val ? "peso" : "altezza") + '</th>' + (val ? '<th>valore</th>' : '') + '<th>stato</th></tr>';
+    e.ord.forEach(function (k, i) {
+      var st = e.stato[k], cl = st === "preso" ? "preso" : st === "scartato" ? "scartato" : "", ora = e.x === k ? " riga-attuale" : "";
+      r += '<tr class="' + cl + ora + '"><td>' + (i + 1) + '</td><td>' + V.ogg[k].nome + '</td><td>' + fmtNum(V.ogg[k].h) + '</td>' + (val ? '<td>' + fmtNum(V.ogg[k].v) + '</td>' : '') + '<td>' + (st === "preso" ? '<span class="ok">preso</span>' : st === "scartato" ? 'scartato' : 'da guardare') + '</td></tr>';
+    });
+    $("zw-tab").innerHTML = r + '</table>';
+    $("zw-cont").innerHTML = '<span>passo: <b>' + V.k + '</b> di ' + (V.ev.length - 1) + '</span><span>' + (val ? "peso" : "altezza") + ' occupata: <b>' + fmtNum(e.tot) + '</b> su ' + fmtNum(V.cap) + '</span>' + (val ? '<span>valore: <b>' + fmtNum(e.val) + '</b></span>' : '');
+    var t;
+    if (e.x === null) t = "I candidati sono in ordine: «seleziona» prende sempre il primo non ancora guardato. S = ∅.";
+    else { var o = V.ogg[e.x]; t = "Si seleziona " + o.nome + " (" + (val ? "peso " : "altezza ") + fmtNum(o.h) + (val ? ", valore " + fmtNum(o.v) : "") + "). " + (e.ok ? "S ∪ {" + o.nome + "} è ammissibile: " + fmtNum(e.tot - o.h) + " + " + fmtNum(o.h) + " = " + fmtNum(e.tot) + " ≤ " + fmtNum(V.cap) + ". Lo si prende, e non lo si toglierà più." : "Con " + o.nome + " si arriverebbe a " + fmtNum(e.tot + o.h) + " > " + fmtNum(V.cap) + ": S ∪ {" + o.nome + "} non è ammissibile, si scarta."); }
+    if (V.k === V.ev.length - 1) {
+      var ot = ottimoZaino(V.ogg, V.cap, val ? "v" : "h"), fg = val ? e.val : e.tot, nomi = function (S) { return "{" + S.map(function (k) { return V.ogg[k].nome; }).join(", ") + "}"; };
+      t += "<br><b>Fine</b>: il greedy dà S = " + nomi(e.S) + ", " + (val ? "valore " : "riempimento ") + fmtNum(fg) + ". Provando tutti i sottoinsiemi, l'ottimo è " + fmtNum(ot.best) + " (per esempio " + nomi(ot.sol[0]) + "). " +
+        (Math.abs(fg - ot.best) < 1e-9 ? '<span class="ok">Qui il greedy ha trovato una soluzione ottima.</span>' : '<span class="errore">Qui il greedy non trova l\'ottimo.</span>');
+    }
+    $("zw-txt").innerHTML = t;
+    $("zw-passo").disabled = $("zw-fine").disabled = V.k >= V.ev.length - 1;
+  }
+  $("zw-passo").onclick = function () { if (V.k < V.ev.length - 1) V.k++; mostra(); };
+  $("zw-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("zw-reset").onclick = prepara;
+  ["zw-tipo", "zw-crit", "zw-cap", "zw-in"].forEach(function (id) { $(id).onchange = function () { if (id === "zw-cap" || id === "zw-in") $("zw-es").value = String(ES.length - 1); prepara(); }; });
+  $("zw-es").onchange = function () { var e = ES[Number($("zw-es").value)]; if (e[1] !== null) { $("zw-tipo").value = e[1]; $("zw-crit").value = e[2]; $("zw-cap").value = String(e[3]).replace(".", ","); $("zw-in").value = e[4].replace(/\./g, ","); } prepara(); };
+  $("zw-es").onchange();
+})();
+
+// ---------------------------------------------------------------- 3. il distributore di resto
+(function () {
+  if (!$("rs-corpo")) return;
+  var M = [50, 20, 10, 5], ES = [["Lavagna, pagina 30, esempio 1", [10, 10, 0, 5], 85], ["Lavagna, pagina 30, esempio 2", [10, 10, 0, 2], 85], ["Lavagna, pagina 29: 10 monete per taglio", [10, 10, 10, 10], 85]];
+  $("rs-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="rs-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli">' + M.map(function (m) { return '<label>monete da ' + m + ' <input type="number" min="0" max="20" id="rs-q' + m + '" style="width:64px"></label>'; }).join("") + '<label>resto R <input type="number" min="5" step="5" max="500" id="rs-r" style="width:80px"></label></div>' +
+    '<div class="controlli"><button class="primario" id="rs-passo">Passo →</button><button id="rs-fine">Fino alla fine</button><button id="rs-reset">Ricomincia</button></div>' +
+    '<div class="contatori" id="rs-cont"></div><div class="tabella-wrap" id="rs-tab"></div><div class="narrazione" id="rs-txt"></div>';
+  var V = { t: [], R: 0, ev: [], k: 0 };
+  function prepara() {
+    var R = Number($("rs-r").value), t = M.map(function (m) { return { m: m, q: Math.max(0, Math.min(20, Math.floor(Number($("rs-q" + m).value) || 0))) }; });
+    if (!(R > 0) || R > 500) { $("rs-txt").innerHTML = '<span class="errore">Il resto deve essere tra 1 e 500 centesimi.</span>'; return; }
+    V.t = t; V.R = R; V.ev = eventiResto(t, R); V.k = 0; mostra();
+  }
+  function mostra() {
+    var e = V.ev[V.k], r = '<table><tr><th>moneta</th><th>disponibili</th><th>prese dal greedy</th></tr>';
+    V.t.forEach(function (t, i) { var fatto = V.ev.slice(1, V.k + 1).some(function (x) { return x.k === i; }); r += '<tr class="' + (e.k === i ? "riga-attuale" : "") + '"><td>' + t.m + '</td><td>' + t.q + '</td><td>' + (fatto ? e.presi[i] : "–") + '</td></tr>'; });
+    $("rs-tab").innerHTML = r + '</table>';
+    var dato = V.R - e.resta;
+    $("rs-cont").innerHTML = '<span>dato finora: <b>' + dato + '</b></span><span>resta da dare: <b>' + e.resta + '</b></span>';
+    var t;
+    if (e.k === null) t = "«seleziona» prende sempre la moneta disponibile di valore più grande, finché non si supera il resto.";
+    else { var x = V.t[e.k]; t = "Monete da " + x.m + ": " + (x.q === 0 ? "non ce ne sono." : "se ne prendono " + e.quante + (e.quante ? " (" + e.quante + " × " + x.m + " = " + e.quante * x.m + ")" : "") + (e.scartate ? "; le altre " + e.scartate + " si scartano, perché farebbero superare il resto." : ".")); }
+    if (V.k === V.ev.length - 1) {
+      var es = restoEsatto(V.t, V.R);
+      if (e.resta === 0) t += '<br><b>Fine</b>: <span class="ok">il greedy dà il resto esatto</span>, ' + V.R + ' centesimi.';
+      else if (es) t += '<br><b>Fine</b>: il greedy dà solo ' + dato + ' e si ferma: risponderebbe «non si può». <span class="errore">Ma il resto esatto si può dare</span>: ' + es.map(function (q, i) { return q ? q + " × " + V.t[i].m : null; }).filter(Boolean).join(" + ") + ' = ' + V.R + '.';
+      else t += '<br><b>Fine</b>: il greedy dà ' + dato + '. E qui ha ragione: provando tutte le combinazioni, il resto esatto non si può dare.';
+    }
+    $("rs-txt").innerHTML = t;
+    $("rs-passo").disabled = $("rs-fine").disabled = V.k >= V.ev.length - 1;
+  }
+  $("rs-passo").onclick = function () { if (V.k < V.ev.length - 1) V.k++; mostra(); };
+  $("rs-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("rs-reset").onclick = prepara;
+  M.concat(["r"]).forEach(function (m) { $(m === "r" ? "rs-r" : "rs-q" + m).onchange = prepara; });
+  $("rs-es").onchange = function () { var e = ES[Number($("rs-es").value)]; M.forEach(function (m, i) { $("rs-q" + m).value = e[1][i]; }); $("rs-r").value = e[2]; prepara(); };
+  $("rs-es").onchange();
+})();
+})();
+</script>
+</body>
+</html>

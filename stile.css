@@ -529,3 +529,13 @@ svg .t-su-viola { fill: var(--card); }
 .legenda-giro .pall.in { background: var(--green); }
 .legenda-giro .pall.post { background: var(--orange); }
 .record.attivo { border-width: 3px; background: var(--hl); }
+
+/* ---------- pacchi 19–20: grafi pesati, greedy ---------- */
+svg .r-peso { fill: var(--card); }
+svg .t-peso { fill: var(--violet); }
+svg .r-grigio { fill: var(--code-bg); stroke: var(--muted); }
+tr.preso td { background: var(--green-soft); }
+tr.scartato td { color: var(--muted); }
+.chipset { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 6px 0; }
+.chipset .ins { display: inline-block; padding: 2px 9px; border-radius: 9px; border: 1.5px solid var(--border); background: var(--card); font: 600 14px system-ui, sans-serif; }
+.chipset .ins.nuovo { border-color: var(--green); background: var(--green-soft); }

@@ -26,7 +26,9 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 15 · Limite n log n e ordinare senza confrontare | riepilogo degli ordinamenti, alberi di decisione e limite log₂(n!), integerSort, bucketSort, ordinamento per più chiavi, radixSort, cifre con shift e AND | 16–17 |
 | 16 · Operazioni sugli heap, code con priorità, analisi ammortizzata | togli la radice, inserisci, cancella, cambia chiave, min-heap come coda con priorità, deleteMin e changeKey dei temi d'esame, contatore binario | 17–18 |
 | 17 · Union-find | partizioni, QuickFind e bilanciamento, QuickUnion, union by rank e il lemma, compressione dei cammini, log* n, esercizio 7.1 | 18–19 |
-| 18 · Grafi: parole, rappresentazioni, alberi e visite | definizioni, gradi, cammini e connessione, Eulero e Hamilton, liste e matrici, M^k, alberi e alberi ricoprenti, visita in ampiezza e in profondità | 19–20 |
+| 18 · Grafi: parole, rappresentazioni, alberi e visite | definizioni, gradi, cammini e connessione, Eulero e Hamilton, liste e matrici, M^k, alberi e alberi ricoprenti, visita in ampiezza e in profondità e il loro tempo | 19–21 |
+| 19 · Problemi di ottimizzazione e tecnica greedy | grafi pesati, soluzioni ammissibili e ottime, colorazione, zaino, sacco del ladro, resto, schema greedy e controesempi, foglio 9 | 21 |
+| 20 · Albero ricoprente minimo: Kruskal e Prim | Kruskal e la sua correttezza, union-find, O(m log n), Prim con d e vicino e la coda con priorità, gli scritti su Kruskal | 22–23 |
 
 ## Come si usa
 
