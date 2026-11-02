@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bellman–Ford e Dijkstra</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 23 · fine della lezione 25 e prima parte della 26 (lavagne del 19 e del 21 novembre 2025)</span>
+</div>
+
+<h1>Cammini minimi da un vertice: Bellman–Ford e Dijkstra</h1>
+<p class="sottotitolo">Il secondo problema dei cammini minimi: dato un vertice di partenza s, trovare la distanza da s a ogni altro vertice. Due algoritmi lo risolvono con la stessa operazione di base, l'aggiornamento di una distanza passando da un vertice. Bellman–Ford la applica a tutti gli archi, n − 1 volte, e funziona anche con i pesi negativi (purché non ci siano cicli negativi). Dijkstra sceglie con una strategia greedy da quale vertice ripartire, è molto più veloce, ma vuole pesi non negativi. Con il vettore dei predecessori si ricavano anche i cammini, che formano l'albero dei cammini minimi: da non confondere con l'albero ricoprente minimo.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: «lavagna del 19 novembre, pagina N» è la lezione 25 (dalla pagina 17), «lavagna del 21 novembre, pagina N» è la lezione 26 (fino alla pagina 12). «Le slide» sono quelle dei cammini minimi: il Codice 12.4 (Bellman–Ford) e i Codici 13.1–13.3 (Dijkstra).</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Le due lezioni in sei domande</span>
+  <ol>
+    <li><b>Qual è il problema?</b> Dati un grafo pesato G = (V, E, w) e un vertice s, calcolare per ogni vertice v la distanza da s a v (il peso del cammino minimo).</li>
+    <li><b>Qual è l'operazione di base?</b> L'aggiornamento: se d[u] + w(u, v) &lt; d[v], allora d[v] ← d[u] + w(u, v). Arrivare a v passando da u conviene.</li>
+    <li><b>Come lavora Bellman–Ford?</b> Fa n − 1 giri, e in ogni giro aggiorna con tutti gli archi. Funziona se non ci sono cicli negativi. Tempo O(n · m).</li>
+    <li><b>Come lavora Dijkstra?</b> Tiene un insieme C di candidati; ogni volta estrae quello con d minima (scelta greedy), che diventa definitivo, e aggiorna con i suoi archi uscenti. Funziona se non ci sono archi di peso negativo. Con una coda con priorità e le liste di adiacenza: O(m log n).</li>
+    <li><b>Come si ricavano i cammini?</b> Con pred[v], il vertice che precede v sul cammino migliore trovato: gli archi (pred[v], v) formano l'albero dei cammini minimi.</li>
+    <li><b>È l'albero ricoprente minimo?</b> No: l'albero dei cammini minimi minimizza la distanza da s di ogni vertice, l'albero ricoprente minimo la somma dei pesi degli archi.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#problema">Il problema e l'aggiornamento</a></li>
+    <li><a href="#bellman">L'algoritmo di Bellman–Ford</a></li>
+    <li><a href="#dijkstra">L'algoritmo di Dijkstra: l'idea greedy</a></li>
+    <li><a href="#correttezza">Perché Dijkstra funziona</a></li>
+    <li><a href="#tempo">Implementazione e tempo di calcolo</a></li>
+    <li><a href="#pred">I cammini: il vettore dei predecessori</a></li>
+    <li><a href="#alberi">Albero dei cammini minimi e albero ricoprente minimo</a></li>
+    <li><a href="#negativi">Pesi negativi, e il quadro dei problemi</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti (gli scritti)</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="problema"><span class="num">1</span>Il problema e l'aggiornamento</h2>
+<p class="in-questa"><b>In questa sezione:</b> il problema dei cammini minimi da un vertice a tutti gli altri (lavagna del 19 novembre, pagine 17–19) e l'operazione che usano tutti e due gli algoritmi.</p>
+<p>Un cammino minimo da x a y è un cammino da x a y di peso minimo, e il suo peso è la <em>distanza</em> da x a y (pacco 22). Ora il vertice di partenza è fissato:</p>
+<div class="box def">
+  <span class="etichetta">Cammini minimi da un vertice a tutti gli altri</span>
+  <p><b>Input</b>: un grafo G = (V, E) con una funzione peso w : E → ℝ, e un vertice di partenza s ∈ V.</p>
+  <p><b>Output</b>: per ogni vertice v, la distanza da s a v, cioè la lunghezza del cammino minimo da s a v (∞ se v non è raggiungibile da s).</p>
+</div>
+<p>Le slide parlano di grafi orientati, il caso più generale: un grafo non orientato si tratta come un grafo orientato in cui ogni lato vale nei due versi. L'esempio della lavagna è nella Figura 1, con s = A.</p>
+<div class="figura">
+<svg viewBox="0 0 340.6 177.2" width="340.6" height="177.2" role="img" aria-label="il grafo A–F con s = A" font-family="system-ui, sans-serif"><path d="M49.9 80.9 L108.4 45.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.4 45.7 l-5.4 7.2 l-3.4 -5.7 z" class="t-muted" fill="#5b6270"/><path d="M138 37 L200.6 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M200.6 37 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M230.5 44.7 L289 79.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M289 79.9 l-8.9 -1.4 l3.4 -5.7 z" class="t-muted" fill="#5b6270"/><path d="M49.9 96.3 L108.4 131.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.4 131.5 l-8.9 -1.4 l3.4 -5.7 z" class="t-muted" fill="#5b6270"/><path d="M123 52 L123 123.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M123 123.2 l-3.3 -8.4 l6.7 0 z" class="t-muted" fill="#5b6270"/><path d="M133.1 129.1 L206.1 49.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M206.1 49.5 l-3.2 8.4 l-4.9 -4.5 z" class="t-muted" fill="#5b6270"/><path d="M138 140.2 L200.6 140.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M200.6 140.2 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M230.5 132.5 L289 97.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M289 97.3 l-5.4 7.2 l-3.4 -5.7 z" class="t-muted" fill="#5b6270"/><path d="M217.6 125.2 L217.6 54" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M217.6 54 l3.3 8.4 l-6.7 0 z" class="t-muted" fill="#5b6270"/><rect x="77.6" y="62.4" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="85.1" y="75.9" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="162.8" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="170.3" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="248" y="62.4" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="255.5" y="75.9" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="67.4" y="114" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="74.9" y="127.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">1</text><rect x="105.5" y="79.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="113" y="93.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="170.2" y="86.4" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="177.7" y="99.9" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="162.8" y="141.2" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="170.3" y="154.7" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="258.2" y="114" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="265.7" y="127.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="220.1" y="79.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="227.6" y="93.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><circle cx="37" cy="88.6" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="93.6" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="123" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="123" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="217.6" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="217.6" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="303.6" cy="88.6" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="303.6" y="93.6" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="123" cy="140.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="123" y="145.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="217.6" cy="140.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="217.6" y="145.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg>
+<div class="didascalia"><b>Figura 1.</b> Lavagna del 19 novembre, pagina 17: il grafo orientato A–F; s = A, in giallo.</div>
+</div>
+<p>Tutti e due gli algoritmi tengono un vettore d (D nelle slide), con indici in V: <strong>d[v] = il peso del cammino minimo da s a v trovato sinora</strong> (lavagna, pagina 18). Inizialmente d[s] = 0 e d[v] = ∞ per gli altri vertici: all'inizio si conosce solo il cammino vuoto da s a s. Poi i valori possono solo diminuire, con l'<strong>aggiornamento</strong> (pagina 19):</p>
+<pre class="pseudo"><b>IF</b> d[u] + w(u, v) &lt; d[v] <b>THEN</b>
+  d[v] ← d[u] + w(u, v)</pre>
+<div class="figura">
+<svg viewBox="0 0 300 150" width="300" height="150" role="img" aria-label="aggiornamento di d[v] passando da u" font-family="system-ui, sans-serif"><path d="M45 40 Q150 20 255 40" fill="none" class="l-verde" stroke="#17803d" stroke-width="2" stroke-dasharray="6 4"/><path d="M42 50 Q90 110 172 118" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2" stroke-dasharray="6 4"/><line x1="195" y1="112" x2="258" y2="52" class="l-blu" stroke="#2f52c4" stroke-width="2.4"/><text x="150" y="18" font-size="12" text-anchor="middle" class="t-verde" fill="#17803d">il migliore trovato finora: d[v]</text><text x="88" y="120" font-size="12" text-anchor="end" class="t-blu" fill="#2f52c4">d[u]</text><text x="238" y="98" font-size="12" class="t-blu" fill="#2f52c4">w(u, v)</text><circle cx="30" cy="42" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="30" y="47" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">s</text><circle cx="270" cy="42" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="270" y="47" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v</text><circle cx="185" cy="122" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="185" y="127" font-size="13" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">u</text></svg>
+<div class="didascalia"><b>Figura 2.</b> Lavagna del 19 novembre, pagina 19. Il miglior cammino trovato finora da s a v pesa d[v]. Se si arriva a u con d[u] e poi si prende l'arco (u, v), il totale è d[u] + w(u, v). Se è minore, è un cammino migliore per arrivare a v.</div>
+</div>
+<p>In ogni momento d[v] è il peso di un cammino vero da s a v (oppure ∞), quindi non può mai essere minore della distanza: d[v] ≥ distanza da s a v. I due algoritmi differiscono solo nell'ordine in cui fanno gli aggiornamenti.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>d[v] = peso del miglior cammino da s a v trovato finora: 0 per s, ∞ per gli altri all'inizio.</li>
+    <li>Aggiornamento: se d[u] + w(u, v) &lt; d[v], allora d[v] ← d[u] + w(u, v). d[v] può solo scendere, e non va mai sotto la distanza vera.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="bellman"><span class="num">2</span>L'algoritmo di Bellman–Ford</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'algoritmo che aggiorna con tutti gli archi, n − 1 volte (lavagna del 19 novembre, pagine 18–21; Codice 12.4): perché bastano n − 1 giri, e il suo tempo, O(n · m).</p>
+<p>L'idea (pagina 19): <strong>ad ogni passo si seguono tutti gli archi del grafo</strong>, facendo l'aggiornamento per ognuno. Quanti passi servono? (pagina 20)</p>
+<ul>
+  <li>Ipotesi: G non ha cicli di peso negativo.</li>
+  <li>Allora tra ogni coppia di vertici (collegati) esiste un cammino minimo <strong>semplice</strong> (pacco 22, sezione 2).</li>
+  <li>Quindi basta considerare cammini con al più n vertici, cioè al più <strong>n − 1 archi</strong>.</li>
+  <li>Quindi in al più n − 1 passi si raggiungono tutti i nodi, ottenendo i pesi dei cammini minimi.</li>
+</ul>
+<p>Perché un giro «fa avanzare» di un arco: dopo il primo giro d[v] è già giusto per i vertici il cui cammino minimo ha un solo arco (l'aggiornamento con l'arco (s, v) li ha sistemati); dopo il secondo giro, per quelli con un cammino minimo di due archi (il primo arco era già sistemato, e l'aggiornamento con il secondo li sistema); e così via. Dopo k giri d[v] è al più il peso del miglior cammino da s a v con al più k archi. Con k = n − 1 sono compresi tutti i cammini semplici.</p>
+<p class="titolo-codice">Lavagna del 19 novembre, pagina 21 (Codice 12.4 delle slide)</p>
+<pre class="pseudo"><b>ALGORITMO</b> BellmanFord(grafo G, vertice s) → vettore
+  sia d[V] un vettore con indici in V
+  d[s] ← 0
+  <b>FOR EACH</b> v ∈ V \ {s} <b>DO</b> d[v] ← ∞
+  <b>FOR</b> k ← 1 <b>TO</b> n − 1 <b>DO</b>
+    <b>FOR EACH</b> (u, v) ∈ E <b>DO</b>
+      <b>IF</b> d[u] + w(u, v) &lt; d[v] <b>THEN</b>
+        d[v] ← d[u] + w(u, v)
+  <b>RETURN</b> d</pre>
+<p>L'esempio della lavagna (pagina 18), con gli archi esaminati nell'ordine (A, B), (B, C), (C, D), (A, E), (B, E), (E, C), (E, F), (F, D), (F, C):</p>
+<div class="figura">
+<div class="tabella-wrap"><table><tr><th>dopo</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr><tr><td>inizio</td><td>0</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td></tr><tr><td>giro 1, arco (A, B)</td><td>0</td><td class="verde">3</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td></tr><tr><td>giro 1, arco (B, C)</td><td>0</td><td>3</td><td class="verde">8</td><td>∞</td><td>∞</td><td>∞</td></tr><tr><td>giro 1, arco (C, D)</td><td>0</td><td>3</td><td>8</td><td class="verde">10</td><td>∞</td><td>∞</td></tr><tr><td>giro 1, arco (A, E)</td><td>0</td><td>3</td><td>8</td><td>10</td><td class="verde">1</td><td>∞</td></tr><tr><td>giro 1, arco (E, C)</td><td>0</td><td>3</td><td class="verde">7</td><td>10</td><td>1</td><td>∞</td></tr><tr><td>giro 1, arco (E, F)</td><td>0</td><td>3</td><td>7</td><td>10</td><td>1</td><td class="verde">4</td></tr><tr><td>giro 1, arco (F, D)</td><td>0</td><td>3</td><td>7</td><td class="verde">9</td><td>1</td><td>4</td></tr><tr><td>giro 1, arco (F, C)</td><td>0</td><td>3</td><td class="verde">6</td><td>9</td><td>1</td><td>4</td></tr><tr><td>giro 2, arco (C, D)</td><td>0</td><td>3</td><td>6</td><td class="verde">8</td><td>1</td><td>4</td></tr></table></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna del 19 novembre, pagina 18: i valori di d dopo ogni aggiornamento riuscito (in verde il valore appena cambiato). Nel primo giro d[C] scende da ∞ a 8, poi a 7, poi a 6, e d[D] da ∞ a 10, poi a 9; nel secondo giro l'arco (C, D) porta d[D] a 8. Gli altri giri non cambiano più niente.</div>
+</div>
+<p><b>Il tempo</b> (pagina 21). Il grafo si rappresenta con una <strong>lista di archi</strong>, che è proprio quello che serve per «per ogni arco». Il ciclo esterno fa n − 1 giri, e ognuno scorre tutti gli m archi con un aggiornamento O(1): <strong>tempo O(m · n)</strong>. <strong>Spazio O(n)</strong> per il vettore d (oltre al grafo).</p>
+<div class="widget" id="w-bf">
+  <h4>Bellman–Ford arco per arco</h4>
+  <div id="bf-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Bellman–Ford: d[s] = 0, gli altri ∞; per n − 1 volte, aggiorna con tutti gli archi. Corretto se non ci sono cicli negativi (i cammini minimi semplici hanno al più n − 1 archi).</li>
+    <li>Lista di archi; tempo O(m · n), spazio O(n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="dijkstra"><span class="num">3</span>L'algoritmo di Dijkstra: l'idea greedy</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'algoritmo di Dijkstra (lavagna del 19 novembre, pagine 22–25; lavagna del 21 novembre, pagine 2 e 3; Codice 13.1): la strategia greedy, il codice e i due esempi della lavagna.</p>
+<p>Bellman–Ford fa molti aggiornamenti inutili: in ogni giro guarda tutti gli archi, anche quelli che partono da vertici con una distanza ancora sbagliata. Dijkstra invece, <strong>ad ogni passo, considera gli archi che escono da un vertice u scelto con strategia greedy</strong> (lavagna del 19 novembre, pagina 23). Funziona con un'ipotesi in più (pagina 22): <strong>i pesi sono non negativi</strong>.</p>
+<div class="box def">
+  <span class="etichetta">La strategia (lavagna del 19 novembre, pagina 24)</span>
+  <ul>
+    <li><b>Distanze provvisorie</b>: il vettore d, inizialmente 0 per s e ∞ per gli altri.</li>
+    <li><b>C ⊆ V</b>, l'insieme dei vertici candidati: inizialmente C = V.</li>
+    <li><b>Strategia «greedy»</b>: si preleva da C il vertice u con d[u] minima; d[u] diventa definitiva; si aggiorna d[v] per ogni v adiacente a u.</li>
+  </ul>
+</div>
+<p class="titolo-codice">Lavagna del 19 novembre, pagina 25 (Codice 13.1 delle slide)</p>
+<pre class="pseudo"><b>ALGORITMO</b> Dijkstra(grafo G, vertice s) → vettore
+  sia d[V] un vettore con indici in V
+  d[s] ← 0
+  <b>FOR EACH</b> v ∈ V \ {s} <b>DO</b> d[v] ← ∞
+  C ← V
+  <b>WHILE</b> C ≠ ∅ <b>DO</b>
+    u ← elemento di C con d[u] minima
+    C ← C \ {u}
+    <b>FOR EACH</b> (u, v) ∈ E <b>DO</b>
+      <b>IF</b> d[u] + w(u, v) &lt; d[v] <b>THEN</b>
+        d[v] ← d[u] + w(u, v)
+  <b>RETURN</b> d</pre>
+<p>L'idea: tra i candidati, quello con d minima non può essere raggiunto meglio passando da altri candidati, perché arrivare a un altro candidato costa già almeno altrettanto, e gli archi non hanno peso negativo. Quindi la sua distanza è definitiva, e si può usare per aggiornare i vicini. La sezione 4 lo dimostra.</p>
+<p><b>Il primo esempio</b> (lavagna del 19 novembre, pagina 24) è il grafo della Figura 1, da A. Si estrae A (0): d[B] = 3, d[E] = 1. Si estrae E (1): d[C] = 7, d[F] = 4. Si estrae B (3): da B, C costerebbe 8, non migliora. Si estrae F (4): d[C] = 6, d[D] = 9. Si estrae C (6): d[D] = 8. Infine D (8).</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">l'albero dei cammini minimi da A</div><svg viewBox="0 0 322 170" width="322" height="170" role="img" aria-label="Il grafo A–F di Bellman–Ford e Dijkstra" font-family="system-ui, sans-serif"><path d="M49.9 77.3 L102.4 45.7" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M102.4 45.7 l-5.4 7.2 l-3.4 -5.7 z" class="t-verde" fill="#17803d"/><path d="M132 37 L188 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M188 37 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M217.9 44.7 L270.4 76.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M270.4 76.3 l-8.9 -1.4 l3.4 -5.7 z" class="t-verde" fill="#17803d"/><path d="M49.9 92.7 L102.4 124.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M102.4 124.3 l-8.9 -1.4 l3.4 -5.7 z" class="t-verde" fill="#17803d"/><path d="M117 52 L117 116" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M117 116 l-3.3 -8.4 l6.7 0 z" class="t-muted" fill="#5b6270"/><path d="M127.1 121.9 L193.5 49.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M193.5 49.5 l-3.2 8.4 l-4.9 -4.5 z" class="t-muted" fill="#5b6270"/><path d="M132 133 L188 133" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M188 133 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M217.9 125.3 L270.4 93.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M270.4 93.7 l-5.4 7.2 l-3.4 -5.7 z" class="t-muted" fill="#5b6270"/><path d="M205 118 L205 54" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M205 54 l3.3 8.4 l-6.7 0 z" class="t-verde" fill="#17803d"/><rect x="74.6" y="60.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="82.1" y="74.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">3</text><rect x="153.5" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="161" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="232.4" y="60.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="239.9" y="74.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="64.4" y="108.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="71.9" y="122.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><rect x="99.5" y="76" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="107" y="89.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="160.9" y="82.8" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="168.4" y="96.3" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="153.5" y="134" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="161" y="147.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">3</text><rect x="242.6" y="108.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="250.1" y="122.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="207.5" y="76" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="215" y="89.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><circle cx="37" cy="85" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="90" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="17" y="72" font-size="12" font-weight="700" text-anchor="end" class="t-arancio" fill="#b4500f">0</text><circle cx="117" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="117" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">3</text><circle cx="205" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="205" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">6</text><circle cx="285" cy="85" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="285" y="90" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="305" y="72" font-size="12" font-weight="700" text-anchor="start" class="t-arancio" fill="#b4500f">8</text><circle cx="117" cy="133" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="138" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><text x="117" y="163" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">1</text><circle cx="205" cy="133" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="205" y="138" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text><text x="205" y="163" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">4</text></svg></div><div><div class="nome-mat">la D dopo ogni estrazione</div><div class="tabella-wrap"><table><tr><th>dopo</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th></tr><tr><td>inizio</td><td>0</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td><td>∞</td></tr><tr><td>estratto A</td><td>0</td><td class="verde">3</td><td>∞</td><td>∞</td><td class="verde">1</td><td>∞</td></tr><tr><td>estratto E</td><td>0</td><td>3</td><td class="verde">7</td><td>∞</td><td>1</td><td class="verde">4</td></tr><tr><td>estratto B</td><td>0</td><td>3</td><td>7</td><td>∞</td><td>1</td><td>4</td></tr><tr><td>estratto F</td><td>0</td><td>3</td><td class="verde">6</td><td class="verde">9</td><td>1</td><td>4</td></tr><tr><td>estratto C</td><td>0</td><td>3</td><td>6</td><td class="verde">8</td><td>1</td><td>4</td></tr><tr><td>estratto D</td><td>0</td><td>3</td><td>6</td><td>8</td><td>1</td><td>4</td></tr></table></div></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna del 19 novembre, pagina 24. A destra la D dopo ogni estrazione (in verde i valori appena diminuiti); a sinistra le distanze finali accanto ai vertici e, in verde, l'albero dei cammini minimi (sezione 6). I vertici escono in ordine di distanza: A, E, B, F, C, D.</div>
+</div>
+<p><b>Il secondo esempio</b> (lavagna del 21 novembre, pagina 3) è il grafo A–G del pacco 22, da A: A 0; C 6; B 7; E 10 (passando da C); F 12; D 13 (scende da 14, passando da E invece che da B); G 15 (scende da 16, passando da D invece che da F). Nella Figura 5 il risultato.</p>
+<div class="widget" id="w-dj">
+  <h4>Dijkstra vertice per vertice</h4>
+  <div id="dj-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Dijkstra: C ← V; finché C non è vuoto, estrai u con d[u] minima (diventa definitiva) e aggiorna con gli archi (u, v). Pesi non negativi.</li>
+    <li>I vertici escono in ordine di distanza da s.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="correttezza"><span class="num">4</span>Perché Dijkstra funziona</h2>
+<p class="in-questa"><b>In questa sezione:</b> il teorema di correttezza (lavagna del 19 novembre, pagina 26) con la dimostrazione delle slide, in due passi: le distanze dei vertici estratti non cambiano più, e alla fine sono giuste.</p>
+<div class="box def">
+  <span class="etichetta">Teorema (lavagna del 19 novembre, pagina 26)</span>
+  <p>Dato un grafo G = (V, E, w) e un vertice s ∈ V, se G non contiene archi di peso negativo, allora al termine dell'esecuzione dell'algoritmo di Dijkstra, per ogni v ∈ V, d[v] contiene la lunghezza del cammino minimo da s a v.</p>
+</div>
+<p>Alla lavagna c'è solo l'enunciato; le slide lo dimostrano. Sia u<sub>1</sub>, u<sub>2</sub>, …, u<sub>n</sub> l'ordine in cui i vertici vengono estratti da C (u<sub>1</sub> = s).</p>
+<div class="dim">
+  <div class="dim-tit">Proprietà 1 (slide)</div>
+  <p class="enunciato">Se G non ha archi di peso negativo, Dijkstra non modifica d[v] quando v non è più in C.</p>
+  <p>Per assurdo: sia k la prima iterazione in cui viene modificato d[u<sub>j</sub>] di un vertice u<sub>j</sub> già estratto (j &lt; k). Allora c'è l'arco (u<sub>k</sub>, u<sub>j</sub>) con d[u<sub>k</sub>] + w(u<sub>k</sub>, u<sub>j</sub>) &lt; d[u<sub>j</sub>]. Siccome w(u<sub>k</sub>, u<sub>j</sub>) ≥ 0: <strong>d[u<sub>k</sub>] &lt; d[u<sub>j</sub>]</strong>. <span class="rif">1</span></p>
+  <p>D'altra parte, prima dell'iterazione k nessun vertice estratto è stato modificato, e ogni volta si è estratto il minimo: quindi d[u<sub>1</sub>] ≤ d[u<sub>2</sub>] ≤ … ≤ d[u<sub>k</sub>], e in particolare <strong>d[u<sub>j</sub>] ≤ d[u<sub>k</sub>]</strong>. <span class="rif">2</span> Contraddizione. □</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Se d[u<sub>k</sub>] fosse ≥ d[u<sub>j</sub>], aggiungendo un peso ≥ 0 non si potrebbe scendere sotto d[u<sub>j</sub>].</p>
+    <p><span class="rif">2</span>Quando è stato estratto u<sub>j</sub>, era il minimo tra i candidati, e u<sub>k</sub> era ancora tra i candidati; dopo, d[u<sub>k</sub>] può solo essere sceso, ma non sotto d[u<sub>j</sub>]: ogni aggiornamento di u<sub>k</sub> parte da un vertice estratto dopo u<sub>j</sub>, con d ≥ d[u<sub>j</sub>], più un peso ≥ 0.</p>
+  </div>
+</div>
+<div class="dim">
+  <div class="dim-tit">Teorema 1 (slide)</div>
+  <p class="enunciato">Con pesi non negativi, alla fine d[v] = d<sub>v</sub> per ogni v, dove d<sub>v</sub> è la distanza da s a v.</p>
+  <p>Sappiamo già che d[v] ≥ d<sub>v</sub> in ogni momento (sezione 1), e per la Proprietà 1 il valore di un vertice non cambia più dopo che è stato estratto. Per assurdo, sia u il <strong>primo vertice estratto con d[u] &gt; d<sub>u</sub></strong>. Si prende un cammino minimo da s a u.</p>
+  <p>Nel momento in cui u viene estratto, s è già fuori da C (è il primo a uscire, con d[s] = 0 = d<sub>s</sub>, quindi u ≠ s) e u è ancora dentro. Sia y il <strong>primo vertice del cammino ancora in C</strong>, e x quello che lo precede sul cammino. <span class="rif">1</span></p>
+  <p>x è stato estratto prima di u, quindi il suo valore è giusto: d[x] = d<sub>x</sub>. <span class="rif">2</span> Quando x è stato estratto, l'algoritmo ha esaminato l'arco (x, y):</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">d[y]</span><span class="rel">≤</span><span class="dx">d<sub>x</sub> + w(x, y)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">d<sub>y</sub></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">≤</span><span class="dx">d<sub>u</sub></span><span class="perche"><span class="rif">4</span></span><span class="sx"></span><span class="rel">&lt;</span><span class="dx">d[u]</span><span class="perche"></span></span></div>
+  <p>Se y = u, questo dice d[u] &lt; d[u]: impossibile. Se y ≠ u, y è un candidato con d[y] &lt; d[u], ma l'algoritmo ha estratto u perché aveva la d minima tra i candidati: impossibile. □</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Un tale y esiste perché u, l'ultimo vertice del cammino, è ancora in C; e y ≠ s perché s non è in C, quindi y ha un predecessore x sul cammino, che non è in C.</p>
+    <p><span class="rif">2</span>u è il primo vertice estratto con un valore sbagliato, e x è uscito prima di lui.</p>
+    <p><span class="rif">3</span>Il pezzo del cammino minimo da s a y è un cammino minimo (principio di ottimalità), e finisce con l'arco (x, y): d<sub>y</sub> = d<sub>x</sub> + w(x, y).</p>
+    <p><span class="rif">4</span>Il resto del cammino, da y a u, ha peso ≥ 0 perché i pesi non sono negativi. È l'unico punto in cui serve davvero l'ipotesi.</p>
+  </div>
+  <p class="piccolo">Le slide fanno lo stesso ragionamento chiamando u<sub>j</sub> il vertice che precede u sul cammino minimo, e osservando che è stato estratto prima. Prendere, come qui, il primo vertice del cammino ancora in C copre anche il caso in cui il predecessore diretto di u non è ancora uscito.</p>
+</div>
+<p>L'ipotesi «pesi non negativi» è fondamentale: con pesi negativi si possono costruire esempi, anche senza cicli, in cui Dijkstra sbaglia (sezione 8).</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Con pesi ≥ 0: un vertice estratto non viene più modificato, e i vertici escono in ordine di d non decrescente.</li>
+    <li>Per assurdo sul primo vertice sbagliato u<sub>k</sub>: il suo predecessore sul cammino minimo è uscito prima con il valore giusto, e aggiornando ha sistemato anche u<sub>k</sub>.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="tempo"><span class="num">5</span>Implementazione e tempo di calcolo</h2>
+<p class="in-questa"><b>In questa sezione:</b> la rappresentazione del grafo, la coda con priorità e il tempo (lavagna del 19 novembre, pagina 27; lavagna del 21 novembre, pagine 4–7; Codice 13.2): O(m log n).</p>
+<p>n = #V, m = #E. Il ciclo WHILE fa <strong>n iterazioni</strong>: a ogni iterazione esce un vertice da C. Due righe decidono il costo.</p>
+<p><b>Il FOR EACH (u, v) ∈ E.</b> Con una lista di archi, a ogni iterazione bisognerebbe scorrere tutti gli m archi per trovare quelli che escono da u: n · m in tutto. Con le <strong>liste di adiacenza</strong> (o di incidenza) si scorre solo la lista di u, e siccome u prende una volta sola ogni valore di V, si scorrono tutte le liste una volta: <strong>m passi complessivi</strong> (lavagna del 21 novembre, pagina 4).</p>
+<p><b>«u ← elemento di C con d[u] minima».</b> Scorrendo il vettore d servono n passi a ogni iterazione, n<sup>2</sup> in tutto. Meglio una <strong>coda con priorità</strong> C, un min-heap in un vettore posizionale (pacco 16), con priorità d[v]: si estrae il minimo con deleteMin, e quando d[v] diminuisce si aggiorna la priorità con changeKey (pagina 5):</p>
+<p class="titolo-codice">Lavagna del 21 novembre, pagina 6 (Codice 13.2 delle slide)</p>
+<pre class="pseudo"><b>ALGORITMO</b> Dijkstra(grafo G, vertice s) → vettore
+  sia d[V] un vettore con indici in V
+  d[s] ← 0                                              <span class="com">// [a]</span>
+  <b>FOR EACH</b> v ∈ V \ {s} <b>DO</b> d[v] ← ∞
+  sia C una coda con priorità vuota                     <span class="com">// [b]</span>
+  <b>FOR EACH</b> v ∈ V <b>DO</b> C.insert(v, d[v])
+  <b>WHILE</b> C ≠ ∅ <b>DO</b>                                     <span class="com">// [c]</span>
+    u ← C.deleteMin()                                   <span class="com">// [c1]</span>
+    <b>FOR EACH</b> (u, v) ∈ E <b>DO</b>                          <span class="com">// [c2]</span>
+      <b>IF</b> d[u] + w(u, v) &lt; d[v] <b>THEN</b>
+        d[v] ← d[u] + w(u, v)
+        C.changeKey(v, d[v])                            <span class="com">// [c3]</span>
+  <b>RETURN</b> d</pre>
+<ul>
+  <li><b>[a]</b> Inizializzazione di d: O(n).</li>
+  <li><b>[b]</b> Riempimento di C: O(n). Si riempie il vettore posizionale con s all'inizio (chiave 0) e gli altri dopo (chiave ∞, in qualsiasi ordine): è già un heap.</li>
+  <li><b>[c]</b> Il ciclo WHILE: n iterazioni.
+    <ul>
+      <li><b>[c1]</b> n deleteMin, O(log n) ciascuna: O(n log n).</li>
+      <li><b>[c2]</b> L'intestazione del FOR EACH, con le liste di adiacenza: m iterazioni complessive, O(m).</li>
+      <li><b>[c3]</b> Al massimo m changeKey (al più una per arco), O(log n) ciascuna: O(m log n).</li>
+    </ul>
+  </li>
+</ul>
+<div class="mat-blocco"><span class="catena"><span class="sx">T(n, m)</span><span class="rel">=</span><span class="dx">O(n) + O(n) + O(n log n) + O(m) + O(m log n)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">O(n log n) + O(m log n)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">O(m log n)</span><span class="perche"><span class="rif">1</span></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>Se il grafo è connesso, m ≥ n − 1, quindi n log n ≤ (m + 1) log n (lavagna del 21 novembre, pagina 6).</p>
+</div>
+<p><strong>Tempo O(m log n)</strong>. Con gli heap di Fibonacci, dove changeKey costa O(1) quando la chiave diminuisce, <strong>O(m + n log n)</strong> (pagina 7). L'implementazione è quasi uguale a quella di Prim (pacco 20): ma in Prim d[v] è il peso di un arco che collega v all'albero, qui è il peso di un intero cammino da s a v, e l'aggiornamento è diverso (le slide consigliano di confrontare i due codici riga per riga).</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Liste di adiacenza (o incidenza): il FOR EACH fa m passi in tutto. Coda con priorità (min-heap): n deleteMin e al più m changeKey, O(log n) ciascuna.</li>
+    <li>Tempo <b>O(m log n)</b>; con gli heap di Fibonacci O(m + n log n). Senza coda, cercando il minimo in d, Θ(n<sup>2</sup>) per la sola ricerca del minimo.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="pred"><span class="num">6</span>I cammini: il vettore dei predecessori</h2>
+<p class="in-questa"><b>In questa sezione:</b> come ricavare i cammini minimi e non solo le distanze (lavagna del 21 novembre, pagine 8 e 9; Codice 13.3), e cos'è l'albero dei cammini minimi.</p>
+<p>Si aggiunge un vettore <strong>pred[V]</strong>: ogni volta che d[v] migliora passando da u, si scrive <strong>pred[v] ← u</strong>. Così pred[v] è sempre il vertice che precede v sul cammino migliore trovato finora, e alla fine sul cammino minimo. L'algoritmo restituisce d e pred.</p>
+<p class="titolo-codice">Lavagna del 21 novembre, pagina 9 (Codice 13.3 delle slide)</p>
+<pre class="pseudo"><b>ALGORITMO</b> Dijkstra(grafo G, vertice s) → (vettore, vettore)
+  sia d[V] un vettore con indici in V
+  sia pred[V] un vettore con indici in V
+  d[s] ← 0
+  <b>FOR EACH</b> v ∈ V \ {s} <b>DO</b> d[v] ← ∞
+  sia C una coda con priorità vuota
+  <b>FOR EACH</b> v ∈ V <b>DO</b> C.insert(v, d[v])
+  <b>WHILE</b> C ≠ ∅ <b>DO</b>
+    u ← C.deleteMin()
+    <b>FOR EACH</b> (u, v) ∈ E <b>DO</b>
+      <b>IF</b> d[u] + w(u, v) &lt; d[v] <b>THEN</b>
+        d[v] ← d[u] + w(u, v)
+        C.changeKey(v, d[v])
+        pred[v] ← u
+  <b>RETURN</b> d, pred</pre>
+<p>Il cammino minimo da s a v si legge a ritroso: v, pred[v], pred[pred[v]], … fino a s. Se v non è raggiungibile, pred[v] non è definito e d[v] = ∞. Se ogni vertice è raggiungibile da s, gli archi (pred[v], v) per v ≠ s formano un albero con radice s, l'<strong>albero dei cammini minimi</strong>: in lui, il cammino da s a ogni vertice è un cammino minimo (le slide).</p>
+<div class="figura">
+<svg viewBox="0 0 353 173" width="353" height="173" role="img" aria-label="l'albero dei cammini minimi da A nel grafo A–G" font-family="system-ui, sans-serif"><path d="M52 37 L110 37" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M110 37 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M40.7 51.5 Q53.2 100.9 94.6 126.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M94.6 126.9 l-8.9 -1.6 l3.6 -5.7 z" class="t-verde" fill="#17803d"/><path d="M142 37 L200 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M200 37 l-8.4 3.3 l0 -6.7 z" class="t-muted" fill="#5b6270"/><path d="M105.3 121.5 Q92.8 72.1 51.4 46.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M51.4 46.1 l8.9 1.6 l-3.6 5.7 z" class="t-muted" fill="#5b6270"/><path d="M124 136 L209 136" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M209 136 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M205.9 47.1 L121.5 124.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M121.5 124.5 l3.9 -8.1 l4.5 4.9 z" class="t-muted" fill="#5b6270"/><path d="M232 37 L290 37" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M290 37 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M224.6 121.1 L218.5 53.9" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M218.5 53.9 l4.1 8 l-6.6 0.6 z" class="t-verde" fill="#17803d"/><path d="M241 136 L299 136" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M299 136 l-8.4 3.3 l0 -6.7 z" class="t-verde" fill="#17803d"/><path d="M314.6 121.1 L308.5 53.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M308.5 53.9 l4.1 8 l-6.6 0.6 z" class="t-muted" fill="#5b6270"/><path d="M297.5 48.6 L236.8 122.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M236.8 122.8 l2.7 -8.6 l5.2 4.2 z" class="t-muted" fill="#5b6270"/><rect x="74.5" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="82" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">7</text><rect x="55.6" y="84.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="63.1" y="98.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">6</text><rect x="164.5" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="172" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">7</text><rect x="75.4" y="70.3" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="82.9" y="83.8" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">7</text><rect x="160" y="137" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="167.5" y="150.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">4</text><rect x="148.7" y="70.1" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="156.2" y="83.6" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="254.5" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="262" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="224" y="76.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="231.5" y="90.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">3</text><rect x="263.5" y="137" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="271" y="150.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="314" y="76.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="321.5" y="90.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><rect x="251.3" y="71.2" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="258.8" y="84.7" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><circle cx="37" cy="37" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="37" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">0</text><circle cx="127" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="127" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="127" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">7 A</text><circle cx="109" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="109" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="109" y="166" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">6 A</text><circle cx="217" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="217" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="217" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">13 E</text><circle cx="226" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="226" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><text x="226" y="166" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">10 C</text><circle cx="316" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="316" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text><text x="316" y="166" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">12 E</text><circle cx="307" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="307" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">G</text><text x="307" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">15 D</text></svg>
+<div class="didascalia"><b>Figura 5.</b> Lavagna del 21 novembre, pagina 9: il grafo A–G da A, con accanto a ogni vertice la distanza e il predecessore (B 7 A, C 6 A, D 13 E, E 10 C, F 12 E, G 15 D). In verde l'albero dei cammini minimi: A–B, A–C, C–E, E–D, E–F, D–G.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>pred[v] ← u quando d[v] migliora passando da u. Cammino a ritroso: v, pred[v], … fino a s.</li>
+    <li>Gli archi (pred[v], v) formano l'albero dei cammini minimi con radice s.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="alberi"><span class="num">7</span>Albero dei cammini minimi e albero ricoprente minimo</h2>
+<p class="in-questa"><b>In questa sezione:</b> la differenza tra i due alberi, su un grafo non orientato (lavagna del 21 novembre, pagina 10, e l'esempio delle slide). È una domanda frequente agli scritti.</p>
+<p>In un grafo non orientato connesso, l'albero dei cammini minimi da s è anche un albero ricoprente: ha tutti i vertici e n − 1 archi del grafo. Ma <strong>non è necessariamente un albero ricoprente minimo</strong>, perché i due problemi hanno obiettivi diversi:</p>
+<ul>
+  <li>l'<strong>albero dei cammini minimi</strong> minimizza, per ciascun vertice v, la distanza da s a v;</li>
+  <li>l'<strong>albero ricoprente minimo</strong> minimizza la somma dei pesi di tutti i suoi archi.</li>
+</ul>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">il grafo</div><svg viewBox="0 0 191 173" width="191" height="173" role="img" aria-label="Il quadrato della lavagna" font-family="system-ui, sans-serif"><path d="M52 37 L139 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M37 52 L37 121" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M154 52 L154 121" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M52 136 L139 136" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><rect x="88" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="95.5" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="19.5" y="77.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="27" y="91" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="136.5" y="77.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="144" y="91" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">1</text><rect x="88" y="137" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="95.5" y="150.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><circle cx="37" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="154" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="37" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="154" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text></svg></div><div><div class="nome-mat">albero ricoprente minimo: peso 6</div><svg viewBox="0 0 191 173" width="191" height="173" role="img" aria-label="Il quadrato della lavagna" font-family="system-ui, sans-serif"><path d="M52 37 L139 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M37 52 L37 121" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M154 52 L154 121" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M52 136 L139 136" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><rect x="88" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="95.5" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="19.5" y="77.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="27" y="91" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">3</text><rect x="136.5" y="77.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="144" y="91" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><rect x="88" y="137" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="95.5" y="150.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><circle cx="37" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="154" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="37" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="154" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text></svg></div><div><div class="nome-mat">albero dei cammini minimi da A: peso 10</div><svg viewBox="0 0 191 173" width="191" height="173" role="img" aria-label="Il quadrato della lavagna" font-family="system-ui, sans-serif"><path d="M52 37 L139 37" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M37 52 L37 121" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M154 52 L154 121" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M52 136 L139 136" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><rect x="88" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="95.5" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">5</text><rect x="19.5" y="77.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="27" y="91" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">3</text><rect x="136.5" y="77.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="144" y="91" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">1</text><rect x="88" y="137" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="95.5" y="150.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">2</text><circle cx="37" cy="37" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="37" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">0</text><circle cx="154" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="154" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">5</text><circle cx="37" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="37" y="166" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">3</text><circle cx="154" cy="136" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="154" y="141" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="154" y="166" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">5</text></svg></div></div>
+<div class="didascalia"><b>Figura 6.</b> Lavagna del 21 novembre, pagina 10. Nel quadrato, l'albero ricoprente minimo è {A–C, C–D, D–B}, peso 6. L'albero dei cammini minimi da A è {A–B, A–C, C–D}, peso 10: per arrivare a B conviene l'arco diretto (5), mentre nell'albero ricoprente minimo da A a B si fa A → C → D → B = 3 + 2 + 1 = 6.</div>
+</div>
+<p>Lo stesso succede sull'esagono delle slide: da B l'albero dei cammini minimi pesa 19, un albero ricoprente minimo 17 (Figura 7).</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">cammini minimi da B: peso 19</div><svg viewBox="0 0 283.2 204" width="283.2" height="204" role="img" aria-label="L'esagono pesato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M45.4 91.6 L86 46.4" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M45.4 112.4 L86 157.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M95.4 50 L95.4 154" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M103.4 47.5 L179.8 156.5" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M109.4 168 L173.8 168" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M197.2 46.4 L237.8 91.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M109.4 36 L173.8 36" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M237.8 112.4 L197.2 157.6" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><rect x="65.6" y="66.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="73.1" y="80.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">3</text><rect x="50.8" y="132.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="58.3" y="146.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="77.9" y="93" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="85.4" y="106.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">4</text><rect x="125.9" y="98.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="133.4" y="112.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">5</text><rect x="134.1" y="169" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="141.6" y="182.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="202.6" y="66.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="210.1" y="80.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="134.1" y="37" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="141.6" y="50.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">6</text><rect x="202.6" y="119.3" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="210.1" y="132.8" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><circle cx="36" cy="102" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="36" y="107" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="17" y="90" font-size="12" font-weight="700" text-anchor="end" class="t-arancio" fill="#b4500f">3</text><circle cx="95.4" cy="36" r="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="95.4" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="95.4" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">0</text><circle cx="95.4" cy="168" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="95.4" y="173" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="95.4" y="197" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">4</text><circle cx="187.8" cy="36" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="187.8" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="187.8" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">6</text><circle cx="247.2" cy="102" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="247.2" y="107" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><text x="266.2" y="90" font-size="12" font-weight="700" text-anchor="start" class="t-arancio" fill="#b4500f">6</text><circle cx="187.8" cy="168" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="187.8" y="173" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text><text x="187.8" y="197" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">5</text></svg></div><div><div class="nome-mat">albero ricoprente minimo: peso 17</div><svg viewBox="0 0 283.2 204" width="283.2" height="204" role="img" aria-label="L'esagono pesato della lavagna (A–F)" font-family="system-ui, sans-serif"><path d="M45.4 91.6 L86 46.4" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M45.4 112.4 L86 157.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M95.4 50 L95.4 154" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M103.4 47.5 L179.8 156.5" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M109.4 168 L173.8 168" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M197.2 46.4 L237.8 91.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M109.4 36 L173.8 36" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M237.8 112.4 L197.2 157.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><rect x="65.6" y="66.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="73.1" y="80.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">3</text><rect x="50.8" y="132.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="58.3" y="146.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="77.9" y="93" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="85.4" y="106.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><rect x="125.9" y="98.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="133.4" y="112.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">5</text><rect x="134.1" y="169" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="141.6" y="182.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="202.6" y="66.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="210.1" y="80.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">6</text><rect x="134.1" y="37" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="141.6" y="50.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="202.6" y="119.3" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="210.1" y="132.8" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><circle cx="36" cy="102" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="36" y="107" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="95.4" cy="36" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="95.4" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="95.4" cy="168" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="95.4" y="173" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="187.8" cy="36" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="187.8" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="247.2" cy="102" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="247.2" y="107" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="187.8" cy="168" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="187.8" y="173" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div></div>
+<div class="didascalia"><b>Figura 7.</b> L'esempio delle slide sull'esagono: a sinistra l'albero dei cammini minimi da B (in blu, con le distanze), peso 19; a destra un albero ricoprente minimo, peso 17.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Albero dei cammini minimi: minimizza la distanza da s di ogni vertice. Albero ricoprente minimo: minimizza la somma dei pesi. In generale sono diversi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="negativi"><span class="num">8</span>Pesi negativi, e il quadro dei problemi</h2>
+<p class="in-questa"><b>In questa sezione:</b> un esempio in cui Dijkstra sbaglia con un peso negativo (lavagna del 21 novembre, pagina 11) e il riepilogo dei problemi dei cammini minimi con i loro algoritmi (pagina 12).</p>
+<p>Nel grafo della Figura 8, da A, Dijkstra estrae A (d[D] = 3, d[C] = 2), poi C (d[B] = 4), poi D: da D l'arco (D, C) di peso −2 dà 3 − 2 = 1 &lt; 2, ma C è già uscito, e il suo valore era già stato usato per B. Risultato: d[B] = 4. Invece il cammino A → D → C → B pesa 3 − 2 + 2 = <strong>3</strong>. Il ragionamento della sezione 4 («il candidato con d minima non si può raggiungere meglio») cade, perché un arco negativo può far scendere un cammino che sembrava più lungo.</p>
+<div class="figura">
+<svg viewBox="0 0 250 195" width="250" height="195" role="img" aria-label="Dijkstra sbaglia con un peso negativo" font-family="system-ui, sans-serif"><path d="M116.9 42.6 L197.2 74.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M197.2 74.7 l-9 0 l2.5 -6.2 z" class="t-muted" fill="#5b6270"/><path d="M108.1 51.1 L141.2 142" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M141.2 142 l-6 -6.7 l6.3 -2.3 z" class="t-muted" fill="#5b6270"/><path d="M203.2 92.4 L158.1 145.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M158.1 145.1 l2.9 -8.5 l5.1 4.3 z" class="t-muted" fill="#5b6270"/><path d="M132 158 L54 158" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M54 158 l8.4 -3.3 l0 6.7 z" class="t-muted" fill="#5b6270"/><rect x="146.8" y="59.3" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="154.3" y="72.8" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="108.1" y="91.9" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="115.6" y="105.4" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="161.4" y="104" width="22" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="172.4" y="117.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">-2</text><rect x="84.5" y="139" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="92" y="152.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><circle cx="103" cy="37" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="103" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><text x="103" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">0</text><circle cx="37" cy="158" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="163" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><text x="37" y="188" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">4 C</text><circle cx="147" cy="158" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="147" y="163" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><text x="147" y="188" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">2 A → 1 D</text><circle cx="213" cy="81" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="213" y="86" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><text x="233" y="68" font-size="12" font-weight="700" text-anchor="start" class="t-arancio" fill="#b4500f">3 A</text></svg>
+<div class="didascalia"><b>Figura 8.</b> Lavagna del 21 novembre, pagina 11: accanto a ogni vertice i valori di d e i predecessori. C riceve 2 da A, poi 1 da D quando è già stato estratto; B resta a 4, mentre la sua distanza vera è 3. Bellman–Ford invece trova 3 (prova il riquadro della sezione 2).</div>
+</div>
+<p><b>Il quadro dei problemi</b> (lavagna del 21 novembre, pagina 12):</p>
+<div class="tabella-wrap"><table>
+  <tr><th>problema</th><th>algoritmo</th><th>tempo</th><th>condizione</th></tr>
+  <tr><td>cammino minimo tra due vertici</td><td>non c'è un algoritmo diretto: si usa uno dei successivi</td><td></td><td></td></tr>
+  <tr><td>da un vertice a tutti gli altri</td><td>Dijkstra</td><td>O(m log n)</td><td>nessun arco di peso negativo</td></tr>
+  <tr><td>da un vertice a tutti gli altri</td><td>Bellman–Ford</td><td>O(m · n)</td><td>nessun ciclo negativo</td></tr>
+  <tr><td>tra ogni coppia di vertici</td><td>Floyd–Warshall</td><td>O(n<sup>3</sup>)</td><td>nessun ciclo negativo</td></tr>
+</table></div>
+<p>«Non c'è un algoritmo diretto» per due vertici: per trovare il cammino minimo da s a t non si conosce niente di più veloce, nel caso peggiore, che calcolare le distanze da s a tutti (con Dijkstra ci si può fermare quando esce t).</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Con un arco negativo Dijkstra può sbagliare anche senza cicli. Bellman–Ford e Floyd–Warshall reggono i pesi negativi, non i cicli negativi.</li>
+    <li>Dijkstra O(m log n), Bellman–Ford O(m · n), Floyd–Warshall O(n<sup>3</sup>).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Problema</b>: dati G = (V, E, w) e s, la distanza da s a ogni v. d[v] = miglior cammino trovato finora; aggiornamento con (u, v) se d[u] + w(u, v) &lt; d[v].</li>
+    <li><b>Bellman–Ford</b>: n − 1 giri su tutti gli archi; lista di archi; O(m · n); no cicli negativi.</li>
+    <li><b>Dijkstra</b>: estrai da C il vertice con d minima (definitiva), aggiorna i vicini; liste di adiacenza + min-heap: O(m log n) (Fibonacci: O(m + n log n)); no archi negativi.</li>
+    <li><b>pred</b>: albero dei cammini minimi. ≠ albero ricoprente minimo.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Metodo: le domande ricorrenti su Dijkstra</span>
+  <ul>
+    <li><b>«Enunciate il problema risolto dall'algoritmo»</b>: istanza = grafo (orientato o no) G = (V, E) con pesi w <em>non negativi</em> e un vertice s; soluzione = per ogni v ∈ V la lunghezza del cammino minimo da s a v (il vettore D). Non descrivere la strategia.</li>
+    <li><b>La riga «u ← elemento di C con D[u] minima» senza strutture ausiliarie</b>: scorrere D (o C) costa O(n) a ogni esecuzione, O(n<sup>2</sup>) in tutto (n esecuzioni).</li>
+    <li><b>Il FOR EACH con una lista di archi</b>: m iterazioni a ogni giro del WHILE, n · m in tutto. Con liste di adiacenza o di incidenza: m in tutto. Con la matrice dei pesi: n a ogni giro (tutta la riga di u), n<sup>2</sup> in tutto.</li>
+    <li><b>La struttura ausiliaria</b>: una coda con priorità (min-heap) con deleteMin e changeKey; tempo O(m log n) con le liste di adiacenza, giustificato riga per riga come nella sezione 5.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Dijkstra è l'esercizio 3 degli scritti del 14 giugno 2024, del 12 luglio 2024, del 19 settembre 2025 e del 19 giugno 2026; l'albero dei cammini minimi compare anche negli scritti su Kruskal (20 settembre 2024, 14 novembre 2025) e nello scritto del 19 gennaio 2024. Tutti nella sezione 10.</li>
+    <li>Scegliere l'algoritmo giusto: da un vertice con pesi ≥ 0 → Dijkstra; tutte le coppie → Floyd–Warshall; pesi negativi da un vertice → Bellman–Ford. Se il testo chiede un tempo «di ordine inferiore a n<sup>3</sup> qualunque sia m», Floyd–Warshall e Bellman–Ford (O(n · m), che con m ≈ n<sup>2</sup> è n<sup>3</sup>) sono esclusi.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi risolti (gli scritti)</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'esercizio 3 di cinque scritti e due punti degli scritti su Kruskal. Prova a risolverli prima di aprire la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Scritto del 19 settembre 2025, esercizio 3: Dijkstra, righe e tempi</summary>
+  <p>(a) Dato G = (V, E) con pesi ω e x, y ∈ V, definite cammino da x a y e cammino minimo da x a y. (b) Enunciate il problema risolto dall'algoritmo di Dijkstra (istanza, vincoli, soluzione; non la strategia). (c) È dato lo pseudocodice del Codice 13.1 con le righe numerate: 7 è «u ← elemento di C con D[u] minima», 9 è «foreach (u, v) ∈ E do». L'algoritmo è implementato senza strutture ausiliarie per le distanze provvisorie. (d) d1: quanto costa ogni esecuzione della riga 7? d2: e in tutto? (e) Con il grafo rappresentato come lista d'archi: e1: quante iterazioni fa il ciclo della riga 9 per una iterazione del while? e2: e in tutto? e3: si può ridurre con un'altra rappresentazione? (f) Una struttura ausiliaria per ridurre il tempo della riga 7 e dell'algoritmo: pseudocodice e tempo, con la rappresentazione più adatta.</p>
+  <div class="soluzione">
+    <p><b>(a)</b> Un <b>cammino</b> da x a y è una sequenza di vertici v<sub>0</sub>, v<sub>1</sub>, …, v<sub>k</sub> con v<sub>0</sub> = x, v<sub>k</sub> = y e (v<sub>i−1</sub>, v<sub>i</sub>) ∈ E per i = 1, …, k; il suo peso è ω(ρ) = Σ<sub>i=1</sub><sup>k</sup> ω(v<sub>i−1</sub>, v<sub>i</sub>). Un <b>cammino minimo</b> da x a y è un cammino ρ da x a y tale che ω(ρ) ≤ ω(ρ') per ogni cammino ρ' da x a y.</p>
+    <p><b>(b)</b> <i>Istanza</i>: un grafo G = (V, E) (orientato o no) con una funzione peso ω : E → ℝ che non assume valori negativi (vincolo), e un vertice s ∈ V. <i>Soluzione</i>: per ogni vertice v ∈ V, la lunghezza del cammino minimo da s a v (∞ se v non è raggiungibile), cioè il vettore D delle distanze da s.</p>
+    <p><b>(d)</b> d1: senza strutture ausiliarie bisogna scorrere i vertici ancora in C e confrontarne le D: fino a n confronti, <b>O(n)</b> (all'iterazione i i candidati sono n − i + 1). d2: il while fa n iterazioni, n + (n − 1) + … + 1 = n(n + 1)/2 confronti: <b>Θ(n<sup>2</sup>)</b>.</p>
+    <p><b>(e)</b> e1: con una lista di archi, per trovare gli archi che escono da u bisogna scorrere tutta la lista: <b>m iterazioni</b> a ogni giro del while. e2: n giri, <b>n · m</b> in tutto. e3: sì, con le <b>liste di adiacenza</b> (o di incidenza): a ogni giro si scorre solo la lista di u, con δ<sub>out</sub>(u) elementi; u prende una volta ogni vertice, quindi in tutto Σ<sub>u</sub> δ<sub>out</sub>(u) = <b>m</b> iterazioni (in un grafo non orientato 2m: ogni lato è in due liste).</p>
+    <p><b>(f)</b> Una <b>coda con priorità</b> C, realizzata come min-heap in un vettore posizionale, con un elemento per ogni vertice candidato e priorità D[v]. La riga 7 diventa u ← C.deleteMin() (che toglie anche u dalla coda, al posto della riga 8), e quando D[v] diminuisce si aggiorna la priorità con C.changeKey(v, D[v]). Lo pseudocodice è il Codice 13.2 della sezione 5. Tempo, con le liste di adiacenza: riempire la coda O(n); n deleteMin O(n log n); m iterazioni del ciclo interno; al più m changeKey O(m log n). Totale O((n + m) log n), cioè <b>O(m log n)</b> se m ≥ n − 1 (per esempio grafo connesso).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 19 giugno 2026, esercizio 3: Dijkstra con la matrice dei pesi</summary>
+  <p>I punti (a)–(f) sono quelli dello scritto del 19 settembre 2025 (definizioni, il problema, costo della riga 7 senza strutture ausiliarie, la coda con priorità e il suo tempo con la rappresentazione più adatta). In più: (g) V = {1, …, n}, s = 1, e l'algoritmo riceve la matrice dei pesi M (m<sub>i,j</sub> = ω(i, j) se (i, j) ∈ E, ∞ altrimenti). g1: quante iterazioni fa il ciclo della riga 9 per un giro del while? g2: e in tutto? g3: se l'algoritmo con la coda con priorità riceve M, come cambia il tempo?</p>
+  <div class="soluzione">
+    <p><b>(a)–(f)</b> Come nello scritto del 19 settembre 2025: riga 7 O(n) per esecuzione e Θ(n<sup>2</sup>) in tutto; coda con priorità (min-heap) con deleteMin e changeKey; con le liste di adiacenza O(m log n).</p>
+    <p><b>(g)</b> g1: con la matrice, gli archi che escono da u sono le caselle della riga u diverse da ∞, e per trovarli bisogna guardare tutta la riga: <b>n iterazioni</b> per giro. g2: <b>n<sup>2</sup></b> in tutto. g3: con la coda e la matrice il tempo diventa O(n<sup>2</sup>) per scorrere le righe, più O(n log n) per le deleteMin, più O(m log n) per le changeKey: <b>O(n<sup>2</sup> + m log n)</b>. Se gli archi sono tanti (m dell'ordine di n<sup>2</sup>) è O(n<sup>2</sup> log n): peggio della versione semplice senza coda, che con la matrice costa Θ(n<sup>2</sup>) (Θ(n<sup>2</sup>) per la riga 7 e Θ(n<sup>2</sup>) per la riga 9). Con la matrice la coda con priorità non conviene.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 14 giugno 2024, esercizio 3: l'area centrale della città</summary>
+  <p>La mappa di una città è un grafo orientato pesato G = (V, E, ω): i vertici sono gli incroci, gli archi i tratti di strada, il peso la lunghezza. Il centro è il vertice s. La distanza di un luogo dal centro è la lunghezza del percorso più breve dal centro; r è la distanza del vertice più lontano da s. L'area centrale è fatta dei luoghi a distanza d ≤ r/2, l'area periferica di quelli a distanza d &gt; r/2. L'algoritmo riceve G e s e restituisce l'elenco degli incroci dell'area centrale. (a) La strategia a parole e lo pseudocodice ad alto livello (ispirandosi a un algoritmo del corso). (b) Rappresentazione del grafo, implementazione con eventuali strutture di supporto, tempo giustificato. (c) Come ottenere anche l'elenco dei tratti di strada tra le due aree, e il tempo delle parti aggiunte.</p>
+  <div class="soluzione">
+    <p><b>(a)</b> Le distanze da s si calcolano con <b>Dijkstra</b> (le lunghezze delle strade non sono negative). Poi r è il massimo di D, e l'elenco contiene i vertici con D[v] ≤ r/2.</p>
+<pre class="pseudo"><b>Algoritmo</b> areaCentrale(grafo G = (V, E, ω), vertice s) → elenco
+  sia D un vettore con insieme di indici V
+  D[s] ← 0
+  <b>foreach</b> v ∈ V \ {s} <b>do</b> D[v] ← ∞
+  C ← V
+  <b>while</b> C ≠ ∅ <b>do</b>
+    u ← elemento di C con D[u] minima
+    C ← C \ {u}
+    <b>foreach</b> (u, v) ∈ E <b>do</b>
+      <b>if</b> D[u] + ω(u, v) &lt; D[v] <b>then</b> D[v] ← D[u] + ω(u, v)
+  r ← max { D[v] | v ∈ V }
+  L ← elenco vuoto
+  <b>foreach</b> v ∈ V <b>do</b>
+    <b>if</b> D[v] ≤ r / 2 <b>then</b> aggiungi v a L
+  <b>return</b> L</pre>
+    <p><b>(b)</b> Grafo con <b>liste di adiacenza</b>; l'insieme C come <b>coda con priorità</b> (min-heap) con deleteMin e changeKey. Dijkstra: O(n) per inizializzare D e la coda, n deleteMin O(n log n), m iterazioni complessive dei cicli interni, al più m changeKey O(m log n): O((n + m) log n). Il massimo e l'elenco: O(n). Totale <b>O((n + m) log n)</b>, cioè O(m log n) se m ≥ n − 1.</p>
+    <p><b>(c)</b> Si segna in un array centrale[v] (vero se D[v] ≤ r/2) l'area di ogni vertice, mentre si costruisce L. Poi si scorrono tutte le liste di adiacenza: ogni arco (u, v) con centrale[u] ≠ centrale[v] collega le due aree e va nell'elenco. Tempo delle parti aggiunte: O(n) per l'array, O(n + m) per scorrere le liste.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 12 luglio 2024, esercizio 3: gli incroci in ordine di distanza dal centro</summary>
+  <p>La mappa è un grafo orientato con vertici 1, …, n (incroci) e archi pesati (lunghezze dei tratti); il centro è il vertice 1. L'algoritmo riceve il grafo e restituisce un elenco con ogni vertice e la sua distanza dal vertice 1, in ordine non decrescente di distanza (il primo è 1, l'ultimo il più lontano). Il tempo deve essere di ordine inferiore a n<sup>3</sup>, qualunque sia il numero m di strade. (a) Strategia e pseudocodice ad alto livello. (b) Rappresentazione, implementazione e tempo. (c) Se servono le distanze da ogni v al vertice 1 (non da 1 a v), come adattare l'algoritmo? Il tempo cambia? Nell'esempio (il grafo della Figura 6 del pacco 22) l'elenco è 1 (0), 2 (5), 4 (9), 3 (11).</p>
+  <div class="soluzione">
+    <p><b>(a)</b> Cammini minimi da un vertice a tutti gli altri: <b>Dijkstra</b> da 1. Bellman–Ford costa O(n · m), che con m dell'ordine di n<sup>2</sup> è n<sup>3</sup>; Floyd–Warshall è Θ(n<sup>3</sup>): tutti e due esclusi. Dijkstra estrae i vertici in ordine di distanza da 1, quindi l'elenco ordinato si costruisce senza ordinare: ogni volta che si estrae u, si aggiunge la coppia ⟨u, D[u]⟩ in fondo a una lista. (Ordinare solo il vettore D, invece, perderebbe l'associazione tra vertici e distanze.)</p>
+<pre class="pseudo"><b>Algoritmo</b> elencoDistanze(grafo G = (V, E, ω)) → elenco
+  sia D un vettore con insieme di indici V
+  D[1] ← 0
+  <b>foreach</b> v ∈ V \ {1} <b>do</b> D[v] ← ∞
+  C ← V
+  L ← lista vuota
+  <b>while</b> C ≠ ∅ <b>do</b>
+    u ← elemento di C con D[u] minima
+    C ← C \ {u}
+    aggiungi ⟨u, D[u]⟩ in fondo a L          <span class="com">// D[u] è definitiva</span>
+    <b>foreach</b> (u, v) ∈ E <b>do</b>
+      <b>if</b> D[u] + ω(u, v) &lt; D[v] <b>then</b> D[v] ← D[u] + ω(u, v)
+  <b>return</b> L</pre>
+    <p><b>(b)</b> Liste di adiacenza (o di incidenza) e C come min-heap (deleteMin, changeKey). Tempo: O(n) per l'inizializzazione; n deleteMin O(n log n); m iterazioni del ciclo interno in tutto, con al più m changeKey O(m log n); n inserimenti in fondo alla lista O(n) (tenendo un puntatore all'ultimo elemento). Totale <b>O((n + m) log n)</b>, che anche con m ≈ n<sup>2</sup> è O(n<sup>2</sup> log n), di ordine inferiore a n<sup>3</sup>.</p>
+    <p><b>(c)</b> La distanza da v a 1 nel grafo è la distanza da 1 a v nel <b>grafo trasposto</b>, quello con tutti gli archi girati: un cammino v → … → 1 diventa 1 → … → v con gli stessi pesi. Quindi si costruisce il grafo trasposto e si esegue Dijkstra da 1. Con le liste di adiacenza, il ciclo «foreach (u, v) ∈ E» dovrebbe scorrere gli archi che <em>entrano</em> in u, che non si trovano in fretta; per questo si costruiscono prima le liste del grafo trasposto: per ogni arco (u, v) di peso ω si aggiunge u nella lista di v. Costa O(n + m), quindi il tempo totale resta <b>O((n + m) log n)</b>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 19 gennaio 2024, esercizio 3: i tapis roulant sotto la città</summary>
+  <p>Sotto ogni strada di una città c'è una galleria; si decide in quali gallerie mettere i tapis roulant (gallerie principali, con un tapis per verso) in modo che (i) da ogni incrocio si possa raggiungere ogni altro incrocio usando solo gallerie principali e (ii) la lunghezza totale delle gallerie principali sia minima. Si conosce la lunghezza di ogni strada; una strada collega due incroci senza incroci in mezzo. (a) Formalizzate con i grafi. (b) Un algoritmo che determini le strade con le gallerie principali e quelle con le secondarie, a parole e in pseudocodice ad alto livello, ispirandosi a un algoritmo del corso. (c) Rappresentazione, implementazione con strutture di supporto, tempo. (d) Fissato l'incrocio c della piazza centrale, si chiede invece di minimizzare, per ogni incrocio x, la lunghezza delle gallerie principali che da c portano a x. La strategia di (b) va bene? Se no, quale algoritmo serve e perché?</p>
+  <div class="soluzione">
+    <p><b>(a)</b> Grafo <b>non orientato</b> pesato G = (V, E, ω): i vertici sono gli incroci, i lati le strade, il peso la lunghezza. Le gallerie principali devono connettere tutti i vertici con lunghezza totale minima: senza cicli (togliendo una galleria da un ciclo si resta connessi e si accorcia il totale), quindi formano un <b>albero ricoprente minimo</b>.</p>
+    <p><b>(b)</b> L'algoritmo di <b>Kruskal</b> (pacco 20): si esaminano le strade in ordine di lunghezza non decrescente; una strada va tra le principali (A) se i suoi estremi non sono già connessi dalle principali scelte, altrimenti tra le secondarie (B).</p>
+<pre class="pseudo"><b>Algoritmo</b> gallerie(G = (V, E, ω)) → (insieme, insieme)
+  ordina E in base alle lunghezze in modo non decrescente
+  A ← ∅
+  B ← ∅
+  <b>foreach</b> (x, y) ∈ E secondo l'ordine <b>do</b>
+    <b>if</b> x e y non sono connessi nel grafo (V, A) <b>then</b> A ← A ∪ {(x, y)}
+    <b>else</b> B ← B ∪ {(x, y)}
+  <b>return</b> (A, B)</pre>
+    <p><b>(c)</b> Lista di archi in un array, ordinata con heapSort, O(m log m). La condizione «non connessi» con union-find (QuickUnion con bilanciamento): n MAKESET all'inizio, FIND(x) ≠ FIND(y) per «non connessi», UNION quando la strada va in A. 2m FIND O(m log n), n − 1 UNION O(n), aggiunte ad A e B O(1) ciascuna. Totale <b>O(m log n)</b> (il grafo delle strade è connesso: n − 1 ≤ m ≤ n<sup>2</sup>).</p>
+    <p><b>(d)</b> No. Ora l'obiettivo è, per ogni incrocio x, il percorso più corto da c a x: è l'<b>albero dei cammini minimi</b> da c, che si ottiene con <b>Dijkstra</b> da c (lunghezze non negative) e il vettore dei predecessori: le principali sono le strade (pred[x], x). L'albero ricoprente minimo minimizza la somma delle lunghezze, non le distanze da c, e in generale è diverso: nella Figura 6, da A, nell'albero ricoprente minimo B si raggiunge con 6, nell'albero dei cammini minimi con 5.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 14 novembre 2025, punto (i): l'albero dei cammini minimi da v<sub>3</sub></summary>
+  <p>Nel grafo dello scritto (l'esagono con i vertici v<sub>1</sub>, …, v<sub>6</sub>: v<sub>1</sub>–v<sub>2</sub> 3, v<sub>1</sub>–v<sub>6</sub> 2, v<sub>2</sub>–v<sub>6</sub> 4, v<sub>2</sub>–v<sub>3</sub> 6, v<sub>2</sub>–v<sub>5</sub> 5, v<sub>5</sub>–v<sub>6</sub> 5, v<sub>3</sub>–v<sub>4</sub> 6, v<sub>4</sub>–v<sub>5</sub> 1), disegnate l'albero dei cammini minimi a partire da v<sub>3</sub> e spiegate perché non è un albero ricoprente minimo. (Gli altri punti, su Kruskal, sono nel pacco 20.)</p>
+  <div class="figura">
+<div class="affianco"><div><div class="nome-mat">albero dei cammini minimi da v3: peso 20</div><svg viewBox="0 0 276.8 200" width="276.8" height="200" role="img" aria-label="Il grafo dello scritto del 14 novembre 2025" font-family="system-ui, sans-serif"><path d="M45.4 89.6 L84.2 46.4" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M45.4 110.4 L84.2 153.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M93.6 50 L93.6 150" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M101.6 47.5 L175.2 152.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M169.2 164 L107.6 164" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M192.6 46.4 L231.4 89.6" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M107.6 36 L169.2 36" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M231.4 110.4 L192.6 153.6" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><rect x="64.7" y="65.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="72.2" y="79.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">3</text><rect x="49.9" y="129.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="57.4" y="143.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">2</text><rect x="76.1" y="91" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="83.6" y="104.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">4</text><rect x="122.7" y="96.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="130.2" y="110.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="130.9" y="145" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="138.4" y="158.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="197.1" y="65.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="204.6" y="79.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">6</text><rect x="130.9" y="37" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="138.4" y="50.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">6</text><rect x="197.1" y="116.3" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="204.6" y="129.8" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><circle cx="36" cy="100" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="36" y="105" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v1</text><text x="17" y="88" font-size="12" font-weight="700" text-anchor="end" class="t-arancio" fill="#b4500f">9</text><circle cx="93.6" cy="36" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93.6" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v2</text><text x="93.6" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">6</text><circle cx="183.2" cy="36" r="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="183.2" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v3</text><text x="183.2" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">0</text><circle cx="240.8" cy="100" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="240.8" y="105" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v4</text><text x="259.8" y="88" font-size="12" font-weight="700" text-anchor="start" class="t-arancio" fill="#b4500f">6</text><circle cx="183.2" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="183.2" y="169" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v5</text><text x="183.2" y="193" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">7</text><circle cx="93.6" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93.6" y="169" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v6</text><text x="93.6" y="193" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">10</text></svg></div><div><div class="nome-mat">un albero ricoprente minimo: peso 17</div><svg viewBox="0 0 276.8 200" width="276.8" height="200" role="img" aria-label="Il grafo dello scritto del 14 novembre 2025" font-family="system-ui, sans-serif"><path d="M45.4 89.6 L84.2 46.4" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M45.4 110.4 L84.2 153.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M93.6 50 L93.6 150" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M101.6 47.5 L175.2 152.5" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M169.2 164 L107.6 164" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M192.6 46.4 L231.4 89.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M107.6 36 L169.2 36" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M231.4 110.4 L192.6 153.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><rect x="64.7" y="65.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="72.2" y="79.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">3</text><rect x="49.9" y="129.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="57.4" y="143.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="76.1" y="91" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="83.6" y="104.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><rect x="122.7" y="96.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="130.2" y="110.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">5</text><rect x="130.9" y="145" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="138.4" y="158.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="197.1" y="65.7" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="204.6" y="79.2" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">6</text><rect x="130.9" y="37" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="138.4" y="50.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">6</text><rect x="197.1" y="116.3" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="204.6" y="129.8" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><circle cx="36" cy="100" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="36" y="105" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v1</text><circle cx="93.6" cy="36" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93.6" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v2</text><circle cx="183.2" cy="36" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="183.2" y="41" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v3</text><circle cx="240.8" cy="100" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="240.8" y="105" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v4</text><circle cx="183.2" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="183.2" y="169" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v5</text><circle cx="93.6" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="93.6" y="169" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v6</text></svg></div></div>
+  <div class="didascalia"><b>Figura 9.</b> A sinistra l'albero dei cammini minimi da v<sub>3</sub> (in blu, con le distanze e i predecessori), peso 20; a destra un albero ricoprente minimo, peso 17.</div>
+  </div>
+  <div class="soluzione">
+    <p>Dijkstra da v<sub>3</sub>: v<sub>3</sub> 0; v<sub>2</sub> 6 e v<sub>4</sub> 6 (archi diretti); da v<sub>4</sub>: v<sub>5</sub> 7; da v<sub>2</sub>: v<sub>1</sub> 9, v<sub>6</sub> 10; da v<sub>5</sub>: v<sub>6</sub> resterebbe 12, non migliora; da v<sub>1</sub>: v<sub>6</sub> 11, non migliora. Albero: v<sub>3</sub>–v<sub>2</sub>, v<sub>3</sub>–v<sub>4</sub>, v<sub>4</sub>–v<sub>5</sub>, v<sub>2</sub>–v<sub>1</sub>, v<sub>2</sub>–v<sub>6</sub>, peso 6 + 6 + 1 + 3 + 4 = <b>20</b>. Non è minimo: un albero ricoprente minimo pesa 17. Il motivo: questo albero minimizza la distanza da v<sub>3</sub> di ogni vertice, e per farlo usa entrambi gli archi di peso 6 che escono da v<sub>3</sub> (per arrivare a v<sub>2</sub> e a v<sub>4</sub> nel modo più corto); un albero ricoprente minimo ne usa uno solo, perché minimizza la somma dei pesi.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 20 settembre 2024, punto (h): l'albero dei cammini minimi da v<sub>1</sub></summary>
+  <p>Nel grafo dello scritto (v<sub>1</sub>–v<sub>4</sub> 2, v<sub>1</sub>–v<sub>2</sub> 5, v<sub>2</sub>–v<sub>4</sub> 4, v<sub>3</sub>–v<sub>4</sub> 2, v<sub>2</sub>–v<sub>3</sub> 7) disegnate l'albero dei cammini minimi da v<sub>1</sub>. È un albero ricoprente minimo? Se sì, lo è sempre? Se no, perché differiscono?</p>
+  <div class="figura">
+<div class="affianco"><div><div class="nome-mat">albero dei cammini minimi da v1: peso 9</div><svg viewBox="0 0 221.2 189" width="221.2" height="189" role="img" aria-label="Il grafo dello scritto del 20 settembre 2024" font-family="system-ui, sans-serif"><path d="M52 37 L169.2 37" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M37 52 L37 137" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M48.8 142.8 L172.4 46.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M184.2 137 L184.2 52" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3.4"/><path d="M52 152 L169.2 152" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><rect x="103.1" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="110.6" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">2</text><rect x="19.5" y="85.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="27" y="99" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">5</text><rect x="109.3" y="93.4" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="116.8" y="106.9" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><rect x="186.7" y="85.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="194.2" y="99" font-size="12.5" font-weight="700" text-anchor="middle" class="t-blu" fill="#2f52c4">2</text><rect x="103.1" y="153" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="110.6" y="166.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">7</text><circle cx="37" cy="37" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v1</text><text x="37" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">0</text><circle cx="37" cy="152" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="157" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v2</text><text x="37" y="182" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">5</text><circle cx="184.2" cy="152" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="184.2" y="157" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v3</text><text x="184.2" y="182" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">4</text><circle cx="184.2" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="184.2" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v4</text><text x="184.2" y="15" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">2</text></svg></div><div><div class="nome-mat">l'albero ricoprente minimo: peso 8</div><svg viewBox="0 0 221.2 189" width="221.2" height="189" role="img" aria-label="Il grafo dello scritto del 20 settembre 2024" font-family="system-ui, sans-serif"><path d="M52 37 L169.2 37" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M37 52 L37 137" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><path d="M48.8 142.8 L172.4 46.2" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M184.2 137 L184.2 52" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M52 152 L169.2 152" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="2 4"/><rect x="103.1" y="38" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="110.6" y="51.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="19.5" y="85.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="27" y="99" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="109.3" y="93.4" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="116.8" y="106.9" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">4</text><rect x="186.7" y="85.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="194.2" y="99" font-size="12.5" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">2</text><rect x="103.1" y="153" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="110.6" y="166.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">7</text><circle cx="37" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v1</text><circle cx="37" cy="152" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="157" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v2</text><circle cx="184.2" cy="152" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="184.2" y="157" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v3</text><circle cx="184.2" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="184.2" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v4</text></svg></div></div>
+  <div class="didascalia"><b>Figura 10.</b> A sinistra l'albero dei cammini minimi da v<sub>1</sub> (peso 9), a destra l'albero ricoprente minimo (peso 8).</div>
+  </div>
+  <div class="soluzione">
+    <p>Dijkstra da v<sub>1</sub>: v<sub>4</sub> 2, v<sub>2</sub> 5 (diretto; da v<sub>4</sub> sarebbe 2 + 4 = 6), v<sub>3</sub> 4 (passando da v<sub>4</sub>). Albero: v<sub>1</sub>–v<sub>4</sub>, v<sub>4</sub>–v<sub>3</sub>, v<sub>1</sub>–v<sub>2</sub>, peso 2 + 2 + 5 = <b>9</b>. <b>Non è minimo</b>: l'albero ricoprente minimo {v<sub>1</sub>–v<sub>4</sub>, v<sub>3</sub>–v<sub>4</sub>, v<sub>2</sub>–v<sub>4</sub>} pesa 8. I due alberi differiscono perché hanno obiettivi diversi: il primo vuole il cammino più corto da v<sub>1</sub> a ogni vertice (per v<sub>2</sub> l'arco diretto di peso 5 batte v<sub>1</sub> → v<sub>4</sub> → v<sub>2</sub> = 6), il secondo il peso totale minimo (dove l'arco v<sub>2</sub>–v<sub>4</sub>, 4, costa meno di v<sub>1</sub>–v<sub>2</sub>, 5).</p>
+  </div>
+</details>
+
+<!-- ============================================================ 11 -->
+<h2 id="approfondimenti"><span class="num">11</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per lo scritto. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: Bellman–Ford scopre i cicli negativi</summary>
+  <div class="soluzione">
+    <p>Dopo i suoi n − 1 giri, Bellman–Ford può fare un giro in più: se qualche arco (u, v) migliora ancora d[v], allora c'è un ciclo di peso negativo raggiungibile da s (senza cicli negativi, dopo n − 1 giri le distanze sono già giuste e non possono più scendere). Il riquadro della sezione 2, con il grafo «con un ciclo negativo», lo segnala.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: fermare Bellman–Ford prima</summary>
+  <div class="soluzione">
+    <p>Se in un giro nessun aggiornamento ha cambiato niente, nemmeno i giri successivi cambieranno niente (esaminano gli stessi archi con gli stessi valori): ci si può fermare. Nell'esempio della lavagna già il terzo giro non cambia nulla. Il caso peggiore resta O(m · n).</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="22-floyd-warshall.html">← Pacco 22: cammini minimi e Floyd–Warshall</a>
+  <a href="index.html">Tutti i pacchi</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- pesati.js
+// Grafi pesati (pacchi 19, 20, 22, 23): dati della lavagna, disegno con i pesi, Kruskal, Prim.
+// Un grafo pesato: { nome, orientato, V: [...], pos: { v: [x, y] } (in «caselle»), E: [[u, v, w], ...], curve: { indice: k } }
+var GP = {
+  esagono: { nome: "L'esagono pesato della lavagna (A–F)", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    E: [["A", "B", 3], ["A", "C", 2], ["B", "C", 4], ["B", "F", 5], ["C", "F", 5], ["D", "E", 6], ["B", "D", 6], ["E", "F", 1]] },
+  sette: { nome: "Il grafo a 7 vertici della lavagna (Prim)", orientato: false, V: ["A", "B", "C", "D", "E", "F", "G"],
+    pos: { F: [0.6, 0], G: [1.8, 0], C: [0, 1.05], D: [1.2, 1.05], E: [2.4, 1.05], A: [0.6, 2.1], B: [1.8, 2.1] },
+    E: [["F", "G", 20], ["C", "F", 23], ["D", "F", 1], ["D", "G", 4], ["E", "G", 15], ["C", "D", 36], ["D", "E", 9], ["A", "C", 28], ["A", "D", 25], ["B", "D", 16], ["B", "E", 3], ["A", "B", 17]] },
+  orientato: { nome: "Il grafo orientato pesato della lavagna (1–7)", orientato: true, V: [1, 2, 3, 4, 5, 6, 7],
+    pos: { 1: [0, 0], 2: [1.1, 0], 4: [2.2, 0], 7: [3.3, 0], 3: [0.8, 1.1], 5: [2.4, 1.1], 6: [3.4, 1.1] },
+    E: [[1, 2, 5], [2, 4, 3], [4, 7, 2], [3, 1, 7], [1, 3, 6], [4, 3, 9], [3, 5, 4], [7, 5, 3], [5, 6, 2], [6, 7, 2]] },
+  esame14nov: { nome: "Il grafo dello scritto del 14 novembre 2025", orientato: false, V: ["v1", "v2", "v3", "v4", "v5", "v6"],
+    pos: { v1: [0, 1], v2: [0.9, 0], v6: [0.9, 2], v3: [2.3, 0], v4: [3.2, 1], v5: [2.3, 2] },
+    E: [["v1", "v2", 3], ["v1", "v6", 2], ["v2", "v6", 4], ["v2", "v5", 5], ["v5", "v6", 5], ["v3", "v4", 6], ["v2", "v3", 6], ["v4", "v5", 1]] },
+  esame20set: { nome: "Il grafo dello scritto del 20 settembre 2024", orientato: false, V: ["v1", "v2", "v3", "v4"],
+    pos: { v1: [0, 0], v4: [1.6, 0], v2: [0, 1.25], v3: [1.6, 1.25] },
+    E: [["v1", "v4", 2], ["v1", "v2", 5], ["v2", "v4", 4], ["v3", "v4", 2], ["v2", "v3", 7]] }
+};
+function escP(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1p(v) { return Math.round(v * 10) / 10; }
+function chiaveP(u, v, orientato) { return orientato ? u + ">" + v : [String(u), String(v)].sort().join("~"); }
+function cmpV(a, b) { return typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), "it", { numeric: true }); }
+// archi uscenti da u: [[v, w], ...] in ordine di vertice
+function adiacentiP(G, u) {
+  var r = [];
+  G.E.forEach(function (e) { if (e[0] === u) r.push([e[1], e[2]]); else if (!G.orientato && e[1] === u) r.push([e[0], e[2]]); });
+  return r.sort(function (a, b) { return cmpV(a[0], b[0]); });
+}
+function pesoTot(archi) { return archi.reduce(function (t, e) { return t + e[2]; }, 0); }
+var STILE_P = { n: ["r-nodo", "#ffffff", "#2f52c4"], giallo: ["r-giallo", "#fff1a8", "#b4500f"], verde: ["r-verde", "#e6f5ea", "#17803d"], blu: ["r-blu", "#e8edfc", "#2f52c4"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f"], rosso: ["r-rosso", "#fdecea", "#b42318"], viola: ["r-viola", "#f1ebfb", "#6d3fc0"], grigio: ["r-grigio", "#eef0f3", "#5b6270"] };
+var COL_A = { verde: ["l-verde", "#17803d", 3.4], arancio: ["l-arancio", "#b4500f", 3.4], rosso: ["l-rosso", "#b42318", 3.4], blu: ["l-blu", "#2f52c4", 3.4], viola: ["l-viola", "#6d3fc0", 3.4],
+  scartato: ["l-muted", "#5b6270", 1.2, "5 4"], tenue: ["l-muted", "#5b6270", 1, "2 4"] };
+// opz: { cella, r, evNodi: {v: stile}, evArchi: {chiave: colore}, etich: {v: testo}, etichPos: {v: "su"|"giu"|"sx"|"dx"}, numeri: {v: n}, aria, senzaPesi, margine }
+function svgPesato(G, opz) {
+  opz = opz || {};
+  var C = opz.cella || 90, R = opz.r || 15, m = R + (opz.margine || 22), s = [], xs = [], ys = [];
+  G.V.forEach(function (v) { xs.push(G.pos[v][0]); ys.push(G.pos[v][1]); });
+  var W = Math.max.apply(null, xs) * C + 2 * m, H = Math.max.apply(null, ys) * C + 2 * m;
+  function P(v) { return [m + G.pos[v][0] * C, m + G.pos[v][1] * C]; }
+  var esiste = {}; G.E.forEach(function (e) { esiste[e[0] + ">" + e[1]] = true; });
+  s.push('<svg viewBox="0 0 ' + r1p(W) + ' ' + r1p(H) + '" width="' + r1p(W) + '" height="' + r1p(H) + '" role="img" aria-label="' + escP(opz.aria || G.nome) + '" font-family="system-ui, sans-serif">');
+  var etichette = [];
+  G.E.forEach(function (e, k) {
+    var a = P(e[0]), b = P(e[1]), key = chiaveP(e[0], e[1], G.orientato), ev = opz.evArchi && opz.evArchi[key], c = ev ? COL_A[ev] : ["l-muted", "#5b6270", 1.4];
+    var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.sqrt(dx * dx + dy * dy), ux = dx / l, uy = dy / l;
+    var doppio = G.orientato && esiste[e[1] + ">" + e[0]];
+    var curva = (G.curve && G.curve[k]) || (doppio ? 0.2 : 0);
+    var x1 = a[0] + ux * R, y1 = a[1] + uy * R, x2 = b[0] - ux * (R + (G.orientato ? 2 : 0)), y2 = b[1] - uy * (R + (G.orientato ? 2 : 0)), d, ang, mx, my;
+    if (curva) {
+      var cx = (a[0] + b[0]) / 2 - uy * curva * l, cy = (a[1] + b[1]) / 2 + ux * curva * l;
+      var vx = cx - a[0], vy = cy - a[1], vl = Math.sqrt(vx * vx + vy * vy); x1 = a[0] + vx / vl * R; y1 = a[1] + vy / vl * R;
+      var wx = b[0] - cx, wy = b[1] - cy, wl = Math.sqrt(wx * wx + wy * wy); x2 = b[0] - wx / wl * (R + 2); y2 = b[1] - wy / wl * (R + 2);
+      d = "M" + r1p(x1) + " " + r1p(y1) + " Q" + r1p(cx) + " " + r1p(cy) + " " + r1p(x2) + " " + r1p(y2); ang = Math.atan2(wy, wx);
+      mx = 0.25 * a[0] + 0.5 * cx + 0.25 * b[0]; my = 0.25 * a[1] + 0.5 * cy + 0.25 * b[1];
+    } else { d = "M" + r1p(x1) + " " + r1p(y1) + " L" + r1p(x2) + " " + r1p(y2); ang = Math.atan2(dy, dx); mx = (a[0] + b[0]) / 2; my = (a[1] + b[1]) / 2; }
+    s.push('<path d="' + d + '" fill="none" class="' + c[0] + '" stroke="' + c[1] + '" stroke-width="' + c[2] + '"' + (c[3] ? ' stroke-dasharray="' + c[3] + '"' : '') + '/>');
+    if (G.orientato) s.push('<path d="M' + r1p(x2) + ' ' + r1p(y2) + ' l' + r1p(-9 * Math.cos(ang - 0.38)) + ' ' + r1p(-9 * Math.sin(ang - 0.38)) + ' l' + r1p(9 * Math.cos(ang - 0.38) - 9 * Math.cos(ang + 0.38)) + ' ' + r1p(9 * Math.sin(ang - 0.38) - 9 * Math.sin(ang + 0.38)) + ' z" class="' + c[0].replace("l-", "t-") + '" fill="' + c[1] + '"/>');
+    if (!opz.senzaPesi) {
+      // il peso sta un po' di lato rispetto al punto medio, dalla parte «esterna»
+      var nx = -uy, ny = ux, off = curva ? 0 : 10, tx = mx + nx * off, ty = my + ny * off, txt = String(e[2]), bw = 7 * txt.length + 8;
+      etichette.push('<rect x="' + r1p(tx - bw / 2) + '" y="' + r1p(ty - 9) + '" width="' + r1p(bw) + '" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/>' +
+        '<text x="' + r1p(tx) + '" y="' + r1p(ty + 4.5) + '" font-size="12.5" font-weight="700" text-anchor="middle" class="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[0].replace("l-", "t-") : "t-peso") + '" fill="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[1] : "#6d3fc0") + '">' + escP(txt) + '</text>');
+    }
+  });
+  s.push(etichette.join(""));
+  G.V.forEach(function (v) {
+    var p = P(v), st = STILE_P[(opz.evNodi && opz.evNodi[v]) || "n"], lab = escP(v), fs = lab.length > 2 ? 12 : 14;
+    s.push('<circle cx="' + r1p(p[0]) + '" cy="' + r1p(p[1]) + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    s.push('<text x="' + r1p(p[0]) + '" y="' + r1p(p[1] + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + lab + '</text>');
+    if (opz.numeri && opz.numeri[v] !== undefined) {
+      s.push('<circle cx="' + r1p(p[0] + R * 0.85) + '" cy="' + r1p(p[1] - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1p(p[0] + R * 0.85) + '" y="' + r1p(p[1] - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.numeri[v] + '</text>');
+    }
+    if (opz.etich && opz.etich[v] !== undefined && opz.etich[v] !== "") {
+      var pos = (opz.etichPos && opz.etichPos[v]) || (G.pos[v][1] <= 0.01 ? "su" : (G.pos[v][1] >= Math.max.apply(null, ys) - 0.01 ? "giu" : (G.pos[v][0] <= 0.01 ? "sx" : "dx")));
+      var ex = p[0], ey = p[1], an = "middle";
+      if (pos === "su") ey = p[1] - R - 7; else if (pos === "giu") ey = p[1] + R + 15; else if (pos === "sx") { ex = p[0] - R - 5; ey = p[1] - R + 2; an = "end"; } else { ex = p[0] + R + 5; ey = p[1] - R + 2; an = "start"; }
+      s.push('<text x="' + r1p(ex) + '" y="' + r1p(ey) + '" font-size="12" font-weight="700" text-anchor="' + an + '" class="t-arancio" fill="#b4500f">' + escP(opz.etich[v]) + '</text>');
+    }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+// archi scelti -> mappa per evArchi
+function evDa(archi, colore, G) { var r = {}; archi.forEach(function (e) { r[chiaveP(e[0], e[1], G.orientato)] = colore; }); return r; }
+
+// ---------------------------------------------------------------- Kruskal (Codice 11.2, con union-find)
+// spareggio: a parità di peso si segue l'ordine di G.E (come alla lavagna)
+function ordinaArchi(G) { return G.E.map(function (e, k) { return [e[0], e[1], e[2], k]; }).sort(function (a, b) { return a[2] - b[2] || a[3] - b[3]; }); }
+function eventiKruskal(G) {
+  var ord = ordinaArchi(G), padre = {}, ev = [], T = [], scart = [], nFind = 0, nUnion = 0;
+  G.V.forEach(function (v) { padre[v] = v; });
+  function find(x) { nFind++; while (padre[x] !== x) x = padre[x]; return x; }
+  function insiemi() { var g = {}; G.V.forEach(function (v) { var r = v; while (padre[r] !== r) r = padre[r]; (g[r] = g[r] || []).push(v); }); return Object.keys(g).map(function (k) { return g[k]; }); }
+  ev.push({ k: -1, testo: "Gli archi sono ordinati per peso; T non ha archi; ogni vertice è un insieme da solo (MAKESET).", T: [], scart: [], insiemi: insiemi(), nFind: 0, nUnion: 0, ord: ord });
+  ord.forEach(function (e, k) {
+    var tx = find(e[0]), ty = find(e[1]), ok = tx !== ty, testo;
+    if (ok) { padre[ty] = tx; nUnion++; T.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") ≠ FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " non sono connessi in T. UNION dei due insiemi; l'arco entra in T."; }
+    else { scart.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") = FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " sono già connessi in T. L'arco formerebbe un ciclo: si scarta."; }
+    ev.push({ k: k, preso: ok, testo: testo, T: T.slice(), scart: scart.slice(), insiemi: insiemi(), nFind: nFind, nUnion: nUnion, ord: ord });
+  });
+  return ev;
+}
+// ---------------------------------------------------------------- Prim (Codice 11.4, con d e vicino)
+function eventiPrim(G, s) {
+  var d = {}, vic = {}, inT = {}, VT = [], ET = [], ev = [];
+  G.V.forEach(function (v) { d[v] = Infinity; vic[v] = null; });
+  function foto(testo, y, cambiati) { var dd = {}, vv = {}; G.V.forEach(function (v) { dd[v] = d[v]; vv[v] = vic[v]; }); ev.push({ testo: testo, d: dd, vicino: vv, VT: VT.slice(), ET: ET.slice(), y: y, cambiati: cambiati || [] }); }
+  foto("All'inizio la struttura è vuota: d[v] = ∞ per ogni vertice, e vicino non è definito.", null);
+  var primo = true;
+  while (VT.length < G.V.length) {
+    var y = null;
+    if (primo && s !== undefined && s !== null) y = s;
+    else G.V.forEach(function (v) { if (!inT[v] && (y === null || d[v] < d[y])) y = v; });
+    var t;
+    inT[y] = true; VT.push(y);
+    if (d[y] !== Infinity) { ET.push([vic[y], y, d[y]]); t = "Tra i vertici fuori da T, " + y + " ha d minima (" + d[y] + "): entra in T con l'arco (" + vic[y] + ", " + y + ") di peso " + d[y] + "."; }
+    else t = "Prima iterazione: tutte le d valgono ∞, quindi si può prendere un vertice qualsiasi. Si sceglie " + y + ", che entra in T senza archi.";
+    var camb = [];
+    adiacentiP(G, y).forEach(function (p) { var z = p[0], w = p[1]; if (!inT[z] && w < d[z]) { d[z] = w; vic[z] = y; camb.push(z); } });
+    t += camb.length ? " Si guardano gli archi di " + y + ": migliorano " + camb.map(function (z) { return "d[" + z + "] = " + d[z]; }).join(", ") + " (con vicino " + y + ")." : " Nessun vertice fuori da T diventa più vicino passando da " + y + ".";
+    foto(t, y, camb);
+    primo = false;
+  }
+  return ev;
+}
+// tutti gli alberi ricoprenti (per grafi piccoli): restituisce [{archi, peso}]
+function tuttiAlberi(G) {
+  var n = G.V.length, m = G.E.length, r = [];
+  function rec(i, scelti) {
+    if (scelti.length === n - 1) { if (connessoCon(G, scelti)) r.push({ archi: scelti.slice(), peso: pesoTot(scelti) }); return; }
+    if (i >= m || m - i < n - 1 - scelti.length) return;
+    scelti.push(G.E[i]); rec(i + 1, scelti); scelti.pop(); rec(i + 1, scelti);
+  }
+  rec(0, []);
+  return r;
+}
+function connessoCon(G, archi) {
+  var p = {}; G.V.forEach(function (v) { p[v] = v; });
+  function f(x) { while (p[x] !== x) x = p[x]; return x; }
+  var c = G.V.length; archi.forEach(function (e) { var a = f(e[0]), b = f(e[1]); if (a !== b) { p[a] = b; c--; } });
+  return c === 1;
+}
+
+// ---- dinamica.js
+// Programmazione dinamica (pacco 21): Fibonacci, cammino minimo su matrice (lavagna), cammino massimo su griglia (scritto 6/2/2026).
+// Fibonacci: numero di chiamate e righe eseguite dalla versione ricorsiva
+function fibNum(n) { var a = 1, b = 1; for (var i = 3; i <= n; i++) { var c = a + b; a = b; b = c; } return n <= 2 ? 1 : b; }
+function fibAlbero(n) { return n <= 2 ? { v: n, c: [] } : { v: n, c: [fibAlbero(n - 1), fibAlbero(n - 2)] }; }
+// lavagna: M n×n, cammino dalla prima all'ultima colonna, mosse: colonna successiva, riga sopra / stessa / sotto. Indici 0-based nel codice.
+function camminoMinimoEventi(M) {
+  var n = M.length, C = M.map(function (r) { return r.map(function () { return null; }); }), ev = [];
+  for (var i = 0; i < n; i++) { C[i][0] = M[i][0]; }
+  ev.push({ tipo: "col1", C: C.map(function (r) { return r.slice(); }), testo: "Prima colonna: C[i, 1] = M[i, 1], perché un cammino che finisce nella colonna 1 è fatto della sola casella di partenza." });
+  for (var j = 1; j < n; j++) for (var i = 0; i < n; i++) {
+    var cand = [], best = null;
+    [i - 1, i, i + 1].forEach(function (r) { if (r >= 0 && r < n) { cand.push(r); if (best === null || C[r][j - 1] < C[best][j - 1]) best = r; } });
+    C[i][j] = M[i][j] + C[best][j - 1];
+    ev.push({ tipo: "cella", i: i, j: j, cand: cand, best: best, C: C.map(function (r) { return r.slice(); }) });
+  }
+  var imin = 0; for (var i = 1; i < n; i++) if (C[i][n - 1] < C[imin][n - 1]) imin = i;
+  // ricostruzione all'indietro
+  var path = [[imin, n - 1]], r = imin;
+  for (var j = n - 1; j > 0; j--) { var prev = null; [r - 1, r, r + 1].forEach(function (q) { if (q >= 0 && q < n && prev === null && C[q][j - 1] === C[r][j] - M[r][j]) prev = q; }); r = prev; path.unshift([r, j - 1]); }
+  ev.push({ tipo: "fine", C: C.map(function (r) { return r.slice(); }), imin: imin, path: path });
+  return ev;
+}
+// scritto del 6/2/2026: griglia n×n, da (1,1) a (n,n), mosse a destra o in basso, valore massimo; N = numero di cammini massimi
+function grigliaMassimoEventi(M) {
+  var n = M.length, C = M.map(function (r) { return r.map(function () { return null; }); }), N = M.map(function (r) { return r.map(function () { return null; }); }), ev = [];
+  for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {
+    var cand = [];
+    if (i > 0) cand.push([i - 1, j]); if (j > 0) cand.push([i, j - 1]);
+    if (!cand.length) { C[i][j] = M[i][j]; N[i][j] = 1; ev.push({ tipo: "cella", i: i, j: j, cand: [], best: [], C: C.map(function (r) { return r.slice(); }), N: N.map(function (r) { return r.slice(); }) }); continue; }
+    var mx = Math.max.apply(null, cand.map(function (p) { return C[p[0]][p[1]]; })), best = cand.filter(function (p) { return C[p[0]][p[1]] === mx; });
+    C[i][j] = M[i][j] + mx; N[i][j] = best.reduce(function (t, p) { return t + N[p[0]][p[1]]; }, 0);
+    ev.push({ tipo: "cella", i: i, j: j, cand: cand, best: best, C: C.map(function (r) { return r.slice(); }), N: N.map(function (r) { return r.slice(); }) });
+  }
+  var path = [[n - 1, n - 1]], i = n - 1, j = n - 1;
+  while (i > 0 || j > 0) { if (i > 0 && C[i - 1][j] === C[i][j] - M[i][j]) i--; else j--; path.unshift([i, j]); }
+  ev.push({ tipo: "fine", C: C, N: N, path: path });
+  return ev;
+}
+// disegno di una griglia di numeri con un cammino evidenziato
+// opz: { cella, cammino: [[i,j]...], colore: "verde"|"rosso"|..., sfondo: {"i,j": stile}, titoloRighe: true, aria, vuote: true (null = casella vuota) }
+var COL_G = { verde: ["l-verde", "#17803d", "r-verde", "#e6f5ea"], rosso: ["l-rosso", "#b42318", "r-rosso", "#fdecea"], arancio: ["l-arancio", "#b4500f", "r-arancio", "#fdf0e3"], blu: ["l-blu", "#2f52c4", "r-blu", "#e8edfc"], viola: ["l-viola", "#6d3fc0", "r-viola", "#f1ebfb"], giallo: ["l-arancio", "#b4500f", "r-giallo", "#fff1a8"] };
+function svgGriglia(M, opz) {
+  opz = opz || {};
+  var n = M.length, k = M[0].length, c = opz.cella || 40, m = opz.indici ? 22 : 4, W = k * c + m + 4, H = n * c + m + 4, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "una matrice") + '" font-family="system-ui, sans-serif">');
+  for (var i = 0; i < n; i++) for (var j = 0; j < k; j++) {
+    var key = i + "," + j, st = opz.sfondo && opz.sfondo[key] ? COL_G[opz.sfondo[key]] : null;
+    s.push('<rect x="' + (m + j * c) + '" y="' + (m + i * c) + '" width="' + c + '" height="' + c + '" class="' + (st ? st[2] : "r-nodo") + '" fill="' + (st ? st[3] : "#ffffff") + '" stroke="#9aa3b2" stroke-width="1"/>');
+    var v = M[i][j];
+    if (v !== null && v !== undefined) s.push('<text x="' + (m + j * c + c / 2) + '" y="' + (m + i * c + c / 2 + 5) + '" font-size="' + (String(v).length > 2 ? 12.5 : 15) + '" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + (v === Infinity ? "∞" : v) + '</text>');
+  }
+  if (opz.indici) {
+    for (var i = 0; i < n; i++) s.push('<text x="' + (m - 7) + '" y="' + (m + i * c + c / 2 + 4) + '" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">' + (opz.nomi ? opz.nomi[i] : i + 1) + '</text>');
+    for (var j = 0; j < k; j++) s.push('<text x="' + (m + j * c + c / 2) + '" y="' + (m - 7) + '" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">' + (opz.nomi ? opz.nomi[j] : j + 1) + '</text>');
+  }
+  (opz.cammini || (opz.cammino ? [[opz.cammino, opz.colore || "verde"]] : [])).forEach(function (cc, q) {
+    var p = cc[0], col = COL_G[cc[1] || "verde"], off = (q - ((opz.cammini || [0]).length - 1) / 2) * 4;
+    var pts = p.map(function (x) { return (m + x[1] * c + c / 2 + off) + "," + (m + x[0] * c + c / 2 + off); }).join(" ");
+    s.push('<polyline points="' + pts + '" fill="none" class="' + col[0] + '" stroke="' + col[1] + '" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/>');
+    p.forEach(function (x) { s.push('<circle cx="' + (m + x[1] * c + c / 2 + off) + '" cy="' + (m + x[0] * c + c / 2 + off) + '" r="' + (c * 0.36) + '" fill="none" class="' + col[0] + '" stroke="' + col[1] + '" stroke-width="2"/>'); });
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+function stringaFib(n) { return n <= 2 ? "F" + n : "F" + n + "(" + stringaFib(n - 1) + "," + stringaFib(n - 2) + ")"; }
+
+// ---- cammini.js
+// Cammini minimi (pacchi 22 e 23): grafi della lavagna, Floyd–Warshall con P, Bellman–Ford, Dijkstra con pred.
+// usa svgPesato e i GP di pesati.js
+var GC = {
+  fw: { nome: "Il grafo dell'esempio di Floyd–Warshall (v1–v4)", orientato: true, V: [1, 2, 3, 4], etich: ["v1", "v2", "v3", "v4"],
+    pos: { 1: [0, 0], 4: [1.5, 0], 2: [0, 1.3], 3: [1.5, 1.3] },
+    E: [[1, 2, 5], [2, 3, 7], [2, 4, 4], [3, 2, 1], [4, 1, 2], [4, 3, 2]] },
+  quattro: { nome: "Il grafo della matrice delle distanze (1–4)", orientato: true, V: [1, 2, 3, 4],
+    pos: { 1: [0, 0], 2: [2, 0], 4: [1, 0.65], 3: [1, 1.6] },
+    E: [[1, 2, 2], [2, 3, 5], [3, 1, 3], [3, 4, 1], [4, 1, 1], [4, 2, 2]], curve: { 1: 0.25, 2: 0.25 } },
+  ag: { nome: "Il grafo orientato A–G della lavagna", orientato: true, V: ["A", "B", "C", "D", "E", "F", "G"],
+    pos: { A: [0, 0], B: [1, 0], D: [2, 0], G: [3, 0], C: [0.8, 1.1], E: [2.1, 1.1], F: [3.1, 1.1] },
+    E: [["A", "B", 7], ["A", "C", 6], ["B", "D", 7], ["C", "A", 7], ["C", "E", 4], ["D", "C", 2], ["D", "G", 2], ["E", "D", 3], ["E", "F", 2], ["F", "G", 4], ["G", "E", 4]] },
+  af: { nome: "Il grafo A–F di Bellman–Ford e Dijkstra", orientato: true, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 0.6], B: [1, 0], E: [1, 1.2], C: [2.1, 0], F: [2.1, 1.2], D: [3.1, 0.6] },
+    E: [["A", "B", 3], ["B", "C", 5], ["C", "D", 2], ["A", "E", 1], ["B", "E", 2], ["E", "C", 6], ["E", "F", 3], ["F", "D", 5], ["F", "C", 2]] },
+  ciclo: { nome: "Un grafo con un ciclo negativo", orientato: true, V: ["A", "B", "C", "D"],
+    pos: { A: [0, 0.75], B: [1, 0], C: [2, 0.75], D: [1, 1.5] },
+    E: [["A", "B", 2], ["B", "C", 1], ["C", "A", -4], ["A", "D", 3], ["D", "C", 4]] },
+  nociclo: { nome: "Lo stesso grafo senza ciclo negativo", orientato: true, V: ["A", "B", "C", "D"],
+    pos: { A: [0, 0.75], B: [1, 0], C: [2, 0.75], D: [1, 1.5] },
+    E: [["A", "B", 2], ["B", "C", 1], ["C", "A", -2], ["A", "D", 3], ["D", "C", 4]] },
+  negDij: { nome: "Un grafo su cui Dijkstra sbaglia", orientato: true, V: ["A", "B", "C", "D"],
+    pos: { A: [0.6, 0], D: [1.6, 0.4], C: [1, 1.1], B: [0, 1.1] },
+    E: [["A", "D", 3], ["A", "C", 2], ["D", "C", -2], ["C", "B", 2]] },
+  quadrato: { nome: "Il quadrato della lavagna", orientato: false, V: ["A", "B", "C", "D"],
+    pos: { A: [0, 0], B: [1.3, 0], C: [0, 1.1], D: [1.3, 1.1] },
+    E: [["A", "B", 5], ["A", "C", 3], ["B", "D", 1], ["C", "D", 2]] }
+};
+function nomeV(G, v) { return G.etich ? G.etich[G.V.indexOf(v)] : String(v); }
+function matricePesi(G) { // matrice D0 di Floyd–Warshall (0 in diagonale)
+  var n = G.V.length, D = [];
+  for (var i = 0; i < n; i++) { D.push([]); for (var j = 0; j < n; j++) D[i].push(i === j ? 0 : Infinity); }
+  G.E.forEach(function (e) { var a = G.V.indexOf(e[0]), b = G.V.indexOf(e[1]); D[a][b] = Math.min(D[a][b], e[2]); if (!G.orientato) D[b][a] = Math.min(D[b][a], e[2]); });
+  return D;
+}
+function copiaM(M) { return M.map(function (r) { return r.slice(); }); }
+// Floyd–Warshall con P (Codice 12.2). P con indici 1..n, 0 = nessuno. Eventi per ogni (k, i, j) in cui D cambia, più uno alla fine di ogni k.
+function floydWarshall(D0) {
+  var n = D0.length, D = copiaM(D0), P = D0.map(function (r, i) { return r.map(function (x, j) { return i !== j && x < Infinity ? i + 1 : 0; }); }), passi = [], fotoK = [{ k: 0, D: copiaM(D), P: copiaM(P), cambiati: [] }];
+  for (var k = 0; k < n; k++) {
+    var camb = [];
+    for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {
+      var via = D[i][k] + D[k][j], prima = D[i][j];
+      if (via < D[i][j]) { D[i][j] = via; P[i][j] = P[k][j]; camb.push([i, j]); passi.push({ k: k, i: i, j: j, prima: prima, via: via, cambia: true }); }
+    }
+    fotoK.push({ k: k + 1, D: copiaM(D), P: copiaM(P), cambiati: camb });
+  }
+  return { D: D, P: P, foto: fotoK, passi: passi };
+}
+// Codice 12.3: il cammino da i a j (indici 1..n) leggendo P a ritroso
+function camminoDaP(P, i, j) {
+  if (i === j) return [i];
+  if (P[i - 1][j - 1] === 0) return null;
+  var seq = [j], h = j;
+  while (h !== i) { h = P[i - 1][h - 1]; if (h === 0) return null; seq.unshift(h); if (seq.length > P.length + 1) return null; }
+  return seq;
+}
+function fmtD(x) { return x === Infinity ? "∞" : String(x); }
+// Bellman–Ford (Codice 12.4): eventi per ogni arco esaminato in ogni giro
+function eventiBellmanFord(G, s) {
+  var d = {}, pred = {}, ev = [];
+  G.V.forEach(function (v) { d[v] = v === s ? 0 : Infinity; pred[v] = null; });
+  ev.push({ giro: 0, arco: null, d: Object.assign({}, d), pred: Object.assign({}, pred), testo: "d[" + s + "] = 0, tutti gli altri ∞." });
+  for (var k = 1; k <= G.V.length - 1; k++) {
+    var cambiato = false;
+    G.E.forEach(function (e) {
+      var u = e[0], v = e[1], w = e[2], ok = d[u] + w < d[v], t;
+      if (ok) { t = "Giro " + k + ", arco (" + u + ", " + v + ") di peso " + w + ": d[" + u + "] + " + w + " = " + (d[u] + w) + " < d[" + v + "] = " + fmtD(d[v]) + ", quindi d[" + v + "] diventa " + (d[u] + w) + "."; d[v] = d[u] + w; pred[v] = u; cambiato = true; }
+      else t = "Giro " + k + ", arco (" + u + ", " + v + ") di peso " + w + ": d[" + u + "] + " + w + " = " + fmtD(d[u] + w) + " non è minore di d[" + v + "] = " + fmtD(d[v]) + ". Niente cambia.";
+      ev.push({ giro: k, arco: e, aggiorna: ok, d: Object.assign({}, d), pred: Object.assign({}, pred), testo: t });
+    });
+    ev.push({ giro: k, fineGiro: true, cambiato: cambiato, d: Object.assign({}, d), pred: Object.assign({}, pred), testo: "Fine del giro " + k + (cambiato ? "." : ": in questo giro non è cambiato niente, e non cambierà più niente nemmeno nei giri successivi.") });
+  }
+  return ev;
+}
+// Dijkstra (Codice 13.1 con pred): eventi per ogni vertice estratto
+function eventiDijkstra(G, s) {
+  var d = {}, pred = {}, C = G.V.slice(), fatti = [], ev = [];
+  G.V.forEach(function (v) { d[v] = v === s ? 0 : Infinity; pred[v] = null; });
+  ev.push({ u: null, d: Object.assign({}, d), pred: Object.assign({}, pred), fatti: [], camb: [], testo: "D[" + s + "] = 0, tutti gli altri ∞; C contiene tutti i vertici." });
+  while (C.length) {
+    var u = C[0]; C.forEach(function (x) { if (d[x] < d[u]) u = x; });
+    C.splice(C.indexOf(u), 1); fatti.push(u);
+    var camb = [], visti = [];
+    G.E.forEach(function (e) {
+      var pairs = [[e[0], e[1]]]; if (!G.orientato) pairs.push([e[1], e[0]]);
+      pairs.forEach(function (p) { if (p[0] !== u) return; var v = p[1], w = e[2]; visti.push(v); if (d[u] + w < d[v]) { d[v] = d[u] + w; pred[v] = u; camb.push(v); } });
+    });
+    var t = "Si estrae " + u + ", che ha la D minima tra i candidati (" + fmtD(d[u]) + "): D[" + u + "] diventa definitiva. " + (camb.length ? "Dagli archi che escono da " + u + " migliorano: " + camb.map(function (v) { return "D[" + v + "] = " + d[v]; }).join(", ") + "." : (visti.length ? "Nessun arco che esce da " + u + " migliora una distanza." : "Da " + u + " non esce nessun arco."));
+    ev.push({ u: u, d: Object.assign({}, d), pred: Object.assign({}, pred), fatti: fatti.slice(), camb: camb, testo: t });
+  }
+  return ev;
+}
+
+// ---- w23.js
+// Riquadri interattivi del pacco 23.
+function $(id) { return document.getElementById(id); }
+function sceltaGrafi(id, L) { return '<label>Grafo <select id="' + id + '" style="width:auto;max-width:100%">' + L.map(function (g, k) { return '<option value="' + k + '">' + g[0] + '</option>'; }).join("") + '</select></label>'; }
+function evAlbero(G, pred, col) { var r = {}; G.E.forEach(function (e) { r[chiaveP(e[0], e[1], G.orientato)] = "tenue"; }); Object.keys(pred).forEach(function (v) { if (pred[v] === null || pred[v] === undefined) return; r[chiaveP(pred[v], v, G.orientato)] = col || "verde"; }); return r; }
+function etD(G, d, pred) { var r = {}; G.V.forEach(function (v) { r[v] = (d[v] === Infinity ? "∞" : d[v]) + (pred[v] !== null && pred[v] !== undefined ? " " + pred[v] : ""); }); return r; }
+
+// ---------------------------------------------------------------- 1. Bellman–Ford
+(function () {
+  if (!$("bf-corpo")) return;
+  var L = [["il grafo A–F della lavagna", GC.af], ["il grafo con un peso negativo (Dijkstra sbaglia)", GC.negDij], ["senza ciclo negativo (C → A pesa −2)", GC.nociclo], ["con un ciclo negativo (C → A pesa −4)", GC.ciclo]];
+  $("bf-corpo").innerHTML = '<div class="controlli">' + sceltaGrafi("bf-g", L) + '<label>s = <select id="bf-s" style="width:auto"></select></label></div>' +
+    '<div class="controlli"><button class="primario" id="bf-passo">Prossimo arco →</button><button id="bf-giro">Fine del giro</button><button id="bf-fine">Fino alla fine</button><button id="bf-reset">Ricomincia</button></div>' +
+    '<div class="contatori" id="bf-cont"></div><div class="figura" id="bf-fig" style="margin:6px 0"></div><div class="narrazione" id="bf-txt"></div>';
+  var V = {};
+  function vertici() { var G = L[Number($("bf-g").value)][1]; $("bf-s").innerHTML = G.V.map(function (v) { return '<option>' + v + '</option>'; }).join(""); }
+  function prepara() { V.G = L[Number($("bf-g").value)][1]; V.ev = eventiBellmanFord(V.G, $("bf-s").value); V.k = 0; mostra(); }
+  function mostra() {
+    var e = V.ev[V.k], G = V.G, ev = {}, nod = {};
+    G.E.forEach(function (x) { ev[chiaveP(x[0], x[1], true)] = "tenue"; });
+    Object.keys(e.pred).forEach(function (v) { if (e.pred[v] !== null) ev[chiaveP(e.pred[v], v, true)] = "verde"; });
+    if (e.arco) { ev[chiaveP(e.arco[0], e.arco[1], true)] = e.aggiorna ? "arancio" : "blu"; nod[e.arco[1]] = e.aggiorna ? "arancio" : "n"; }
+    nod[$("bf-s").value] = "giallo";
+    $("bf-fig").innerHTML = svgPesato(G, { cella: 86, r: 15, evArchi: ev, evNodi: nod, etich: etD(G, e.d, e.pred), aria: "Bellman–Ford" });
+    $("bf-cont").innerHTML = '<span>giro <b>' + e.giro + '</b> di ' + (G.V.length - 1) + '</span><span>passo ' + V.k + ' di ' + (V.ev.length - 1) + '</span>';
+    var t = e.testo;
+    if (V.k === V.ev.length - 1) {
+      var ancora = G.E.some(function (x) { return e.d[x[0]] + x[2] < e.d[x[1]]; });
+      t += "<br><b>Fine</b> dopo n − 1 = " + (G.V.length - 1) + " giri. " + (ancora ? '<span class="errore">Ma qualche arco migliorerebbe ancora una distanza: c\'è un ciclo di peso negativo, e il problema è mal posto.</span>' : "Accanto a ogni vertice: la distanza da " + $("bf-s").value + " e il predecessore; in verde l'albero dei cammini minimi.");
+    }
+    $("bf-txt").innerHTML = t + '<br><span class="piccolo">Accanto a ogni vertice: d e il predecessore. In arancione l\'arco che ha appena migliorato una distanza, in blu quello esaminato senza miglioramenti.</span>';
+    $("bf-passo").disabled = $("bf-giro").disabled = $("bf-fine").disabled = V.k >= V.ev.length - 1;
+  }
+  $("bf-passo").onclick = function () { if (V.k < V.ev.length - 1) V.k++; mostra(); };
+  $("bf-giro").onclick = function () { do { V.k++; } while (V.k < V.ev.length - 1 && !V.ev[V.k].fineGiro); mostra(); };
+  $("bf-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("bf-reset").onclick = prepara; $("bf-s").onchange = prepara; $("bf-g").onchange = function () { vertici(); prepara(); };
+  vertici(); prepara();
+})();
+
+// ---------------------------------------------------------------- 2. Dijkstra
+(function () {
+  if (!$("dj-corpo")) return;
+  var L = [["il grafo A–F della lavagna", GC.af], ["il grafo A–G della lavagna", GC.ag], ["l'esagono (non orientato)", GP.esagono], ["il quadrato (non orientato)", GC.quadrato], ["lo scritto del 14 novembre 2025", GP.esame14nov], ["lo scritto del 20 settembre 2024", GP.esame20set], ["un peso negativo: Dijkstra sbaglia", GC.negDij]];
+  $("dj-corpo").innerHTML = '<div class="controlli">' + sceltaGrafi("dj-g", L) + '<label>s = <select id="dj-s" style="width:auto"></select></label></div>' +
+    '<div class="controlli"><button class="primario" id="dj-passo">Prossimo vertice →</button><button id="dj-fine">Fino alla fine</button><button id="dj-reset">Ricomincia</button></div>' +
+    '<div class="contatori" id="dj-cont"></div><div class="figura" id="dj-fig" style="margin:6px 0"></div><div class="tabella-wrap" id="dj-tab"></div><div class="narrazione" id="dj-txt"></div>';
+  var V = {};
+  function vertici() { var G = L[Number($("dj-g").value)][1]; $("dj-s").innerHTML = G.V.map(function (v) { return '<option>' + v + '</option>'; }).join(""); }
+  function prepara() { V.G = L[Number($("dj-g").value)][1]; V.ev = eventiDijkstra(V.G, $("dj-s").value); V.k = 0; mostra(); }
+  function mostra() {
+    var e = V.ev[V.k], G = V.G, nod = {};
+    e.fatti.forEach(function (v) { nod[v] = "verde"; }); if (e.u) nod[e.u] = "giallo"; e.camb.forEach(function (v) { if (e.fatti.indexOf(v) < 0) nod[v] = "arancio"; });
+    $("dj-fig").innerHTML = svgPesato(G, { cella: G.V.length > 6 ? 84 : 76, r: 15, evArchi: evAlbero(G, e.pred), evNodi: nod, etich: etD(G, e.d, e.pred), aria: "Dijkstra" });
+    $("dj-tab").innerHTML = '<table><tr><th></th>' + G.V.map(function (v) { return '<th>' + v + '</th>'; }).join("") + '</tr><tr><td>D</td>' + G.V.map(function (v) { return '<td' + (e.camb.indexOf(v) >= 0 ? ' class="verde"' : '') + '>' + (e.d[v] === Infinity ? "∞" : e.d[v]) + '</td>'; }).join("") + '</tr><tr><td>pred</td>' + G.V.map(function (v) { return '<td>' + (e.pred[v] === null ? "–" : e.pred[v]) + '</td>'; }).join("") + '</tr><tr><td>in C?</td>' + G.V.map(function (v) { return '<td>' + (e.fatti.indexOf(v) >= 0 ? "no" : "sì") + '</td>'; }).join("") + '</tr></table>';
+    $("dj-cont").innerHTML = '<span>estratti: <b>' + e.fatti.length + '</b> di ' + G.V.length + '</span>';
+    var t = e.testo;
+    if (V.k === V.ev.length - 1) {
+      var negativo = G.E.some(function (x) { return x[2] < 0; });
+      var w = 0; Object.keys(e.pred).forEach(function (v) { if (e.pred[v] === null) return; G.E.forEach(function (x) { if ((x[0] === e.pred[v] && x[1] === v) || (!G.orientato && x[1] === e.pred[v] && x[0] === v)) w += x[2]; }); });
+      t += "<br><b>Fine</b>: C è vuoto. In verde l'albero dei cammini minimi (gli archi (pred[v], v)), di peso totale " + w + "." + (!G.orientato ? " Un albero ricoprente minimo di questo grafo pesa " + tuttiAlberi(G).reduce(function (m, a) { return Math.min(m, a.peso); }, Infinity) + ": in generale i due alberi sono diversi." : "") + (negativo ? ' <span class="errore">Ma c\'è un arco di peso negativo: Dijkstra non è garantito. Qui D[B] = 4, mentre A → D → C → B pesa 3.</span>' : "");
+    }
+    $("dj-txt").innerHTML = t + '<br><span class="piccolo">In giallo il vertice appena estratto, in verde quelli con D definitiva, in arancione quelli la cui D è appena diminuita. Accanto a ogni vertice: D e pred.</span>';
+    $("dj-passo").disabled = $("dj-fine").disabled = V.k >= V.ev.length - 1;
+  }
+  $("dj-passo").onclick = function () { if (V.k < V.ev.length - 1) V.k++; mostra(); };
+  $("dj-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("dj-reset").onclick = prepara; $("dj-s").onchange = prepara; $("dj-g").onchange = function () { vertici(); prepara(); };
+  vertici(); prepara();
+})();
+})();
+</script>
+</body>
+</html>

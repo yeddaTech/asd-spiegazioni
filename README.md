@@ -29,6 +29,9 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 18 · Grafi: parole, rappresentazioni, alberi e visite | definizioni, gradi, cammini e connessione, Eulero e Hamilton, liste e matrici, M^k, alberi e alberi ricoprenti, visita in ampiezza e in profondità e il loro tempo | 19–21 |
 | 19 · Problemi di ottimizzazione e tecnica greedy | grafi pesati, soluzioni ammissibili e ottime, colorazione, zaino, sacco del ladro, resto, schema greedy e controesempi, foglio 9 | 21 |
 | 20 · Albero ricoprente minimo: Kruskal e Prim | Kruskal e la sua correttezza, union-find, O(m log n), Prim con d e vicino e la coda con priorità, gli scritti su Kruskal | 22–23 |
+| 21 · La programmazione dinamica | Fibonacci ricorsivo e con l'array, cammino minimo su matrice, la matrice C, lo schema generale, scritto del 6/2/2026 | 24 |
+| 22 · Cammini minimi e Floyd–Warshall | definizioni, principio di ottimalità, matrice dei pesi, Floyd–Warshall con P, cicli negativi, sette scritti | 24–25 |
+| 23 · Bellman–Ford e Dijkstra | aggiornamento, Bellman–Ford, Dijkstra con dimostrazione e coda con priorità, pred e albero dei cammini minimi, pesi negativi, gli scritti | 25–26 |
 
 ## Come si usa
 

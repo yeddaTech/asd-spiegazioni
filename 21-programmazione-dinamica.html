@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programmazione dinamica</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 21 · prima parte della lezione 24 (lavagna del 17 novembre 2025)</span>
+</div>
+
+<h1>La programmazione dinamica</h1>
+<p class="sottotitolo">Una tecnica nuova per progettare algoritmi: si spezza il problema in sottoproblemi più semplici, li si risolve dal più facile al più difficile, e si scrive ogni soluzione in una tabella, così non si calcola mai due volte la stessa cosa. La lezione la mostra su due esempi: i numeri di Fibonacci, dove la ricorsione ripete lo stesso lavoro un numero esponenziale di volte, e il cammino di valore minimo su una matrice, dove provare tutti i cammini costerebbe un tempo esponenziale e la tabella lo risolve in O(n<sup>2</sup>). Servirà subito dopo per l'algoritmo di Floyd–Warshall (pacco 22).</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue la lavagna dell'anno scorso: «lavagna, pagina N» è la lezione 24 (17 novembre 2025), pagine 2–12. Il resto della stessa lezione (i cammini minimi) è nel pacco 22.</li>
+    <li>Nelle matrici, M[i, j] è il numero nella riga i e nella colonna j; righe e colonne si contano da 1.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in cinque domande</span>
+  <ol>
+    <li><b>Perché Fibonacci ricorsivo è lento?</b> Ricalcola gli stessi valori moltissime volte: esegue 3F<sub>n</sub> − 2 righe di codice, un numero che cresce esponenzialmente con n.</li>
+    <li><b>Come si fa meglio?</b> Si calcolano F<sub>1</sub>, F<sub>2</sub>, F<sub>3</sub>, … in ordine, scrivendoli in un array: ognuno si ottiene dai due precedenti, già pronti. Tempo O(n).</li>
+    <li><b>Qual è il problema della matrice?</b> Trovare un cammino dalla prima all'ultima colonna, che a ogni passo va nella colonna dopo (riga sopra, stessa riga o riga sotto), con la somma dei numeri più piccola possibile. I cammini sono almeno n · 2<sup>n−1</sup>: provarli tutti è troppo.</li>
+    <li><b>Come lo risolve la programmazione dinamica?</b> Con la matrice C: C[i, j] è il valore del cammino minimo che finisce nella casella (i, j). La prima colonna è uguale a M; ogni altra casella è M[i, j] più il minimo delle tre caselle della colonna prima. Tempo O(n<sup>2</sup>).</li>
+    <li><b>Qual è lo schema generale?</b> Individuare i sottoproblemi; risolvere prima quelli «base» e poi gli altri usando le soluzioni già trovate, scritte in una tabella; ricavare la soluzione finale dalla tabella.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#fibonacci">Fibonacci: la ricorsione che rifà il lavoro</a></li>
+    <li><a href="#fib-array">Fibonacci con un array</a></li>
+    <li><a href="#matrice">Il cammino di valore minimo su una matrice</a></li>
+    <li><a href="#sottoproblemi">I sottoproblemi e la matrice C</a></li>
+    <li><a href="#algoritmo">L'algoritmo e il suo tempo</a></li>
+    <li><a href="#ricostruire">Ricostruire il cammino</a></li>
+    <li><a href="#schema">La programmazione dinamica in generale</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="fibonacci"><span class="num">1</span>Fibonacci: la ricorsione che rifà il lavoro</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'algoritmo ricorsivo per i numeri di Fibonacci, l'albero delle sue chiamate e il suo tempo (lavagna, pagina 3): esponenziale, perché calcola tante volte le stesse cose.</p>
+<p>I numeri di Fibonacci sono 1, 1, 2, 3, 5, 8, 13, 21, …: i primi due valgono 1, e ogni altro è la somma dei due precedenti.</p>
+<div class="box def">
+  <span class="etichetta">Numeri di Fibonacci (lavagna, pagina 3)</span>
+  <p>F<sub>1</sub> = F<sub>2</sub> = 1;   F<sub>n</sub> = F<sub>n−1</sub> + F<sub>n−2</sub> per n ≥ 3.</p>
+</div>
+<p>La definizione è ricorsiva, e si traduce subito in un algoritmo ricorsivo:</p>
+<p class="titolo-codice">Lavagna, pagina 3</p>
+<pre class="pseudo"><b>ALGORITMO</b> Fibonacci(intero n) → intero
+  <b>IF</b> n = 1 <b>OR</b> n = 2 <b>THEN RETURN</b> 1
+  <b>ELSE RETURN</b> Fibonacci(n − 1) + Fibonacci(n − 2)</pre>
+<p>È corretto, ma lentissimo. La Figura 1 mostra perché: per calcolare F<sub>6</sub> servono F<sub>5</sub> e F<sub>4</sub>; ma anche F<sub>5</sub> ha bisogno di F<sub>4</sub>, che quindi viene calcolato due volte, da zero. F<sub>3</sub> viene calcolato tre volte, F<sub>2</sub> cinque volte.</p>
+<div class="figura">
+<svg viewBox="0 0 668 276" width="668" height="276" role="img" aria-label="l'albero delle chiamate di Fibonacci(6)" font-family="system-ui, sans-serif"><g transform="translate(0,0)"><line x1="318.8" y1="35.1" x2="189.2" y2="78.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="349.2" y1="35.1" x2="478.8" y2="78.9" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="160.7" y1="93" x2="107.3" y2="129" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="187.3" y1="93" x2="240.7" y2="129" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="84.5" y1="150.9" x2="63.5" y2="179.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="103.5" y1="150.9" x2="124.5" y2="179.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="48.4" y1="207" x2="39.6" y2="231" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="59.6" y1="207" x2="68.4" y2="231" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="244.5" y1="150.9" x2="223.5" y2="179.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="263.5" y1="150.9" x2="284.5" y2="179.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="480.7" y1="93" x2="427.3" y2="129" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="507.3" y1="93" x2="560.7" y2="129" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="404.5" y1="150.9" x2="383.5" y2="179.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><line x1="423.5" y1="150.9" x2="444.5" y2="179.1" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><circle cx="334" cy="30" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="334" y="35" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F6</text><circle cx="174" cy="84" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="174" y="89" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F5</text><circle cx="94" cy="138" r="16" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="94" y="143" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F4</text><circle cx="54" cy="192" r="16" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="54" y="197" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F3</text><circle cx="34" cy="246" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="34" y="251" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F2</text><circle cx="74" cy="246" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="74" y="251" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F1</text><circle cx="134" cy="192" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="134" y="197" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F2</text><circle cx="254" cy="138" r="16" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="254" y="143" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F3</text><circle cx="214" cy="192" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="214" y="197" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F2</text><circle cx="294" cy="192" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="294" y="197" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F1</text><circle cx="494" cy="84" r="16" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.6"/><text x="494" y="89" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F4</text><circle cx="414" cy="138" r="16" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="414" y="143" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F3</text><circle cx="374" cy="192" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="374" y="197" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F2</text><circle cx="454" cy="192" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="454" y="197" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F1</text><circle cx="574" cy="138" r="16" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="574" y="143" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F2</text></g></svg>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagina 3: l'albero delle chiamate di Fibonacci(6). Ogni nodo F<sub>k</sub> è una chiamata Fibonacci(k), e i suoi figli sono le due chiamate che fa. In azzurro le due chiamate a F<sub>4</sub>, in arancione le tre a F<sub>3</sub>: ognuna rifà tutto il suo sottoalbero.</div>
+</div>
+<p>Il prof conta T(n), il numero di righe di codice eseguite (lavagna, pagina 3). Con n = 1 o n = 2 si esegue una riga sola (l'IF, che restituisce 1). Altrimenti si eseguono due righe (l'IF e l'ELSE) più tutte le righe delle due chiamate:</p>
+<div class="mat-blocco"><span class="casi"><span class="casi-sx">T(n) =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="40"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">1</span><span class="cond">se n = 1 oppure n = 2</span><span class="val">2 + T(n − 1) + T(n − 2)</span><span class="cond">altrimenti</span></span></span></div>
+<p>La lavagna scrive il risultato: <strong>T(n) = 3F<sub>n</sub> − 2</strong>. Da dove viene? T(n) assomiglia a Fibonacci, ma c'è quel «2 +» in più. Il trucco è aggiungere 2 a T: si chiama S(n) = T(n) + 2.</p>
+<div class="mat-blocco"><span class="catena"><span class="sx">S(n)</span><span class="rel">=</span><span class="dx">T(n) + 2</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">2 + T(n − 1) + T(n − 2) + 2</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(T(n − 1) + 2) + (T(n − 2) + 2)</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">S(n − 1) + S(n − 2)</span><span class="perche"></span></span></div>
+<div class="spiega">
+  <div class="spiega-tit">I passaggi spiegati</div>
+  <p><span class="rif">1</span>Per n ≥ 3 si sostituisce T(n) con la sua definizione.</p>
+</div>
+<p>Quindi S segue la stessa regola di Fibonacci, e parte da S(1) = S(2) = 1 + 2 = 3, cioè 3 volte i valori iniziali di Fibonacci. Allora per ogni n vale S(n) = 3F<sub>n</sub> (ogni valore è 3 volte quello di Fibonacci, perché si sommano sempre due valori che sono già 3 volte quelli di Fibonacci). Togliendo il 2: T(n) = 3F<sub>n</sub> − 2.</p>
+<p>E quanto è grande F<sub>n</sub>? Cresce come φ<sup>n</sup>, con <strong>φ = (1 + √5)/2 ≈ 1,618</strong>, il «rapporto aureo» (lavagna, pagina 3): ogni numero di Fibonacci è circa 1,618 volte il precedente. Quindi il tempo della versione ricorsiva è <strong>esponenziale</strong>: per n = 50 sono più di 37 miliardi di righe, per n = 100 un numero con 21 cifre.</p>
+<div class="widget" id="w-fb">
+  <h4>Fibonacci: quanto lavoro fa la ricorsione</h4>
+  <div id="fb-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Fibonacci ricorsivo: T(n) = 1 per n ≤ 2, altrimenti 2 + T(n − 1) + T(n − 2). Risultato: T(n) = 3F<sub>n</sub> − 2, che cresce come φ<sup>n</sup>: esponenziale.</li>
+    <li>Il motivo: le stesse chiamate (F<sub>4</sub>, F<sub>3</sub>, …) vengono ripetute moltissime volte.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="fib-array"><span class="num">2</span>Fibonacci con un array</h2>
+<p class="in-questa"><b>In questa sezione:</b> la versione che calcola ogni numero una volta sola (lavagna, pagina 4), e perché è il primo esempio di programmazione dinamica.</p>
+<p>Invece di partire da F<sub>n</sub> e scendere, si parte dal basso: si calcolano F<sub>1</sub>, F<sub>2</sub>, F<sub>3</sub>, … in ordine, e si scrivono in un array. Quando serve F<sub>i</sub>, i due valori da sommare sono già nell'array.</p>
+<p class="titolo-codice">Lavagna, pagina 4</p>
+<pre class="pseudo"><b>ALGORITMO</b> Fibonacci(intero n) → intero
+  sia Fib[1..n] un array di interi
+  Fib[1] ← 1
+  Fib[2] ← 1
+  <b>FOR</b> i ← 3 <b>TO</b> n <b>DO</b>
+    Fib[i] ← Fib[i − 1] + Fib[i − 2]
+  <b>RETURN</b> Fib[n]</pre>
+<p>Il FOR fa n − 2 giri, uno per ogni numero da calcolare, e ogni giro è una somma: tempo <strong>O(n)</strong>, invece che esponenziale. Lo spazio è O(n) per l'array; ma alla lavagna c'è scritto «si può evitare l'array»: per calcolare il prossimo numero bastano gli ultimi due, quindi bastano due variabili, e lo spazio diventa O(1).</p>
+<p>Questa è già l'idea della programmazione dinamica: il problema F<sub>n</sub> si risolve a partire dai <strong>sottoproblemi</strong> F<sub>1</sub>, F<sub>2</sub>, …, F<sub>n−1</sub>, risolti dal più semplice al più difficile, e le soluzioni si scrivono in una <strong>tabella</strong> (l'array Fib) per non ricalcolarle mai.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Fib[1] = Fib[2] = 1; per i da 3 a n, Fib[i] = Fib[i − 1] + Fib[i − 2]. Tempo O(n); spazio O(n), oppure O(1) con due variabili.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="matrice"><span class="num">3</span>Il cammino di valore minimo su una matrice</h2>
+<p class="in-questa"><b>In questa sezione:</b> il secondo esempio (lavagna, pagine 5–7): il problema, quattro cammini d'esempio, e perché provarli tutti richiede un tempo esponenziale.</p>
+<div class="box def">
+  <span class="etichetta">Il problema (lavagna, pagina 6)</span>
+  <p>Data una matrice n × n di interi, determinare un «cammino» dalla prima all'ultima colonna di valore minimo.</p>
+  <ul>
+    <li><b>Inizio</b>: una posizione qualunque della prima colonna.</li>
+    <li><b>Da una posizione</b> si può raggiungere la posizione nella colonna successiva sulla riga sopra, sulla stessa riga o sulla riga sotto.</li>
+    <li><b>Fine</b>: una posizione qualunque dell'ultima colonna.</li>
+    <li><b>Valore</b> del cammino: la somma dei valori lungo il cammino.</li>
+  </ul>
+</div>
+<p>Quindi un cammino tocca una casella per colonna, n caselle in tutto, e a ogni passo si sposta di una colonna verso destra e al massimo di una riga in su o in giù (Figura 2). Nella prima e nell'ultima riga le scelte sono solo due, perché non c'è una riga sopra o sotto.</p>
+<div class="figura">
+<svg viewBox="0 0 146 146" width="146" height="146" role="img" aria-label="da una casella si va a una delle tre caselle della colonna dopo" font-family="system-ui, sans-serif"><rect x="4" y="4" width="46" height="46" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><rect x="50" y="4" width="46" height="46" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><rect x="96" y="4" width="46" height="46" class="r-verde" fill="#e6f5ea" stroke="#9aa3b2" stroke-width="1"/><rect x="4" y="50" width="46" height="46" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><rect x="50" y="50" width="46" height="46" class="r-giallo" fill="#fff1a8" stroke="#9aa3b2" stroke-width="1"/><text x="73" y="78" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">X</text><rect x="96" y="50" width="46" height="46" class="r-verde" fill="#e6f5ea" stroke="#9aa3b2" stroke-width="1"/><rect x="4" y="96" width="46" height="46" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><rect x="50" y="96" width="46" height="46" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><rect x="96" y="96" width="46" height="46" class="r-verde" fill="#e6f5ea" stroke="#9aa3b2" stroke-width="1"/></svg>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagina 6: dalla casella gialla si può andare in una delle tre caselle verdi della colonna successiva.</div>
+</div>
+<p>L'esempio della lavagna (pagina 5) è la matrice della Figura 3, con quattro cammini e il loro valore.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">1 → 3 → 8 → 5 = 17</div><svg viewBox="0 0 144 144" width="144" height="144" role="img" aria-label="il cammino 1 → 3 → 8 → 5 = 17" font-family="system-ui, sans-serif"><rect x="4" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="38" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="72" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="106" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="4" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><rect x="38" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="72" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="106" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="4" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="38" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="72" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="106" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="4" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="38" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="72" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="106" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><polyline points="21,21 55,21 89,21 123,21" fill="none" class="l-verde" stroke="#17803d" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="21" cy="21" r="12.24" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="55" cy="21" r="12.24" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="89" cy="21" r="12.24" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="123" cy="21" r="12.24" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/></svg></div><div><div class="nome-mat">4 → 2 → 8 → 5 = 19</div><svg viewBox="0 0 144 144" width="144" height="144" role="img" aria-label="il cammino 4 → 2 → 8 → 5 = 19" font-family="system-ui, sans-serif"><rect x="4" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="38" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="72" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="106" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="4" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><rect x="38" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="72" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="106" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="4" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="38" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="72" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="106" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="4" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="38" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="72" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="106" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><polyline points="21,55 55,55 89,21 123,21" fill="none" class="l-rosso" stroke="#b42318" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="21" cy="55" r="12.24" fill="none" class="l-rosso" stroke="#b42318" stroke-width="2"/><circle cx="55" cy="55" r="12.24" fill="none" class="l-rosso" stroke="#b42318" stroke-width="2"/><circle cx="89" cy="21" r="12.24" fill="none" class="l-rosso" stroke="#b42318" stroke-width="2"/><circle cx="123" cy="21" r="12.24" fill="none" class="l-rosso" stroke="#b42318" stroke-width="2"/></svg></div><div><div class="nome-mat">2 → 8 → 5 → 6 = 21</div><svg viewBox="0 0 144 144" width="144" height="144" role="img" aria-label="il cammino 2 → 8 → 5 → 6 = 21" font-family="system-ui, sans-serif"><rect x="4" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="38" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="72" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="106" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="4" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><rect x="38" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="72" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="106" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="4" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="38" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="72" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="106" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="4" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="38" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="72" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="106" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><polyline points="21,89 55,123 89,89 123,55" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="21" cy="89" r="12.24" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="2"/><circle cx="55" cy="123" r="12.24" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="2"/><circle cx="89" cy="89" r="12.24" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="2"/><circle cx="123" cy="55" r="12.24" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="2"/></svg></div><div><div class="nome-mat">2 → 1 → 7 → 1 = 11</div><svg viewBox="0 0 144 144" width="144" height="144" role="img" aria-label="il cammino 2 → 1 → 7 → 1 = 11" font-family="system-ui, sans-serif"><rect x="4" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="38" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="72" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="106" y="4" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="26" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="4" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><rect x="38" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="72" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="106" y="38" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="60" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="4" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="38" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="72" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="106" y="72" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="94" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="4" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="21" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="38" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="55" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="72" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="89" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="106" y="106" width="34" height="34" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="123" y="128" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><polyline points="21,89 55,89 89,55 123,89" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="21" cy="89" r="12.24" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="2"/><circle cx="55" cy="89" r="12.24" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="2"/><circle cx="89" cy="55" r="12.24" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="2"/><circle cx="123" cy="89" r="12.24" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="2"/></svg></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 5. In verde 1 → 3 → 8 → 5 = 17; in rosso 4 → 2 → 8 → 5 = 19; in arancione 2 → 8 → 5 → 6 = 21; in viola 2 → 1 → 7 → 1 = 11. Nessuno dei quattro è il minimo, che vale 6 (sezione 4).</div>
+</div>
+<p><b>La ricerca esaustiva</b> (lavagna, pagina 7): esaminare tutti i possibili cammini e tenere il migliore. Quanti sono? Con n = 1 uno solo; con n = 2 sono 4 (2 caselle di partenza, e da ognuna 2 caselle d'arrivo). Con n &gt; 2: per la prima colonna ci sono n scelte, e per ognuna delle altre n − 1 colonne almeno 2 (anche dal bordo si può andare dritto o verso l'interno). Quindi i cammini sono <strong>almeno n · 2 · 2 ⋯ 2 = n · 2<sup>n−1</sup></strong>: un numero esponenziale di scelte. Con n = 40 sono più di 20 000 miliardi.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Cammino: una casella per colonna, dalla prima all'ultima; a ogni passo riga sopra, stessa riga o riga sotto. Valore = somma; si cerca il minimo.</li>
+    <li>I cammini sono almeno n · 2<sup>n−1</sup>: la ricerca esaustiva è esponenziale.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="sottoproblemi"><span class="num">4</span>I sottoproblemi e la matrice C</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'idea della programmazione dinamica applicata alla matrice (lavagna, pagine 8–10): i sottoproblemi P(i, j), la matrice C dei loro risultati e la formula per calcolarla colonna per colonna.</p>
+<p>Il problema P è il cammino di valore minimo in una matrice n × n. Il prof introduce un sottoproblema per ogni casella (lavagna, pagina 8):</p>
+<div class="box def">
+  <span class="etichetta">I sottoproblemi (lavagna, pagine 8 e 9)</span>
+  <p>Per i, j = 1, …, n, il problema <strong>P(i, j)</strong>: trovare il cammino di valore minimo che inizia nella colonna 1 e termina nella posizione (i, j).</p>
+  <p><strong>C[i, j]</strong> = il valore del cammino minimo che inizia nella colonna 1 e termina nella posizione (i, j). C è la matrice dei risultati dei problemi P(i, j).</p>
+  <p>Il valore del cammino minimo sulla matrice è <strong>min { C[i, n] | i = 1, …, n }</strong>.</p>
+</div>
+<p>L'ultima riga dice perché i sottoproblemi servono: il cammino migliore finisce in qualche casella dell'ultima colonna, quindi è il migliore tra i cammini migliori che finiscono in (1, n), in (2, n), …, in (n, n). La soluzione di P si ricava dalle soluzioni di P(1, n), …, P(n, n).</p>
+<p><b>Come si calcola C</b> (lavagna, pagina 10).</p>
+<ul>
+  <li><b>Prima colonna</b>: C[i, 1] = M[i, 1] per i = 1, …, n. Un cammino che finisce nella colonna 1 è fatto della sola casella di partenza.</li>
+  <li><b>Colonna j &gt; 1</b>: un cammino che finisce in (i, j) arriva da una delle tre caselle (i − 1, j − 1), (i, j − 1), (i + 1, j − 1) della colonna prima. Il pezzo fino a quella casella conviene che sia il migliore possibile, cioè valga C di quella casella. Quindi:</li>
+</ul>
+<div class="formula grande">C[i, j] = M[i, j] + min { C[i − 1, j − 1], C[i, j − 1], C[i + 1, j − 1] }</div>
+<p>dove C[i − 1, j − 1] conta solo se i &gt; 1 (c'è una riga sopra) e C[i + 1, j − 1] solo se i &lt; n (c'è una riga sotto). Le C della colonna j − 1 sono già calcolate, se si procede una colonna alla volta da sinistra a destra.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">M (l'ingresso)</div><svg viewBox="0 0 202 202" width="202" height="202" role="img" aria-label="una matrice" font-family="system-ui, sans-serif"><rect x="22" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="66" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="110" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="154" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="22" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><rect x="66" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="110" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><rect x="154" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="22" y="110" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="66" y="110" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="110" y="110" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="154" y="110" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="22" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="66" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="110" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="154" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><text x="15" y="48" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="15" y="92" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="15" y="136" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="15" y="180" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="44" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">1</text><text x="88" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">2</text><text x="132" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">3</text><text x="176" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">4</text><polyline points="44,132 88,132 132,176 176,132" fill="none" class="l-verde" stroke="#17803d" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="44" cy="132" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="88" cy="132" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="132" cy="176" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="176" cy="132" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/></svg></div><div><div class="nome-mat">C (i risultati dei sottoproblemi)</div><svg viewBox="0 0 202 202" width="202" height="202" role="img" aria-label="una matrice" font-family="system-ui, sans-serif"><rect x="22" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="66" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><rect x="110" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><rect x="154" y="22" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="49" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><rect x="22" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><rect x="66" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="110" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><rect x="154" y="66" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="93" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><rect x="22" y="110" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="66" y="110" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="110" y="110" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="154" y="110" width="44" height="44" class="r-verde" fill="#e6f5ea" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="137" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="22" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="44" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><rect x="66" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="88" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><rect x="110" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="132" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="154" y="154" width="44" height="44" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="176" y="181" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><text x="15" y="48" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="15" y="92" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="15" y="136" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="15" y="180" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="44" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">1</text><text x="88" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">2</text><text x="132" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">3</text><text x="176" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">4</text><polyline points="44,132 88,132 132,176 176,132" fill="none" class="l-verde" stroke="#17803d" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="44" cy="132" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="88" cy="132" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="132" cy="176" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="176" cy="132" r="15.84" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/></svg></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagina 10: a sinistra la matrice M, a destra la matrice C. Per esempio C[2, 2] = M[2, 2] + min{C[1, 1], C[2, 1], C[3, 1]} = 2 + min{1, 4, 2} = 3. Il minimo dell'ultima colonna è C[3, 4] = 6; in verde il cammino che lo realizza, 2 → 1 → 2 → 1.</div>
+</div>
+<div class="widget" id="w-cm">
+  <h4>La matrice C, casella per casella</h4>
+  <div id="cm-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>C[i, j] = valore del cammino minimo dalla colonna 1 alla casella (i, j). Soluzione: min { C[i, n] }.</li>
+    <li>C[i, 1] = M[i, 1]; per j &gt; 1, C[i, j] = M[i, j] + il minimo tra C[i − 1, j − 1] (se i &gt; 1), C[i, j − 1], C[i + 1, j − 1] (se i &lt; n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="algoritmo"><span class="num">5</span>L'algoritmo e il suo tempo</h2>
+<p class="in-questa"><b>In questa sezione:</b> lo pseudocodice della lavagna (pagina 11), con il tempo di ogni pezzo: O(n<sup>2</sup>).</p>
+<p class="titolo-codice">Lavagna, pagina 11</p>
+<pre class="pseudo"><b>ALGORITMO</b> camminoMinimo(matrice M[1..n, 1..n]) → intero
+  sia C[1..n, 1..n] una matrice
+  <b>FOR</b> i ← 1 <b>TO</b> n <b>DO</b>                         <span class="com">// prima colonna: O(n)</span>
+    C[i, 1] ← M[i, 1]
+  <b>FOR</b> j ← 2 <b>TO</b> n <b>DO</b>                         <span class="com">// le altre colonne: O(n²)</span>
+    <b>FOR</b> i ← 1 <b>TO</b> n <b>DO</b>
+      min ← C[i, j − 1]
+      <b>IF</b> i &gt; 1 <b>AND</b> C[i − 1, j − 1] &lt; min <b>THEN</b> min ← C[i − 1, j − 1]
+      <b>IF</b> i &lt; n <b>AND</b> C[i + 1, j − 1] &lt; min <b>THEN</b> min ← C[i + 1, j − 1]
+      C[i, j] ← M[i, j] + min
+  min ← C[1, n]                                  <span class="com">// il minimo dell'ultima colonna: O(n)</span>
+  <b>FOR</b> i ← 2 <b>TO</b> n <b>DO</b>
+    <b>IF</b> C[i, n] &lt; min <b>THEN</b> min ← C[i, n]
+  <b>RETURN</b> min</pre>
+<ul>
+  <li>L'ordine dei cicli conta: il FOR esterno è sulle <strong>colonne</strong>, perché per calcolare la colonna j serve tutta la colonna j − 1.</li>
+  <li>Le tre righe dentro il ciclo calcolano il minimo tra le tre caselle della colonna prima: si parte da quella sulla stessa riga, e si controllano quella sopra e quella sotto solo se esistono. «AND» è valutato in modo pigro (pacco 3): se i = 1, C[i − 1, j − 1] non viene letto.</li>
+  <li>Tempo: O(n) per la prima colonna; (n − 1) · n caselle, O(1) ciascuna, per le altre; O(n) per il minimo finale. <strong>Tempo totale O(n<sup>2</sup>)</strong>, cioè lineare nel numero di caselle della matrice. Contro almeno n · 2<sup>n−1</sup> cammini della ricerca esaustiva.</li>
+</ul>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>camminoMinimo: prima colonna di C uguale a M; poi colonna per colonna C[i, j] = M[i, j] + min delle tre caselle prima; infine il minimo dell'ultima colonna. O(n<sup>2</sup>).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="ricostruire"><span class="num">6</span>Ricostruire il cammino</h2>
+<p class="in-questa"><b>In questa sezione:</b> come trovare il cammino, non solo il suo valore, leggendo la matrice C all'indietro. Alla lavagna (pagina 10) il cammino è cerchiato; il procedimento lo scriviamo qui, ed è chiesto negli scritti.</p>
+<p>camminoMinimo restituisce solo il valore. Ma C contiene abbastanza informazione per ritrovare il cammino. Si parte dalla casella dell'ultima colonna con C minima, (3, 4) nella Figura 4, che vale 6. Il cammino migliore che finisce lì arriva da una casella della colonna prima che vale <strong>C[3, 4] − M[3, 4] = 6 − 1 = 5</strong>: tra le tre candidate (2, 3), (3, 3), (4, 3), che valgono 10, 8, 5, è (4, 3). Da (4, 3) si cerca nella colonna 2 una casella con C = 5 − 2 = 3: le candidate sono (3, 2) e (4, 2), che valgono 3 e 10, quindi (3, 2). Da (3, 2), con C = 3 − 1 = 2, si arriva a (3, 1). Il cammino è (3, 1), (3, 2), (4, 3), (3, 4): 2 → 1 → 2 → 1 = 6.</p>
+<p>Ogni passo all'indietro guarda al più tre caselle: in tutto O(n). Se in un passo più di una casella va bene, i cammini minimi sono più di uno, e se ne può scegliere uno qualsiasi.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>All'indietro: dalla casella finale (i, j) si va alla casella della colonna j − 1, tra le tre vicine, che vale C[i, j] − M[i, j]. O(n).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="schema"><span class="num">7</span>La programmazione dinamica in generale</h2>
+<p class="in-questa"><b>In questa sezione:</b> lo schema generale della tecnica (lavagna, pagina 12), il confronto con il divide et impera e con il greedy, e una ricetta per gli esercizi.</p>
+<div class="box def">
+  <span class="etichetta">Programmazione dinamica (lavagna, pagina 12)</span>
+  <p>Soluzione di un problema a partire da sottoproblemi più semplici.</p>
+  <ul>
+    <li>Si individuano sottoproblemi del problema dato.</li>
+    <li>Si risolvono i sottoproblemi a partire dai più semplici:
+      <ul>
+        <li>sottoproblemi «base»: soluzione immediata, che viene memorizzata in una tabella;</li>
+        <li>altri sottoproblemi: soluzione ottenuta utilizzando le soluzioni di sottoproblemi risolti in precedenza (consultazione e aggiornamento della tabella).</li>
+      </ul>
+    </li>
+    <li>Soluzione finale: ricavata dalle soluzioni dei sottoproblemi, come funzione degli elementi della tabella.</li>
+  </ul>
+</div>
+<p>Nei due esempi:</p>
+<div class="tabella-wrap"><table>
+  <tr><th></th><th>Fibonacci</th><th>cammino su matrice</th></tr>
+  <tr><td>sottoproblemi</td><td>F<sub>i</sub>, i = 1, …, n</td><td>P(i, j): cammino minimo che finisce in (i, j)</td></tr>
+  <tr><td>tabella</td><td>l'array Fib</td><td>la matrice C</td></tr>
+  <tr><td>base</td><td>Fib[1] = Fib[2] = 1</td><td>C[i, 1] = M[i, 1]</td></tr>
+  <tr><td>gli altri</td><td>Fib[i] = Fib[i − 1] + Fib[i − 2]</td><td>C[i, j] = M[i, j] + min delle tre caselle prima</td></tr>
+  <tr><td>soluzione finale</td><td>Fib[n]</td><td>min { C[i, n] }</td></tr>
+</table></div>
+<p><b>Rispetto al divide et impera</b> (pacco 7): anche lì un problema si spezza in sottoproblemi, ma ognuno viene risolto da una chiamata ricorsiva, anche se è già stato risolto altrove. Quando i sottoproblemi si ripetono, come in Fibonacci, la ricorsione rifà lo stesso lavoro; la programmazione dinamica lo fa una volta e lo scrive nella tabella.</p>
+<p><b>Rispetto al greedy</b> (pacco 19): il greedy fa a ogni passo una scelta e non torna mai indietro, e può sbagliare. La programmazione dinamica non sceglie in anticipo: per la casella (i, j) considera tutte e tre le caselle da cui si può arrivare, e tiene la migliore. Così trova sempre l'ottimo, pur senza provare tutti i cammini.</p>
+<div class="box esame">
+  <span class="etichetta">Metodo: progettare una programmazione dinamica</span>
+  <ol>
+    <li>Definire la tabella: cosa contiene ogni casella, in parole («C[i, j] = il valore del cammino migliore che inizia … e termina in (i, j)»).</li>
+    <li>I casi base: le caselle che si calcolano subito.</li>
+    <li>La formula per le altre caselle, a partire da caselle già calcolate (da dove si può arrivare nella casella (i, j)?).</li>
+    <li>L'ordine in cui riempire la tabella, in modo che le caselle che servono siano già pronte.</li>
+    <li>Dove si legge la soluzione finale.</li>
+    <li>Il tempo: numero di caselle per il costo di una casella.</li>
+    <li>Se serve la soluzione e non solo il valore: ricostruirla all'indietro dalla tabella.</li>
+  </ol>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Sottoproblemi; prima i base, poi gli altri dalle soluzioni già scritte nella tabella; la soluzione finale dalla tabella.</li>
+    <li>Diversa dal divide et impera (non ricalcola) e dal greedy (non fa scelte irrevocabili).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="riassunto"><span class="num">8</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Fibonacci ricorsivo</b>: T(n) = 3F<sub>n</sub> − 2, esponenziale (come φ<sup>n</sup>, φ = (1 + √5)/2), perché ricalcola gli stessi valori. <b>Con l'array</b>: O(n), spazio O(n) o O(1).</li>
+    <li><b>Cammino minimo su matrice</b>: esaustiva ≥ n · 2<sup>n−1</sup> cammini. C[i, 1] = M[i, 1]; C[i, j] = M[i, j] + min{C[i − 1, j − 1], C[i, j − 1], C[i + 1, j − 1]}; soluzione min{C[i, n]}; O(n<sup>2</sup>). Il cammino si ricostruisce all'indietro.</li>
+    <li><b>Programmazione dinamica</b>: sottoproblemi, tabella, base, formula, soluzione finale.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>La programmazione dinamica è uscita come esercizio 3 il 6 febbraio 2026 (la griglia con il cammino massimo, nella sezione 9): scrivere la formula per C, l'algoritmo, il tempo, e ricostruire il cammino. Il Metodo della sezione 7 è lo schema della risposta.</li>
+    <li>Più spesso arriva attraverso l'algoritmo di Floyd–Warshall (pacco 22), che è una programmazione dinamica.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="esercizi"><span class="num">9</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'esercizio 3 dello scritto del 6 febbraio 2026 e due esercizi in più. Prova a risolverli prima di aprire la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Scritto del 6 febbraio 2026, esercizio 3: il cammino massimo su una griglia</summary>
+  <p>È data una griglia n × n di interi, la matrice M (righe e colonne da 1 a n, m<sub>i,j</sub> è il numero in riga i e colonna j). Un cammino inizia nella casella in alto a sinistra (1, 1), finisce in quella in basso a destra (n, n), e da ogni casella va in quella immediatamente a destra (se non si è già nell'ultima colonna) oppure in quella immediatamente sotto (se non si è già nell'ultima riga). Il valore del cammino è la somma dei numeri delle sue caselle. Si vuole il valore massimo. c<sub>i,j</sub> è il massimo valore di un cammino che inizia in (1, 1) e termina in (i, j).</p>
+  <ul>
+    <li>(a) Scrivete le formule per ricavare c<sub>i,j</sub> da opportuni c<sub>i',j'</sub> con i' &lt; i o j' &lt; j e da m<sub>i,j</sub>, o solo da m<sub>i,j</sub>.</li>
+    <li>(b) Descrivete a parole e in pseudocodice un algoritmo di programmazione dinamica che, ricevendo M, calcoli C e restituisca il valore massimo di un cammino che termina in (n, n).</li>
+    <li>(c) Il tempo, in funzione di n.</li>
+    <li>(d) Come ricavare da C un cammino di valore massimo, e il tempo di questa parte.</li>
+    <li>(e) Come stabilire da C se c'è più di un cammino di valore massimo.</li>
+    <li>(f) Come contare i cammini massimi senza aumentare significativamente il tempo (il loro numero può essere esponenziale in n).</li>
+  </ul>
+  <p>Gli esempi del testo: con la prima griglia della Figura 5 il massimo è 20, con un solo cammino; con M = (1 0 1 1 / 1 2 2 1 / 2 2 1 1 / 1 0 2 1) il massimo è 10, con tre cammini.</p>
+  <div class="figura">
+<div class="affianco"><div><div class="nome-mat">la griglia M</div><svg viewBox="0 0 194 194" width="194" height="194" role="img" aria-label="una matrice" font-family="system-ui, sans-serif"><rect x="22" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="64" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="106" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="148" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="22" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="64" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="106" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="148" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">0</text><rect x="22" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="64" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="106" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="148" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">0</text><rect x="22" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="64" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="106" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="148" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><text x="15" y="47" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="15" y="89" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="15" y="131" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="15" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="43" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">1</text><text x="85" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">2</text><text x="127" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">3</text><text x="169" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">4</text></svg></div><div><div class="nome-mat">un cammino di valore 18</div><svg viewBox="0 0 194 194" width="194" height="194" role="img" aria-label="una matrice" font-family="system-ui, sans-serif"><rect x="22" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="64" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="106" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">6</text><rect x="148" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="22" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="64" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="106" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="148" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">0</text><rect x="22" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><rect x="64" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="106" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="148" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">0</text><rect x="22" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="64" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><rect x="106" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><rect x="148" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><text x="15" y="47" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="15" y="89" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="15" y="131" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="15" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="43" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">1</text><text x="85" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">2</text><text x="127" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">3</text><text x="169" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">4</text><polyline points="43,43 43,85 43,127 43,169 85,169 127,169 169,169" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="43" cy="43" r="15.12" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2"/><circle cx="43" cy="85" r="15.12" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2"/><circle cx="43" cy="127" r="15.12" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2"/><circle cx="43" cy="169" r="15.12" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2"/><circle cx="85" cy="169" r="15.12" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2"/><circle cx="127" cy="169" r="15.12" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2"/><circle cx="169" cy="169" r="15.12" fill="none" class="l-blu" stroke="#2f52c4" stroke-width="2"/></svg></div><div><div class="nome-mat">C e il cammino massimo (20)</div><svg viewBox="0 0 194 194" width="194" height="194" role="img" aria-label="una matrice" font-family="system-ui, sans-serif"><rect x="22" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><rect x="64" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><rect x="106" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><rect x="148" y="22" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="48" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><rect x="22" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><rect x="64" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><rect x="106" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><rect x="148" y="64" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="90" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><rect x="22" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><rect x="64" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><rect x="106" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><rect x="148" y="106" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="132" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><rect x="22" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><rect x="64" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="85" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><rect x="106" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="127" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><rect x="148" y="148" width="42" height="42" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="169" y="174" font-size="15" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><text x="15" y="47" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><text x="15" y="89" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><text x="15" y="131" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><text x="15" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><text x="43" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">1</text><text x="85" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">2</text><text x="127" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">3</text><text x="169" y="15" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">4</text><polyline points="43,43 85,43 127,43 127,85 127,127 127,169 169,169" fill="none" class="l-verde" stroke="#17803d" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/><circle cx="43" cy="43" r="15.12" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="85" cy="43" r="15.12" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="127" cy="43" r="15.12" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="127" cy="85" r="15.12" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="127" cy="127" r="15.12" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="127" cy="169" r="15.12" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/><circle cx="169" cy="169" r="15.12" fill="none" class="l-verde" stroke="#17803d" stroke-width="2"/></svg></div></div>
+  <div class="didascalia"><b>Figura 5.</b> Lo scritto del 6 febbraio 2026: la griglia M, un cammino di valore 18 (in blu), e la matrice C con il cammino di valore massimo 20 (in verde). Nel riquadro della sezione 4 puoi scegliere gli esempi dello scritto e seguire il calcolo casella per casella.</div>
+  </div>
+  <div class="soluzione">
+    <p><b>(a)</b> In (i, j) si arriva da sopra, (i − 1, j), o da sinistra, (i, j − 1). Il cammino migliore fino a lì è il migliore dei due cammini migliori che arrivano nelle caselle precedenti, più m<sub>i,j</sub>. Nella prima riga si arriva solo da sinistra, nella prima colonna solo da sopra:</p>
+    <div class="mat-blocco"><span class="casi"><span class="casi-sx">c<sub>i,j</sub> =</span><span class="graffa" aria-hidden="true"><svg viewBox="0 0 12 100" preserveAspectRatio="none" width="12" height="80"><path d="M11 1 Q6 1 6 8 L6 43 Q6 50 1 50 Q6 50 6 57 L6 92 Q6 99 11 99" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span><span class="casi-righe"><span class="val">m<sub>1,1</sub></span><span class="cond">se i = 1 e j = 1</span><span class="val">c<sub>1,j−1</sub> + m<sub>1,j</sub></span><span class="cond">se i = 1 e j &gt; 1</span><span class="val">c<sub>i−1,1</sub> + m<sub>i,1</sub></span><span class="cond">se i &gt; 1 e j = 1</span><span class="val">m<sub>i,j</sub> + max{c<sub>i−1,j</sub>, c<sub>i,j−1</sub>}</span><span class="cond">se i &gt; 1 e j &gt; 1</span></span></span></div>
+    <p><b>(b)</b> Si riempie C riga per riga, da sinistra a destra: per la casella (i, j) servono quella sopra e quella a sinistra, già calcolate. La risposta è c<sub>n,n</sub>.</p>
+<pre class="pseudo"><b>ALGORITMO</b> camminoMassimo(matrice M[1..n, 1..n]) → intero
+  sia C[1..n, 1..n] una matrice
+  C[1, 1] ← M[1, 1]
+  <b>FOR</b> j ← 2 <b>TO</b> n <b>DO</b>
+    C[1, j] ← C[1, j − 1] + M[1, j]
+  <b>FOR</b> i ← 2 <b>TO</b> n <b>DO</b>
+    C[i, 1] ← C[i − 1, 1] + M[i, 1]
+    <b>FOR</b> j ← 2 <b>TO</b> n <b>DO</b>
+      <b>IF</b> C[i − 1, j] ≥ C[i, j − 1] <b>THEN</b> C[i, j] ← M[i, j] + C[i − 1, j]
+      <b>ELSE</b> C[i, j] ← M[i, j] + C[i, j − 1]
+  <b>RETURN</b> C[n, n]</pre>
+    <p><b>(c)</b> Ogni casella si calcola con un numero costante di operazioni (un confronto e una somma), e le caselle sono n<sup>2</sup>: <b>Θ(n<sup>2</sup>)</b>.</p>
+    <p><b>(d)</b> All'indietro, partendo da (n, n). Nella casella (i, j) diversa da (1, 1): se i &gt; 1 e C[i − 1, j] = C[i, j] − M[i, j], il cammino arriva da sopra e si va in (i − 1, j); altrimenti arriva da sinistra e si va in (i, j − 1) (in prima riga si va per forza a sinistra, in prima colonna per forza su). Si annotano le caselle in testa a una lista, così alla fine la lista va da (1, 1) a (n, n). Un cammino ha 2n − 1 caselle, e ogni passo costa O(1): <b>O(n)</b>.</p>
+    <p><b>(e)</b> Durante la ricostruzione del punto (d), si guarda in ogni casella se <b>tutte e due</b> le caselle precedenti valgono C[i, j] − M[i, j]. Se succede almeno una volta, i cammini massimi sono più di uno; se non succede mai, il cammino è unico. Perché basta controllare lungo un solo cammino: se esistesse un altro cammino massimo, percorrendo i due cammini all'indietro da (n, n) prima o poi si separerebbero; nella casella in cui si separano, che sta su tutti e due, le due caselle precedenti danno entrambe il massimo.</p>
+    <p><b>(f)</b> Con un'altra tabella, riempita insieme a C (il suggerimento del testo): N[i, j] = il numero di cammini di valore massimo da (1, 1) a (i, j). N[1, 1] = 1; per le altre caselle, N[i, j] è la somma degli N delle caselle precedenti (sopra e sinistra) il cui C dà il massimo: se vince solo quella sopra, N[i, j] = N[i − 1, j]; se solo quella a sinistra, N[i, j] = N[i, j − 1]; se sono pari, la somma dei due. La risposta è N[n, n]. Ogni casella costa ancora O(1), quindi il tempo resta <b>Θ(n<sup>2</sup>)</b>. Nel secondo esempio N[4, 4] = 3. (I numeri possono diventare molto grandi, fino a circa 4<sup>n</sup>: per n grande servono interi lunghi.)</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Quanti cammini con n = 3?</summary>
+  <p>Nel problema della lavagna, quanti sono esattamente i cammini in una matrice 3 × 3? Confrontate con il limite n · 2<sup>n−1</sup>.</p>
+  <div class="soluzione">
+    <p>Si contano con la stessa idea della programmazione dinamica: N[i, j] = numero di cammini che finiscono in (i, j). Nella colonna 1: 1, 1, 1. Nella colonna 2 ogni casella somma le vicine della colonna 1: riga 1 → 1 + 1 = 2; riga 2 → 1 + 1 + 1 = 3; riga 3 → 2. Nella colonna 3: riga 1 → 2 + 3 = 5; riga 2 → 2 + 3 + 2 = 7; riga 3 → 3 + 2 = 5. In tutto <b>5 + 7 + 5 = 17</b> cammini, più del limite 3 · 2<sup>2</sup> = 12 (che è solo una stima dal basso).</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Calcolate C a mano</summary>
+  <p>Con il problema della lavagna, calcolate C e il cammino minimo per M = (3 1 4 / 1 5 9 / 2 6 5).</p>
+  <div class="soluzione">
+    <p>Colonna 1: C = 3, 1, 2. Colonna 2: riga 1: 1 + min{3, 1} = 2; riga 2: 5 + min{3, 1, 2} = 6; riga 3: 6 + min{1, 2} = 7. Colonna 3: riga 1: 4 + min{2, 6} = 6; riga 2: 9 + min{2, 6, 7} = 11; riga 3: 5 + min{6, 7} = 11. Il minimo dell'ultima colonna è <b>6</b>, in (1, 3). All'indietro: 6 − 4 = 2, cioè (1, 2); 2 − 1 = 1, cioè (2, 1). Cammino: 1 → 1 → 4 = 6. Puoi controllarlo nel riquadro della sezione 4 con «Scrivi tu».</p>
+  </div>
+</details>
+
+<!-- ============================================================ 10 -->
+<h2 id="approfondimenti"><span class="num">10</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per lo scritto. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: la ricorsione con memoria</summary>
+  <div class="soluzione">
+    <p>C'è un modo di tenere la versione ricorsiva senza il costo esponenziale: si usa comunque una tabella. Prima di calcolare Fibonacci(k) si guarda se il risultato è già scritto; se sì lo si restituisce subito, se no lo si calcola e lo si scrive. Ogni F<sub>k</sub> viene calcolato una volta sola, e il tempo diventa O(n). Si chiama memoizzazione: è la programmazione dinamica fatta «dall'alto» (si parte dal problema grande), mentre quella della lavagna è «dal basso» (si parte dai sottoproblemi base).</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: quanto vale esattamente F<sub>n</sub></summary>
+  <div class="soluzione">
+    <p>Vale la formula di Binet: F<sub>n</sub> = (φ<sup>n</sup> − ψ<sup>n</sup>)/√5, con φ = (1 + √5)/2 e ψ = (1 − √5)/2 ≈ −0,618. Siccome |ψ| &lt; 1, ψ<sup>n</sup> diventa piccolissimo, e F<sub>n</sub> è l'intero più vicino a φ<sup>n</sup>/√5. Quindi T(n) = 3F<sub>n</sub> − 2 ≈ (3/√5) φ<sup>n</sup>: la lavagna scrive ≈ 3φ<sup>n</sup>, che ha lo stesso andamento a meno della costante 1/√5.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="20-albero-ricoprente-minimo.html">← Pacco 20: albero ricoprente minimo</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="22-floyd-warshall.html">Pacco 22: cammini minimi e Floyd–Warshall →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- alberi.js
+// Alberi binari: costruzione, disegno, visite (pacco 12).
+// Un albero è { radice: id|null, nodi: { id: { v: "8", sx: id|null, dx: id|null } } }.
+function escA(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1a(v) { return Math.round(v * 10) / 10; }
+
+// "8(14(22,12(1,3)),11(,5))": etichetta, poi tra parentesi il sottoalbero sinistro e il destro (vuoto = niente)
+function alberoDa(testo) {
+  var s = testo.replace(/\s+/g, ""), k = 0, n = 0, nodi = {};
+  function nodo() {
+    var et = "";
+    while (k < s.length && "(),".indexOf(s[k]) < 0) et += s[k++];
+    if (et === "") return null;
+    var id = "a" + (n++);
+    nodi[id] = { v: et, sx: null, dx: null };
+    if (s[k] === "(") {
+      k++;
+      nodi[id].sx = nodo();
+      if (s[k] !== ",") throw new Error("manca la virgola in " + testo);
+      k++;
+      nodi[id].dx = nodo();
+      if (s[k] !== ")") throw new Error("manca la parentesi in " + testo);
+      k++;
+    }
+    return id;
+  }
+  var r = nodo();
+  return { radice: r, nodi: nodi };
+}
+// vettore posizionale: radice in A[0], figli di A[i] in A[2i+1] e A[2i+2]
+function alberoDaVettore(A) {
+  var nodi = {};
+  for (var i = 0; i < A.length; i++) nodi["p" + i] = { v: String(A[i]), sx: 2 * i + 1 < A.length ? "p" + (2 * i + 1) : null, dx: 2 * i + 2 < A.length ? "p" + (2 * i + 2) : null, pos: i };
+  return { radice: A.length ? "p0" : null, nodi: nodi };
+}
+function altezza(T, id) {
+  if (id === undefined) id = T.radice;
+  if (id === null) return -1;
+  return 1 + Math.max(altezza(T, T.nodi[id].sx), altezza(T, T.nodi[id].dx));
+}
+function contaNodi(T, id) { if (id === undefined) id = T.radice; if (id === null) return 0; return 1 + contaNodi(T, T.nodi[id].sx) + contaNodi(T, T.nodi[id].dx); }
+
+// posizioni: a profondità d il nodo occupa uno dei 2^d «posti» del livello (come nel vettore posizionale)
+function disponi(T, opz) {
+  opz = opz || {};
+  var h = Math.max(0, altezza(T)), slot = opz.slot || 46, dy = opz.dy || 62;
+  var W = Math.max(opz.minW || 0, Math.pow(2, h) * slot + 2 * (opz.margine || 14));
+  var pos = {}, m = opz.margine || 14, top = opz.top || 30;
+  function vai(id, d, k) {
+    if (id === null) return;
+    var largh = (W - 2 * m) / Math.pow(2, d);
+    pos[id] = { x: m + (k + 0.5) * largh, y: top + d * dy, d: d, k: k };
+    vai(T.nodi[id].sx, d + 1, 2 * k);
+    vai(T.nodi[id].dx, d + 1, 2 * k + 1);
+  }
+  vai(T.radice, 0, 0);
+  return { pos: pos, W: W, H: top + h * dy + (opz.basso || 30), h: h };
+}
+
+var STILE_NODO = {
+  normale: ["r-nodo", "#ffffff", "#9aa3b2", "t-testo", "#1f2328"],
+  visitato: ["r-verde", "#e6f5ea", "#17803d", "t-testo", "#1f2328"],
+  corrente: ["r-giallo", "#fff1a8", "#b4500f", "t-testo", "#1f2328"],
+  inS: ["r-blu", "#e8edfc", "#2f52c4", "t-testo", "#1f2328"],
+  spento: ["r-nodo", "#ffffff", "#9aa3b2", "t-muted", "#5b6270"],
+  rosso: ["r-rosso", "#fdecea", "#b42318", "t-testo", "#1f2328"],
+  viola: ["r-viola", "#f1eafc", "#6d3fc0", "t-testo", "#1f2328"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f", "t-testo", "#1f2328"]
+};
+// opz: { stato: {id: chiave di STILE_NODO}, ordine: {id: numero}, nulls: true, nullStato: {"id:sx": stile},
+//        etichette: [{id, testo, lato: "sx"|"dx"|"sopra"|"sotto", col}], gusci: [{id, testo, col, lato}],
+//        livelli: true, indici: true (mostra la posizione nel vettore), giro: {punti, fino, tacche}, aria }
+function svgAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, R = opz.r || 17, s = [], k;
+  var extraSx = opz.livelli ? 64 : 0, W = L.W + extraSx + (opz.extraDx || 0), H = L.H + (opz.nulls ? 34 : 0) + (opz.extraBasso || 0);
+  s.push('<svg viewBox="0 0 ' + r1a(W) + ' ' + r1a(H) + '" width="' + r1a(W) + '" height="' + r1a(H) + '" role="img" aria-label="' + escA(opz.aria || "Un albero binario") + '" font-family="system-ui, sans-serif">');
+  s.push('<g transform="translate(' + extraSx + ',0)">');
+  // gusci (sottoalberi evidenziati)
+  (opz.gusci || []).forEach(function (g) {
+    var ids = [];
+    (function raccogli(id) { if (id === null) return; ids.push(id); raccogli(T.nodi[id].sx); raccogli(T.nodi[id].dx); })(g.id);
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    ids.forEach(function (i) { x0 = Math.min(x0, pos[i].x); x1 = Math.max(x1, pos[i].x); y0 = Math.min(y0, pos[i].y); y1 = Math.max(y1, pos[i].y); });
+    var pad = R + 9 + (g.pad || 0), c = STILE_NODO[g.col || "viola"];
+    s.push('<rect x="' + r1a(x0 - pad) + '" y="' + r1a(y0 - pad) + '" width="' + r1a(x1 - x0 + 2 * pad) + '" height="' + r1a(y1 - y0 + 2 * pad) + '" rx="' + r1a(pad) + '" class="' + c[0] + '" fill="' + c[1] + '" fill-opacity="0.55" stroke="' + c[2] + '" stroke-width="1.4" stroke-dasharray="5 4"/>');
+    if (g.testo) {
+      var colT = g.col === "arancio" ? ["t-arancio", "#b4500f"] : g.col === "inS" ? ["t-blu", "#2f52c4"] : ["t-viola", "#6d3fc0"];
+      String(g.testo).split("\n").forEach(function (riga, j) {
+        var tx = g.lato === "destra" ? x1 + pad + 6 : x0 - pad + 4, ty = g.lato === "destra" ? y1 - 4 + j * 15 : y1 + pad + 15 + j * 15;
+        s.push('<text x="' + r1a(tx) + '" y="' + r1a(ty) + '" font-size="12.5" font-weight="600" text-anchor="start" class="' + colT[0] + '" fill="' + colT[1] + '">' + riga + '</text>');
+      });
+    }
+  });
+  // livelli
+  if (opz.livelli) {
+    for (var d = 0; d <= L.h; d++) {
+      var yy = (opz.top || 30) + d * (opz.dy || 62);
+      s.push('<text x="' + (-extraSx + 6) + '" y="' + (yy + 4) + '" font-size="12" class="t-muted" fill="#5b6270">livello ' + d + '</text>');
+      s.push('<line x1="' + (-extraSx + 58) + '" y1="' + yy + '" x2="' + (L.W - 6) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/>');
+    }
+  }
+  // archi
+  for (k in pos) {
+    ["sx", "dx"].forEach(function (lato) {
+      var c = T.nodi[k][lato];
+      if (c !== null && pos[c]) {
+        var a = pos[k], b = pos[c], dx = b.x - a.x, dyy = b.y - a.y, l = Math.sqrt(dx * dx + dyy * dyy);
+        s.push('<line x1="' + r1a(a.x + dx / l * R) + '" y1="' + r1a(a.y + dyy / l * R) + '" x2="' + r1a(b.x - dx / l * R) + '" y2="' + r1a(b.y - dyy / l * R) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      } else if (opz.nulls) {
+        var a2 = pos[k], ox = lato === "sx" ? -1 : 1, nx = a2.x + ox * 16, ny = a2.y + 40;
+        var st = (opz.nullStato || {})[k + ":" + lato];
+        var cc = st ? STILE_NODO[st] : STILE_NODO.spento;
+        s.push('<line x1="' + r1a(a2.x + ox * R * 0.6) + '" y1="' + r1a(a2.y + R * 0.8) + '" x2="' + r1a(nx) + '" y2="' + r1a(ny - 7) + '" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="3 3"/>');
+        s.push('<rect x="' + r1a(nx - 13) + '" y="' + r1a(ny - 7) + '" width="26" height="14" rx="3" class="' + cc[0] + '" fill="' + cc[1] + '" stroke="' + cc[2] + '" stroke-width="1"/>');
+        s.push('<text x="' + r1a(nx) + '" y="' + r1a(ny + 3.5) + '" font-size="9.5" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      }
+    });
+  }
+  // giro intorno all'albero
+  if (opz.giro) {
+    var G = opz.giro, pts = G.punti, fino = G.fino === undefined ? pts.length - 1 : G.fino;
+    var dTutto = "M" + pts.map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+    s.push('<path d="' + dTutto + '" class="l-giro" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"/>');
+    if (fino > 0) {
+      var dFatto = "M" + pts.slice(0, fino + 1).map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+      s.push('<path d="' + dFatto + '" class="l-giro-fatto" fill="none" stroke="#6d3fc0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>');
+    }
+    (G.tacche || []).forEach(function (t) {
+      var col = t.tipo === "pre" ? ["t-blu", "#2f52c4"] : t.tipo === "in" ? ["t-verde", "#17803d"] : ["t-arancio", "#b4500f"];
+      s.push('<circle cx="' + r1a(t.x) + '" cy="' + r1a(t.y) + '" r="' + (t.fatta ? 4.2 : 3.2) + '" class="' + col[0] + '" fill="' + (t.fatta ? col[1] : "none") + '" stroke="' + col[1] + '" stroke-width="1.4"' + (t.fatta ? "" : ' fill-opacity="0"') + '/>');
+    });
+    if (G.punto) s.push('<circle cx="' + r1a(G.punto.x) + '" cy="' + r1a(G.punto.y) + '" r="6.5" class="t-viola" fill="#6d3fc0"/>');
+  }
+  // nodi
+  for (k in pos) {
+    var p = pos[k], st2 = STILE_NODO[(opz.stato || {})[k] || "normale"];
+    s.push('<circle cx="' + r1a(p.x) + '" cy="' + r1a(p.y) + '" r="' + R + '" class="' + st2[0] + '" fill="' + st2[1] + '" stroke="' + st2[2] + '" stroke-width="1.6"/>');
+    var et = T.nodi[k].v, fs = et.length > 2 ? 12.5 : 15;
+    s.push('<text x="' + r1a(p.x) + '" y="' + r1a(p.y + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="' + st2[3] + '" fill="' + st2[4] + '">' + escA(et) + '</text>');
+    if (opz.ordine && opz.ordine[k] !== undefined) {
+      s.push('<circle cx="' + r1a(p.x + R * 0.85) + '" cy="' + r1a(p.y - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1a(p.x + R * 0.85) + '" y="' + r1a(p.y - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.ordine[k] + '</text>');
+    }
+    if (opz.indici && T.nodi[k].pos !== undefined) {
+      s.push('<text x="' + r1a(p.x - R - 3) + '" y="' + r1a(p.y - R + 4) + '" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">' + T.nodi[k].pos + '</text>');
+    }
+  }
+  // etichette con freccia
+  (opz.etichette || []).forEach(function (e) {
+    var p = pos[e.id], col = e.col === "arancio" ? ["t-arancio", "#b4500f"] : e.col === "verde" ? ["t-verde", "#17803d"] : e.col === "rosso" ? ["t-rosso", "#b42318"] : e.col === "viola" ? ["t-viola", "#6d3fc0"] : ["t-blu", "#2f52c4"];
+    var lx, ly, ax, ay, anc;
+    if (e.lato === "sx") { lx = p.x - R - 44; ly = p.y + 4; ax = p.x - R - 3; ay = p.y; anc = "end"; }
+    else if (e.lato === "sopra") { lx = p.x + R + 14; ly = p.y - R - 6; ax = p.x + R * 0.6; ay = p.y - R * 0.8; anc = "start"; }
+    else if (e.lato === "sotto") { lx = p.x; ly = p.y + R + 30; ax = p.x; ay = p.y + R + 3; anc = "middle"; }
+    else { lx = p.x + R + 44; ly = p.y + 4; ax = p.x + R + 3; ay = p.y; anc = "start"; }
+    var righe = String(e.testo).split("\n");
+    righe.forEach(function (rg, j) { s.push('<text x="' + r1a(lx + (anc === "start" ? 4 : anc === "end" ? -4 : 0)) + '" y="' + r1a(ly + j * 14 + (e.lato === "sotto" ? 0 : -(righe.length - 1) * 7)) + '" font-size="12.5" font-weight="600" text-anchor="' + anc + '" class="' + col[0] + '" fill="' + col[1] + '">' + rg + '</text>'); });
+    var sx0 = e.lato === "sx" ? lx : e.lato === "sotto" ? lx : lx, sy0 = e.lato === "sotto" ? ly - 12 : e.lato === "sopra" ? ly - 4 : ly - 4;
+    if (e.lato === "sopra") sx0 = lx;
+    var ang = Math.atan2(ay - sy0, ax - sx0);
+    s.push('<line x1="' + r1a(sx0) + '" y1="' + r1a(sy0) + '" x2="' + r1a(ax - 4 * Math.cos(ang)) + '" y2="' + r1a(ay - 4 * Math.sin(ang)) + '" class="' + col[0].replace("t-", "l-") + '" stroke="' + col[1] + '" stroke-width="1.3"/>');
+    s.push('<path d="M' + r1a(ax) + ' ' + r1a(ay) + ' l' + r1a(-8 * Math.cos(ang - 0.42)) + ' ' + r1a(-8 * Math.sin(ang - 0.42)) + ' l' + r1a(8 * Math.cos(ang - 0.42) - 8 * Math.cos(ang + 0.42)) + ' ' + r1a(8 * Math.sin(ang - 0.42) - 8 * Math.sin(ang + 0.42)) + ' z" class="' + col[0] + '" fill="' + col[1] + '"/>');
+  });
+  s.push('</g></svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- visite
+function preordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; out.push(id); preordine(T, T.nodi[id].sx, out); preordine(T, T.nodi[id].dx, out); return out; }
+function inordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; inordine(T, T.nodi[id].sx, out); out.push(id); inordine(T, T.nodi[id].dx, out); return out; }
+function postordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; postordine(T, T.nodi[id].sx, out); postordine(T, T.nodi[id].dx, out); out.push(id); return out; }
+function ampiezza(T) { var out = [], C = T.radice === null ? [] : [T.radice]; while (C.length) { var n = C.shift(); out.push(n); if (T.nodi[n].sx !== null) C.push(T.nodi[n].sx); if (T.nodi[n].dx !== null) C.push(T.nodi[n].dx); } return out; }
+function valori(T, ids) { return ids.map(function (id) { return T.nodi[id].v; }); }
+
+// Il giro intorno all'albero: un percorso che parte a sinistra della radice e gira in senso antiorario,
+// con una tacca a sinistra (pre), sotto (in) e a destra (post) di ogni nodo.
+function giroAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, d = (opz.r || 17) + 9, pts = [], tacche = [];
+  function punto(x, y, tipo, id) { pts.push({ x: x, y: y }); if (tipo) tacche.push({ x: x, y: y, tipo: tipo, id: id, i: pts.length - 1 }); }
+  function giro(id) {
+    var p = pos[id], n = T.nodi[id];
+    punto(p.x - d, p.y, "pre", id);
+    if (n.sx !== null) giro(n.sx);
+    else punto(p.x - d * 0.75, p.y + d * 0.75);
+    punto(p.x, p.y + d, "in", id);
+    if (n.dx !== null) giro(n.dx);
+    else punto(p.x + d * 0.75, p.y + d * 0.75);
+    punto(p.x + d, p.y, "post", id);
+  }
+  if (T.radice !== null) {
+    var r = pos[T.radice];
+    punto(r.x - d * 0.6, r.y - d * 1.25);
+    giro(T.radice);
+    punto(r.x + d * 0.6, r.y - d * 1.25);
+  }
+  return { punti: pts, tacche: tacche };
+}
+
+// Eventi delle visite iterative (con la coda o con la pila), come nel codice della lavagna dell'anno scorso.
+// Ogni evento: { riga, testo, S: [id|null...], corrente, visitati: [id...], nullStato }
+var CODICE_VISITE = {
+  coda: ["<b>ALGORITMO</b> visitaInAmpiezza(AlberoBinario r)", "  C ← coda vuota", "  C.enqueue(r)", "  <b>WHILE NOT</b> (C.isEmpty()) <b>DO</b>", "    n ← C.dequeue()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      C.enqueue(n.sx)", "      C.enqueue(n.dx)"],
+  pila: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  P ← pila vuota", "  P.push(r)", "  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>", "    n ← P.pop()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      P.push(n.dx)", "      P.push(n.sx)"]
+};
+function eventiVisita(T, tipo) {
+  var ev = [], S = [], vis = [], cor = null, X = tipo === "coda" ? "C" : "P";
+  var ins = tipo === "coda" ? "C.enqueue" : "P.push", est = tipo === "coda" ? "C.dequeue()" : "P.pop()";
+  function nome(id) { return id === null ? "null" : "il nodo " + escA(T.nodi[id].v); }
+  function scatta(riga, testo) { ev.push({ riga: riga, testo: testo, S: S.slice(), corrente: cor, visitati: vis.slice() }); }
+  scatta(0, "Chiamata della visita sulla radice, " + nome(T.radice) + ".");
+  scatta(1, (tipo === "coda" ? "Si crea una coda vuota C." : "Si crea una pila vuota P."));
+  S.push(T.radice); scatta(2, ins + "(r): " + (tipo === "coda" ? "la radice entra nella coda." : "la radice entra nella pila."));
+  var giri = 0;
+  while (giri++ < 200) {
+    if (!S.length) { cor = null; scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " è vuota: il ciclo finisce. Ordine di visita: <b>" + valori(T, vis).join(" ") + "</b>."); break; }
+    scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " non è vuota: si entra nel ciclo.");
+    var n = tipo === "coda" ? S.shift() : S.pop();
+    cor = n;
+    scatta(4, "n ← " + est + ": si toglie " + nome(n) + (tipo === "coda" ? ", il primo della coda." : ", quello in cima alla pila."));
+    if (n === null) { scatta(5, "n = null: non c'è nessun nodo da visitare, si torna al WHILE."); continue; }
+    scatta(5, "n ≠ null: è un nodo vero.");
+    vis.push(n); scatta(6, "Si visita il nodo " + escA(T.nodi[n].v) + ": è il " + vis.length + "° visitato.");
+    var a = tipo === "coda" ? T.nodi[n].sx : T.nodi[n].dx, b = tipo === "coda" ? T.nodi[n].dx : T.nodi[n].sx;
+    S.push(a); scatta(7, ins + "(n." + (tipo === "coda" ? "sx" : "dx") + "): entra " + (a === null ? "null (il figlio " + (tipo === "coda" ? "sinistro" : "destro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "sinistro, " : "destro, ") + escA(T.nodi[a].v)) + ".");
+    S.push(b); scatta(8, ins + "(n." + (tipo === "coda" ? "dx" : "sx") + "): entra " + (b === null ? "null (il figlio " + (tipo === "coda" ? "destro" : "sinistro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "destro, " : "sinistro, ") + escA(T.nodi[b].v)) + "." + (tipo === "pila" && b !== null ? " È in cima: sarà il prossimo a uscire." : ""));
+  }
+  return ev;
+}
+
+// Eventi della visita ricorsiva: ordine "pre" | "in" | "post".
+var CODICE_RIC = {
+  pre: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visita la radice", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)"],
+  "in": ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visita la radice", "    visitaInProfondità(r.dx)"],
+  post: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)", "    visita la radice"]
+};
+function eventiRicorsiva(T, ordine) {
+  var ev = [], pila = [], out = [];
+  var righe = ordine === "pre" ? { vis: 2, sx: 3, dx: 4 } : ordine === "in" ? { sx: 2, vis: 3, dx: 4 } : { sx: 2, dx: 3, vis: 4 };
+  function nome(id) { return id === null ? "null" : escA(T.nodi[id].v); }
+  function scatta(riga, testo, extra) {
+    var e = { riga: riga, testo: testo, pila: pila.map(function (r) { return { id: r.id, lato: r.lato }; }), out: out.slice(), corrente: pila.length ? pila[pila.length - 1].id : null };
+    if (extra) for (var q in extra) e[q] = extra[q];
+    ev.push(e);
+  }
+  function chiama(id, lato) {
+    pila.push({ id: id, lato: lato });
+    scatta(0, "Chiamata visitaInProfondità(" + nome(id) + ")" + (lato ? ", sul sottoalbero " + (lato === "sx" ? "sinistro" : "destro") + " del nodo " + nome(pila[pila.length - 2].id) : ", sulla radice") + ". Nella pila delle chiamate entra un record.");
+    if (id === null) {
+      scatta(1, "r = null: l'albero è vuoto, non c'è niente da fare. La chiamata finisce subito.");
+      pila.pop();
+      return;
+    }
+    scatta(1, "r ≠ null: si esegue il corpo dell'IF.");
+    var passi = [["vis", righe.vis], ["sx", righe.sx], ["dx", righe.dx]].sort(function (a, b) { return a[1] - b[1]; });
+    passi.forEach(function (ps) {
+      if (ps[0] === "vis") { out.push(id); scatta(ps[1], "Si visita la radice di questo sottoalbero: " + nome(id) + ". Ordine finora: <b>" + valori(T, out).join(" ") + "</b>.", { visitaOra: id }); }
+      else {
+        scatta(ps[1], "Chiamata ricorsiva sul figlio " + (ps[0] === "sx" ? "sinistro" : "destro") + " di " + nome(id) + ": " + nome(T.nodi[id][ps[0]]) + ".");
+        chiama(T.nodi[id][ps[0]], ps[0]);
+        scatta(ps[1], "Torniamo alla chiamata su " + nome(id) + ": il sottoalbero " + (ps[0] === "sx" ? "sinistro" : "destro") + " è finito.");
+      }
+    });
+    pila.pop();
+  }
+  chiama(T.radice, null);
+  ev.push({ riga: 0, testo: "La prima chiamata è finita: la pila delle chiamate è vuota. Ordine di visita: <b>" + valori(T, out).join(" ") + "</b>.", pila: [], out: out.slice(), corrente: null, fine: true });
+  return ev;
+}
+
+// Notazione polacca inversa: valuta con una pila. Restituisce i passi.
+function passiRPN(tokens) {
+  var P = [], passi = [{ j: -1, pila: [], testo: "Si leggono i simboli da sinistra a destra, con una pila vuota." }], err = null;
+  for (var j = 0; j < tokens.length && !err; j++) {
+    var t = tokens[j];
+    if (/^-?\d+(\.\d+)?$/.test(t)) { P.push(Number(t)); passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un numero: push(" + t + ")." }); }
+    else if ("+-−*×/:".indexOf(t) >= 0 && t.length === 1) {
+      if (P.length < 2) { err = "«" + t + "» è un operatore, ma nella pila ci sono meno di due numeri: l'espressione è sbagliata."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); break; }
+      var b = P.pop(), a = P.pop(), v;
+      if (t === "+") v = a + b; else if (t === "-" || t === "−") v = a - b; else if (t === "*" || t === "×") v = a * b; else v = b === 0 ? NaN : a / b;
+      v = Math.round(v * 1e6) / 1e6;
+      P.push(v);
+      passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un operatore: pop() dà " + b + " (il secondo operando), pop() dà " + a + " (il primo). Si calcola " + a + " " + t + " " + b + " = " + v + " e si fa push(" + v + ").", tolti: [a, b] });
+    } else { err = "Simbolo non riconosciuto: «" + escA(t) + "»."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); }
+  }
+  if (!err) {
+    if (P.length === 1) passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli: nella pila resta un solo numero, <b>" + P[0] + "</b>. È il valore dell'espressione.", fine: true });
+    else passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli, ma nella pila restano " + P.length + " numeri: l'espressione è sbagliata (mancano operatori).", errore: true, fine: true });
+  }
+  return passi;
+}
+// HTML di una pila verticale di "chip" (cima in alto) e di una coda orizzontale
+function htmlPilaChip(els, fmt, opz) {
+  opz = opz || {};
+  var h = '<div class="pilachip">';
+  if (!els.length) h += '<div class="chip zero">vuota</div>';
+  els.forEach(function (e, j) { h += '<div class="chip' + (e === null ? " zero" : "") + (j === els.length - 1 ? " cima" : "") + '">' + fmt(e) + (j === els.length - 1 ? ' <span class="lab-cima">← cima</span>' : '') + '</div>'; });
+  return h + '</div>';
+}
+function htmlCodaChip(els, fmt) {
+  var h = '<div class="codachip"><span class="lab-coda">primo →</span>';
+  if (!els.length) h += '<span class="chip zero">vuota</span>';
+  els.forEach(function (e) { h += '<span class="chip' + (e === null ? " zero" : "") + '">' + fmt(e) + '</span>'; });
+  return h + '<span class="lab-coda">← ultimo</span></div>';
+}
+
+// ---- dinamica.js
+// Programmazione dinamica (pacco 21): Fibonacci, cammino minimo su matrice (lavagna), cammino massimo su griglia (scritto 6/2/2026).
+// Fibonacci: numero di chiamate e righe eseguite dalla versione ricorsiva
+function fibNum(n) { var a = 1, b = 1; for (var i = 3; i <= n; i++) { var c = a + b; a = b; b = c; } return n <= 2 ? 1 : b; }
+function fibAlbero(n) { return n <= 2 ? { v: n, c: [] } : { v: n, c: [fibAlbero(n - 1), fibAlbero(n - 2)] }; }
+// lavagna: M n×n, cammino dalla prima all'ultima colonna, mosse: colonna successiva, riga sopra / stessa / sotto. Indici 0-based nel codice.
+function camminoMinimoEventi(M) {
+  var n = M.length, C = M.map(function (r) { return r.map(function () { return null; }); }), ev = [];
+  for (var i = 0; i < n; i++) { C[i][0] = M[i][0]; }
+  ev.push({ tipo: "col1", C: C.map(function (r) { return r.slice(); }), testo: "Prima colonna: C[i, 1] = M[i, 1], perché un cammino che finisce nella colonna 1 è fatto della sola casella di partenza." });
+  for (var j = 1; j < n; j++) for (var i = 0; i < n; i++) {
+    var cand = [], best = null;
+    [i - 1, i, i + 1].forEach(function (r) { if (r >= 0 && r < n) { cand.push(r); if (best === null || C[r][j - 1] < C[best][j - 1]) best = r; } });
+    C[i][j] = M[i][j] + C[best][j - 1];
+    ev.push({ tipo: "cella", i: i, j: j, cand: cand, best: best, C: C.map(function (r) { return r.slice(); }) });
+  }
+  var imin = 0; for (var i = 1; i < n; i++) if (C[i][n - 1] < C[imin][n - 1]) imin = i;
+  // ricostruzione all'indietro
+  var path = [[imin, n - 1]], r = imin;
+  for (var j = n - 1; j > 0; j--) { var prev = null; [r - 1, r, r + 1].forEach(function (q) { if (q >= 0 && q < n && prev === null && C[q][j - 1] === C[r][j] - M[r][j]) prev = q; }); r = prev; path.unshift([r, j - 1]); }
+  ev.push({ tipo: "fine", C: C.map(function (r) { return r.slice(); }), imin: imin, path: path });
+  return ev;
+}
+// scritto del 6/2/2026: griglia n×n, da (1,1) a (n,n), mosse a destra o in basso, valore massimo; N = numero di cammini massimi
+function grigliaMassimoEventi(M) {
+  var n = M.length, C = M.map(function (r) { return r.map(function () { return null; }); }), N = M.map(function (r) { return r.map(function () { return null; }); }), ev = [];
+  for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) {
+    var cand = [];
+    if (i > 0) cand.push([i - 1, j]); if (j > 0) cand.push([i, j - 1]);
+    if (!cand.length) { C[i][j] = M[i][j]; N[i][j] = 1; ev.push({ tipo: "cella", i: i, j: j, cand: [], best: [], C: C.map(function (r) { return r.slice(); }), N: N.map(function (r) { return r.slice(); }) }); continue; }
+    var mx = Math.max.apply(null, cand.map(function (p) { return C[p[0]][p[1]]; })), best = cand.filter(function (p) { return C[p[0]][p[1]] === mx; });
+    C[i][j] = M[i][j] + mx; N[i][j] = best.reduce(function (t, p) { return t + N[p[0]][p[1]]; }, 0);
+    ev.push({ tipo: "cella", i: i, j: j, cand: cand, best: best, C: C.map(function (r) { return r.slice(); }), N: N.map(function (r) { return r.slice(); }) });
+  }
+  var path = [[n - 1, n - 1]], i = n - 1, j = n - 1;
+  while (i > 0 || j > 0) { if (i > 0 && C[i - 1][j] === C[i][j] - M[i][j]) i--; else j--; path.unshift([i, j]); }
+  ev.push({ tipo: "fine", C: C, N: N, path: path });
+  return ev;
+}
+// disegno di una griglia di numeri con un cammino evidenziato
+// opz: { cella, cammino: [[i,j]...], colore: "verde"|"rosso"|..., sfondo: {"i,j": stile}, titoloRighe: true, aria, vuote: true (null = casella vuota) }
+var COL_G = { verde: ["l-verde", "#17803d", "r-verde", "#e6f5ea"], rosso: ["l-rosso", "#b42318", "r-rosso", "#fdecea"], arancio: ["l-arancio", "#b4500f", "r-arancio", "#fdf0e3"], blu: ["l-blu", "#2f52c4", "r-blu", "#e8edfc"], viola: ["l-viola", "#6d3fc0", "r-viola", "#f1ebfb"], giallo: ["l-arancio", "#b4500f", "r-giallo", "#fff1a8"] };
+function svgGriglia(M, opz) {
+  opz = opz || {};
+  var n = M.length, k = M[0].length, c = opz.cella || 40, m = opz.indici ? 22 : 4, W = k * c + m + 4, H = n * c + m + 4, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "una matrice") + '" font-family="system-ui, sans-serif">');
+  for (var i = 0; i < n; i++) for (var j = 0; j < k; j++) {
+    var key = i + "," + j, st = opz.sfondo && opz.sfondo[key] ? COL_G[opz.sfondo[key]] : null;
+    s.push('<rect x="' + (m + j * c) + '" y="' + (m + i * c) + '" width="' + c + '" height="' + c + '" class="' + (st ? st[2] : "r-nodo") + '" fill="' + (st ? st[3] : "#ffffff") + '" stroke="#9aa3b2" stroke-width="1"/>');
+    var v = M[i][j];
+    if (v !== null && v !== undefined) s.push('<text x="' + (m + j * c + c / 2) + '" y="' + (m + i * c + c / 2 + 5) + '" font-size="' + (String(v).length > 2 ? 12.5 : 15) + '" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + (v === Infinity ? "∞" : v) + '</text>');
+  }
+  if (opz.indici) {
+    for (var i = 0; i < n; i++) s.push('<text x="' + (m - 7) + '" y="' + (m + i * c + c / 2 + 4) + '" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">' + (opz.nomi ? opz.nomi[i] : i + 1) + '</text>');
+    for (var j = 0; j < k; j++) s.push('<text x="' + (m + j * c + c / 2) + '" y="' + (m - 7) + '" font-size="11" text-anchor="middle" class="t-muted" fill="#5b6270">' + (opz.nomi ? opz.nomi[j] : j + 1) + '</text>');
+  }
+  (opz.cammini || (opz.cammino ? [[opz.cammino, opz.colore || "verde"]] : [])).forEach(function (cc, q) {
+    var p = cc[0], col = COL_G[cc[1] || "verde"], off = (q - ((opz.cammini || [0]).length - 1) / 2) * 4;
+    var pts = p.map(function (x) { return (m + x[1] * c + c / 2 + off) + "," + (m + x[0] * c + c / 2 + off); }).join(" ");
+    s.push('<polyline points="' + pts + '" fill="none" class="' + col[0] + '" stroke="' + col[1] + '" stroke-width="3" stroke-opacity="0.75" stroke-linejoin="round"/>');
+    p.forEach(function (x) { s.push('<circle cx="' + (m + x[1] * c + c / 2 + off) + '" cy="' + (m + x[0] * c + c / 2 + off) + '" r="' + (c * 0.36) + '" fill="none" class="' + col[0] + '" stroke="' + col[1] + '" stroke-width="2"/>'); });
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+function stringaFib(n) { return n <= 2 ? "F" + n : "F" + n + "(" + stringaFib(n - 1) + "," + stringaFib(n - 2) + ")"; }
+
+// ---- w21.js
+// Riquadri interattivi del pacco 21.
+function $(id) { return document.getElementById(id); }
+
+// ---------------------------------------------------------------- 1. Fibonacci: ricorsivo contro array
+(function () {
+  if (!$("fb-corpo")) return;
+  $("fb-corpo").innerHTML = '<div class="controlli"><label>n = <input type="number" id="fb-n" min="1" max="60" value="6" style="width:80px"></label></div><div class="tabella-wrap" id="fb-tab"></div><div class="figura" id="fb-fig" style="margin:6px 0"></div><div class="narrazione" id="fb-txt"></div>';
+  function fmt(x) { return x.toLocaleString("it-IT"); }
+  function mostra() {
+    var n = Math.max(1, Math.min(60, Math.floor(Number($("fb-n").value) || 1))), F = fibNum(n);
+    var chiamate = 2 * F - 1, righe = 3 * F - 2, iter = Math.max(0, n - 2);
+    $("fb-tab").innerHTML = '<table><tr><th></th><th>versione ricorsiva</th><th>versione con l\'array</th></tr><tr><td>F<sub>' + n + '</sub></td><td colspan="2">' + fmt(F) + '</td></tr><tr><td>chiamate</td><td>' + fmt(chiamate) + '</td><td>1</td></tr><tr><td>righe eseguite</td><td>T(' + n + ') = 3F<sub>' + n + '</sub> − 2 = ' + fmt(righe) + '</td><td>circa ' + fmt(2 * iter + 4) + ' (il FOR fa ' + iter + ' giri)</td></tr></table>';
+    if (n <= 7) {
+      var T = alberoDa(stringaFib(n)), st = {}, conta = {};
+      Object.keys(T.nodi).forEach(function (id) { var v = T.nodi[id].v; conta[v] = (conta[v] || 0) + 1; });
+      Object.keys(T.nodi).forEach(function (id) { var v = T.nodi[id].v; if (n >= 4 && v === "F" + (n - 2)) st[id] = "inS"; if (n >= 5 && v === "F" + (n - 3)) st[id] = "arancio"; });
+      $("fb-fig").innerHTML = svgAlbero(T, { slot: 34, dy: 50, r: 14, stato: st, aria: "albero delle chiamate" });
+      $("fb-txt").innerHTML = "Nell'albero ogni nodo è una chiamata. " + (n >= 4 ? "F" + (n - 2) + " (in azzurro) viene calcolato " + conta["F" + (n - 2)] + " volte" + (n >= 5 ? ", F" + (n - 3) + " (in arancione) " + conta["F" + (n - 3)] + " volte" : "") + ": la ricorsione rifà lo stesso lavoro tante volte." : "Con n così piccolo non ci sono ancora ripetizioni.");
+    } else { $("fb-fig").innerHTML = ""; $("fb-txt").innerHTML = "L'albero è troppo grande da disegnare: ha " + fmt(chiamate) + " nodi. La versione con l'array invece fa un giro per ogni numero da 3 a " + n + "."; }
+  }
+  $("fb-n").oninput = mostra; mostra();
+})();
+
+// ---------------------------------------------------------------- 2. la matrice C passo per passo
+(function () {
+  if (!$("cm-corpo")) return;
+  var ES = [["Lavagna: cammino minimo da sinistra a destra", "min", "1 3 8 5\n4 2 7 6\n2 1 5 1\n9 8 2 3"],
+    ["Scritto 6/2/2026, primo esempio: massimo da (1,1) a (n,n)", "max", "5 3 6 2\n5 1 3 0\n2 1 1 0\n1 3 1 1"],
+    ["Scritto 6/2/2026, secondo esempio (tre cammini massimi)", "max", "1 0 1 1\n1 2 2 1\n2 2 1 1\n1 0 2 1"],
+    ["Scrivi tu (cammino minimo da sinistra a destra)", "min", null], ["Scrivi tu (massimo da (1,1) a (n,n))", "max", null]];
+  $("cm-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="cm-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label style="width:100%">La matrice M (una riga per riga, numeri separati da spazi) <textarea id="cm-in" rows="4" style="width:100%;font-family:ui-monospace,monospace;font-size:14px"></textarea></label></div>' +
+    '<div class="controlli"><button class="primario" id="cm-passo">Prossima casella →</button><button id="cm-fine">Fino alla fine</button><button id="cm-reset">Ricomincia</button></div>' +
+    '<div class="contatori" id="cm-cont"></div><div class="affianco" id="cm-fig"></div><div class="narrazione" id="cm-txt"></div>';
+  var V = { M: null, tipo: "min", ev: [], k: 0 };
+  function leggi() {
+    var r = $("cm-in").value.trim().split("\n").map(function (x) { return x.trim().split(/[\s,;]+/).map(Number); });
+    var n = r.length;
+    if (n < 2 || n > 7) return "Scrivi una matrice quadrata da 2×2 a 7×7.";
+    for (var i = 0; i < n; i++) { if (r[i].length !== n) return "La riga " + (i + 1) + " ha " + r[i].length + " numeri invece di " + n + ": la matrice deve essere quadrata."; if (r[i].some(function (x) { return !isFinite(x); })) return "Nella riga " + (i + 1) + " c'è qualcosa che non è un numero."; }
+    V.M = r; return null;
+  }
+  function prepara() {
+    var e = ES[Number($("cm-es").value)]; V.tipo = e[1];
+    var err = leggi(); if (err) { $("cm-txt").innerHTML = '<span class="errore">' + err + '</span>'; $("cm-fig").innerHTML = ""; return; }
+    V.ev = V.tipo === "min" ? camminoMinimoEventi(V.M) : grigliaMassimoEventi(V.M); V.k = 0; mostra();
+  }
+  function lab(i, j) { return "(" + (i + 1) + ", " + (j + 1) + ")"; }
+  function mostra() {
+    var e = V.ev[V.k], n = V.M.length, sfM = {}, sfC = {}, t = "";
+    if (e.tipo === "cella") {
+      sfM[e.i + "," + e.j] = "giallo"; sfC[e.i + "," + e.j] = "giallo";
+      e.cand.forEach(function (p) { var q = V.tipo === "min" ? [p, e.j - 1] : p; sfC[q[0] + "," + q[1]] = "blu"; });
+      var best = V.tipo === "min" ? [[e.best, e.j - 1]] : e.best;
+      best.forEach(function (q) { sfC[q[0] + "," + q[1]] = "verde"; });
+      if (V.tipo === "min") t = "C" + lab(e.i, e.j).replace("(", "[").replace(")", "]") + " = M" + lab(e.i, e.j).replace("(", "[").replace(")", "]") + " + il minimo tra " + e.cand.map(function (r) { return "C[" + (r + 1) + ", " + e.j + "] = " + e.C[r][e.j - 1]; }).join(", ") + " (in blu; il minimo in verde) = " + V.M[e.i][e.j] + " + " + e.C[e.best][e.j - 1] + " = " + e.C[e.i][e.j] + ".";
+      else if (!e.cand.length) t = "C[1, 1] = M[1, 1] = " + e.C[0][0] + ": il cammino è fatto della sola casella di partenza.";
+      else t = "In " + lab(e.i, e.j) + " si arriva " + e.cand.map(function (p) { return (p[0] < e.i ? "dall'alto, " : "da sinistra, ") + "C" + lab(p[0], p[1]).replace("(", "[").replace(")", "]") + " = " + e.C[p[0]][p[1]]; }).join(", oppure ") + ". Il massimo è " + Math.max.apply(null, e.cand.map(function (p) { return e.C[p[0]][p[1]]; })) + ": C[" + (e.i + 1) + ", " + (e.j + 1) + "] = " + V.M[e.i][e.j] + " + " + (e.C[e.i][e.j] - V.M[e.i][e.j]) + " = " + e.C[e.i][e.j] + ". Cammini massimi fino a qui: " + e.N[e.i][e.j] + ".";
+    } else if (e.tipo === "col1") { for (var i = 0; i < n; i++) sfC[i + ",0"] = "giallo"; t = e.testo; }
+    var C = e.C, opzC = { cella: 42, indici: true, sfondo: sfC, aria: "la matrice C" }, opzM = { cella: 42, indici: true, sfondo: sfM, aria: "la matrice M" };
+    if (e.tipo === "fine") {
+      opzC.cammino = e.path; opzM.cammino = e.path;
+      if (V.tipo === "min") { sfC[e.imin + "," + (n - 1)] = "verde"; t = "Fine. Il valore del cammino minimo è il minimo dell'ultima colonna di C: C[" + (e.imin + 1) + ", " + n + "] = " + C[e.imin][n - 1] + ". Il cammino (in verde) si ricostruisce all'indietro: da ogni casella si torna a quella della colonna prima con C = C della casella meno M della casella."; }
+      else t = "Fine. Il valore massimo è C[" + n + ", " + n + "] = " + C[n - 1][n - 1] + ". Cammini di valore massimo: " + e.N[n - 1][n - 1] + ". Il cammino in verde si ricostruisce all'indietro, da (" + n + ", " + n + ") verso (1, 1), andando ogni volta nella casella (sopra o a sinistra) con C = C della casella meno M della casella.";
+    }
+    $("cm-fig").innerHTML = '<div><div class="nome-mat">M</div>' + svgGriglia(V.M, opzM) + '</div><div><div class="nome-mat">C</div>' + svgGriglia(C, opzC) + '</div>' + (V.tipo === "max" && e.N ? '<div><div class="nome-mat">quanti cammini massimi</div>' + svgGriglia(e.N, { cella: 42, indici: true, aria: "numero di cammini massimi" }) + '</div>' : '');
+    $("cm-cont").innerHTML = '<span>passo <b>' + V.k + '</b> di ' + (V.ev.length - 1) + '</span>';
+    $("cm-txt").innerHTML = t;
+    $("cm-passo").disabled = $("cm-fine").disabled = V.k >= V.ev.length - 1;
+  }
+  $("cm-passo").onclick = function () { if (V.k < V.ev.length - 1) V.k++; mostra(); };
+  $("cm-fine").onclick = function () { V.k = V.ev.length - 1; mostra(); };
+  $("cm-reset").onclick = prepara;
+  $("cm-in").onchange = function () { var k = Number($("cm-es").value); if (ES[k][2] !== null) $("cm-es").value = ES[k][1] === "min" ? "3" : "4"; prepara(); };
+  $("cm-es").onchange = function () { var e = ES[Number($("cm-es").value)]; if (e[2] !== null) $("cm-in").value = e[2]; prepara(); };
+  $("cm-es").onchange();
+})();
+})();
+</script>
+</body>
+</html>
