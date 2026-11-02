@@ -247,7 +247,7 @@
 <div class="tabella-wrap"><table><tr><th>oggetto</th><th>peso</th><th>valore</th><th>il greedy (per valore)</th><th>la soluzione ottima</th></tr><tr><td>c1</td><td>12</td><td>100</td><td><span class="ok">✓</span></td><td>–</td></tr><tr><td>c2</td><td>3</td><td>80</td><td><span class="ok">✓</span></td><td><span class="ok">✓</span></td></tr><tr><td>c3</td><td>6</td><td>75</td><td>–</td><td><span class="ok">✓</span></td></tr><tr><td>c4</td><td>6</td><td>70</td><td>–</td><td><span class="ok">✓</span></td></tr><tr><td>c5</td><td>3</td><td>30</td><td><span class="ok">✓</span></td><td><span class="ok">✓</span></td></tr><tr><td colspan="3"><b>totale</b> (peso; valore)</td><td><b>18; 210</b></td><td><b>18; 255</b></td></tr></table></div>
 <div class="didascalia"><b>Figura 5.</b> Lavagna, pagina 27, con P = 20. Il greedy guarda gli oggetti in ordine di valore: c<sub>1</sub> (100) entra, peso 12; c<sub>2</sub> (80) entra, peso 15; c<sub>3</sub> (75) porterebbe a 21, si scarta; c<sub>4</sub> (70) porterebbe a 21, si scarta; c<sub>5</sub> (30) entra, peso 18. Valore 210. Invece {c<sub>2</sub>, c<sub>3</sub>, c<sub>4</sub>, c<sub>5</sub>} pesa ugualmente 18 e vale 255: è la soluzione ottima.</div>
 </div>
-<p>Il difetto è lo stesso dello zaino: c<sub>1</sub> vale tanto, ma pesa 12 e occupa più di metà del sacco. Prendendolo per primo (ottimo locale, irrevocabile) si rinuncia a c<sub>3</sub> e c<sub>4</sub>, che insieme pesano come c<sub>1</sub> e valgono 145. Nel riquadro della sezione 5 puoi scegliere l'esempio «Zaino con valori» e provare anche altri criteri per seleziona.</p>
+<p>Il difetto è lo stesso dello zaino: c<sub>1</sub> vale tanto, ma pesa 12 e occupa più di metà del sacco. Prendendolo per primo (ottimo locale, irrevocabile) si rinuncia a c<sub>3</sub> e c<sub>4</sub>, che insieme pesano come c<sub>1</sub> e valgono 145. Nel riquadro «Lo zaino con la strategia greedy» puoi scegliere l'esempio «Zaino con valori» e provare anche altri criteri per seleziona.</p>
 <div class="box riassunto">
   <span class="etichetta">In breve</span>
   <ul>
@@ -293,7 +293,7 @@
 <!-- ============================================================ 8 -->
 <h2 id="quando"><span class="num">8</span>Quando ci si può fidare del greedy</h2>
 <p class="in-questa"><b>In questa sezione:</b> cosa insegnano gli esempi della lezione, messo in ordine: il greedy è veloce, ma va dimostrato che funziona; per far vedere che non funziona basta un esempio.</p>
-<p>Gli esempi della lezione portano tutti allo stesso punto. Il greedy ha due grandi pregi: è <strong>semplice</strong> (lo schema della sezione 4 è sempre lo stesso) e <strong>veloce</strong> (di solito si ordinano i candidati e si fa un solo giro, in tutto O(k log k)). Ma la scelta dell'ottimo locale e la scelta irrevocabile possono portarlo fuori strada: <strong>il greedy non sempre trova la soluzione ottima</strong>.</p>
+<p>Gli esempi della lezione portano tutti allo stesso punto. Il greedy ha due grandi pregi: è <strong>semplice</strong> (lo schema è sempre lo stesso: S vuoto, seleziona il migliore, aggiungilo se resta ammissibile) e <strong>veloce</strong> (di solito si ordinano i candidati e si fa un solo giro, in tutto O(k log k)). Ma la scelta dell'ottimo locale e la scelta irrevocabile possono portarlo fuori strada: <strong>il greedy non sempre trova la soluzione ottima</strong>.</p>
 <p>Quindi, davanti a un algoritmo greedy, ci sono due casi:</p>
 <ul>
   <li><b>Funziona sempre.</b> Allora va <em>dimostrato</em>: non basta provarlo su qualche esempio, perché un esempio che va bene non dice niente sugli altri. Nel pacco 20 lo vedrai per gli algoritmi di Kruskal e di Prim, che costruiscono l'albero ricoprente minimo con un greedy, e funzionano sempre.</li>
@@ -340,7 +340,7 @@
 
 <!-- ============================================================ 10 -->
 <h2 id="esercizi"><span class="num">10</span>Esercizi risolti (foglio 9)</h2>
-<p class="in-questa"><b>In questa sezione:</b> i due esercizi del foglio 9 e due esercizi in più. Prova a risolverli da solo, poi apri la soluzione.</p>
+<p class="in-questa"><b>In questa sezione:</b> i due esercizi del foglio 9 e due esercizi in più. Prova a risolverli, poi apri la soluzione.</p>
 
 <details class="esercizio">
   <summary>Esercizio 9.1 del foglio 9: le scatole nella cassaforte</summary>
@@ -371,7 +371,7 @@
   <b>RETURN</b> S</pre>
     <p>È lo schema greedy: il FOR EACH secondo l'ordine fa da «seleziona» e da C ← C \ {x}; la variabile occupata serve a controllare in un passo se S ∪ {s<sub>i</sub>} è ammissibile. Il tempo è O(k log k) per l'ordinamento più O(k) per il ciclo.</p>
     <p><b>(c)</b> Basta che le scatole più preziose siano anche quelle che riempiono bene. Per esempio cinque scatole tutte alte 5, con valori 10, 9, 8, 7 e 1: il greedy prende le prime quattro (altezza 20, valore 34), e la quinta non entra. Nessuna soluzione fa di meglio: in un'altezza di 20 entrano al massimo quattro scatole alte 5, e queste sono le quattro di valore più grande.</p>
-    <p><b>(d)</b> No. Lo mostra già l'esempio del testo: con h = 14 il greedy prende s<sub>1</sub> (valore 8, altezza 10); poi s<sub>3</sub> (altezza 16 &gt; 14) e s<sub>2</sub> (15 &gt; 14) non entrano. Valore 8, mentre {s<sub>2</sub>, s<sub>3</sub>} è alta 11 e vale 9. Puoi provarlo nel riquadro della sezione 5, esempio «Cassaforte dell'esercizio 9.1».</p>
+    <p><b>(d)</b> No. Lo mostra già l'esempio del testo: con h = 14 il greedy prende s<sub>1</sub> (valore 8, altezza 10); poi s<sub>3</sub> (altezza 16 &gt; 14) e s<sub>2</sub> (15 &gt; 14) non entrano. Valore 8, mentre {s<sub>2</sub>, s<sub>3</sub>} è alta 11 e vale 9. Puoi provarlo nel riquadro «Lo zaino con la strategia greedy», esempio «Cassaforte dell'esercizio 9.1».</p>
   </div>
 </details>
 
@@ -394,7 +394,11 @@
 
 <details class="esercizio">
   <summary>Esercizio. Un'altra idea per seleziona</summary>
-  <p>Per il sacco del ladro qualcuno propone di selezionare l'oggetto con il rapporto valore/peso più grande, cioè quello che vale di più per ogni chilo. Sull'esempio della Figura 5 (P = 20) funziona? Funziona sempre?</p>
+  <p>Per il sacco del ladro qualcuno propone di selezionare l'oggetto con il rapporto valore/peso più grande, cioè quello che vale di più per ogni chilo. Sull'esempio della lavagna (P = 20, gli oggetti della tabella) funziona? Funziona sempre?</p>
+  <div class="figura">
+<div class="tabella-wrap"><table><tr><th>oggetto</th><th>peso</th><th>valore</th><th>il greedy (per valore)</th><th>la soluzione ottima</th></tr><tr><td>c1</td><td>12</td><td>100</td><td><span class="ok">✓</span></td><td>–</td></tr><tr><td>c2</td><td>3</td><td>80</td><td><span class="ok">✓</span></td><td><span class="ok">✓</span></td></tr><tr><td>c3</td><td>6</td><td>75</td><td>–</td><td><span class="ok">✓</span></td></tr><tr><td>c4</td><td>6</td><td>70</td><td>–</td><td><span class="ok">✓</span></td></tr><tr><td>c5</td><td>3</td><td>30</td><td><span class="ok">✓</span></td><td><span class="ok">✓</span></td></tr><tr><td colspan="3"><b>totale</b> (peso; valore)</td><td><b>18; 210</b></td><td><b>18; 255</b></td></tr></table></div>
+  <div class="didascalia"><b>Figura 5, ripetuta.</b> Gli oggetti dell'esempio, con la scelta del greedy per valore e la soluzione ottima.</div>
+  </div>
   <div class="soluzione">
     <p>I rapporti sono: c<sub>1</sub> 100/12 ≈ 8,3; c<sub>2</sub> 80/3 ≈ 26,7; c<sub>3</sub> 75/6 = 12,5; c<sub>4</sub> 70/6 ≈ 11,7; c<sub>5</sub> 30/3 = 10. Ordine: c<sub>2</sub>, c<sub>3</sub>, c<sub>4</sub>, c<sub>5</sub>, c<sub>1</sub>. Il greedy prende c<sub>2</sub> (3), c<sub>3</sub> (9), c<sub>4</sub> (15), c<sub>5</sub> (18), e c<sub>1</sub> non entra. Valore 255: <b>qui trova l'ottimo</b>.</p>
     <p>Ma <b>non sempre</b>. Controesempio con P = 10: c<sub>1</sub> peso 1, valore 2 (rapporto 2); c<sub>2</sub> peso 10, valore 10 (rapporto 1). Il greedy prende c<sub>1</sub> e poi c<sub>2</sub> non entra più (11): valore 2. Prendendo solo c<sub>2</sub> si ha 10.</p>
@@ -403,7 +407,7 @@
 
 <details class="esercizio">
   <summary>Esercizio. Il resto con monete senza limiti</summary>
-  <p>Nel distributore della sezione 7, supponete che le monete di ogni taglio siano infinite (K<sub>5</sub> = K<sub>10</sub> = K<sub>20</sub> = K<sub>50</sub> = ∞). Per quali resti R il greedy dà il resto esatto?</p>
+  <p>Nel distributore di resto (monete da 5, 10, 20 e 50 centesimi; il greedy dà sempre la moneta più grande che non fa superare il resto), supponete che le monete di ogni taglio siano infinite (K<sub>5</sub> = K<sub>10</sub> = K<sub>20</sub> = K<sub>50</sub> = ∞). Per quali resti R il greedy dà il resto esatto?</p>
   <div class="soluzione">
     <p>Per tutti gli R multipli di 5 (gli altri non si possono dare in nessun modo, perché tutte le monete sono multipli di 5). Il greedy dà monete da 50 finché il resto rimasto è almeno 50, poi da 20 finché è almeno 20, poi da 10, poi da 5. Ogni volta che passa a un taglio più piccolo, il resto rimasto è minore del taglio precedente ma ancora multiplo di 5; alla fine le monete da 5, che sono infinite, completano qualsiasi multiplo di 5. Nell'esempio 2 della lavagna il greedy sbagliava solo perché le monete da 5 erano due e quelle da 10 nessuna.</p>
   </div>
@@ -427,7 +431,7 @@
 <details class="esercizio" style="border-style:dashed">
   <summary>Facoltativo: colorare è difficile</summary>
   <div class="soluzione">
-    <p>Per la colorazione di grafi non si conosce nessun algoritmo veloce che trovi sempre il minimo numero di colori: per decidere se tre colori bastano, i metodi noti provano, nel caso peggiore, un numero di colorazioni che cresce esponenzialmente con n. Un greedy semplice (ogni vertice prende il primo colore non usato dai suoi vicini già colorati) dà sempre una colorazione ammissibile, ma a volte con più colori del necessario. Il riquadro della sezione 2 trova il minimo provando tutte le possibilità, e va bene solo perché i grafi sono piccoli.</p>
+    <p>Per la colorazione di grafi non si conosce nessun algoritmo veloce che trovi sempre il minimo numero di colori: per decidere se tre colori bastano, i metodi noti provano, nel caso peggiore, un numero di colorazioni che cresce esponenzialmente con n. Un greedy semplice (ogni vertice prende il primo colore non usato dai suoi vicini già colorati) dà sempre una colorazione ammissibile, ma a volte con più colori del necessario. Il riquadro «Colora tu» trova il minimo provando tutte le possibilità, e va bene solo perché i grafi sono piccoli.</p>
   </div>
 </details>
 
