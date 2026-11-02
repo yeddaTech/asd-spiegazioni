@@ -32,6 +32,10 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 21 · La programmazione dinamica | Fibonacci ricorsivo e con l'array, cammino minimo su matrice, la matrice C, lo schema generale, scritto del 6/2/2026 | 24 |
 | 22 · Cammini minimi e Floyd–Warshall | definizioni, principio di ottimalità, matrice dei pesi, Floyd–Warshall con P, cicli negativi, sette scritti | 24–25 |
 | 23 · Bellman–Ford e Dijkstra | aggiornamento, Bellman–Ford, Dijkstra con dimostrazione e coda con priorità, pred e albero dei cammini minimi, pesi negativi, gli scritti | 25–26 |
+| 24 · Alberi binari di ricerca | definizione, ricerca, minimo e massimo, inserimento, cancellazione, costo Θ(h), gli scritti | 26–27 |
+| 25 · Alberi bilanciati e AVL | perfettamente bilanciati, AVL, alberi di Fibonacci, rotazioni semplici e doppie, gli scritti | 27–28 |
+| 26 · Alberi 2-3 e B-alberi | alberi 2-3, instradamento, split, nodi minimi e massimi, B-alberi e accessi al disco, gli scritti | 28–29 |
+| 27 · Tabelle hash | accesso diretto, fattore di carico, uniformità, divisione e ripiegamento, liste di collisione, indirizzamento aperto | 29–30 |
 
 ## Come si usa
 

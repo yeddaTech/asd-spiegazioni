@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alberi binari di ricerca</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 24 · fine della lezione 26 e prima parte della 27 (lavagne del 21 e del 24 novembre 2025)</span>
+</div>
+
+<h1>Alberi binari di ricerca</h1>
+<p class="sottotitolo">Un albero binario di ricerca tiene le chiavi in ordine: tutto quello che sta a sinistra di un nodo è più piccolo, tutto quello che sta a destra è più grande o uguale. Così per cercare una chiave basta scendere dalla radice scegliendo ogni volta la strada giusta, come nella ricerca binaria su un array ordinato, ma con inserimenti e cancellazioni veloci. Questa pagina spiega ricerca, minimo e massimo, inserimento e cancellazione (con i tre casi), e il punto debole: il costo è proporzionale all'altezza, che può arrivare a n − 1. È la base dei pacchi 25 e 26, e il primo esercizio di molti scritti.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: «lavagna del 21 novembre, pagina N» è la lezione 26 (dalla pagina 13), «lavagna del 24 novembre, pagina N» è la lezione 27 (fino alla pagina 19). «Le slide» sono quelle degli alberi binari di ricerca, con i Codici da 14.1 a 14.5.</li>
+    <li>Ripasso dal pacco 12: in un albero binario ogni nodo ha al più due figli, il sinistro e il destro; l'altezza è il numero di archi del cammino più lungo dalla radice a una foglia (un nodo solo ha altezza 0).</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in cinque domande</span>
+  <ol>
+    <li><b>Cos'è un albero binario di ricerca?</b> Un albero binario in cui, per ogni nodo n, le chiavi del sottoalbero sinistro sono minori della chiave di n e quelle del sottoalbero destro maggiori o uguali.</li>
+    <li><b>Come si cerca una chiave?</b> Si parte dalla radice: se la chiave cercata è minore si va a sinistra, se è maggiore a destra, finché la si trova o si arriva a un sottoalbero vuoto.</li>
+    <li><b>Come si inserisce?</b> Si cerca la chiave; dove la ricerca finisce (in un sottoalbero vuoto) si attacca il nuovo nodo, come foglia.</li>
+    <li><b>Come si cancella?</b> Una foglia si toglie; un nodo con un figlio si sostituisce con quel figlio; un nodo con due figli prende la chiave più piccola del sottoalbero destro, e si toglie quel nodo.</li>
+    <li><b>Quanto costa?</b> Θ(h), dove h è l'altezza; e ⌊log<sub>2</sub> n⌋ ≤ h &lt; n. Se l'albero degenera in una catena, le operazioni costano come su una lista.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#definizione">La definizione</a></li>
+    <li><a href="#ordine">La visita simmetrica dà le chiavi in ordine</a></li>
+    <li><a href="#ricerca">Ricerca, minimo e massimo</a></li>
+    <li><a href="#inserimento">Inserimento</a></li>
+    <li><a href="#cancellazione">Cancellazione</a></li>
+    <li><a href="#costo">Il costo e l'altezza</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="definizione"><span class="num">1</span>La definizione</h2>
+<p class="in-questa"><b>In questa sezione:</b> cos'è un albero binario di ricerca (lavagna del 21 novembre, pagine 14–16), con tre esempi, e com'è fatto un nodo.</p>
+<div class="box def">
+  <span class="etichetta">Albero binario di ricerca (lavagna, pagina 14)</span>
+  <p>Un <strong>albero binario di ricerca</strong> è un albero binario in cui, <strong>per ogni nodo n</strong>:</p>
+  <ul>
+    <li>il valore di ogni chiave contenuta nel sottoalbero sinistro di n è <strong>minore</strong> della chiave contenuta in n;</li>
+    <li>il valore di ogni chiave contenuta nel sottoalbero destro di n è <strong>maggiore o uguale</strong> della chiave contenuta in n.</li>
+  </ul>
+</div>
+<p>Attenzione alle parole «ogni chiave del sottoalbero»: non basta confrontare un nodo con i suoi figli, bisogna confrontarlo con tutti i discendenti. La Figura 1 mostra i tre esempi della pagina 15.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) sì</div><svg viewBox="0 0 392 190" width="392" height="190" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="60" y1="118" x2="26" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="72" x2="60" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="60" y1="118" x2="94" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="26" x2="128" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="196" y1="118" x2="162" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="72" x2="196" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="298" y1="72" x2="264" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="26" x2="298" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="366" y1="118" x2="332" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="298" y1="72" x2="366" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="26" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="26" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="60" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="94" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="128" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="162" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="162" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><circle cx="196" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="196" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="230" cy="26" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="230" y="30.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="264" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="264" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="298" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="298" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="332" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="332" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">28</text><circle cx="366" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="366" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">33</text></svg></div><div><div class="nome-mat">(b) no: 14 è a destra di 15</div><svg viewBox="0 0 392 190" width="392" height="190" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="60" y1="118" x2="26" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="94" y1="72" x2="60" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="162" y1="26" x2="94" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="94" y1="72" x2="128" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="118" x2="196" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="298" y1="72" x2="230" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="118" x2="264" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="162" y1="26" x2="298" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="366" y1="118" x2="332" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="298" y1="72" x2="366" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="26" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="26" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="60" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="94" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="128" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="162" cy="26" r="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="162" y="30.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="196" cy="164" r="14" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="196" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="230" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="230" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="264" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="264" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">23</text><circle cx="298" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="298" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="332" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="332" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">28</text><circle cx="366" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="366" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">33</text></svg></div><div><div class="nome-mat">(c) no: 25 è a sinistra di 20</div><svg viewBox="0 0 256 190" width="256" height="190" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="60" y1="26" x2="26" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="118" x2="94" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="196" y1="72" x2="128" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="118" x2="162" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="60" y1="26" x2="196" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="196" y1="72" x2="230" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="26" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="26" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="60" cy="26" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="30.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="94" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="128" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><circle cx="162" cy="164" r="14" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="162" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="196" cy="72" r="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="196" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="230" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="230" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">32</text></svg></div></div>
+<div class="didascalia"><b>Figura 1.</b> Lavagna del 21 novembre, pagina 15. (a) È un albero di ricerca. (b) Non lo è: 14 è figlio di 22, ed è giusto che stia a sinistra di 22, ma sta nel sottoalbero destro di 15 ed è minore di 15. (c) Non lo è: 25 sta nel sottoalbero sinistro di 20 ed è maggiore di 20.</div>
+</div>
+<p>Chiavi uguali vanno a destra (è il «maggiore o uguale» della definizione). Ogni nodo contiene un <strong>dato</strong>, cioè la chiave e gli altri campi, e i riferimenti <strong>sx</strong> e <strong>dx</strong> ai due sottoalberi (pagina 16, Figura 2). Si cerca sempre per chiave, e gli altri campi vengono con lei.</p>
+<div class="figura">
+<table class="mat" style="margin:0 auto"><tr><td colspan="2" style="padding:6px 24px"><b>chiave</b></td></tr><tr><td colspan="2" style="padding:6px 24px">altri campi</td></tr><tr><td style="padding:6px 18px">sx</td><td style="padding:6px 18px">dx</td></tr></table>
+<div class="didascalia"><b>Figura 2.</b> Lavagna del 21 novembre, pagina 16: un nodo. In alto il dato (la chiave e gli altri campi), in basso l'accesso ai due sottoalberi.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Per ogni nodo n: sottoalbero sinistro &lt; chiave di n ≤ sottoalbero destro. Si controllano tutti i discendenti, non solo i figli.</li>
+    <li>Nodo: chiave, altri campi, sx, dx.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="ordine"><span class="num">2</span>La visita simmetrica dà le chiavi in ordine</h2>
+<p class="in-questa"><b>In questa sezione:</b> una proprietà importante (lavagna del 21 novembre, pagina 17): visitando l'albero in ordine simmetrico si leggono le chiavi in ordine crescente.</p>
+<p>La visita in ordine simmetrico (pacco 12) visita il sottoalbero sinistro, poi la radice, poi il sottoalbero destro. In un albero di ricerca il sottoalbero sinistro contiene le chiavi minori della radice e il destro quelle maggiori o uguali: quindi prima vengono tutte le chiavi più piccole, poi la radice, poi tutte le più grandi, e lo stesso vale dentro ogni sottoalbero. Sull'albero (a) della Figura 1:</p>
+<ul>
+  <li>in ampiezza: 15, 12, 25, 8, 14, 22, 33, 1, 10, 13, 28;</li>
+  <li>in ordine simmetrico (sx – radice – dx): <strong>1, 8, 10, 12, 13, 14, 15, 22, 25, 28, 33</strong>, in ordine crescente.</li>
+</ul>
+<p>È anche un modo per controllare se un albero è di ricerca: lo è se e solo se la visita simmetrica dà le chiavi in ordine non decrescente.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Visita simmetrica di un albero di ricerca = chiavi in ordine crescente.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="ricerca"><span class="num">3</span>Ricerca, minimo e massimo</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si cerca una chiave (lavagna del 21 novembre, pagine 18 e 19; lavagna del 24 novembre, pagine 4 e 5; Codici 14.1 e 14.2), in versione ricorsiva e iterativa, e come si trovano il minimo e il massimo.</p>
+<p>Per cercare k: se l'albero è vuoto, k non c'è; se k è minore della chiave della radice, può stare solo nel sottoalbero sinistro; se è maggiore, solo nel destro; se è uguale, è lì.</p>
+<p class="titolo-codice">Codice 14.1 delle slide (lavagna del 24 novembre, pagina 4)</p>
+<pre class="pseudo"><b>FUNZIONE</b> trova(AlberoRicerca r, tipoChiave k) → Nodo
+  <b>IF</b> r = null <b>THEN RETURN</b> null
+  <b>ELSE IF</b> k &lt; r.chiave <b>THEN RETURN</b> trova(r.sx, k)
+  <b>ELSE IF</b> k &gt; r.chiave <b>THEN RETURN</b> trova(r.dx, k)
+  <b>ELSE RETURN</b> r</pre>
+<p>Le chiamate ricorsive sono l'ultima cosa che la funzione fa (il risultato viene restituito così com'è): sono <strong>ricorsioni in coda</strong>, scrive il prof. Una ricorsione in coda si trasforma facilmente in un ciclo: invece di chiamare la funzione sul sottoalbero, si sposta r sul sottoalbero e si ricomincia.</p>
+<p class="titolo-codice">Codice 14.2 delle slide (lavagna del 24 novembre, pagina 5)</p>
+<pre class="pseudo"><b>FUNZIONE</b> trova(AlberoRicerca r, tipoChiave k) → Nodo
+  <b>WHILE</b> r ≠ null <b>AND</b> r.chiave ≠ k <b>DO</b>
+    <b>IF</b> k &lt; r.chiave <b>THEN</b> r ← r.sx
+    <b>ELSE</b> r ← r.dx
+  <b>RETURN</b> r</pre>
+<p>Si può usare direttamente r come variabile di lavoro (alla lavagna c'è una variabile n ← r): i riferimenti sono passati per valore, quindi cambiare r dentro la funzione non cambia l'albero di chi l'ha chiamata (le slide). Esempio: cercare 14 nell'albero (a) della Figura 1: 15 → 12 → 14, trovato. Cercare 24: 15 → 25 → 22 → sottoalbero destro di 22 vuoto: non c'è.</p>
+<p><b>Minimo e massimo</b> (lavagna del 21 novembre, pagina 18). Il massimo è il nodo più a destra: si scende sempre a destra finché si può. Il minimo, simmetricamente, è il nodo più a sinistra.</p>
+<pre class="pseudo"><b>FUNZIONE</b> massimo(AlberoRicerca r) → Nodo
+  <b>IF</b> r = null <b>THEN RETURN</b> null
+  <b>ELSE</b>
+    n ← r
+    <b>WHILE</b> n.dx ≠ null <b>DO</b> n ← n.dx
+    <b>RETURN</b> n</pre>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Ricerca: a sinistra se k &lt; chiave, a destra se k &gt; chiave; ricorsiva (in coda) o iterativa.</li>
+    <li>Massimo: sempre a destra. Minimo: sempre a sinistra.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="inserimento"><span class="num">4</span>Inserimento</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si inserisce una chiave (lavagna del 24 novembre, pagine 6–10; Codici 14.3 e 14.4): si cerca il posto, e il nuovo nodo diventa una foglia.</p>
+<p>Il nuovo nodo va dove la ricerca della sua chiave fallirebbe: si scende come per cercarla, e quando si arriva a un sottoalbero vuoto lo si sostituisce con il nuovo nodo. Il nuovo nodo è sempre una <strong>foglia</strong>, e la forma del resto dell'albero non cambia. L'esempio della pagina 6: inserire 15, 10, 5, 18, 12, 7, 16, 22 partendo da un albero vuoto (Figura 3).</p>
+<ul>
+  <li>15 diventa la radice. 10 &lt; 15: a sinistra di 15. 5 &lt; 15, 5 &lt; 10: a sinistra di 10. 18 ≥ 15: a destra di 15.</li>
+  <li>12: 12 &lt; 15, 12 ≥ 10: a destra di 10. 7: 7 &lt; 15, 7 &lt; 10, 7 ≥ 5: a destra di 5. 16: 16 ≥ 15, 16 &lt; 18: a sinistra di 18. 22: a destra di 18.</li>
+</ul>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">dopo 15 10 5 18</div><svg viewBox="0 0 154 144" width="154" height="144" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="60" y1="72" x2="26" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="94" y1="26" x2="60" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="94" y1="26" x2="128" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="26" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="26" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="60" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="94" cy="26" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="30.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="128" cy="72" r="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="128" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">18</text></svg></div><div><div class="nome-mat">dopo 15 10 5 18 12 7 16 22</div><svg viewBox="0 0 290 190" width="290" height="190" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="94" y1="72" x2="26" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="26" y1="118" x2="60" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="162" y1="26" x2="94" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="94" y1="72" x2="128" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="72" x2="196" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="162" y1="26" x2="230" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="72" x2="264" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="26" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="26" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="60" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="94" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="128" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="162" cy="26" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="162" y="30.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="196" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="196" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="230" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="230" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><circle cx="264" cy="118" r="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="264" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">22</text></svg></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna del 24 novembre, pagina 6: l'albero dopo i primi quattro inserimenti e alla fine. L'ordine di inserimento decide la forma: la stessa serie di chiavi in un altro ordine darebbe un albero diverso.</div>
+</div>
+<p>La versione ricorsiva (Codice 14.3) restituisce la radice dell'albero modificato: se l'albero è vuoto crea il nodo e lo restituisce; altrimenti inserisce nel sottoalbero giusto e riaggancia il risultato.</p>
+<p class="titolo-codice">Codice 14.3 delle slide</p>
+<pre class="pseudo"><b>FUNZIONE</b> inserisci(AlberoRicerca r, elemento d) → AlberoRicerca
+  k ← d.chiave
+  <b>IF</b> r = null <b>THEN</b>
+    r ← riferimento a nuovo nodo
+    r.chiave ← k
+    r.altri campi ← d.altri campi
+    r.sx ← null
+    r.dx ← null
+  <b>ELSE IF</b> k &lt; r.chiave <b>THEN</b> r.sx ← inserisci(r.sx, d)
+  <b>ELSE</b> r.dx ← inserisci(r.dx, d)
+  <b>RETURN</b> r</pre>
+<p>La versione iterativa (lavagna, pagine 9 e 10; Codice 14.4) ha tre parti, segnate in verde alla lavagna: la <b>creazione del nuovo nodo</b> t; la <b>ricerca della posizione</b>, scendendo con n e ricordando in padre l'ultimo nodo visitato; l'<b>inserimento</b>, che attacca t sotto padre dal lato giusto.</p>
+<p class="titolo-codice">Codice 14.4 delle slide (lavagna del 24 novembre, pagina 10)</p>
+<pre class="pseudo"><b>FUNZIONE</b> inserisci(AlberoRicerca r, elemento d) → AlberoRicerca
+  k ← d.chiave
+  t ← riferimento a nuovo nodo                     <span class="com">// creazione del nuovo nodo</span>
+  t.chiave ← k
+  t.altri campi ← d.altri campi
+  t.sx ← null
+  t.dx ← null
+  padre ← null                                     <span class="com">// ricerca della posizione</span>
+  n ← r
+  <b>WHILE</b> n ≠ null <b>DO</b>
+    padre ← n
+    <b>IF</b> k &lt; n.chiave <b>THEN</b> n ← n.sx
+    <b>ELSE</b> n ← n.dx
+  <b>IF</b> padre = null <b>THEN</b> r ← t                  <span class="com">// inserimento (albero vuoto: t è la radice)</span>
+  <b>ELSE IF</b> k &lt; padre.chiave <b>THEN</b> padre.sx ← t
+  <b>ELSE</b> padre.dx ← t
+  <b>RETURN</b> r</pre>
+<p>L'esempio delle pagine 8 e 10: inserire 21 nell'albero (a) della Figura 1. Si scende 15 → 25 → 22; 21 &lt; 22 e il sottoalbero sinistro di 22 è vuoto: n diventa null, padre è 22, e t va a sinistra di 22 (Figura 4).</p>
+<div class="figura">
+<svg viewBox="0 0 426 190" width="426" height="190" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="60" y1="118" x2="26" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="72" x2="60" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="60" y1="118" x2="94" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="26" x2="128" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="196" y1="118" x2="162" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="72" x2="196" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="298" y1="118" x2="264" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="332" y1="72" x2="298" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="230" y1="26" x2="332" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="400" y1="118" x2="366" y2="164" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="332" y1="72" x2="400" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="26" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="26" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="60" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">8</text><circle cx="94" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="128" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="162" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="162" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><circle cx="196" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="196" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="230" cy="26" r="14" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="230" y="30.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="264" cy="164" r="14" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="264" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">21</text><circle cx="298" cy="118" r="14" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="298" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="332" cy="72" r="14" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="332" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="366" cy="164" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="366" y="168.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">28</text><circle cx="400" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="400" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">33</text></svg>
+<div class="didascalia"><b>Figura 4.</b> Lavagna del 24 novembre, pagine 8 e 10: inserimento di 21. In verde il cammino percorso (15, 25, 22), in giallo il nuovo nodo, figlio sinistro di 22.</div>
+</div>
+<div class="widget" id="w-ab">
+  <h4>Un albero di ricerca: inserisci, cerca, cancella</h4>
+  <div id="ab-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Inserimento: si scende come nella ricerca (a sinistra se k &lt; chiave, altrimenti a destra) e il nuovo nodo diventa foglia dove si arriva a null.</li>
+    <li>Iterativo: nuovo nodo t; ricerca della posizione con n e padre; padre.sx o padre.dx ← t (o r ← t se l'albero era vuoto).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="cancellazione"><span class="num">5</span>Cancellazione</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si toglie un nodo senza rompere l'ordine (lavagna del 24 novembre, pagine 11–15; Codice 14.5): tre casi, a seconda di quanti figli ha il nodo.</p>
+<p>Come nelle liste (pagina 11): per togliere un elemento, chi puntava a lui deve puntare a qualcos'altro. In un albero però un nodo può avere due figli, e il padre ha un solo posto per loro. Tre casi, sull'albero della Figura 5:</p>
+<ol>
+  <li><b>Il nodo è una foglia</b> (pagina 12, «facile»). Si toglie: il padre punta a null. Esempio: cancella 3.</li>
+  <li><b>Il nodo ha un unico figlio</b> (pagina 13). Si modifica il puntatore nel nodo padre: invece che al nodo, punta al suo unico figlio, che si porta dietro tutto il suo sottoalbero. L'ordine resta giusto, perché tutto quel sottoalbero stava già dalla parte giusta del padre. Esempi: cancella 23 (21 punta a 39); cancella 5 (7 punta a 2).</li>
+  <li><b>Il nodo ha due figli</b> (pagina 14). Si sostituisce il suo contenuto con quello del nodo con la <strong>chiave più piccola del sottoalbero destro</strong>; poi si toglie quel nodo, che ha al massimo un figlio (non ha il figlio sinistro, altrimenti non sarebbe il più piccolo), quindi è il caso 1 o 2. Esempio: cancella 21: il più piccolo del suo sottoalbero destro è 25; 25 prende il posto di 21, e il vecchio nodo di 25, che ha il solo figlio 27, si toglie con il caso 2.</li>
+</ol>
+<p>Perché proprio il più piccolo del sottoalbero destro? È maggiore o uguale a tutto il sottoalbero sinistro (sta a destra del nodo) e minore o uguale a tutto il resto del sottoalbero destro (è il minimo): messo al posto del nodo, rispetta la definizione con tutti e due i sottoalberi.</p>
+<p>Caso particolare, in tutti i casi: <strong>la cancellazione della radice</strong>. Non c'è un padre da modificare: cambia la radice dell'albero, ed è per questo che la funzione restituisce la radice.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">l'albero</div><svg viewBox="0 0 516 328" width="516" height="328" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="50" y1="104" x2="24" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="102" y1="64" x2="50" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="50" y1="104" x2="76" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="24" x2="102" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="206" y1="104" x2="154" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="154" y1="144" x2="180" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="258" y1="64" x2="206" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="206" y1="104" x2="232" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="24" x2="258" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="258" y1="64" x2="284" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="414" y1="184" x2="310" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="362" y1="264" x2="336" y2="304" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="310" y1="224" x2="362" y2="264" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="362" y1="264" x2="388" y2="304" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="466" y1="144" x2="414" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="414" y1="184" x2="440" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="284" y1="104" x2="466" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="466" y1="144" x2="492" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="24" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="24" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="50" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="50" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="76" cy="144" r="12" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="76" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="102" cy="64" r="12" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="102" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="128" cy="24" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="28.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="154" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="154" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="180" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="180" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="206" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="206" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="232" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="232" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="258" cy="64" r="12" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="258" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">21</text><circle cx="284" cy="104" r="12" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="284" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">23</text><circle cx="310" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="310" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="336" cy="304" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="308.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><circle cx="362" cy="264" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="362" y="268.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="388" cy="304" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="388" y="308.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">29</text><circle cx="414" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="414" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">37</text><circle cx="440" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="440" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">38</text><circle cx="466" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="466" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">39</text><circle cx="492" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="492" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">55</text></svg></div><div><div class="nome-mat">cancella 3 (caso 1)</div><svg viewBox="0 0 490 328" width="490" height="328" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="50" y1="104" x2="24" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="76" y1="64" x2="50" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="102" y1="24" x2="76" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="180" y1="104" x2="128" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="144" x2="154" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="232" y1="64" x2="180" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="180" y1="104" x2="206" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="102" y1="24" x2="232" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="232" y1="64" x2="258" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="388" y1="184" x2="284" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="336" y1="264" x2="310" y2="304" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="284" y1="224" x2="336" y2="264" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="336" y1="264" x2="362" y2="304" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="440" y1="144" x2="388" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="388" y1="184" x2="414" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="258" y1="104" x2="440" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="440" y1="144" x2="466" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="24" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="24" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="50" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="50" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="76" cy="64" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="76" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="102" cy="24" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="102" y="28.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="128" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="154" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="154" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="180" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="180" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="206" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="206" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="232" cy="64" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="232" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">21</text><circle cx="258" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="258" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">23</text><circle cx="284" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="284" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="310" cy="304" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="310" y="308.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><circle cx="336" cy="264" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="268.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="362" cy="304" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="362" y="308.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">29</text><circle cx="388" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="388" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">37</text><circle cx="414" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="414" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">38</text><circle cx="440" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="440" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">39</text><circle cx="466" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="466" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">55</text></svg></div><div><div class="nome-mat">cancella 23 (caso 2)</div><svg viewBox="0 0 464 288" width="464" height="288" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="50" y1="104" x2="24" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="76" y1="64" x2="50" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="102" y1="24" x2="76" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="180" y1="104" x2="128" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="128" y1="144" x2="154" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="232" y1="64" x2="180" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="180" y1="104" x2="206" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="102" y1="24" x2="232" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="362" y1="144" x2="258" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="310" y1="224" x2="284" y2="264" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="258" y1="184" x2="310" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="310" y1="224" x2="336" y2="264" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="414" y1="104" x2="362" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="362" y1="144" x2="388" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="232" y1="64" x2="414" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="414" y1="104" x2="440" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="24" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="24" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="50" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="50" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="76" cy="64" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="76" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">5</text><circle cx="102" cy="24" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="102" y="28.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="128" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="154" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="154" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="180" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="180" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="206" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="206" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="232" cy="64" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="232" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">21</text><circle cx="258" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="258" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="284" cy="264" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="284" y="268.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><circle cx="310" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="310" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="336" cy="264" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="268.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">29</text><circle cx="362" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="362" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">37</text><circle cx="388" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="388" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">38</text><circle cx="414" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="414" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">39</text><circle cx="440" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="440" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">55</text></svg></div><div><div class="nome-mat">cancella 5 (caso 2)</div><svg viewBox="0 0 438 288" width="438" height="288" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="50" y1="64" x2="24" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="76" y1="24" x2="50" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="154" y1="104" x2="102" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="102" y1="144" x2="128" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="206" y1="64" x2="154" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="154" y1="104" x2="180" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="76" y1="24" x2="206" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="336" y1="144" x2="232" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="284" y1="224" x2="258" y2="264" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="232" y1="184" x2="284" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="284" y1="224" x2="310" y2="264" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="388" y1="104" x2="336" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="336" y1="144" x2="362" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="206" y1="64" x2="388" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="388" y1="104" x2="414" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="24" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="24" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="50" cy="64" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="50" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="76" cy="24" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="76" y="28.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="102" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="102" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="128" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="154" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="154" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="180" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="206" cy="64" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="206" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">21</text><circle cx="232" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="232" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="258" cy="264" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="258" y="268.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><circle cx="284" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="284" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="310" cy="264" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="310" y="268.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">29</text><circle cx="336" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">37</text><circle cx="362" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="362" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">38</text><circle cx="388" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="388" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">39</text><circle cx="414" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="414" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">55</text></svg></div><div><div class="nome-mat">cancella 21 (caso 3: al suo posto 25)</div><svg viewBox="0 0 412 248" width="412" height="248" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="50" y1="64" x2="24" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="76" y1="24" x2="50" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="154" y1="104" x2="102" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="102" y1="144" x2="128" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="206" y1="64" x2="154" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="154" y1="104" x2="180" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="76" y1="24" x2="206" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="258" y1="184" x2="232" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="310" y1="144" x2="258" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="258" y1="184" x2="284" y2="224" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="362" y1="104" x2="310" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="310" y1="144" x2="336" y2="184" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="206" y1="64" x2="362" y2="104" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="362" y1="104" x2="388" y2="144" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="24" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="24" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="50" cy="64" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="50" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="76" cy="24" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="76" y="28.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="102" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="102" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="128" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="154" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="154" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="180" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="180" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="206" cy="64" r="12" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="206" y="68.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="232" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="232" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><circle cx="258" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="258" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="284" cy="224" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="284" y="228.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">29</text><circle cx="310" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="310" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">37</text><circle cx="336" cy="184" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="188.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">38</text><circle cx="362" cy="104" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="362" y="108.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">39</text><circle cx="388" cy="144" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="388" y="148.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">55</text></svg></div></div>
+<div class="didascalia"><b>Figura 5.</b> Lavagna del 24 novembre, pagine 12–15: l'albero, con in rosso le chiavi che si cancellano, poi l'albero dopo ogni cancellazione. Nell'ultimo, in giallo, 25 al posto di 21.</div>
+</div>
+<p class="titolo-codice">Codice 14.5 delle slide</p>
+<pre class="pseudo"><b>FUNZIONE</b> cancella(AlberoRicerca r, tipoChiave k) → AlberoRicerca
+  padre ← null                                   <span class="com">// ricerca del nodo e del padre</span>
+  n ← r
+  <b>WHILE</b> n ≠ null <b>AND</b> n.chiave ≠ k <b>DO</b>
+    padre ← n
+    <b>IF</b> k &lt; n.chiave <b>THEN</b> n ← n.sx <b>ELSE</b> n ← n.dx
+  <b>IF</b> n ≠ null <b>THEN</b>
+    <b>IF</b> n.sx = null <b>THEN</b>                       <span class="com">// manca il figlio sinistro:</span>
+      <b>IF</b> padre ≠ null <b>THEN</b>                     <span class="com">// il nodo si sostituisce con il sottoalbero destro</span>
+        <b>IF</b> n.chiave &lt; padre.chiave <b>THEN</b> padre.sx ← n.dx
+        <b>ELSE</b> padre.dx ← n.dx
+      <b>ELSE</b> r ← r.dx                             <span class="com">// caso particolare: cancellazione della radice</span>
+    <b>ELSE IF</b> n.dx = null <b>THEN</b>                  <span class="com">// manca il figlio destro:</span>
+      <b>IF</b> padre ≠ null <b>THEN</b>                     <span class="com">// il nodo si sostituisce con il sottoalbero sinistro</span>
+        <b>IF</b> n.chiave &lt; padre.chiave <b>THEN</b> padre.sx ← n.sx
+        <b>ELSE</b> padre.dx ← n.sx
+      <b>ELSE</b> r ← r.sx
+    <b>ELSE</b>                                         <span class="com">// ci sono entrambi i figli</span>
+      t ← n
+      m ← n.dx
+      <b>WHILE</b> m.sx ≠ null <b>DO</b>                     <span class="com">// il più piccolo del sottoalbero destro</span>
+        t ← m
+        m ← m.sx
+      n.chiave ← m.chiave                        <span class="com">// m e t: il minimo e suo padre</span>
+      n.altri campi ← m.altri campi
+      <b>IF</b> t = n <b>THEN</b> n.dx ← m.dx                  <span class="com">// m era il figlio destro di n</span>
+      <b>ELSE</b> t.sx ← m.dx
+  <b>RETURN</b> r</pre>
+<p>Il codice non distingue il caso 1 dal caso 2: una foglia non ha il figlio sinistro, quindi entra nel primo ramo, e il padre riceve n.dx, cioè null. Nell'ultimo ramo, m non ha figlio sinistro, quindi al suo posto va m.dx (il caso 1 o 2 per m).</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Foglia: si toglie. Un figlio: il padre punta al figlio. Due figli: si copia la chiave minima del sottoalbero destro e si toglie quel nodo (che ha al più un figlio).</li>
+    <li>Cancellando la radice cambia il riferimento r: la funzione lo restituisce.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="costo"><span class="num">6</span>Il costo e l'altezza</h2>
+<p class="in-questa"><b>In questa sezione:</b> quanto costano le operazioni (lavagna del 24 novembre, pagina 17) e quanto può essere alto un albero binario con n nodi (pagine 18 e 19).</p>
+<p>Ricerca, inserimento e cancellazione scendono lungo un cammino dalla radice verso il basso, facendo O(1) lavoro per nodo: il loro costo è <strong>Θ(h)</strong> nel caso peggiore, dove h è l'altezza dell'albero. Ma l'altezza dipende dall'ordine degli inserimenti: inserendo 1, 4, 7, 9, 12, 15, ogni chiave va a destra della precedente, e l'albero è una catena, un <strong>albero degenere</strong> con h = n − 1 (Figura 6). Allora le operazioni costano come su una lista.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">inserendo 1 4 7 9 12 15: h = 5</div><svg viewBox="0 0 200 230" width="200" height="230" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="25" y1="25" x2="55" y2="61" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="55" y1="61" x2="85" y2="97" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="85" y1="97" x2="115" y2="133" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="115" y1="133" x2="145" y2="169" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="145" y1="169" x2="175" y2="205" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="25" cy="25" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="25" y="29.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="55" cy="61" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="55" y="65.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="85" cy="97" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="85" y="101.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="115" cy="133" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="115" y="137.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="145" cy="169" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="145" y="173.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="175" cy="205" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="209.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text></svg></div><div><div class="nome-mat">le stesse chiavi, h = 2</div><svg viewBox="0 0 222 144" width="222" height="144" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="94" y1="26" x2="26" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="26" y1="72" x2="60" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="162" y1="72" x2="128" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="94" y1="26" x2="162" y2="72" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="162" y1="72" x2="196" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="26" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="26" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="60" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="60" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="94" cy="26" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="94" y="30.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">7</text><circle cx="128" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="128" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">9</text><circle cx="162" cy="72" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="162" y="76.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="196" cy="118" r="14" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="196" y="122.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text></svg></div></div>
+<div class="didascalia"><b>Figura 6.</b> Lavagna del 24 novembre, pagina 17: inserendo le chiavi in ordine crescente si ottiene una catena, alta n − 1 = 5. A destra le stesse chiavi in un albero alto 2.</div>
+</div>
+<p>Quanto può variare l'altezza di un albero binario con n nodi? (pagine 18 e 19)</p>
+<ul>
+  <li>Con altezza h, il <b>minimo</b> numero di nodi è h + 1: l'albero degenere, un nodo per livello.</li>
+  <li>Il <b>massimo</b> è 2<sup>h+1</sup> − 1: l'albero completo, con tutti i livelli pieni (1 + 2 + 4 + … + 2<sup>h</sup>).</li>
+</ul>
+<div class="formula grande">h + 1 ≤ n ≤ 2<sup>h+1</sup> − 1</div>
+<p>Dalla prima disuguaglianza: h ≤ n − 1, cioè <strong>h &lt; n</strong>. Dalla seconda: n &lt; 2<sup>h+1</sup>, quindi log<sub>2</sub> n &lt; h + 1, e siccome h è intero, <strong>⌊log<sub>2</sub> n⌋ ≤ h</strong>. In tutto:</p>
+<div class="formula grande">⌊log<sub>2</sub> n⌋ ≤ h &lt; n</div>
+<p>Il costo delle operazioni va quindi da Θ(log n), se l'albero è basso, a Θ(n), se è degenere. Per avere sempre Θ(log n) bisogna tenere l'albero bilanciato: è il tema del pacco 25 (alberi AVL) e del pacco 26 (alberi 2-3).</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Ricerca, inserimento, cancellazione: Θ(h).</li>
+    <li>h + 1 ≤ n ≤ 2<sup>h+1</sup> − 1, quindi ⌊log<sub>2</sub> n⌋ ≤ h &lt; n: da logaritmico (albero completo) a lineare (albero degenere).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="riassunto"><span class="num">7</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Definizione</b>: per ogni nodo n, sottoalbero sinistro &lt; n ≤ sottoalbero destro. Visita simmetrica = ordine crescente.</li>
+    <li><b>Ricerca</b>: ricorsiva (ricorsione in coda) o iterativa. <b>Massimo</b>: sempre a destra; <b>minimo</b>: sempre a sinistra.</li>
+    <li><b>Inserimento</b>: il nuovo nodo diventa una foglia dove la ricerca arriva a null.</li>
+    <li><b>Cancellazione</b>: foglia; un figlio; due figli (minimo del sottoalbero destro).</li>
+    <li><b>Costo</b> Θ(h), con ⌊log<sub>2</sub> n⌋ ≤ h &lt; n.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Metodo: costruire l'albero da una sequenza (esercizio 1)</span>
+  <ol>
+    <li>La prima chiave è la radice.</li>
+    <li>Per ogni chiave successiva, si parte dalla radice e si scende: a sinistra se la chiave è minore di quella del nodo, a destra se è maggiore o uguale.</li>
+    <li>Dove manca il figlio da quella parte, si attacca la nuova chiave come foglia. Non si sposta mai niente.</li>
+    <li>Alla fine si controlla con la visita simmetrica: deve dare le chiavi in ordine crescente.</li>
+  </ol>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>L'esercizio 1 di molti scritti chiede «l'albero binario di ricerca che si ottiene inserendo i numeri della sequenza, uno dopo l'altro, senza effettuare operazioni di bilanciamento» (20 giugno 2025, 19 settembre 2025, 14 novembre 2025, 27 febbraio 2026): sono nella sezione 8. La seconda parte di quegli esercizi (AVL, perfettamente bilanciato) è nel pacco 25.</li>
+    <li>All'orale: la definizione, la ricerca, i tre casi della cancellazione, il costo Θ(h) e i limiti dell'altezza.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="esercizi"><span class="num">8</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'esercizio della lavagna e le parti degli scritti sugli alberi binari di ricerca. Prova a risolverli prima di aprire la soluzione; nel riquadro della sezione 4 puoi rifarli passo per passo.</p>
+
+<details class="esercizio">
+  <summary>Lavagna del 24 novembre, pagina 16: inserire 17 chiavi e cancellarne tre</summary>
+  <p>Disegnate l'albero di ricerca che si ottiene a partire da un albero vuoto inserendo, nell'ordine, 13 22 20 11 24 35 28 40 19 14 10 12 16 25 15 27 18. Disegnate poi come diventa se si rimuovono 13, 24 e 11.</p>
+  <div class="figura">
+<div class="affianco"><div><div class="nome-mat">dopo gli inserimenti</div><svg viewBox="0 0 432 276" width="432" height="276" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="48" y1="62" x2="24" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="96" y1="24" x2="48" y2="62" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="48" y1="62" x2="72" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="216" y1="138" x2="120" y2="176" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="168" y1="214" x2="144" y2="252" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="120" y1="176" x2="168" y2="214" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="168" y1="214" x2="192" y2="252" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="240" y1="100" x2="216" y2="138" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="264" y1="62" x2="240" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="96" y1="24" x2="264" y2="62" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="264" y1="62" x2="288" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="360" y1="176" x2="312" y2="214" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="312" y1="214" x2="336" y2="252" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="384" y1="138" x2="360" y2="176" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="288" y1="100" x2="384" y2="138" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="384" y1="138" x2="408" y2="176" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="24" cy="100" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="24" y="104.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="48" cy="62" r="12" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="48" y="66.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="72" cy="100" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="72" y="104.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="96" cy="24" r="12" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="96" y="28.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">13</text><circle cx="120" cy="176" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="120" y="180.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="144" cy="252" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="144" y="256.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="168" cy="214" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="168" y="218.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="192" cy="252" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="192" y="256.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><circle cx="216" cy="138" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="216" y="142.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><circle cx="240" cy="100" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="240" y="104.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="264" cy="62" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="264" y="66.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="288" cy="100" r="12" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="288" y="104.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">24</text><circle cx="312" cy="214" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="312" y="218.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="336" cy="252" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="256.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="360" cy="176" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="360" y="180.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">28</text><circle cx="384" cy="138" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="384" y="142.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">35</text><circle cx="408" cy="176" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="408" y="180.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">40</text></svg></div><div><div class="nome-mat">dopo le cancellazioni di 13, 24, 11</div><svg viewBox="0 0 360 238" width="360" height="238" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="48" y1="62" x2="24" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="72" y1="24" x2="48" y2="62" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="120" y1="176" x2="96" y2="214" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="168" y1="138" x2="120" y2="176" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="120" y1="176" x2="144" y2="214" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="192" y1="100" x2="168" y2="138" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="216" y1="62" x2="192" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="72" y1="24" x2="216" y2="62" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="288" y1="138" x2="240" y2="176" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="240" y1="176" x2="264" y2="214" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="312" y1="100" x2="288" y2="138" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="216" y1="62" x2="312" y2="100" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="312" y1="100" x2="336" y2="138" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="24" cy="100" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="24" y="104.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">10</text><circle cx="48" cy="62" r="12" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="48" y="66.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="72" cy="24" r="12" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="72" y="28.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="96" cy="214" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="96" y="218.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">15</text><circle cx="120" cy="176" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="120" y="180.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="144" cy="214" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="144" y="218.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><circle cx="168" cy="138" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="168" y="142.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">19</text><circle cx="192" cy="100" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="192" y="104.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">20</text><circle cx="216" cy="62" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="216" y="66.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">22</text><circle cx="240" cy="176" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="240" y="180.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="264" cy="214" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="264" y="218.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="288" cy="138" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="288" y="142.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">28</text><circle cx="312" cy="100" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="312" y="104.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">35</text><circle cx="336" cy="138" r="12" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="336" y="142.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">40</text></svg></div></div>
+  <div class="didascalia"><b>Figura 7.</b> L'albero dopo gli inserimenti (in rosso le chiavi da cancellare) e dopo le cancellazioni (in giallo le chiavi che hanno preso il posto di 13 e di 11).</div>
+  </div>
+  <div class="soluzione">
+    <p>Gli inserimenti, come nel Metodo: 13 radice; 22 a destra; 20 a sinistra di 22; 11 a sinistra di 13; 24 a destra di 22; 35 a destra di 24; 28 a sinistra di 35; 40 a destra di 35; 19 a sinistra di 20; 14 a sinistra di 19; 10 a sinistra di 11; 12 a destra di 11; 16 a destra di 14; 25 a sinistra di 28; 15 a sinistra di 16; 27 a destra di 25; 18 a destra di 16.</p>
+    <ul>
+      <li><b>Cancella 13</b> (la radice, con due figli): il minimo del sottoalbero destro si trova scendendo 22 → 20 → 19 → 14; 14 non ha figlio sinistro. 14 prende il posto di 13, e il vecchio nodo di 14, che ha il solo figlio 16, si toglie: 19 punta a 16.</li>
+      <li><b>Cancella 24</b> (un solo figlio, 35): 22 punta a 35.</li>
+      <li><b>Cancella 11</b> (due figli): il minimo del sottoalbero destro è 12, una foglia. 12 prende il posto di 11, e la foglia si toglie.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 20 giugno 2025, punto (a): 14 16 80 33 44 17 28 35</summary>
+  <p>Disegnate l'albero binario di ricerca che si ottiene inserendo i numeri della sequenza, uno dopo l'altro, a partire da un albero vuoto, senza bilanciamenti.</p>
+  <div class="figura">
+<svg viewBox="0 0 260 260" width="260" height="260" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="25" y1="25" x2="55" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="145" y1="151" x2="85" y2="193" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="85" y1="193" x2="115" y2="235" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="235" y1="109" x2="145" y2="151" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="205" y1="193" x2="175" y2="235" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="145" y1="151" x2="205" y2="193" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="55" y1="67" x2="235" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="25" cy="25" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="25" y="29.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="55" cy="67" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="55" y="71.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="85" cy="193" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="85" y="197.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">17</text><circle cx="115" cy="235" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="115" y="239.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">28</text><circle cx="145" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="145" y="155.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">33</text><circle cx="175" cy="235" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="239.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">35</text><circle cx="205" cy="193" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="205" y="197.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">44</text><circle cx="235" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="235" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">80</text></svg>
+  <div class="didascalia"><b>Figura 8.</b> L'albero dello scritto del 20 giugno 2025: alto 5.</div>
+  </div>
+  <div class="soluzione">
+    <p>14 radice; 16 a destra di 14; 80 a destra di 16; 33 a sinistra di 80; 44 a destra di 33; 17 a sinistra di 33; 28 a destra di 17; 35 a sinistra di 44. È molto sbilanciato: 14 e 16 non hanno figlio sinistro, e 80 non ha figlio destro.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 19 settembre 2025, punto (a): 28 25 16 14 56 29 26 48</summary>
+  <p>Come sopra, senza bilanciamenti.</p>
+  <div class="figura">
+<svg viewBox="0 0 260 176" width="260" height="176" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="55" y1="109" x2="25" y2="151" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="85" y1="67" x2="55" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="145" y1="25" x2="85" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="85" y1="67" x2="115" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="235" y1="67" x2="175" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="175" y1="109" x2="205" y2="151" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="145" y1="25" x2="235" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="25" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="25" y="155.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">14</text><circle cx="55" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="55" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">16</text><circle cx="85" cy="67" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="85" y="71.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">25</text><circle cx="115" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="115" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">26</text><circle cx="145" cy="25" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="145" y="29.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">28</text><circle cx="175" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">29</text><circle cx="205" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="205" y="155.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">48</text><circle cx="235" cy="67" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="235" y="71.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">56</text></svg>
+  <div class="didascalia"><b>Figura 9.</b> L'albero dello scritto del 19 settembre 2025.</div>
+  </div>
+  <div class="soluzione">
+    <p>28 radice; 25 a sinistra; 16 a sinistra di 25; 14 a sinistra di 16; 56 a destra di 28; 29 a sinistra di 56; 26 a destra di 25; 48 a destra di 29.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 14 novembre 2025, punto (a): 30 21 18 24 34 27 29 35</summary>
+  <p>Come sopra, senza bilanciamenti.</p>
+  <div class="figura">
+<svg viewBox="0 0 260 218" width="260" height="218" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="55" y1="67" x2="25" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="175" y1="25" x2="55" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="55" y1="67" x2="85" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="85" y1="109" x2="115" y2="151" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="115" y1="151" x2="145" y2="193" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="175" y1="25" x2="205" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="205" y1="67" x2="235" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="25" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="25" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><circle cx="55" cy="67" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="55" y="71.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">21</text><circle cx="85" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="85" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">24</text><circle cx="115" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="115" y="155.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">27</text><circle cx="145" cy="193" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="145" y="197.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">29</text><circle cx="175" cy="25" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="29.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">30</text><circle cx="205" cy="67" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="205" y="71.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">34</text><circle cx="235" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="235" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">35</text></svg>
+  <div class="didascalia"><b>Figura 10.</b> L'albero dello scritto del 14 novembre 2025.</div>
+  </div>
+  <div class="soluzione">
+    <p>30 radice; 21 a sinistra; 18 a sinistra di 21; 24 a destra di 21; 34 a destra di 30; 27 a destra di 24; 29 a destra di 27; 35 a destra di 34.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Scritto del 27 febbraio 2026, punto (a): 12 33 24 42 11 44 18 46</summary>
+  <p>Come sopra, senza bilanciamenti.</p>
+  <div class="figura">
+<svg viewBox="0 0 260 218" width="260" height="218" role="img" aria-label="un albero binario di ricerca" font-family="system-ui, sans-serif"><line x1="55" y1="25" x2="25" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="115" y1="109" x2="85" y2="151" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="145" y1="67" x2="115" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="55" y1="25" x2="145" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="145" y1="67" x2="175" y2="109" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="175" y1="109" x2="205" y2="151" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><line x1="205" y1="151" x2="235" y2="193" class="l-muted" stroke="#5b6270" stroke-width="1.3"/><circle cx="25" cy="67" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="25" y="71.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">11</text><circle cx="55" cy="25" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="55" y="29.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">12</text><circle cx="85" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="85" y="155.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">18</text><circle cx="115" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="115" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">24</text><circle cx="145" cy="67" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="145" y="71.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">33</text><circle cx="175" cy="109" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="175" y="113.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">42</text><circle cx="205" cy="151" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="205" y="155.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">44</text><circle cx="235" cy="193" r="13" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1.6"/><text x="235" y="197.6" font-size="13.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">46</text></svg>
+  <div class="didascalia"><b>Figura 11.</b> L'albero dello scritto del 27 febbraio 2026.</div>
+  </div>
+  <div class="soluzione">
+    <p>12 radice; 33 a destra; 24 a sinistra di 33; 42 a destra di 33; 11 a sinistra di 12; 44 a destra di 42; 18 a sinistra di 24; 46 a destra di 44.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Il minimo, la ricerca e il costo</summary>
+  <p>Nell'albero (a) della Figura 1: (1) quali nodi visita la ricerca di 13? (2) qual è il minimo, e quanti passi servono per trovarlo? (3) Con n = 1000 nodi, quanti confronti fa al massimo una ricerca, nel caso migliore possibile per la forma dell'albero e nel caso peggiore?</p>
+  <div class="soluzione">
+    <p>(1) 15 → 12 → 14 → 13: 13 &lt; 15, a sinistra; 13 ≥ 12, a destra; 13 &lt; 14, a sinistra; trovato. (2) Il minimo è 1: si scende sempre a sinistra, 15 → 12 → 8 → 1, tre passi. (3) Un cammino dalla radice ha h + 1 nodi. Nel caso migliore l'albero è alto ⌊log<sub>2</sub> 1000⌋ = 9, quindi al massimo 10 confronti; nel caso peggiore è una catena alta 999, quindi fino a 1000 confronti.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 9 -->
+<h2 id="approfondimenti"><span class="num">9</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per lo scritto. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: l'altezza media</summary>
+  <div class="soluzione">
+    <p>Se le chiavi arrivano in un ordine casuale (tutti gli ordini ugualmente probabili), l'albero che si ottiene ha in media altezza O(log n): il caso degenere è raro. Ma negli usi reali le chiavi arrivano spesso quasi ordinate (codici progressivi, date), proprio il caso peggiore. Per questo si usano alberi che si ribilanciano da soli.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: cancellare con il predecessore</summary>
+  <div class="soluzione">
+    <p>Nel caso 3 si può usare anche la chiave più grande del sottoalbero sinistro (il predecessore) invece della più piccola del destro: rispetta la definizione nello stesso modo. Con chiavi ripetute però va scelta con attenzione: con la convenzione «uguali a destra», il minimo del sottoalbero destro è la scelta che non rompe mai la definizione.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="23-dijkstra.html">← Pacco 23: Bellman–Ford e Dijkstra</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="25-alberi-avl.html">Pacco 25: alberi bilanciati e AVL →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- alberi.js
+// Alberi binari: costruzione, disegno, visite (pacco 12).
+// Un albero è { radice: id|null, nodi: { id: { v: "8", sx: id|null, dx: id|null } } }.
+function escA(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1a(v) { return Math.round(v * 10) / 10; }
+
+// "8(14(22,12(1,3)),11(,5))": etichetta, poi tra parentesi il sottoalbero sinistro e il destro (vuoto = niente)
+function alberoDa(testo) {
+  var s = testo.replace(/\s+/g, ""), k = 0, n = 0, nodi = {};
+  function nodo() {
+    var et = "";
+    while (k < s.length && "(),".indexOf(s[k]) < 0) et += s[k++];
+    if (et === "") return null;
+    var id = "a" + (n++);
+    nodi[id] = { v: et, sx: null, dx: null };
+    if (s[k] === "(") {
+      k++;
+      nodi[id].sx = nodo();
+      if (s[k] !== ",") throw new Error("manca la virgola in " + testo);
+      k++;
+      nodi[id].dx = nodo();
+      if (s[k] !== ")") throw new Error("manca la parentesi in " + testo);
+      k++;
+    }
+    return id;
+  }
+  var r = nodo();
+  return { radice: r, nodi: nodi };
+}
+// vettore posizionale: radice in A[0], figli di A[i] in A[2i+1] e A[2i+2]
+function alberoDaVettore(A) {
+  var nodi = {};
+  for (var i = 0; i < A.length; i++) nodi["p" + i] = { v: String(A[i]), sx: 2 * i + 1 < A.length ? "p" + (2 * i + 1) : null, dx: 2 * i + 2 < A.length ? "p" + (2 * i + 2) : null, pos: i };
+  return { radice: A.length ? "p0" : null, nodi: nodi };
+}
+function altezza(T, id) {
+  if (id === undefined) id = T.radice;
+  if (id === null) return -1;
+  return 1 + Math.max(altezza(T, T.nodi[id].sx), altezza(T, T.nodi[id].dx));
+}
+function contaNodi(T, id) { if (id === undefined) id = T.radice; if (id === null) return 0; return 1 + contaNodi(T, T.nodi[id].sx) + contaNodi(T, T.nodi[id].dx); }
+
+// posizioni: a profondità d il nodo occupa uno dei 2^d «posti» del livello (come nel vettore posizionale)
+function disponi(T, opz) {
+  opz = opz || {};
+  var h = Math.max(0, altezza(T)), slot = opz.slot || 46, dy = opz.dy || 62;
+  var W = Math.max(opz.minW || 0, Math.pow(2, h) * slot + 2 * (opz.margine || 14));
+  var pos = {}, m = opz.margine || 14, top = opz.top || 30;
+  function vai(id, d, k) {
+    if (id === null) return;
+    var largh = (W - 2 * m) / Math.pow(2, d);
+    pos[id] = { x: m + (k + 0.5) * largh, y: top + d * dy, d: d, k: k };
+    vai(T.nodi[id].sx, d + 1, 2 * k);
+    vai(T.nodi[id].dx, d + 1, 2 * k + 1);
+  }
+  vai(T.radice, 0, 0);
+  return { pos: pos, W: W, H: top + h * dy + (opz.basso || 30), h: h };
+}
+
+var STILE_NODO = {
+  normale: ["r-nodo", "#ffffff", "#9aa3b2", "t-testo", "#1f2328"],
+  visitato: ["r-verde", "#e6f5ea", "#17803d", "t-testo", "#1f2328"],
+  corrente: ["r-giallo", "#fff1a8", "#b4500f", "t-testo", "#1f2328"],
+  inS: ["r-blu", "#e8edfc", "#2f52c4", "t-testo", "#1f2328"],
+  spento: ["r-nodo", "#ffffff", "#9aa3b2", "t-muted", "#5b6270"],
+  rosso: ["r-rosso", "#fdecea", "#b42318", "t-testo", "#1f2328"],
+  viola: ["r-viola", "#f1eafc", "#6d3fc0", "t-testo", "#1f2328"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f", "t-testo", "#1f2328"]
+};
+// opz: { stato: {id: chiave di STILE_NODO}, ordine: {id: numero}, nulls: true, nullStato: {"id:sx": stile},
+//        etichette: [{id, testo, lato: "sx"|"dx"|"sopra"|"sotto", col}], gusci: [{id, testo, col, lato}],
+//        livelli: true, indici: true (mostra la posizione nel vettore), giro: {punti, fino, tacche}, aria }
+function svgAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, R = opz.r || 17, s = [], k;
+  var extraSx = opz.livelli ? 64 : 0, W = L.W + extraSx + (opz.extraDx || 0), H = L.H + (opz.nulls ? 34 : 0) + (opz.extraBasso || 0);
+  s.push('<svg viewBox="0 0 ' + r1a(W) + ' ' + r1a(H) + '" width="' + r1a(W) + '" height="' + r1a(H) + '" role="img" aria-label="' + escA(opz.aria || "Un albero binario") + '" font-family="system-ui, sans-serif">');
+  s.push('<g transform="translate(' + extraSx + ',0)">');
+  // gusci (sottoalberi evidenziati)
+  (opz.gusci || []).forEach(function (g) {
+    var ids = [];
+    (function raccogli(id) { if (id === null) return; ids.push(id); raccogli(T.nodi[id].sx); raccogli(T.nodi[id].dx); })(g.id);
+    var x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    ids.forEach(function (i) { x0 = Math.min(x0, pos[i].x); x1 = Math.max(x1, pos[i].x); y0 = Math.min(y0, pos[i].y); y1 = Math.max(y1, pos[i].y); });
+    var pad = R + 9 + (g.pad || 0), c = STILE_NODO[g.col || "viola"];
+    s.push('<rect x="' + r1a(x0 - pad) + '" y="' + r1a(y0 - pad) + '" width="' + r1a(x1 - x0 + 2 * pad) + '" height="' + r1a(y1 - y0 + 2 * pad) + '" rx="' + r1a(pad) + '" class="' + c[0] + '" fill="' + c[1] + '" fill-opacity="0.55" stroke="' + c[2] + '" stroke-width="1.4" stroke-dasharray="5 4"/>');
+    if (g.testo) {
+      var colT = g.col === "arancio" ? ["t-arancio", "#b4500f"] : g.col === "inS" ? ["t-blu", "#2f52c4"] : ["t-viola", "#6d3fc0"];
+      String(g.testo).split("\n").forEach(function (riga, j) {
+        var tx = g.lato === "destra" ? x1 + pad + 6 : x0 - pad + 4, ty = g.lato === "destra" ? y1 - 4 + j * 15 : y1 + pad + 15 + j * 15;
+        s.push('<text x="' + r1a(tx) + '" y="' + r1a(ty) + '" font-size="12.5" font-weight="600" text-anchor="start" class="' + colT[0] + '" fill="' + colT[1] + '">' + riga + '</text>');
+      });
+    }
+  });
+  // livelli
+  if (opz.livelli) {
+    for (var d = 0; d <= L.h; d++) {
+      var yy = (opz.top || 30) + d * (opz.dy || 62);
+      s.push('<text x="' + (-extraSx + 6) + '" y="' + (yy + 4) + '" font-size="12" class="t-muted" fill="#5b6270">livello ' + d + '</text>');
+      s.push('<line x1="' + (-extraSx + 58) + '" y1="' + yy + '" x2="' + (L.W - 6) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="0.6" stroke-dasharray="2 5"/>');
+    }
+  }
+  // archi
+  for (k in pos) {
+    ["sx", "dx"].forEach(function (lato) {
+      var c = T.nodi[k][lato];
+      if (c !== null && pos[c]) {
+        var a = pos[k], b = pos[c], dx = b.x - a.x, dyy = b.y - a.y, l = Math.sqrt(dx * dx + dyy * dyy);
+        s.push('<line x1="' + r1a(a.x + dx / l * R) + '" y1="' + r1a(a.y + dyy / l * R) + '" x2="' + r1a(b.x - dx / l * R) + '" y2="' + r1a(b.y - dyy / l * R) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      } else if (opz.nulls) {
+        var a2 = pos[k], ox = lato === "sx" ? -1 : 1, nx = a2.x + ox * 16, ny = a2.y + 40;
+        var st = (opz.nullStato || {})[k + ":" + lato];
+        var cc = st ? STILE_NODO[st] : STILE_NODO.spento;
+        s.push('<line x1="' + r1a(a2.x + ox * R * 0.6) + '" y1="' + r1a(a2.y + R * 0.8) + '" x2="' + r1a(nx) + '" y2="' + r1a(ny - 7) + '" class="l-muted" stroke="#5b6270" stroke-width="1" stroke-dasharray="3 3"/>');
+        s.push('<rect x="' + r1a(nx - 13) + '" y="' + r1a(ny - 7) + '" width="26" height="14" rx="3" class="' + cc[0] + '" fill="' + cc[1] + '" stroke="' + cc[2] + '" stroke-width="1"/>');
+        s.push('<text x="' + r1a(nx) + '" y="' + r1a(ny + 3.5) + '" font-size="9.5" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      }
+    });
+  }
+  // giro intorno all'albero
+  if (opz.giro) {
+    var G = opz.giro, pts = G.punti, fino = G.fino === undefined ? pts.length - 1 : G.fino;
+    var dTutto = "M" + pts.map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+    s.push('<path d="' + dTutto + '" class="l-giro" fill="none" stroke="#9aa3b2" stroke-width="1.4" stroke-dasharray="4 4" stroke-linejoin="round"/>');
+    if (fino > 0) {
+      var dFatto = "M" + pts.slice(0, fino + 1).map(function (p) { return r1a(p.x) + " " + r1a(p.y); }).join(" L");
+      s.push('<path d="' + dFatto + '" class="l-giro-fatto" fill="none" stroke="#6d3fc0" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>');
+    }
+    (G.tacche || []).forEach(function (t) {
+      var col = t.tipo === "pre" ? ["t-blu", "#2f52c4"] : t.tipo === "in" ? ["t-verde", "#17803d"] : ["t-arancio", "#b4500f"];
+      s.push('<circle cx="' + r1a(t.x) + '" cy="' + r1a(t.y) + '" r="' + (t.fatta ? 4.2 : 3.2) + '" class="' + col[0] + '" fill="' + (t.fatta ? col[1] : "none") + '" stroke="' + col[1] + '" stroke-width="1.4"' + (t.fatta ? "" : ' fill-opacity="0"') + '/>');
+    });
+    if (G.punto) s.push('<circle cx="' + r1a(G.punto.x) + '" cy="' + r1a(G.punto.y) + '" r="6.5" class="t-viola" fill="#6d3fc0"/>');
+  }
+  // nodi
+  for (k in pos) {
+    var p = pos[k], st2 = STILE_NODO[(opz.stato || {})[k] || "normale"];
+    s.push('<circle cx="' + r1a(p.x) + '" cy="' + r1a(p.y) + '" r="' + R + '" class="' + st2[0] + '" fill="' + st2[1] + '" stroke="' + st2[2] + '" stroke-width="1.6"/>');
+    var et = T.nodi[k].v, fs = et.length > 2 ? 12.5 : 15;
+    s.push('<text x="' + r1a(p.x) + '" y="' + r1a(p.y + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="' + st2[3] + '" fill="' + st2[4] + '">' + escA(et) + '</text>');
+    if (opz.ordine && opz.ordine[k] !== undefined) {
+      s.push('<circle cx="' + r1a(p.x + R * 0.85) + '" cy="' + r1a(p.y - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1a(p.x + R * 0.85) + '" y="' + r1a(p.y - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.ordine[k] + '</text>');
+    }
+    if (opz.indici && T.nodi[k].pos !== undefined) {
+      s.push('<text x="' + r1a(p.x - R - 3) + '" y="' + r1a(p.y - R + 4) + '" font-size="11" text-anchor="end" class="t-verde" fill="#17803d">' + T.nodi[k].pos + '</text>');
+    }
+  }
+  // etichette con freccia
+  (opz.etichette || []).forEach(function (e) {
+    var p = pos[e.id], col = e.col === "arancio" ? ["t-arancio", "#b4500f"] : e.col === "verde" ? ["t-verde", "#17803d"] : e.col === "rosso" ? ["t-rosso", "#b42318"] : e.col === "viola" ? ["t-viola", "#6d3fc0"] : ["t-blu", "#2f52c4"];
+    var lx, ly, ax, ay, anc;
+    if (e.lato === "sx") { lx = p.x - R - 44; ly = p.y + 4; ax = p.x - R - 3; ay = p.y; anc = "end"; }
+    else if (e.lato === "sopra") { lx = p.x + R + 14; ly = p.y - R - 6; ax = p.x + R * 0.6; ay = p.y - R * 0.8; anc = "start"; }
+    else if (e.lato === "sotto") { lx = p.x; ly = p.y + R + 30; ax = p.x; ay = p.y + R + 3; anc = "middle"; }
+    else { lx = p.x + R + 44; ly = p.y + 4; ax = p.x + R + 3; ay = p.y; anc = "start"; }
+    var righe = String(e.testo).split("\n");
+    righe.forEach(function (rg, j) { s.push('<text x="' + r1a(lx + (anc === "start" ? 4 : anc === "end" ? -4 : 0)) + '" y="' + r1a(ly + j * 14 + (e.lato === "sotto" ? 0 : -(righe.length - 1) * 7)) + '" font-size="12.5" font-weight="600" text-anchor="' + anc + '" class="' + col[0] + '" fill="' + col[1] + '">' + rg + '</text>'); });
+    var sx0 = e.lato === "sx" ? lx : e.lato === "sotto" ? lx : lx, sy0 = e.lato === "sotto" ? ly - 12 : e.lato === "sopra" ? ly - 4 : ly - 4;
+    if (e.lato === "sopra") sx0 = lx;
+    var ang = Math.atan2(ay - sy0, ax - sx0);
+    s.push('<line x1="' + r1a(sx0) + '" y1="' + r1a(sy0) + '" x2="' + r1a(ax - 4 * Math.cos(ang)) + '" y2="' + r1a(ay - 4 * Math.sin(ang)) + '" class="' + col[0].replace("t-", "l-") + '" stroke="' + col[1] + '" stroke-width="1.3"/>');
+    s.push('<path d="M' + r1a(ax) + ' ' + r1a(ay) + ' l' + r1a(-8 * Math.cos(ang - 0.42)) + ' ' + r1a(-8 * Math.sin(ang - 0.42)) + ' l' + r1a(8 * Math.cos(ang - 0.42) - 8 * Math.cos(ang + 0.42)) + ' ' + r1a(8 * Math.sin(ang - 0.42) - 8 * Math.sin(ang + 0.42)) + ' z" class="' + col[0] + '" fill="' + col[1] + '"/>');
+  });
+  s.push('</g></svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- visite
+function preordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; out.push(id); preordine(T, T.nodi[id].sx, out); preordine(T, T.nodi[id].dx, out); return out; }
+function inordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; inordine(T, T.nodi[id].sx, out); out.push(id); inordine(T, T.nodi[id].dx, out); return out; }
+function postordine(T, id, out) { out = out || []; if (id === undefined) id = T.radice; if (id === null) return out; postordine(T, T.nodi[id].sx, out); postordine(T, T.nodi[id].dx, out); out.push(id); return out; }
+function ampiezza(T) { var out = [], C = T.radice === null ? [] : [T.radice]; while (C.length) { var n = C.shift(); out.push(n); if (T.nodi[n].sx !== null) C.push(T.nodi[n].sx); if (T.nodi[n].dx !== null) C.push(T.nodi[n].dx); } return out; }
+function valori(T, ids) { return ids.map(function (id) { return T.nodi[id].v; }); }
+
+// Il giro intorno all'albero: un percorso che parte a sinistra della radice e gira in senso antiorario,
+// con una tacca a sinistra (pre), sotto (in) e a destra (post) di ogni nodo.
+function giroAlbero(T, opz) {
+  opz = opz || {};
+  var L = disponi(T, opz), pos = L.pos, d = (opz.r || 17) + 9, pts = [], tacche = [];
+  function punto(x, y, tipo, id) { pts.push({ x: x, y: y }); if (tipo) tacche.push({ x: x, y: y, tipo: tipo, id: id, i: pts.length - 1 }); }
+  function giro(id) {
+    var p = pos[id], n = T.nodi[id];
+    punto(p.x - d, p.y, "pre", id);
+    if (n.sx !== null) giro(n.sx);
+    else punto(p.x - d * 0.75, p.y + d * 0.75);
+    punto(p.x, p.y + d, "in", id);
+    if (n.dx !== null) giro(n.dx);
+    else punto(p.x + d * 0.75, p.y + d * 0.75);
+    punto(p.x + d, p.y, "post", id);
+  }
+  if (T.radice !== null) {
+    var r = pos[T.radice];
+    punto(r.x - d * 0.6, r.y - d * 1.25);
+    giro(T.radice);
+    punto(r.x + d * 0.6, r.y - d * 1.25);
+  }
+  return { punti: pts, tacche: tacche };
+}
+
+// Eventi delle visite iterative (con la coda o con la pila), come nel codice della lavagna dell'anno scorso.
+// Ogni evento: { riga, testo, S: [id|null...], corrente, visitati: [id...], nullStato }
+var CODICE_VISITE = {
+  coda: ["<b>ALGORITMO</b> visitaInAmpiezza(AlberoBinario r)", "  C ← coda vuota", "  C.enqueue(r)", "  <b>WHILE NOT</b> (C.isEmpty()) <b>DO</b>", "    n ← C.dequeue()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      C.enqueue(n.sx)", "      C.enqueue(n.dx)"],
+  pila: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  P ← pila vuota", "  P.push(r)", "  <b>WHILE NOT</b> (P.isEmpty()) <b>DO</b>", "    n ← P.pop()", "    <b>IF</b> n ≠ null <b>THEN</b>", "      visita il nodo associato a n", "      P.push(n.dx)", "      P.push(n.sx)"]
+};
+function eventiVisita(T, tipo) {
+  var ev = [], S = [], vis = [], cor = null, X = tipo === "coda" ? "C" : "P";
+  var ins = tipo === "coda" ? "C.enqueue" : "P.push", est = tipo === "coda" ? "C.dequeue()" : "P.pop()";
+  function nome(id) { return id === null ? "null" : "il nodo " + escA(T.nodi[id].v); }
+  function scatta(riga, testo) { ev.push({ riga: riga, testo: testo, S: S.slice(), corrente: cor, visitati: vis.slice() }); }
+  scatta(0, "Chiamata della visita sulla radice, " + nome(T.radice) + ".");
+  scatta(1, (tipo === "coda" ? "Si crea una coda vuota C." : "Si crea una pila vuota P."));
+  S.push(T.radice); scatta(2, ins + "(r): " + (tipo === "coda" ? "la radice entra nella coda." : "la radice entra nella pila."));
+  var giri = 0;
+  while (giri++ < 200) {
+    if (!S.length) { cor = null; scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " è vuota: il ciclo finisce. Ordine di visita: <b>" + valori(T, vis).join(" ") + "</b>."); break; }
+    scatta(3, (tipo === "coda" ? "La coda" : "La pila") + " non è vuota: si entra nel ciclo.");
+    var n = tipo === "coda" ? S.shift() : S.pop();
+    cor = n;
+    scatta(4, "n ← " + est + ": si toglie " + nome(n) + (tipo === "coda" ? ", il primo della coda." : ", quello in cima alla pila."));
+    if (n === null) { scatta(5, "n = null: non c'è nessun nodo da visitare, si torna al WHILE."); continue; }
+    scatta(5, "n ≠ null: è un nodo vero.");
+    vis.push(n); scatta(6, "Si visita il nodo " + escA(T.nodi[n].v) + ": è il " + vis.length + "° visitato.");
+    var a = tipo === "coda" ? T.nodi[n].sx : T.nodi[n].dx, b = tipo === "coda" ? T.nodi[n].dx : T.nodi[n].sx;
+    S.push(a); scatta(7, ins + "(n." + (tipo === "coda" ? "sx" : "dx") + "): entra " + (a === null ? "null (il figlio " + (tipo === "coda" ? "sinistro" : "destro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "sinistro, " : "destro, ") + escA(T.nodi[a].v)) + ".");
+    S.push(b); scatta(8, ins + "(n." + (tipo === "coda" ? "dx" : "sx") + "): entra " + (b === null ? "null (il figlio " + (tipo === "coda" ? "destro" : "sinistro") + " non c'è)" : "il figlio " + (tipo === "coda" ? "destro, " : "sinistro, ") + escA(T.nodi[b].v)) + "." + (tipo === "pila" && b !== null ? " È in cima: sarà il prossimo a uscire." : ""));
+  }
+  return ev;
+}
+
+// Eventi della visita ricorsiva: ordine "pre" | "in" | "post".
+var CODICE_RIC = {
+  pre: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visita la radice", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)"],
+  "in": ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visita la radice", "    visitaInProfondità(r.dx)"],
+  post: ["<b>ALGORITMO</b> visitaInProfondità(AlberoBinario r)", "  <b>IF</b> r ≠ null <b>THEN</b>", "    visitaInProfondità(r.sx)", "    visitaInProfondità(r.dx)", "    visita la radice"]
+};
+function eventiRicorsiva(T, ordine) {
+  var ev = [], pila = [], out = [];
+  var righe = ordine === "pre" ? { vis: 2, sx: 3, dx: 4 } : ordine === "in" ? { sx: 2, vis: 3, dx: 4 } : { sx: 2, dx: 3, vis: 4 };
+  function nome(id) { return id === null ? "null" : escA(T.nodi[id].v); }
+  function scatta(riga, testo, extra) {
+    var e = { riga: riga, testo: testo, pila: pila.map(function (r) { return { id: r.id, lato: r.lato }; }), out: out.slice(), corrente: pila.length ? pila[pila.length - 1].id : null };
+    if (extra) for (var q in extra) e[q] = extra[q];
+    ev.push(e);
+  }
+  function chiama(id, lato) {
+    pila.push({ id: id, lato: lato });
+    scatta(0, "Chiamata visitaInProfondità(" + nome(id) + ")" + (lato ? ", sul sottoalbero " + (lato === "sx" ? "sinistro" : "destro") + " del nodo " + nome(pila[pila.length - 2].id) : ", sulla radice") + ". Nella pila delle chiamate entra un record.");
+    if (id === null) {
+      scatta(1, "r = null: l'albero è vuoto, non c'è niente da fare. La chiamata finisce subito.");
+      pila.pop();
+      return;
+    }
+    scatta(1, "r ≠ null: si esegue il corpo dell'IF.");
+    var passi = [["vis", righe.vis], ["sx", righe.sx], ["dx", righe.dx]].sort(function (a, b) { return a[1] - b[1]; });
+    passi.forEach(function (ps) {
+      if (ps[0] === "vis") { out.push(id); scatta(ps[1], "Si visita la radice di questo sottoalbero: " + nome(id) + ". Ordine finora: <b>" + valori(T, out).join(" ") + "</b>.", { visitaOra: id }); }
+      else {
+        scatta(ps[1], "Chiamata ricorsiva sul figlio " + (ps[0] === "sx" ? "sinistro" : "destro") + " di " + nome(id) + ": " + nome(T.nodi[id][ps[0]]) + ".");
+        chiama(T.nodi[id][ps[0]], ps[0]);
+        scatta(ps[1], "Torniamo alla chiamata su " + nome(id) + ": il sottoalbero " + (ps[0] === "sx" ? "sinistro" : "destro") + " è finito.");
+      }
+    });
+    pila.pop();
+  }
+  chiama(T.radice, null);
+  ev.push({ riga: 0, testo: "La prima chiamata è finita: la pila delle chiamate è vuota. Ordine di visita: <b>" + valori(T, out).join(" ") + "</b>.", pila: [], out: out.slice(), corrente: null, fine: true });
+  return ev;
+}
+
+// Notazione polacca inversa: valuta con una pila. Restituisce i passi.
+function passiRPN(tokens) {
+  var P = [], passi = [{ j: -1, pila: [], testo: "Si leggono i simboli da sinistra a destra, con una pila vuota." }], err = null;
+  for (var j = 0; j < tokens.length && !err; j++) {
+    var t = tokens[j];
+    if (/^-?\d+(\.\d+)?$/.test(t)) { P.push(Number(t)); passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un numero: push(" + t + ")." }); }
+    else if ("+-−*×/:".indexOf(t) >= 0 && t.length === 1) {
+      if (P.length < 2) { err = "«" + t + "» è un operatore, ma nella pila ci sono meno di due numeri: l'espressione è sbagliata."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); break; }
+      var b = P.pop(), a = P.pop(), v;
+      if (t === "+") v = a + b; else if (t === "-" || t === "−") v = a - b; else if (t === "*" || t === "×") v = a * b; else v = b === 0 ? NaN : a / b;
+      v = Math.round(v * 1e6) / 1e6;
+      P.push(v);
+      passi.push({ j: j, pila: P.slice(), testo: "«" + t + "» è un operatore: pop() dà " + b + " (il secondo operando), pop() dà " + a + " (il primo). Si calcola " + a + " " + t + " " + b + " = " + v + " e si fa push(" + v + ").", tolti: [a, b] });
+    } else { err = "Simbolo non riconosciuto: «" + escA(t) + "»."; passi.push({ j: j, pila: P.slice(), testo: err, errore: true }); }
+  }
+  if (!err) {
+    if (P.length === 1) passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli: nella pila resta un solo numero, <b>" + P[0] + "</b>. È il valore dell'espressione.", fine: true });
+    else passi.push({ j: tokens.length, pila: P.slice(), testo: "Finiti i simboli, ma nella pila restano " + P.length + " numeri: l'espressione è sbagliata (mancano operatori).", errore: true, fine: true });
+  }
+  return passi;
+}
+// HTML di una pila verticale di "chip" (cima in alto) e di una coda orizzontale
+function htmlPilaChip(els, fmt, opz) {
+  opz = opz || {};
+  var h = '<div class="pilachip">';
+  if (!els.length) h += '<div class="chip zero">vuota</div>';
+  els.forEach(function (e, j) { h += '<div class="chip' + (e === null ? " zero" : "") + (j === els.length - 1 ? " cima" : "") + '">' + fmt(e) + (j === els.length - 1 ? ' <span class="lab-cima">← cima</span>' : '') + '</div>'; });
+  return h + '</div>';
+}
+function htmlCodaChip(els, fmt) {
+  var h = '<div class="codachip"><span class="lab-coda">primo →</span>';
+  if (!els.length) h += '<span class="chip zero">vuota</span>';
+  els.forEach(function (e) { h += '<span class="chip' + (e === null ? " zero" : "") + '">' + fmt(e) + '</span>'; });
+  return h + '<span class="lab-coda">← ultimo</span></div>';
+}
+
+// ---- ricerca.js
+// Alberi di ricerca (pacchi 24, 25, 26): alberi binari di ricerca, perfettamente bilanciati, AVL, alberi 2-3.
+// Un nodo binario: { k: chiave, sx: nodo|null, dx: nodo|null }
+function nb(k) { return { k: k, sx: null, dx: null }; }
+function copiaB(t) { return t === null ? null : { k: t.k, sx: copiaB(t.sx), dx: copiaB(t.dx) }; }
+function altB(t) { return t === null ? -1 : 1 + Math.max(altB(t.sx), altB(t.dx)); }
+function nodiB(t) { return t === null ? 0 : 1 + nodiB(t.sx) + nodiB(t.dx); }
+function inordineB(t, out) { out = out || []; if (t) { inordineB(t.sx, out); out.push(t.k); inordineB(t.dx, out); } return out; }
+// stringa nel formato di alberi.js: "15(12(8,),25)"
+function stringaB(t) { if (t === null) return ""; if (!t.sx && !t.dx) return String(t.k); return t.k + "(" + stringaB(t.sx) + "," + stringaB(t.dx) + ")"; }
+function daStringaB(s) { var T = alberoDa(s); function conv(id) { if (id === null) return null; var n = T.nodi[id], v = Number(n.v); return { k: isNaN(v) ? n.v : v, sx: conv(n.sx), dx: conv(n.dx) }; } return conv(T.radice); }
+// per svgAlbero: { radice, nodi } con id = "n" + progressivo; mappa chiave → id (la prima occorrenza)
+function perSvg(t) { var nodi = {}, c = 0, mappa = {}; function vai(x) { if (x === null) return null; var id = "n" + (c++); nodi[id] = { v: String(x.k), sx: null, dx: null }; if (mappa[x.k] === undefined) mappa[x.k] = id; nodi[id].sx = vai(x.sx); nodi[id].dx = vai(x.dx); return id; } var r = vai(t); return { T: { radice: r, nodi: nodi }, id: mappa }; }
+
+// ---------------------------------------------------------------- albero binario di ricerca (Codici 14.1–14.5)
+function inserisciBST(r, k) { // iterativo (Codice 14.4); restituisce { r, cammino: [chiavi visitate], padre }
+  var t = nb(k), padre = null, n = r, cam = [];
+  while (n !== null) { padre = n; cam.push(n.k); n = k < n.k ? n.sx : n.dx; }
+  if (padre === null) r = t; else if (k < padre.k) padre.sx = t; else padre.dx = t;
+  return { r: r, cammino: cam, padre: padre ? padre.k : null, lato: padre ? (k < padre.k ? "sinistro" : "destro") : null };
+}
+function bstDaSequenza(seq) { var r = null; seq.forEach(function (k) { r = inserisciBST(r, k).r; }); return r; }
+function trovaBST(r, k) { var cam = []; while (r !== null && r.k !== k) { cam.push(r.k); r = k < r.k ? r.sx : r.dx; } if (r) cam.push(r.k); return { trovato: r !== null, cammino: cam }; }
+function cancellaBST(r, k) { // Codice 14.5; restituisce { r, caso, testo, sostituto }
+  var padre = null, n = r;
+  while (n !== null && n.k !== k) { padre = n; n = k < n.k ? n.sx : n.dx; }
+  if (n === null) return { r: r, caso: 0, testo: k + " non c'è: l'albero non cambia." };
+  var caso, sost = null;
+  if (n.sx === null || n.dx === null) {
+    var figlio = n.sx === null ? n.dx : n.sx;
+    caso = (n.sx === null && n.dx === null) ? 1 : 2;
+    if (padre === null) r = figlio; else if (padre.sx === n) padre.sx = figlio; else padre.dx = figlio;
+  } else {
+    caso = 3; var t = n, m = n.dx;
+    while (m.sx !== null) { t = m; m = m.sx; }
+    sost = m.k; n.k = m.k;
+    if (t === n) n.dx = m.dx; else t.sx = m.dx;
+  }
+  var testo = caso === 1 ? k + " è una foglia: si toglie (caso 1)." : caso === 2 ? k + " ha un solo figlio: il padre punta direttamente a quel figlio (caso 2)." : k + " ha due figli: si copia al suo posto " + sost + ", la chiave più piccola del sottoalbero destro, e si toglie il nodo di " + sost + ", che ha al più un figlio (caso 3).";
+  return { r: r, caso: caso, testo: testo, sostituto: sost };
+}
+
+// ---------------------------------------------------------------- perfettamente bilanciati e AVL: controlli
+function difettiPB(t, out) { out = out || []; if (t) { var a = nodiB(t.sx), b = nodiB(t.dx); if (Math.abs(a - b) > 1) out.push(t.k); difettiPB(t.sx, out); difettiPB(t.dx, out); } return out; }
+function difettiAVL(t, out) { out = out || []; if (t) { var a = altB(t.sx), b = altB(t.dx); if (Math.abs(a - b) > 1) out.push(t.k); difettiAVL(t.sx, out); difettiAVL(t.dx, out); } return out; }
+// albero perfettamente bilanciato da chiavi ordinate: radice = mediano (con un numero pari di chiavi, quello di sinistra o di destra)
+function perfBilanciato(chiavi, destra) { var a = chiavi.slice().sort(function (x, y) { return x - y; }); function vai(i, j) { if (i > j) return null; var m = destra ? Math.ceil((i + j) / 2) : Math.floor((i + j) / 2); var n = nb(a[m]); n.sx = vai(i, m - 1); n.dx = vai(m + 1, j); return n; } return vai(0, a.length - 1); }
+
+// ---------------------------------------------------------------- AVL: inserimento con le rotazioni della lavagna
+function rotDx(a) { var b = a.sx; a.sx = b.dx; b.dx = a; return b; }
+function rotSx(a) { var b = a.dx; a.dx = b.sx; b.sx = a; return b; }
+// inserisce k (come in un albero di ricerca), poi ribilancia il nodo critico (il più basso sbilanciato sul cammino).
+// restituisce { r, prima (copia dopo l'inserimento semplice), critico, tipo, testo }
+function inserisciAVL(r, k) {
+  var ins = inserisciBST(r, k); r = ins.r;
+  var prima = copiaB(r), cam = [];
+  var n = r; while (n !== null) { cam.push(n); if (n.k === k && !n.sx && !n.dx) break; n = k < n.k ? n.sx : n.dx; }
+  // nodo critico: il più profondo sul cammino con |h(sx) − h(dx)| = 2
+  var crit = null, padreCrit = null;
+  for (var i = cam.length - 1; i >= 0; i--) { var x = cam[i]; if (Math.abs(altB(x.sx) - altB(x.dx)) > 1) { crit = x; padreCrit = i > 0 ? cam[i - 1] : null; break; } }
+  if (!crit) return { r: r, prima: prima, critico: null, tipo: null, testo: "Inserito " + k + " come figlio " + (ins.lato || "radice") + (ins.padre !== null ? " di " + ins.padre : "") + ". Nessun nodo è sbilanciato." };
+  var tipo, nuovo, A = crit.k, B, C;
+  if (k < crit.k) { // sbilanciamento nel sottoalbero sinistro
+    B = crit.sx.k;
+    if (k < crit.sx.k) { tipo = "SS"; nuovo = rotDx(crit); }
+    else { tipo = "SD"; C = crit.sx.dx.k; crit.sx = rotSx(crit.sx); nuovo = rotDx(crit); }
+  } else {
+    B = crit.dx.k;
+    if (k >= crit.dx.k) { tipo = "DD"; nuovo = rotSx(crit); }
+    else { tipo = "DS"; C = crit.dx.sx.k; crit.dx = rotDx(crit.dx); nuovo = rotSx(crit); }
+  }
+  if (padreCrit === null) r = nuovo; else if (padreCrit.sx === crit) padreCrit.sx = nuovo; else padreCrit.dx = nuovo;
+  var desc = { SS: "sbilanciamento a sinistra nel sottoalbero sinistro: rotazione a destra di perno " + A, DD: "sbilanciamento a destra nel sottoalbero destro: rotazione a sinistra di perno " + A,
+    SD: "sbilanciamento a destra nel sottoalbero sinistro: rotazione a sinistra di perno " + B + ", poi rotazione a destra di perno " + A, DS: "sbilanciamento a sinistra nel sottoalbero destro: rotazione a destra di perno " + B + ", poi rotazione a sinistra di perno " + A }[tipo];
+  return { r: r, prima: prima, critico: A, tipo: tipo, B: B, C: C, testo: "Inserito " + k + " come figlio " + ins.lato + " di " + ins.padre + ". Il nodo " + A + " diventa sbilanciato (altezze dei sottoalberi che differiscono di 2): " + desc + "." };
+}
+function avlDaSequenza(seq) { var r = null, ev = []; seq.forEach(function (k) { var x = inserisciAVL(r, k); r = x.r; ev.push({ k: k, prima: x.prima, dopo: copiaB(r), critico: x.critico, tipo: x.tipo, testo: x.testo }); }); return { r: r, ev: ev }; }
+// albero di Fibonacci di altezza h (chiavi assegnate in ordine simmetrico)
+function fibAVL(h) { function forma(h) { if (h < 0) return null; if (h === 0) return nb(0); var n = nb(0); n.sx = forma(h - 1); n.dx = forma(h - 2); return n; } var t = forma(h), c = 1; (function numera(x) { if (!x) return; numera(x.sx); x.k = c++; numera(x.dx); })(t); return t; }
+
+// ---------------------------------------------------------------- alberi 2-3 (dati nelle foglie, chiavi di instradamento nei nodi interni)
+// nodo: { foglia: true, k } oppure { foglia: false, f: [figli 2 o 3] }; le chiavi interne si calcolano: S = max del primo figlio, C = max del secondo (se 3 figli)
+function f23(k) { return { foglia: true, k: k }; }
+function max23(t) { while (!t.foglia) t = t.f[t.f.length - 1]; return t.k; }
+function chiavi23(t) { return t.foglia ? [t.k] : (t.f.length === 2 ? [max23(t.f[0])] : [max23(t.f[0]), max23(t.f[1])]); }
+function copia23(t) { return t.foglia ? f23(t.k) : { foglia: false, f: t.f.map(copia23) }; }
+function altezza23(t) { return t.foglia ? 0 : 1 + altezza23(t.f[0]); }
+function contaNodi23(t) { return t.foglia ? 1 : 1 + t.f.reduce(function (s, x) { return s + contaNodi23(x); }, 0); }
+function foglie23(t, out) { out = out || []; if (t.foglia) out.push(t.k); else t.f.forEach(function (x) { foglie23(x, out); }); return out; }
+// inserimento: restituisce { r, testo, split: numero di nodi divisi }
+function inserisci23(r, k) {
+  if (r === null) return { r: f23(k), testo: "L'albero era vuoto: " + k + " è l'unica foglia.", split: 0 };
+  if (r.foglia) { var a = [r, f23(k)].sort(function (x, y) { return x.k - y.k; }); return { r: { foglia: false, f: a }, testo: "C'era una sola foglia: si crea la radice con le due foglie " + a[0].k + " e " + a[1].k + ".", split: 0 }; }
+  var split = 0, testo = [];
+  function vai(n) { // restituisce null oppure il nuovo fratello creato dallo split
+    if (n.f[0].foglia) {
+      var i = 0; while (i < n.f.length && n.f[i].k <= k) i++;
+      n.f.splice(i, 0, f23(k)); testo.push("La foglia " + k + " va sotto il nodo [" + chiavi23Prima(n, k) + "], al posto giusto in ordine.");
+    } else {
+      var j = 0; var ch = chiavi23(n); while (j < ch.length && k > ch[j]) j++;
+      var nuovo = vai(n.f[j]);
+      if (nuovo) n.f.splice(j + 1, 0, nuovo);
+    }
+    if (n.f.length === 4) { split++; var fr = { foglia: false, f: n.f.splice(2, 2) }; testo.push("Un nodo ha 4 figli: si divide in due nodi con 2 figli ciascuno (split), e il nuovo nodo va al padre."); return fr; }
+    return null;
+  }
+  function chiavi23Prima(n, k) { var f = n.f.filter(function (x) { return x.k !== k; }); return f.length === 2 ? max23(f[0]) : max23(f[0]) + "-" + max23(f[1]); }
+  var fr = vai(r);
+  if (fr) { r = { foglia: false, f: [r, fr] }; testo.push("Anche la radice si è divisa: si crea una nuova radice, e l'albero cresce di un livello."); }
+  return { r: r, testo: testo.join(" "), split: split };
+}
+function albero23DaSequenza(seq) { var r = null, ev = []; seq.forEach(function (k) { var x = inserisci23(r, k); r = x.r; ev.push({ k: k, t: copia23(r), testo: x.testo, split: x.split }); }); return { r: r, ev: ev }; }
+// albero 2-3 con le foglie date e il minimo (o massimo) numero di nodi: livello per livello, raggruppando per 3 (o per 2)
+function albero23Estremo(chiavi, massimo) {
+  var liv = chiavi.slice().sort(function (a, b) { return a - b; }).map(f23);
+  if (liv.length === 1) return liv[0];
+  while (liv.length > 1) {
+    var n = liv.length, g;
+    if (massimo) { g = Math.floor(n / 2); } else { g = Math.ceil(n / 3); }
+    // g gruppi, ciascuno con 2 o 3 elementi: i primi «extra» gruppi hanno un elemento in più
+    var base = massimo ? 2 : Math.floor(n / g), extra = n - base * g, su = [], i = 0;
+    if (!massimo && base < 2) { base = 2; extra = n - 2 * g; }
+    for (var q = 0; q < g; q++) { var c = base + (q < extra ? 1 : 0); su.push({ foglia: false, f: liv.slice(i, i + c) }); i += c; }
+    liv = su;
+  }
+  return liv[0];
+}
+// disegno di un albero 2-3: nodi interni ovali con «x» o «x-y», foglie quadrate
+function svg23(t, opz) {
+  opz = opz || {};
+  var foglie = foglie23(t), Wf = opz.slot || 40, dy = opz.dy || 58, top = 24, s = [], pos = [], x = 14;
+  var h = altezza23(t), W = foglie.length * Wf + 28, H = top + h * dy + 30;
+  function vai(n, d) { var p; if (n.foglia) { p = { x: x + Wf / 2, y: top + d * dy, n: n }; x += Wf; } else { var ps = n.f.map(function (c) { return vai(c, d + 1); }); p = { x: (ps[0].x + ps[ps.length - 1].x) / 2, y: top + d * dy, n: n, figli: ps }; } pos.push(p); return p; }
+  vai(t, 0);
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "un albero 2-3") + '" font-family="system-ui, sans-serif">');
+  pos.forEach(function (p) { if (p.figli) p.figli.forEach(function (c) { s.push('<line x1="' + p.x + '" y1="' + (p.y + 11) + '" x2="' + c.x + '" y2="' + (c.y - (c.n.foglia ? 12 : 11)) + '" class="l-muted" stroke="#5b6270" stroke-width="1.3"/>'); }); });
+  pos.forEach(function (p) {
+    var ev = opz.evid && opz.evid.indexOf(p.n.foglia ? "f" + p.n.k : "i" + chiavi23(p.n).join("-")) >= 0;
+    if (p.n.foglia) s.push('<rect x="' + (p.x - 13) + '" y="' + (p.y - 12) + '" width="26" height="24" rx="2" class="' + (ev ? "r-giallo" : "r-blu") + '" fill="' + (ev ? "#fff1a8" : "#e8edfc") + '" stroke="#2f52c4" stroke-width="1.5"/><text x="' + p.x + '" y="' + (p.y + 5) + '" font-size="12.5" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">' + p.n.k + '</text>');
+    else { var et = chiavi23(p.n).join("-"), w = Math.max(30, et.length * 8 + 14); s.push('<ellipse cx="' + p.x + '" cy="' + p.y + '" rx="' + (w / 2) + '" ry="11" class="' + (ev ? "r-giallo" : "r-nodo") + '" fill="' + (ev ? "#fff1a8" : "#ffffff") + '" stroke="#2f52c4" stroke-width="1.5"/><text x="' + p.x + '" y="' + (p.y + 4.5) + '" font-size="12" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">' + et + '</text>'); }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+// disegno di un albero binario: x = posizione nella visita simmetrica (compatto anche se l'albero è sbilanciato), y = profondità
+// opz: { slot, dy, r, evid: { chiave: stile di STILE_NODO }, bilanci: true (scrive h(sx) − h(dx)), altezze: true, aria }
+function svgBin(t, opz) {
+  opz = opz || {};
+  if (t === null) return '<p class="piccolo" style="text-align:center">(albero vuoto)</p>';
+  var slot = opz.slot || 34, dy = opz.dy || 48, R = opz.r || 14, m = R + 12, pos = [], i = 0, maxd = 0;
+  (function vai(x, d, padre) { if (!x) return; var p = { x: null, y: m + d * dy, n: x, padre: padre }; vai(x.sx, d + 1, p); p.x = m + (i++) * slot; pos.push(p); maxd = Math.max(maxd, d); vai(x.dx, d + 1, p); })(t, 0, null);
+  var W = m * 2 + (i - 1) * slot + (opz.bilanci || opz.altezze ? 22 : 0), H = m * 2 + maxd * dy, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "un albero binario di ricerca") + '" font-family="system-ui, sans-serif">');
+  pos.forEach(function (p) { if (p.padre) s.push('<line x1="' + p.padre.x + '" y1="' + p.padre.y + '" x2="' + p.x + '" y2="' + p.y + '" class="l-muted" stroke="#5b6270" stroke-width="1.3"/>'); });
+  pos.forEach(function (p) {
+    var st = STILE_NODO[(opz.evid && opz.evid[p.n.k]) || "normale"], et = String(p.n.k), fs = et.length > 2 ? 11.5 : 13.5;
+    s.push('<circle cx="' + p.x + '" cy="' + p.y + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/><text x="' + p.x + '" y="' + (p.y + 4.6) + '" font-size="' + fs + '" font-weight="700" text-anchor="middle" class="' + st[3] + '" fill="' + st[4] + '">' + et + '</text>');
+    if (opz.bilanci || opz.altezze) { var b = altB(p.n.sx) - altB(p.n.dx), txt = opz.bilanci ? (b > 0 ? "+" + b : String(b)) : "h=" + altB(p.n), rosso = opz.bilanci && Math.abs(b) > 1; s.push('<text x="' + (p.x + R + 3) + '" y="' + (p.y - R + 4) + '" font-size="11" font-weight="700" class="' + (rosso ? "t-rosso" : "t-viola") + '" fill="' + (rosso ? "#b42318" : "#6d3fc0") + '">' + txt + '</text>'); }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+
+// ---- w24.js
+// Riquadri interattivi del pacco 24.
+function $(id) { return document.getElementById(id); }
+(function () {
+  if (!$("ab-corpo")) return;
+  var ES = [["Lavagna: 15 10 5 18 12 7 16 22", "15 10 5 18 12 7 16 22"], ["Lavagna: l'esercizio con 17 chiavi", "13 22 20 11 24 35 28 40 19 14 10 12 16 25 15 27 18"], ["Albero degenere: 1 4 7 9 12 15", "1 4 7 9 12 15"],
+    ["Scritto 20/6/2025", "14 16 80 33 44 17 28 35"], ["Scritto 19/9/2025", "28 25 16 14 56 29 26 48"], ["Scritto 14/11/2025", "30 21 18 24 34 27 29 35"], ["Scritto 27/2/2026", "12 33 24 42 11 44 18 46"], ["Scrivi tu", null]];
+  $("ab-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="ab-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<div class="controlli"><label style="width:100%">Chiavi da inserire, nell\'ordine <input type="text" id="ab-seq" style="width:100%"></label></div>' +
+    '<div class="controlli"><button class="primario" id="ab-passo">Inserisci la prossima →</button><button id="ab-tutte">Inserisci tutte</button><button id="ab-reset">Ricomincia</button></div>' +
+    '<div class="controlli"><label>Chiave <input type="number" id="ab-k" style="width:80px"></label><button id="ab-cerca">Cerca</button><button id="ab-canc">Cancella</button></div>' +
+    '<div class="contatori" id="ab-cont"></div><div class="figura" id="ab-fig" style="margin:6px 0"></div><div class="narrazione" id="ab-txt"></div>';
+  var V = { r: null, seq: [], i: 0, evid: {}, t: "" };
+  function prepara() { V.seq = $("ab-seq").value.trim().split(/[\s,;]+/).filter(Boolean).map(Number).filter(function (x) { return isFinite(x); }).slice(0, 25); V.r = null; V.i = 0; V.evid = {}; V.t = "L'albero è vuoto. Inserisci le chiavi una alla volta."; mostra(); }
+  function mostra() {
+    $("ab-fig").innerHTML = V.r ? svgBin(V.r, { slot: nodiB(V.r) > 14 ? 26 : 34, dy: 44, r: 13, evid: V.evid }) : '<p class="piccolo" style="text-align:center">(albero vuoto)</p>';
+    $("ab-cont").innerHTML = '<span>nodi: <b>' + nodiB(V.r) + '</b></span><span>altezza: <b>' + (V.r ? altB(V.r) : "–") + '</b></span><span>da inserire: <b>' + (V.seq.length - V.i) + '</b></span>';
+    $("ab-txt").innerHTML = V.t + (V.r ? '<br><span class="piccolo">Visita in ordine simmetrico: ' + inordineB(V.r).join(" ") + ' (in ordine crescente).</span>' : "");
+    $("ab-passo").disabled = $("ab-tutte").disabled = V.i >= V.seq.length;
+  }
+  function inserisciProssima() { var k = V.seq[V.i++], x = inserisciBST(V.r, k); V.r = x.r; V.evid = {}; x.cammino.forEach(function (c) { V.evid[c] = "visitato"; }); V.evid[k] = "corrente"; V.t = x.padre === null ? k + " diventa la radice." : "Si scende " + x.cammino.join(" → ") + " (a sinistra se " + k + " è minore della chiave, a destra altrimenti) e " + k + " diventa figlio " + x.lato + " di " + x.padre + "."; }
+  $("ab-passo").onclick = function () { if (V.i < V.seq.length) inserisciProssima(); mostra(); };
+  $("ab-tutte").onclick = function () { while (V.i < V.seq.length) inserisciProssima(); V.evid = {}; V.t = "Tutte le chiavi inserite."; mostra(); };
+  $("ab-reset").onclick = prepara;
+  $("ab-cerca").onclick = function () { var k = Number($("ab-k").value), x = trovaBST(V.r, k); V.evid = {}; x.cammino.forEach(function (c) { V.evid[c] = "visitato"; }); if (x.trovato) V.evid[k] = "corrente"; V.t = "Ricerca di " + k + ": " + (x.cammino.length ? x.cammino.join(" → ") : "albero vuoto") + ". " + (x.trovato ? "Trovato, con " + x.cammino.length + " confronti." : "Non c'è: si arriva a un sottoalbero vuoto."); mostra(); };
+  $("ab-canc").onclick = function () { var k = Number($("ab-k").value), x = cancellaBST(V.r, k); V.r = x.r; V.evid = {}; if (x.sostituto !== null && x.sostituto !== undefined) V.evid[x.sostituto] = "corrente"; V.t = "Cancellazione di " + k + ". " + x.testo; mostra(); };
+  $("ab-seq").onchange = function () { $("ab-es").value = String(ES.length - 1); prepara(); };
+  $("ab-es").onchange = function () { var e = ES[Number($("ab-es").value)]; if (e[1] !== null) $("ab-seq").value = e[1]; prepara(); };
+  $("ab-es").onchange();
+})();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tabelle hash</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 27 · fine della lezione 29 e lezione 30 (lavagne del 28 novembre e del 1° dicembre 2025)</span>
+</div>
+
+<h1>Tabelle hash</h1>
+<p class="sottotitolo">Un dizionario si può tenere in un array: si calcola la posizione di ogni elemento direttamente dalla sua chiave, con una funzione, la funzione hash. Se va tutto bene, ricerca, inserimento e cancellazione costano O(1), qualunque sia il numero di elementi. Ma le chiavi possibili sono molte più delle posizioni, e due chiavi diverse possono finire nella stessa posizione: una collisione. Questa pagina spiega come scegliere una buona funzione hash e i due modi di gestire le collisioni: le liste di collisione e l'indirizzamento aperto, con le scansioni lineare, quadratica e l'hashing doppio.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: la fine della lezione 29 (28 novembre 2025, dalla pagina 19) e la lezione 30 (1° dicembre 2025), che ripete le prime pagine e va avanti. Qui «lavagna, pagina N» è sempre la lezione 30.</li>
+    <li>Un dizionario (pacco 10 e seguenti) è un insieme di elementi, ognuno con una chiave, con le operazioni di ricerca, inserimento e cancellazione per chiave.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Le lezioni in sei domande</span>
+  <ol>
+    <li><b>Qual è l'idea?</b> Il dizionario sta in un array (la tabella) di m posizioni; la posizione di un elemento si ottiene applicando alla chiave una funzione hash h : U → {0, …, m − 1}.</li>
+    <li><b>E se le chiavi sono già interi tra 0 e m − 1?</b> Tabella ad accesso diretto: la chiave è l'indice, tutto costa O(1). Ma se le chiavi possibili sono tante e quelle presenti poche, lo spazio è sprecato (fattore di carico α = n/m piccolo).</li>
+    <li><b>Cos'è una collisione?</b> Due chiavi diverse con la stessa posizione. Con #U molto più grande di m sono inevitabili: bisogna renderle rare e saperle gestire.</li>
+    <li><b>Cosa deve fare una buona funzione hash?</b> Essere uniforme (ogni posizione ugualmente probabile) e veloce da calcolare, e dipendere da tutta la chiave. Esempi: metodo della divisione, metodo del ripiegamento.</li>
+    <li><b>Come si gestiscono le collisioni?</b> Esternamente, con liste di collisione (in ogni posizione una lista); internamente, con l'indirizzamento aperto (se la posizione è occupata se ne cerca un'altra nella tabella: scansione lineare, quadratica, hashing doppio).</li>
+    <li><b>Quanto costa?</b> Con le liste, nel caso peggiore O(n), in media O(1 + α). L'indirizzamento aperto soffre di agglomerazione, primaria (scansione lineare) o secondaria.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#idea">L'idea e l'accesso diretto</a></li>
+    <li><a href="#carico">Il fattore di carico e le funzioni hash</a></li>
+    <li><a href="#collisioni">Le collisioni</a></li>
+    <li><a href="#uniforme">Funzioni hash uniformi</a></li>
+    <li><a href="#esempi">Due metodi: divisione e ripiegamento</a></li>
+    <li><a href="#liste">Le liste di collisione</a></li>
+    <li><a href="#aperto">L'indirizzamento aperto</a></li>
+    <li><a href="#codice">Inserimento, ricerca e cancellazione</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="idea"><span class="num">1</span>L'idea e l'accesso diretto</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'idea delle tabelle hash e il caso più semplice, le tabelle ad accesso diretto (lavagna del 28 novembre, pagine 20–23; lavagna, pagine 3–5).</p>
+<div class="box def">
+  <span class="etichetta">Tabelle hash: l'idea (lavagna del 28 novembre, pagine 20 e 21)</span>
+  <ul>
+    <li>Il dizionario è memorizzato in un <strong>array</strong> (la tabella) con posizioni 0, …, m − 1.</li>
+    <li>La <strong>posizione</strong> di un elemento si ottiene applicando una funzione alla sua chiave: la <strong>funzione hash</strong>.</li>
+  </ul>
+  <p>U è l'<strong>universo delle chiavi</strong> (tutte le chiavi possibili), {0, …, m − 1} lo spazio degli indici, e la funzione hash è <strong>h : U → {0, …, m − 1}</strong>: trasforma una chiave in un indice.</p>
+</div>
+<p><b>Tabelle ad accesso diretto</b> (pagina 4): il caso semplice in cui le chiavi sono interi univoci nel range 0 … m − 1, cioè U = {0, …, m − 1}. Si usa un array di m posizioni, e l'indice è proprio la chiave (h è la funzione identità): l'elemento di chiave i, se c'è, sta nella posizione i. <strong>Ricerca, inserimento e cancellazione costano O(1).</strong></p>
+<p>Il problema è lo spazio (pagina 5). Gli studenti hanno un numero di matricola tra 0 e 999 999, e quelli che seguono algoritmi sono al più 200. Con l'accesso diretto, U = {0, …, 999 999} e servono m = 1 000 000 posizioni per n = 200 elementi: se ne usa il 200/1 000 000 = 0,02%.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Tabella hash: array di m posizioni, posizione = h(chiave), h : U → {0, …, m − 1}.</li>
+    <li>Accesso diretto (U = {0, …, m − 1}, h identità): tutto O(1), ma spazio sprecato se le chiavi possibili sono molte più di quelle presenti.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="carico"><span class="num">2</span>Il fattore di carico e le funzioni hash</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si misura lo spreco (lavagna, pagina 6) e come una funzione hash lo riduce (pagine 7–9).</p>
+<div class="box def">
+  <span class="etichetta">Fattore di carico (lavagna, pagina 6)</span>
+  <p><strong>α = n/m</strong>, dove n è il numero di elementi presenti e m la dimensione della tabella. α = 1: tabella piena; α = 0: tabella vuota. Se n è molto più piccolo di m, c'è spreco di spazio.</p>
+</div>
+<p>Esempio (pagina 7): le matricole vanno da 950 000 a 999 999, e gli studenti sono n = 200.</p>
+<ul>
+  <li>Con m = 50 000 e <b>h(x) = x − 950 000</b> ogni chiave ha una posizione sua, ma α = 200/50 000 = 2/500 = 0,4%.</li>
+  <li>Con m = 1000 e <b>h'(x) = x MOD 1000</b> (le ultime tre cifre), α = 200/1000 = 1/5 = 20%. Molto meglio, ma ora due matricole con le stesse ultime tre cifre, per esempio 951 234 e 987 234, finiscono nella stessa posizione.</li>
+</ul>
+<p>Un altro esempio (pagina 8): n = 20 persone, con chiave il cognome, e U l'insieme dei cognomi. Una funzione hash: la posizione dell'iniziale nell'alfabeto, 'A' → 0, 'B' → 1, …, 'Z' → 25.</p>
+<p>Nella pratica, salvo casi particolari (pagina 9):</p>
+<ul>
+  <li>il <strong>numero di chiavi possibili</strong> (#U) è <strong>molto più grande</strong> del numero di chiavi attese. Se i cognomi sono stringhe di 10 lettere, #U = 26<sup>10</sup> &gt; 10<sup>14</sup>, circa 141 167 miliardi;</li>
+  <li>la dimensione della tabella m viene scelta <strong>paragonabile al numero di chiavi attese</strong>.</li>
+</ul>
+<p>Quindi h non può essere iniettiva. Una funzione hash è <strong>perfetta</strong> se è iniettiva: u ≠ v ⇒ h(u) ≠ h(v) (lavagna del 28 novembre, pagina 27). Le funzioni perfette esistono solo quando m ≥ #U, come nell'accesso diretto.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>α = n/m: 1 piena, 0 vuota; α piccolo = spreco.</li>
+    <li>Di solito #U è enorme e m è paragonabile al numero di chiavi attese: h non è perfetta (iniettiva).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="collisioni"><span class="num">3</span>Le collisioni</h2>
+<p class="in-questa"><b>In questa sezione:</b> cos'è una collisione e le due cose da fare (lavagna, pagine 10, 11 e 23).</p>
+<div class="box def">
+  <span class="etichetta">Collisione (lavagna, pagine 10 e 23)</span>
+  <p>Si ha una <strong>collisione</strong> quando, dovendo inserire o cercare una chiave x, la posizione h(x) è occupata da un'altra chiave y: la posizione che dovrebbe essere utilizzata per x è già occupata da una chiave differente.</p>
+</div>
+<p>Per convivere con le collisioni (pagina 11) servono due cose:</p>
+<ul>
+  <li><b>fare in modo che avvengano raramente</b>: h deve «sparpagliare» le chiavi nella tabella, in modo che le collisioni siano poco probabili. È la <strong>scelta della funzione hash</strong>, che deve essere uniforme e veloce da calcolare (sezioni 4 e 5);</li>
+  <li><b>avere una strategia per gestire le collisioni</b> nel caso accadano (sezioni 6–8): esterna (liste di collisione) o interna (indirizzamento aperto).</li>
+</ul>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Collisione: h(x) è già occupata da un'altra chiave. Rimedi: una h che sparpaglia bene, e una strategia di gestione.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="uniforme"><span class="num">4</span>Funzioni hash uniformi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cosa vuol dire che una funzione hash sparpaglia bene (lavagna, pagine 13–16).</p>
+<div class="box def">
+  <span class="etichetta">Uniformità (lavagna, pagina 13)</span>
+  <p>h : U → {0, …, m − 1} funzione hash. Per x ∈ U, P(x) è la probabilità che, scegliendo a caso una chiave da U, si scelga x. Per i = 0, …, m − 1:</p>
+  <div class="formula">Q(i) = Σ<sub>x : h(x) = i</sub> P(x)</div>
+  <p>è la probabilità che una chiave scelta a caso da U abbia valore hash i. La funzione hash h è <strong>uniforme</strong> se Q(i) è la stessa per ogni i, cioè <strong>Q(i) = 1/m</strong>.</p>
+</div>
+<p>In parole: ogni posizione deve avere la stessa probabilità di essere usata. Conta la probabilità delle chiavi, non solo quante chiavi vanno in ogni posizione. Due esempi:</p>
+<ul>
+  <li><b>U = [0, 1)</b>, numeri reali, m = 10, h(x) = ⌊10x⌋ (pagina 14): la posizione è la prima cifra decimale. h è uniforme se ogni x tra 0 e 1 ha la stessa probabilità di essere scelto: ogni intervallo [0, 0,1), [0,1, 0,2), … ha probabilità 1/10.</li>
+  <li><b>U = cognomi</b>, m = 26, h(x) = ord(prima lettera di x), con ord('A') = 0, …, ord('Z') = 25 (pagina 15): <strong>non uniforme</strong>. I cognomi italiani che iniziano per R, M, B sono molti di più di quelli per Q, X, Z: alcune posizioni si riempiono, altre restano vuote.</li>
+</ul>
+<p><b>I requisiti di una buona funzione hash</b> (pagina 16): <strong>uniforme</strong> e <strong>veloce da calcolare</strong>.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Uniforme: Q(i) = Σ<sub>h(x) = i</sub> P(x) = 1/m per ogni i. L'iniziale dei cognomi non lo è.</li>
+    <li>Requisiti: uniforme, veloce da calcolare.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="esempi"><span class="num">5</span>Due metodi: divisione e ripiegamento</h2>
+<p class="in-questa"><b>In questa sezione:</b> esempi di funzioni hash (lavagna, pagine 17–21), sulla parola GATTO, con m = 2<sup>10</sup>.</p>
+<p><b>Metodo della divisione</b> (pagina 17): (1) si trasforma la chiave in un intero x (in binario); (2) si divide per la dimensione della tabella e si considera il resto: <strong>h(x) = x MOD m</strong>. Di solito m è una potenza di 2.</p>
+<p>Esempio (pagina 18): U = parole della lingua italiana, m = 2<sup>10</sup> = 1024. GATTO, con il codice ASCII di ogni lettera (G = 71, A = 65, T = 84, T = 84, O = 79) su 8 bit, è l'intero</p>
+<div class="formula">x = 01000111 01000001 01010100 01010100 01001111</div>
+<p>Dividere per 2<sup>10</sup> e prendere il resto vuol dire tenere gli ultimi 10 bit: 0001001111 = <strong>79</strong>. È <strong>facile da calcolare</strong>, ma <strong>non uniforme</strong>: dipende solo dall'ultima lettera e da due bit della penultima, quindi tutte le parole che finiscono in «TO» vanno nella stessa posizione.</p>
+<p>Da qui due regole (pagina 19): in genere la dimensione della tabella è una potenza di 2; e <strong>il valore della funzione hash deve dipendere da tutta la chiave</strong>, non solo da una parte di essa. «Hash», in inglese, vuol dire sminuzzare, tritare.</p>
+<p><b>Un polinomio</b> (pagina 20). Per una parola s = s<sub>0</sub>s<sub>1</sub>…s<sub>n−1</sub> di n lettere:</p>
+<div class="formula">h(s) = ( Σ<sub>i=0</sub><sup>n−1</sup> s<sub>i</sub> · 31<sup>n−i−1</sup> ) MOD 2<sup>10</sup></div>
+<p>h(GATTO) = (71 · 31<sup>4</sup> + 65 · 31<sup>3</sup> + 84 · 31<sup>2</sup> + 84 · 31 + 79) MOD 2<sup>10</sup> = 67 589 813 MOD 1024 = <strong>693</strong>. Ogni lettera conta: buona uniformità, ma tempo di calcolo elevato (moltiplicazioni su numeri grandi).</p>
+<p><b>Metodo del ripiegamento</b> (pagina 21): m = 2<sup>k</sup>; la chiave x, in binario, si suddivide in blocchi x<sub>1</sub>, …, x<sub>ℓ</sub> di k bit ciascuno, e si combinano con l'OR esclusivo (⊕, bit per bit: 1 se i due bit sono diversi): <strong>f(x) = x<sub>1</sub> ⊕ x<sub>2</sub> ⊕ … ⊕ x<sub>ℓ</sub></strong>. Con m = 2<sup>10</sup>, i 40 bit di GATTO in blocchi di 10:</p>
+<div class="tabella-wrap"><table>
+  <tr><td>x<sub>1</sub></td><td style="font-family:ui-monospace,monospace">0100011101</td></tr>
+  <tr><td>x<sub>2</sub></td><td style="font-family:ui-monospace,monospace">0000010101</td></tr>
+  <tr><td>x<sub>3</sub></td><td style="font-family:ui-monospace,monospace">0100010101</td></tr>
+  <tr><td>x<sub>4</sub></td><td style="font-family:ui-monospace,monospace">0001001111</td></tr>
+  <tr><td><b>f(x)</b></td><td style="font-family:ui-monospace,monospace"><b>0001010010</b> = 82</td></tr>
+</table></div>
+<p>Facile da calcolare e con buona uniformità: l'OR esclusivo usa tutta la chiave. (Alla lavagna il terzo blocco è ricopiato uguale al secondo, 0000010101, e il risultato viene 0101010010 = 338. Con il terzo blocco giusto, 0100010101, il risultato è 82.)</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Divisione: x MOD m. Con m = 2<sup>k</sup> tiene solo gli ultimi k bit: veloce ma non uniforme.</li>
+    <li>La funzione deve dipendere da tutta la chiave: polinomio in base 31 (uniforme ma lento), ripiegamento con ⊕ (veloce e uniforme).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="liste"><span class="num">6</span>Le liste di collisione</h2>
+<p class="in-questa"><b>In questa sezione:</b> la gestione esterna delle collisioni (lavagna, pagine 24–27): in ogni posizione una lista.</p>
+<div class="box def">
+  <span class="etichetta">Liste di collisione, o concatenamento esterno (lavagna, pagina 24)</span>
+  <p>La posizione i della tabella contiene (il riferimento a) una lista con ogni record la cui chiave x ha valore hash i, cioè h(x) = i. Una posizione senza chiavi contiene null.</p>
+</div>
+<p>L'esempio della pagina 25: U = stringhe di lettere, h(x) = ord(prima lettera di x), con ord('A') = 0, …, ord('P') = 15, ord('Q') = 16, …, ord('T') = 19, …, ord('Z') = 25. Si inseriscono Pippo, Paperino, Topolino, Qui, Pluto, Quo, Qua, Paperoga.</p>
+<div class="figura">
+<svg viewBox="0 0 420 206" width="420" height="206" role="img" aria-label="una tabella hash" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="4" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="19" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="26" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="41" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="48" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><line x1="50" y1="59" x2="68" y2="59" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="70" y="50" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="106" y="63" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Pippo</text><line x1="142" y1="59" x2="156" y2="59" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="158" y="50" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="194" y="63" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Paperino</text><line x1="230" y1="59" x2="244" y2="59" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="246" y="50" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="282" y="63" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Pluto</text><line x1="318" y1="59" x2="332" y2="59" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="334" y="50" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="370" y="63" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Paperoga</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">16</text><rect x="30" y="70" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><line x1="50" y1="81" x2="68" y2="81" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="70" y="72" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="106" y="85" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Qui</text><line x1="142" y1="81" x2="156" y2="81" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="158" y="72" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="194" y="85" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Quo</text><line x1="230" y1="81" x2="244" y2="81" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="246" y="72" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="282" y="85" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Qua</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">17</text><rect x="30" y="92" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="107" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">18</text><rect x="30" y="114" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="129" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">19</text><rect x="30" y="136" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><line x1="50" y1="147" x2="68" y2="147" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="70" y="138" width="72" height="18" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="106" y="151" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Topolino</text><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">20</text><rect x="30" y="158" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="173" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">21</text><rect x="30" y="180" width="26" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="43" y="195" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text></svg>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagina 25 (le posizioni da 13 a 21): tutte le P nella lista della posizione 15, le Q nella 16, Topolino nella 19. Le altre posizioni sono null.</div>
+</div>
+<p>Le operazioni (pagina 26):</p>
+<ul>
+  <li><b>Inserimento</b>(elemento e, chiave k): <strong>O(1)</strong>, se si inserisce all'inizio della lista h(k). (Alla lavagna le liste sono disegnate in ordine di arrivo; inserendo all'inizio l'ordine è rovesciato, e non cambia niente.)</li>
+  <li><b>Ricerca</b>(chiave k) e <b>cancellazione</b>(chiave k): si scorre la lista h(k), quindi il numero di passi dipende dalla lunghezza delle liste. Nel <strong>caso peggiore O(n)</strong>: tutte le chiavi nella stessa lista. <strong>In media</strong> le liste sono lunghe n/m = α, e il tempo medio è <strong>T<sub>avg</sub>(n) = O(1 + n/m) = O(1 + α)</strong>: 1 per calcolare h e arrivare alla lista, α per scorrerla.</li>
+</ul>
+<p>Con le liste è possibile avere α &gt; 1: più elementi che posizioni. Se m è scelto paragonabile a n, α è una costante, e le operazioni costano O(1) in media.</p>
+<p><b>Agglomerazione</b> (pagina 27): la presenza di zone in cui si concentrano molti dati. Se la funzione hash non sparpaglia bene, si possono formare alcune liste molto lunghe. Esempio: chiave = cognome, funzione hash = ord(iniziale): la lista della R sarà lunghissima, quella della Q quasi vuota.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Liste di collisione: in posizione i la lista delle chiavi con h(x) = i. Inserimento O(1) in testa; ricerca e cancellazione O(n) nel caso peggiore, O(1 + α) in media. α &gt; 1 è possibile.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="aperto"><span class="num">7</span>L'indirizzamento aperto</h2>
+<p class="in-questa"><b>In questa sezione:</b> la gestione interna delle collisioni (lavagna, pagine 28–33): se la posizione è occupata, se ne cerca un'altra nella tabella, con una strategia fissata.</p>
+<div class="box def">
+  <span class="etichetta">Indirizzamento aperto (lavagna, pagine 28 e 30)</span>
+  <p>Inserimento di un elemento di chiave k: se h(k) è già occupata, si cerca un'altra posizione libera utilizzando una strategia predefinita. La strategia è una <strong>funzione ausiliaria c(k, i)</strong>, dove k è la chiave e i ≥ 0 è l'ordine nella scansione: si provano le posizioni c(k, 0), c(k, 1), c(k, 2), … La funzione ausiliaria deve verificare:</p>
+  <ul>
+    <li><strong>c(k, 0) = h(k)</strong>: si prova prima la posizione data dalla funzione hash;</li>
+    <li><strong>{c(k, 0), c(k, 1), …, c(k, m − 1)} = {0, …, m − 1}</strong>: in m tentativi si provano tutte le posizioni, quindi se c'è un posto libero lo si trova.</li>
+  </ul>
+</div>
+<p>Qui ogni posizione contiene al più un elemento, quindi α ≤ 1. Tre funzioni ausiliarie:</p>
+<p><b>Scansione lineare</b> (pagine 28, 29 e 31): <strong>c(k, i) = (h(k) + i) MOD m</strong>: si sceglie la prima posizione libera successiva (ricominciando da 0 dopo m − 1). Lo stesso esempio della Figura 1 (pagina 29): Pippo in 15; Paperino trova 15 occupata e va in 16; Topolino in 19; Qui trova 16 occupata e va in 17; Pluto prova 15, 16, 17 e va in 18; Quo prova 16, 17, 18, 19 e va in 20; Qua va in 21; Paperoga in 22 (Figura 2).</p>
+<div class="figura">
+<svg viewBox="0 0 200 250" width="200" height="250" role="img" aria-label="una tabella hash" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="4" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Pippo</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">16</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Paperino</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">17</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="107" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Qui</text><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">18</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="129" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Pluto</text><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">19</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="151" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Topolino</text><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">20</text><rect x="30" y="158" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="173" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Quo</text><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">21</text><rect x="30" y="180" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="195" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Qua</text><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">22</text><rect x="30" y="202" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="217" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">Paperoga</text><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">23</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/></svg>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagina 29: gli stessi nomi con la scansione lineare. Le posizioni dalla 15 alla 22 formano un blocco unico: è l'agglomerazione primaria.</div>
+</div>
+<p>Il difetto (pagine 29 e 31) è l'<strong>agglomerazione primaria</strong>: le chiavi occupate formano blocchi contigui, e ogni chiave che finisce in un punto qualsiasi del blocco deve scorrerlo fino in fondo, allungandolo ancora. Nell'esempio, una Q, una R o una S finirebbero tutte in fondo al blocco, anche se nessuna di loro aveva colliso con le altre.</p>
+<p><b>Scansione quadratica</b> (pagina 32): <strong>c(k, i) = ⌊h(k) + c<sub>1</sub>i + c<sub>2</sub>i<sup>2</sup>⌋ MOD m</strong>, con c<sub>1</sub>, c<sub>2</sub> opportuni (per esempio c<sub>1</sub> = c<sub>2</sub> = 0,5: gli spostamenti da h(k) sono 0, 1, 3, 6, 10, …). I salti crescono, e i blocchi non si allungano più uno dopo l'altro. Ma resta un difetto: se h(k<sub>1</sub>) = h(k<sub>2</sub>), la sequenza di celle scandita per k<sub>1</sub> e k<sub>2</sub> è la stessa. È l'<strong>agglomerazione secondaria</strong>.</p>
+<p><b>Hashing doppio</b> (pagina 33): <strong>c(k, i) = (h(k) + i · h'(k)) MOD m</strong>, dove h' : U → {0, …, m − 1} è una seconda funzione hash: lo spostamento dipende dalla chiave. Situazione ideale: h(k<sub>1</sub>) = h(k<sub>2</sub>) ⇒ h'(k<sub>1</sub>) ≠ h'(k<sub>2</sub>), così due chiavi che collidono subito prendono poi strade diverse. L'agglomerazione secondaria resta possibile solo per chiavi con h e h' entrambe uguali. Perché la seconda condizione di c sia vera, h'(k) e m non devono avere divisori comuni: con m potenza di 2, h'(k) dispari.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>c(k, i): c(k, 0) = h(k), e in m tentativi tutte le posizioni.</li>
+    <li>Lineare (h(k) + i) MOD m: agglomerazione primaria. Quadratica ⌊h(k) + c<sub>1</sub>i + c<sub>2</sub>i<sup>2</sup>⌋ MOD m: agglomerazione secondaria. Doppio (h(k) + i h'(k)) MOD m: il passo dipende dalla chiave.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="codice"><span class="num">8</span>Inserimento, ricerca e cancellazione</h2>
+<p class="in-questa"><b>In questa sezione:</b> lo pseudocodice dell'indirizzamento aperto (lavagna, pagine 34–36) e l'esempio dei pesci (pagine 37 e 38).</p>
+<p>La tabella è un array V[0..m − 1]; ogni posizione è libera oppure contiene una coppia (elemento, chiave).</p>
+<p class="titolo-codice">Lavagna, pagina 34</p>
+<pre class="pseudo"><b>Inserimento</b>(elemento e, chiave k)
+  i ← 0
+  <b>WHILE</b> i &lt; m <b>AND</b> V[c(k, i)] è occupata <b>DO</b>
+    i ← i + 1
+  <b>IF</b> i &lt; m <b>THEN</b> V[c(k, i)] ← (e, k)         <span class="com">// inserisci l'elemento</span>
+  <b>ELSE</b> errore                                <span class="com">// tabella piena</span></pre>
+<p class="titolo-codice">Lavagna, pagina 35</p>
+<pre class="pseudo"><b>Ricerca</b>(chiave k) → elemento
+  i ← 0
+  <b>WHILE</b> i &lt; m <b>AND</b> V[c(k, i)] è occupata <b>AND</b> V[c(k, i)].chiave ≠ k <b>DO</b>
+    i ← i + 1
+  <b>IF</b> i = m <b>OR</b> V[c(k, i)] è libera <b>THEN</b>
+    <b>RETURN</b> null                               <span class="com">// non c'è</span>
+  <b>ELSE</b>
+    <b>RETURN</b> V[c(k, i)].elemento                <span class="com">// trovato</span></pre>
+<p>La ricerca segue la stessa sequenza c(k, 0), c(k, 1), … dell'inserimento: se arriva a una posizione libera, k non c'è, perché l'inserimento di k si sarebbe fermato proprio lì.</p>
+<p><b>Cancellazione</b>(chiave k) (pagina 36): non si può semplicemente liberare la posizione. Una ricerca successiva di un'altra chiave, inserita dopo k e saltata oltre la sua posizione, si fermerebbe nel buco e direbbe «non c'è». Si fa una <strong>cancellazione logica</strong>: la posizione viene marcata come «cancellata». La ricerca la tratta come occupata (va avanti), l'inserimento la può riusare.</p>
+<p><b>L'esempio dei pesci</b> (pagina 37): m = 16, una funzione f che associa a ogni lettera un numero da 0 a 15 (a 0, b 1, c 2, d 3, e 4, f 5, g e h 6, i, j, k 7, l 8, m 9, n e o 10, p 11, q e r 12, s e t 13, u e v 14, da w a z 15), h(k) = f(prima lettera di k), scansione lineare. Si inseriscono nell'ordine salmone, tonno, rombo, aringa, cernia, aragosta, totano, ostrica, nasello, palombo.</p>
+<ul>
+  <li>salmone → 13; tonno → 13 occupata, 14; rombo → 12; aringa → 0; cernia → 2; aragosta → 0 occupata, 1.</li>
+  <li>totano → 13, 14 occupate, 15; ostrica → 10; nasello → 10 occupata, 11.</li>
+  <li>palombo → 11, 12, 13, 14, 15 occupate, poi 0, 1, 2 (si ricomincia da capo), e finalmente 3.</li>
+</ul>
+<p>La pagina 38 ripropone gli stessi pesci con l'hashing doppio, g(k) = il più piccolo numero primo p ≠ 2 con p ≥ f(terza lettera di k), e c(k, i) = (h(k) + i · g(k)) mod 16. Alla lavagna è «per la prossima lezione»: la soluzione è nella Figura 3 e negli esercizi.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">scansione lineare</div><svg viewBox="0 0 200 360" width="200" height="360" role="img" aria-label="una tabella hash" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">0</text><rect x="30" y="4" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="19" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aringa</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="41" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aragosta</text><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">cernia</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">palombo</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">5</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">6</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">7</text><rect x="30" y="158" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="30" y="180" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">9</text><rect x="30" y="202" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">10</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="239" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ostrica</text><text x="26" y="261" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">11</text><rect x="30" y="246" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="261" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">nasello</text><text x="26" y="283" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">12</text><rect x="30" y="268" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="283" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">rombo</text><text x="26" y="305" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="290" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="305" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">salmone</text><text x="26" y="327" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="312" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="327" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">tonno</text><text x="26" y="349" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="334" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="349" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">totano</text></svg></div><div><div class="nome-mat">scansione quadratica (c₁ = c₂ = 0,5)</div><svg viewBox="0 0 200 360" width="200" height="360" role="img" aria-label="una tabella hash" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">0</text><rect x="30" y="4" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="19" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aringa</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="41" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aragosta</text><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">cernia</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">totano</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">5</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="129" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">palombo</text><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">6</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">7</text><rect x="30" y="158" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="30" y="180" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">9</text><rect x="30" y="202" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">10</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="239" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ostrica</text><text x="26" y="261" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">11</text><rect x="30" y="246" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="261" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">nasello</text><text x="26" y="283" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">12</text><rect x="30" y="268" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="283" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">rombo</text><text x="26" y="305" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="290" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="305" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">salmone</text><text x="26" y="327" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="312" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="327" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">tonno</text><text x="26" y="349" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="334" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/></svg></div><div><div class="nome-mat">hashing doppio</div><svg viewBox="0 0 200 360" width="200" height="360" role="img" aria-label="una tabella hash" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">0</text><rect x="30" y="4" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="19" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aringa</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">cernia</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aragosta</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="107" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">nasello</text><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">5</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">6</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">7</text><rect x="30" y="158" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="173" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ostrica</text><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="30" y="180" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="195" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">tonno</text><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">9</text><rect x="30" y="202" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">10</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="239" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">totano</text><text x="26" y="261" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">11</text><rect x="30" y="246" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="261" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">palombo</text><text x="26" y="283" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">12</text><rect x="30" y="268" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="283" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">rombo</text><text x="26" y="305" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="290" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="305" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">salmone</text><text x="26" y="327" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="312" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="349" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="334" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/></svg></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagine 37 e 38: i dieci pesci con la scansione lineare (come alla lavagna), con la scansione quadratica (un'aggiunta nostra) e con l'hashing doppio. Con la lineare si forma un blocco da 10 a 3 (passando per 15 e 0); con l'hashing doppio le chiavi sono sparse.</div>
+</div>
+<div class="widget" id="w-hs">
+  <h4>Una tabella hash: inserisci e cerca</h4>
+  <div id="hs-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Inserimento: si provano c(k, 0), c(k, 1), … fino alla prima posizione libera (errore se la tabella è piena).</li>
+    <li>Ricerca: stessa sequenza, finché si trova k o una posizione libera. Cancellazione: logica, con un segno.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Tabella hash</b>: array di m posizioni, h : U → {0, …, m − 1}. Accesso diretto: h identità, O(1), spreco. Fattore di carico α = n/m.</li>
+    <li><b>Collisione</b>: h(x) occupata da y ≠ x. h perfetta = iniettiva, impossibile se #U &gt; m.</li>
+    <li><b>Buona h</b>: uniforme (Q(i) = 1/m), veloce, dipende da tutta la chiave. Divisione x MOD m; polinomio; ripiegamento con ⊕.</li>
+    <li><b>Liste di collisione</b>: inserimento O(1); ricerca e cancellazione O(n) nel caso peggiore, O(1 + α) in media.</li>
+    <li><b>Indirizzamento aperto</b>: c(k, i) con c(k, 0) = h(k) e tutte le posizioni. Lineare (agglomerazione primaria), quadratica (secondaria), doppio. Cancellazione logica.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Le tabelle hash non sono mai state chieste negli scritti degli ultimi anni. All'orale: l'idea, le collisioni, cosa vuol dire uniforme, i due modi di gestire le collisioni con i loro costi, l'agglomerazione, perché la cancellazione nell'indirizzamento aperto è logica.</li>
+    <li>Saper riempire a mano una tabella con la scansione lineare e con l'hashing doppio, come negli esempi dei pesci.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'esempio della pagina 38 (hashing doppio), le ricerche annotate alla pagina 37, e un esercizio sulle liste.</p>
+
+<details class="esercizio">
+  <summary>Lavagna, pagina 38: i pesci con l'hashing doppio</summary>
+  <p>m = 16, h(k) = f(prima lettera di k), g(k) = il più piccolo numero primo p ≠ 2 con p ≥ f(terza lettera di k), c(k, i) = (h(k) + i · g(k)) mod 16. Inserire nell'ordine salmone, tonno, rombo, aringa, cernia, aragosta, totano, ostrica, nasello, palombo.</p>
+  <div class="soluzione">
+    <p>Per ogni pesce, h e g (la terza lettera tra parentesi), poi le celle provate:</p>
+    <ul>
+      <li>salmone: h = 13, g = 11 (l, f = 8): 13 libera.</li>
+      <li>tonno: h = 13, g = 11 (n, 10): 13 occupata; 13 + 11 = 24 mod 16 = 8: libera.</li>
+      <li>rombo: h = 12: libera. aringa: h = 0: libera. cernia: h = 2: libera.</li>
+      <li>aragosta: h = 0, g = 3 (a, 0: il più piccolo primo dispari ≥ 0 è 3): 0 occupata; 3: libera.</li>
+      <li>totano: h = 13, g = 13 (t, 13): 13 occupata; 26 mod 16 = 10: libera.</li>
+      <li>ostrica: h = 10, g = 13 (t, 13): 10 occupata; 23 mod 16 = 7: libera.</li>
+      <li>nasello: h = 10, g = 13 (s, 13): 10 occupata; 7 occupata; 36 mod 16 = 4: libera.</li>
+      <li>palombo: h = 11, g = 11 (l, 8): libera.</li>
+    </ul>
+    <p>Risultato: 0 aringa, 2 cernia, 3 aragosta, 4 nasello, 7 ostrica, 8 tonno, 10 totano, 11 palombo, 12 rombo, 13 salmone; le altre libere (Figura 3, a destra). Con la scansione lineare palombo provava 9 celle; qui nessun pesce ne prova più di 3. g è sempre dispari, quindi senza divisori comuni con 16: la sequenza c(k, 0), …, c(k, 15) tocca tutte le posizioni.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Lavagna, pagina 37: cercare tonno, merluzzo, anguilla</summary>
+  <p>Nella tabella dei pesci costruita con la scansione lineare (Figura 3, a sinistra), quali celle guarda la ricerca di tonno, di merluzzo e di anguilla?</p>
+  <div class="soluzione">
+    <ul>
+      <li><b>tonno</b>: h = 13 (salmone, chiave diversa), 14: tonno. Trovato con 2 celle.</li>
+      <li><b>merluzzo</b>: h = f(m) = 9: libera. Non c'è, con 1 cella.</li>
+      <li><b>anguilla</b>: h = 0 (aringa), 1 (aragosta), 2 (cernia), 3 (palombo), 4: libera. Non c'è, ma servono 5 celle: l'agglomerazione allunga anche le ricerche senza successo.</li>
+    </ul>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio. Le liste e il fattore di carico</summary>
+  <p>Una tabella con liste di collisione ha m = 1000 posizioni e contiene n = 3000 chiavi, con una funzione hash uniforme. (1) Quanto vale α? (2) Quanti elementi si scorrono in media per cercare una chiave? (3) E nel caso peggiore? (4) Si potrebbe usare l'indirizzamento aperto?</p>
+  <div class="soluzione">
+    <p>(1) α = 3000/1000 = 3. (2) Le liste sono lunghe in media α = 3, quindi la ricerca costa O(1 + α): un accesso alla tabella più circa 3 elementi (per una chiave assente si scorre tutta la lista, circa 3; per una presente in media circa la metà). (3) Nel caso peggiore tutte le chiavi sono nella stessa lista: 3000 elementi, O(n). (4) No: con l'indirizzamento aperto ogni posizione contiene al più un elemento, quindi n ≤ m; servirebbe una tabella di almeno 3000 posizioni (meglio di più, perché con α vicino a 1 le scansioni diventano lunghe).</p>
+  </div>
+</details>
+
+<!-- ============================================================ 11 -->
+<h2 id="approfondimenti"><span class="num">11</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per lo scritto. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: quanto costa l'indirizzamento aperto in media</summary>
+  <div class="soluzione">
+    <p>Con una funzione «ideale» (ogni sequenza di sondaggio ugualmente probabile), una ricerca senza successo prova in media al più 1/(1 − α) celle. Con α = 0,5 sono 2, con α = 0,9 sono 10: per questo la tabella non va riempita troppo, e quando α supera una soglia (per esempio 0,7) la si ricostruisce più grande, reinserendo tutto. Con la scansione lineare, per l'agglomerazione primaria, il numero medio è circa (1 + 1/(1 − α)<sup>2</sup>)/2: con α = 0,9 circa 50.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: le tabelle hash nei linguaggi</summary>
+  <div class="soluzione">
+    <p>Le map di Go, i dizionari di Python e le HashMap di Java sono tabelle hash. HashMap usa liste di collisione (che diventano alberi bilanciati quando sono troppo lunghe) e raddoppia la tabella quando α supera 0,75; per le stringhe usa proprio il polinomio in base 31 della sezione 5. I dizionari di Python usano l'indirizzamento aperto con una sequenza di sondaggio pseudo-casuale.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="26-alberi-2-3.html">← Pacco 26: alberi 2-3 e B-alberi</a>
+  <a href="index.html">Tutti i pacchi</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- hash.js
+// Tabelle hash (pacco 27): funzioni della lavagna, liste di collisione, indirizzamento aperto.
+var F16 = {}; "a0 b1 c2 d3 e4 f5 g6 h6 i7 j7 k7 l8 m9 n10 o10 p11 q12 r12 s13 t13 u14 v14 w15 x15 y15 z15".split(" ").forEach(function (t) { F16[t[0]] = Number(t.slice(1)); });
+function ordL(c) { return c.toUpperCase().charCodeAt(0) - 65; }
+function primoDispariDa(v) { for (var p = Math.max(3, v); ; p++) { var pr = true; for (var d = 2; d * d <= p; d++) if (p % d === 0) pr = false; if (pr) return p; } }
+// configurazioni: m, h(k), h2(k) per il doppio hashing
+var HCONF = {
+  lavagna16: { m: 16, nome: "m = 16, h(k) = f(prima lettera di k) (lavagna del 1° dicembre, pagina 37)", h: function (k) { return F16[k[0].toLowerCase()]; }, h2: function (k) { return primoDispariDa(F16[(k[2] || "a").toLowerCase()]); }, h2nome: "g(k) = il più piccolo primo p ≠ 2 con p ≥ f(terza lettera di k)" },
+  ord26: { m: 26, nome: "m = 26, h(x) = ord(prima lettera di x) (lavagna del 1° dicembre, pagine 25 e 29)", h: function (k) { return ordL(k[0]); }, h2: function (k) { return 1 + (ordL(k[k.length - 1]) % 25); }, h2nome: "h'(x) = 1 + ord(ultima lettera) mod 25 (scelta nostra)" }
+};
+function sondaggio(conf, metodo, k, i) {
+  var m = conf.m, h = conf.h(k);
+  if (metodo === "lineare") return (h + i) % m;
+  if (metodo === "quadratica") return Math.floor(h + 0.5 * i + 0.5 * i * i) % m;
+  return (h + i * conf.h2(k)) % m;
+}
+// inserisce in sequenza; restituisce stato ed eventi
+function eventiHash(conf, metodo, parole) {
+  var m = conf.m, T = [], ev = [];
+  for (var q = 0; q < m; q++) T.push(metodo === "liste" ? [] : null);
+  parole.forEach(function (k) {
+    var h = conf.h(k), e = { k: k, h: h, seq: [] };
+    if (metodo === "liste") { T[h].push(k); e.pos = h; e.testo = "h(" + k + ") = " + h + ": " + k + " va nella lista della posizione " + h + (T[h].length > 1 ? ", che conteneva già " + T[h].slice(0, -1).join(", ") + " (collisione)." : "."); }
+    else {
+      for (var i = 0; i < m; i++) { var c = sondaggio(conf, metodo, k, i); e.seq.push(c); if (T[c] === null) { T[c] = k; e.pos = c; break; } }
+      e.testo = e.pos === undefined ? "Tabella piena: " + k + " non si può inserire." : "h(" + k + ") = " + h + (metodo === "doppio" ? ", h'(" + k + ") = " + conf.h2(k) : "") + ". Celle provate: " + e.seq.join(", ") + (e.seq.length > 1 ? " (le prime " + (e.seq.length - 1) + " occupate)" : "") + ". " + k + " va in " + e.pos + ".";
+    }
+    e.T = T.map(function (x) { return Array.isArray(x) ? x.slice() : x; }); ev.push(e);
+  });
+  return ev;
+}
+function cercaHash(conf, metodo, T, k) {
+  var h = conf.h(k);
+  if (metodo === "liste") { var L = T[h], p = L.indexOf(k); return { seq: [h], trovato: p >= 0, confronti: p >= 0 ? p + 1 : L.length, testo: "h(" + k + ") = " + h + ": si scorre la lista " + (L.length ? L.join(" → ") : "(vuota)") + ". " + (p >= 0 ? "Trovato al " + (p + 1) + "° confronto." : "Non c'è (" + L.length + " confronti).") }; }
+  var seq = [];
+  for (var i = 0; i < conf.m; i++) { var c = sondaggio(conf, metodo, k, i); seq.push(c); if (T[c] === null) return { seq: seq, trovato: false, testo: "Celle guardate: " + seq.join(", ") + ". La cella " + c + " è libera: " + k + " non c'è." }; if (T[c] === k) return { seq: seq, trovato: true, testo: "Celle guardate: " + seq.join(", ") + ". Trovato in " + c + "." }; }
+  return { seq: seq, trovato: false, testo: "Guardate tutte le m celle: " + k + " non c'è." };
+}
+function svgTabella(T, opz) {
+  opz = opz || {};
+  var m = T.length, rh = 22, W = opz.liste ? 420 : 200, H = m * rh + 8, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "una tabella hash") + '" font-family="system-ui, sans-serif">');
+  for (var i = 0; i < m; i++) {
+    var y = 4 + i * rh, ev = opz.evid && opz.evid[i];
+    s.push('<text x="26" y="' + (y + 15) + '" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">' + i + '</text>');
+    s.push('<rect x="30" y="' + y + '" width="' + (opz.liste ? 26 : 140) + '" height="' + rh + '" class="' + (ev ? (ev === "verde" ? "r-verde" : "r-giallo") : "r-nodo") + '" fill="' + (ev ? (ev === "verde" ? "#e6f5ea" : "#fff1a8") : "#ffffff") + '" stroke="#9aa3b2" stroke-width="1"/>');
+    if (opz.liste) {
+      var L = T[i]; if (!L.length) s.push('<text x="43" y="' + (y + 15) + '" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      L.forEach(function (k, j) { var x = 70 + j * 88; s.push('<line x1="' + (j ? x - 16 : 50) + '" y1="' + (y + 11) + '" x2="' + (x - 2) + '" y2="' + (y + 11) + '" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="' + x + '" y="' + (y + 2) + '" width="72" height="' + (rh - 4) + '" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="' + (x + 36) + '" y="' + (y + 15) + '" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + k + '</text>'); });
+    } else if (T[i] !== null) s.push('<text x="100" y="' + (y + 15) + '" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + T[i] + '</text>');
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+
+// ---- w27.js
+// Riquadri interattivi del pacco 27.
+function $(id) { return document.getElementById(id); }
+(function () {
+  if (!$("hs-corpo")) return;
+  var ES = [["Lavagna: i pesci, m = 16", "lavagna16", "salmone tonno rombo aringa cernia aragosta totano ostrica nasello palombo"], ["Lavagna: i personaggi, m = 26", "ord26", "Pippo Paperino Topolino Qui Pluto Quo Qua Paperoga"]];
+  $("hs-corpo").innerHTML = '<div class="controlli"><label>Esempio <select id="hs-es" style="width:auto;max-width:100%">' + ES.map(function (e, k) { return '<option value="' + k + '">' + e[0] + '</option>'; }).join("") + '</select></label>' +
+    '<label>Gestione delle collisioni <select id="hs-met" style="width:auto"><option value="liste">liste di collisione</option><option value="lineare" selected>scansione lineare</option><option value="quadratica">scansione quadratica</option><option value="doppio">hashing doppio</option></select></label></div>' +
+    '<div class="controlli"><label style="width:100%">Chiavi da inserire, nell\'ordine (parole) <input type="text" id="hs-seq" style="width:100%"></label></div>' +
+    '<div class="controlli"><button class="primario" id="hs-passo">Inserisci la prossima →</button><button id="hs-tutte">Inserisci tutte</button><button id="hs-reset">Ricomincia</button></div>' +
+    '<div class="controlli"><label>Cerca <input type="text" id="hs-k" style="width:120px" value="tonno"></label><button id="hs-cerca">Cerca</button></div>' +
+    '<div class="contatori" id="hs-cont"></div><div class="figura" id="hs-fig" style="margin:6px 0"></div><div class="narrazione" id="hs-txt"></div>';
+  var V = {};
+  function prepara() { var e = ES[Number($("hs-es").value)]; V.conf = HCONF[e[1]]; V.met = $("hs-met").value; V.parole = $("hs-seq").value.trim().split(/[\s,;]+/).filter(function (w) { return /^[A-Za-z]{3,}$/.test(w); }).slice(0, V.conf.m); V.ev = eventiHash(V.conf, V.met, V.parole); V.k = -1; V.evid = {}; V.txt = V.conf.nome + (V.met === "doppio" ? "; " + V.conf.h2nome + "." : ".") + " Le parole devono avere almeno 3 lettere."; mostra(); }
+  function tab() { if (V.k >= 0) return V.ev[V.k].T; var T = []; for (var i = 0; i < V.conf.m; i++) T.push(V.met === "liste" ? [] : null); return T; }
+  function mostra() {
+    var T = tab(), n = V.k + 1;
+    $("hs-fig").innerHTML = svgTabella(T, { liste: V.met === "liste", evid: V.evid });
+    $("hs-cont").innerHTML = '<span>n = <b>' + n + '</b></span><span>m = <b>' + V.conf.m + '</b></span><span>α = n/m = <b>' + (n / V.conf.m).toFixed(2).replace(".", ",") + '</b></span>';
+    $("hs-txt").innerHTML = V.txt; $("hs-passo").disabled = $("hs-tutte").disabled = V.k >= V.ev.length - 1;
+  }
+  function evidSeq(seq, fine, ok) { V.evid = {}; seq.forEach(function (c) { V.evid[c] = "giallo"; }); if (fine !== undefined) V.evid[fine] = ok ? "verde" : "giallo"; }
+  $("hs-passo").onclick = function () { if (V.k < V.ev.length - 1) V.k++; var e = V.ev[V.k]; evidSeq(e.seq.length ? e.seq : [e.pos], e.pos, true); V.txt = e.testo; mostra(); };
+  $("hs-tutte").onclick = function () { V.k = V.ev.length - 1; V.evid = {}; V.txt = "Tutte le chiavi inserite."; mostra(); };
+  $("hs-reset").onclick = prepara; $("hs-met").onchange = prepara;
+  $("hs-cerca").onclick = function () { var k = $("hs-k").value.trim(); if (!/^[A-Za-z]{3,}$/.test(k)) { V.txt = '<span class="errore">Scrivi una parola di almeno 3 lettere.</span>'; mostra(); return; } var r = cercaHash(V.conf, V.met, tab(), k); evidSeq(r.seq, r.seq[r.seq.length - 1], r.trovato); V.txt = "Cerca " + k + ". " + r.testo; mostra(); };
+  $("hs-seq").onchange = prepara;
+  $("hs-es").onchange = function () { var e = ES[Number($("hs-es").value)]; $("hs-seq").value = e[2]; $("hs-k").value = e[2].split(" ")[1]; prepara(); };
+  $("hs-es").onchange();
+})();
+})();
+</script>
+</body>
+</html>
