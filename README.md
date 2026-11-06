@@ -40,7 +40,18 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 29 · Complessità computazionale | limiti superiori e inferiori, problemi di ricerca, ottimizzazione e decisione, P, PSPACE, EXPTIME | 31–32 |
 | 30 · La classe NP | PARTIZIONE, CLIQUE, SODD, algoritmi non deterministici, certificati, P e NP, NPSPACE | 32–34 |
 | 31 · NP-completezza | riduzioni polinomiali, SODD → CLIQUE, NP-difficili e NP-completi, teorema di Cook, altri problemi NP-completi | 33–34 |
-| 32 · Scritti risolti in aula | tre scritti del 2024 risolti per intero, la programmazione dinamica sulla griglia, allenamento sugli esercizi 1 e 2 | 34–36 |
+| 32 · Scritti risolti in aula | tre scritti del 2024 risolti per intero, la programmazione dinamica sulla griglia, allenamento sugli esercizi 1 e 2 (da aprire solo dopo aver fatto quei tre scritti) | 34–36 |
+
+## Dopo i pacchi: l'allenamento allo scritto
+
+| Pagina | Cosa c'è | Esercizi |
+|---|---|---|
+| Il percorso | come funziona, il progresso dei livelli, il correttore degli esercizi 1 e 2, i 19 scritti veri nell'ordine in cui farli | — |
+| Livello 1 · Le mosse di base | un'operazione alla volta: inserimenti, rotazioni, partizione, bubbleSort, heap, visite, un passo di Dijkstra, Kruskal, Floyd–Warshall | 1–24 |
+| Livello 2 · Esercizi interi, numeri piccoli | gli esercizi dello scritto con pochi numeri, i primi esercizi 3, i primi ripassi | 25–46 |
+| Livello 3 · Come allo scritto | la forma e la lunghezza dello scritto, gli esercizi 3 tipici con la teoria di Dijkstra e di Kruskal | 47–71 |
+| Livello 4 · Trappole e varianti | chiavi uguali al perno, scambi tardivi, AVL di altezza massima, 2-3 con il massimo di nodi; costi sui vertici, due sorgenti, grafi non connessi, programmazione dinamica | 72–93 |
+| Livello 5 · Simulazioni d'esame | cinque scritti completi da 2 ore, con la soluzione e la griglia di correzione | 94–108 |
 
 ## Come si usa
 
