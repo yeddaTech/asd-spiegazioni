@@ -46,12 +46,13 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 
 | Pagina | Cosa c'è | Esercizi |
 |---|---|---|
-| Il percorso | come funziona, il progresso dei livelli, il correttore degli esercizi 1 e 2, i 19 scritti veri nell'ordine in cui farli | — |
+| Il percorso | come si studia (calendario, sessione di ogni giorno, metodo per gli esercizi 1, 2 e 3, quaderno degli errori), il progresso dei livelli, il correttore degli esercizi 1 e 2, i 19 scritti veri nell'ordine in cui farli | — |
 | Livello 1 · Le mosse di base | un'operazione alla volta: inserimenti, rotazioni, partizione, bubbleSort, heap, visite, un passo di Dijkstra, Kruskal, Floyd–Warshall | 1–24 |
 | Livello 2 · Esercizi interi, numeri piccoli | gli esercizi dello scritto con pochi numeri, i primi esercizi 3, i primi ripassi | 25–46 |
 | Livello 3 · Come allo scritto | la forma e la lunghezza dello scritto, gli esercizi 3 tipici con la teoria di Dijkstra e di Kruskal | 47–71 |
 | Livello 4 · Trappole e varianti | chiavi uguali al perno, scambi tardivi, AVL di altezza massima, 2-3 con il massimo di nodi; costi sui vertici, due sorgenti, grafi non connessi, programmazione dinamica | 72–93 |
 | Livello 5 · Simulazioni d'esame | cinque scritti completi da 2 ore, con la soluzione e la griglia di correzione | 94–108 |
+| Livello extra · Fuori programma | facoltativo: ricerca binaria, teorema fondamentale, conteggio dei confronti, pile e code, radixSort, analisi ammortizzata, union-find, greedy, Prim, Bellman–Ford, tabelle hash e re-hashing, complessità e NP | 109–129 |
 
 ## Come si usa
 

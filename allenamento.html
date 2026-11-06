@@ -38,7 +38,7 @@ input.es-in, textarea.es-in { width: 100%; max-width: 560px; box-sizing: border-
 </div>
 
 <h1>Allenamento allo scritto</h1>
-<p class="sottotitolo">Aver studiato tutti i pacchi non vuol dire saper fare gli esercizi: davanti a un AVL da costruire o a un problema da risolvere con Floyd–Warshall, la teoria letta una volta non basta. Questo percorso trasforma quello che hai studiato in mani che sanno cosa fare: più di cento esercizi nuovi, in cinque livelli di difficoltà crescente, con le risposte controllate e le soluzioni spiegate. Gli argomenti già fatti ritornano più avanti, così non si dimenticano. Alla fine si passa agli scritti veri, in un ordine preciso.</p>
+<p class="sottotitolo">Aver studiato tutti i pacchi non vuol dire saper fare gli esercizi: davanti a un AVL da costruire o a un problema da risolvere con Floyd–Warshall, la teoria letta una volta non basta. Questo percorso trasforma quello che hai studiato in mani che sanno cosa fare: più di cento esercizi nuovi, in cinque livelli di difficoltà crescente, con le risposte controllate e le soluzioni spiegate, più un livello extra sugli argomenti che allo scritto non sono mai usciti. Gli argomenti già fatti ritornano più avanti, così non si dimenticano. Alla fine si passa agli scritti veri, in un ordine preciso.</p>
 
 <div class="box idea">
   <span class="etichetta">Perché funziona</span>
@@ -50,22 +50,74 @@ input.es-in, textarea.es-in { width: 100%; max-width: 560px; box-sizing: border-
   </ul>
 </div>
 
-<div class="box esame">
-  <span class="etichetta">Come organizzarsi</span>
-  <ul>
-    <li><b>Un livello alla volta, nell'ordine.</b> Indicativamente: livelli 1 e 2 in una settimana, livelli 3 e 4 in due settimane, il livello 5 in una settimana (uno scritto simulato ogni due giorni, con la correzione).</li>
-    <li><b>Un'ora o due al giorno, tutti i giorni</b>, rende più di un giorno intero ogni tanto.</li>
-    <li><b>Quando sbagli</b>, leggi la soluzione, chiudila, e rifai l'esercizio da capo il giorno dopo.</li>
-    <li>Il progresso (gli esercizi fatti, le griglie spuntate, gli scritti corretti) resta salvato in questo browser.</li>
-  </ul>
+
+<h2 id="come-si-studia"><span class="num">1</span>Come si studia: leggilo prima di cominciare</h2>
+<p class="in-questa"><b>In questa sezione:</b> il calendario, la sessione di ogni giorno, come si affronta un esercizio senza correre alla soluzione, come lavorare in due, e il quaderno degli errori.</p>
+
+<div class="box attenzione">
+  <span class="etichetta">La regola più importante</span>
+  <p><b>Non aprire la soluzione appena sei bloccato.</b> Una soluzione letta sembra chiara, ma allo scritto non resta: resta solo quello che hai fatto con le tue mani. La fatica di cercare l'errore è proprio il momento in cui si impara. Un esercizio risolto guardando la soluzione non conta: si rifà da zero il giorno dopo.</p>
 </div>
 
-<h2 id="livelli"><span class="num">1</span>I cinque livelli</h2>
+<h3>Il calendario</h3>
+<div class="tabella-wrap"><table>
+<thead><tr><th>Quando</th><th>Che cosa</th><th>Ritmo</th></tr></thead>
+<tbody>
+<tr><td>Settimana 1</td><td>Livello 1, poi livello 2</td><td>circa 8 esercizi al giorno nel livello 1 (sono brevi), 4–5 nel livello 2</td></tr>
+<tr><td>Settimana 2</td><td>Livello 3</td><td>4 esercizi al giorno, sempre almeno un esercizio 3</td></tr>
+<tr><td>Settimana 3</td><td>Livello 4</td><td>4 esercizi al giorno</td></tr>
+<tr><td>Settimane 4–5</td><td>Livello 5</td><td>una simulazione ogni due giorni: un giorno lo scritto da 2 ore, il giorno dopo la correzione e gli errori rifatti</td></tr>
+<tr><td>Dopo</td><td>Gli scritti veri (sezione 4) e il livello extra</td><td>uno scritto al giorno, nell'ordine della lista; la versione B una settimana dopo; 2–3 esercizi del livello extra come riscaldamento</td></tr>
+</tbody></table></div>
+<p>Due o tre ore al giorno, tutti i giorni, rendono più di un giorno intero ogni tanto. Se un giorno salta, non recuperare facendo il doppio: riprendi dal punto in cui eri.</p>
+
+<h3>La sessione di ogni giorno</h3>
+<ol>
+  <li><b>15 minuti di ripasso</b>: rifai da zero, senza guardare, due esercizi sbagliati nei giorni prima (li trovi nel quaderno degli errori).</li>
+  <li><b>Gli esercizi nuovi</b> del livello, nell'ordine: sono messi in ordine di difficoltà, e i «ripasso» arrivano quando servono.</li>
+  <li><b>10 minuti</b> per aggiornare il quaderno degli errori.</li>
+</ol>
+
+<h3>Come si fa un esercizio 1 o 2</h3>
+<ol>
+  <li>Leggi tutto il testo e <b>sottolinea le parole che decidono la risposta</b>: crescente o decrescente, «immediatamente dopo lo scambio», «dopo la terza iterazione», min-heap o max-heap, quale visita.</li>
+  <li><b>Su carta, con tutti i passaggi</b>: ogni rotazione, ogni scambio, ogni stato intermedio. Niente a mente: allo scritto i passaggi servono anche per non perdersi.</li>
+  <li>Scrivi la risposta nella casella e premi «Controlla».</li>
+  <li>Se non torna, <b>non aprire la soluzione</b>: il messaggio dice da quale numero in poi non torna. Riparti da lì e riprova.</li>
+  <li>Ancora bloccato? <b>Rileggi il metodo nel pacco</b>: la teoria, non la soluzione. Se provi ad aprire la soluzione troppo presto, la pagina ti indica il pacco giusto. Poi riprova.</li>
+  <li>Solo dopo due tentativi apri la soluzione. Leggila <b>fino al tuo primo errore</b>, chiudila e finisci da solo.</li>
+  <li>Se hai aperto la soluzione, l'esercizio va nel quaderno degli errori e si rifà da zero il giorno dopo.</li>
+</ol>
+
+<h3>Come si fa un esercizio 3</h3>
+<ol>
+  <li><b>Cinque minuti di lettura</b>: i dati, i nomi da usare, che cosa chiede ogni punto, le note in fondo.</li>
+  <li><b>In tre righe</b>: che problema è (cammini minimi da una sorgente? verso un vertice? tra tutte le coppie? albero ricoprente? programmazione dinamica?) e quale algoritmo del corso adatti.</li>
+  <li><b>La soluzione completa, come all'esame</b>: nell'ordine dei punti, con i nomi del testo, lo pseudocodice e il tempo giustificato.</li>
+  <li><b>Solo alla fine</b> apri la soluzione e spunta la griglia: solo quello che hai scritto davvero. Quello che manca lo aggiungi sul foglio con un altro colore: è lì che si impara.</li>
+  <li>Dopo due o tre giorni rifai in dieci minuti la scaletta: l'idea, lo pseudocodice, i tempi.</li>
+</ol>
+
+<h3>Se siete in due</h3>
+<ul>
+  <li>Ognuno fa l'esercizio da solo; confrontate i risultati <b>prima</b> di premere «Controlla». Se sono diversi, cercate insieme il punto in cui divergono.</li>
+  <li>Negli esercizi 3 scambiatevi i fogli e correggete l'altro con la griglia, severi come il prof.</li>
+  <li>A turno spiegate ad alta voce un passaggio all'altro: se non sai spiegarlo, non l'hai ancora capito.</li>
+</ul>
+
+<h3>Il quaderno degli errori</h3>
+<p>Un quaderno (o un file) con una riga per ogni errore: il tipo di esercizio, che cosa hai sbagliato, la regola giusta. Per esempio: «partizione decrescente: sx salta le chiavi ≥ perno, non ≤». Rileggilo prima di ogni simulazione e prima dell'esame: alla fine è la cosa più utile che avrai.</p>
+
+<h2 id="livelli"><span class="num">2</span>I cinque livelli</h2>
 <div class="pacchi" id="hub-livelli"></div>
 <div id="hub-pronto" class="grande-scritta">Siete più che pronti all'esame scritto</div>
 <p class="piccolo">La scritta qui sopra si accende quando hai fatto tutti gli esercizi dei cinque livelli. A quel punto sei più che pronto: si passa agli scritti veri.</p>
 
-<h2 id="correttore"><span class="num">2</span>Il correttore degli esercizi 1 e 2</h2>
+<h3>Il livello extra, facoltativo</h3>
+<p>Gli argomenti del corso che, dal 2024 a oggi, allo scritto non sono mai usciti: ricerca binaria, teorema fondamentale, union-find, greedy, Bellman–Ford, tabelle hash, NP e altri. Non conta per la scritta qui sopra: ti copre se il prof cambia lo scritto, e ripassa argomenti che servono all'orale. Fallo in parallelo agli scritti veri, due o tre esercizi al giorno.</p>
+<div class="pacchi" id="hub-extra"></div>
+
+<h2 id="correttore"><span class="num">3</span>Il correttore degli esercizi 1 e 2</h2>
 <p class="in-questa"><b>In questa sezione:</b> uno strumento per controllare le risposte degli esercizi 1 e 2 di qualunque scritto: scegli la domanda, scrivi i numeri, e ottieni la risposta con la soluzione passo per passo, calcolata con gli algoritmi esattamente come nello pseudocodice del corso.</p>
 <p>Usalo <b>dopo</b> aver risolto l'esercizio da solo, per correggerti: è pensato soprattutto per gli scritti veri, che non hanno le soluzioni.</p>
 <div class="widget" id="w-correttore">
@@ -73,14 +125,14 @@ input.es-in, textarea.es-in { width: 100%; max-width: 560px; box-sizing: border-
   <div id="hub-correttore"></div>
 </div>
 
-<h2 id="scritti"><span class="num">3</span>Gli scritti veri, nell'ordine giusto</h2>
+<h2 id="scritti"><span class="num">4</span>Gli scritti veri, nell'ordine giusto</h2>
 <p class="in-questa"><b>In questa sezione:</b> i 19 scritti che hai in PDF, dal 19 gennaio 2024 al 18 settembre 2026, nell'ordine in cui farli, con dove trovare le soluzioni per correggerti. Da fare dopo aver finito i cinque livelli.</p>
 <div class="box esame">
   <span class="etichetta">Come fare uno scritto</span>
   <ol>
     <li><b>Come all'esame</b>: 2 ore di cronometro, niente appunti, niente telefono, il foglio stampato o il PDF aperto senza nient'altro. Rileggi anche le note in fondo all'esercizio 3: lo chiede il testo, e lì ci sono spesso i dettagli che contano (i nomi da non cambiare, il significato di righe e colonne).</li>
     <li><b>Prima gli esercizi 1 e 2</b> (circa 40 minuti in tutto: sono punti sicuri), poi il resto del tempo all'esercizio 3, rispondendo ai punti nell'ordine indicato.</li>
-    <li><b>Correggi subito, lo stesso giorno.</b> Esercizi 1 e 2 con il correttore qui sopra (sezione 2). Esercizio 3 con la soluzione nel pacco indicato accanto allo scritto; per i due scritti che le hanno, anche con le soluzioni del prof (i PDF Nota12luglio2024 e Nota31gennaio2025).</li>
+    <li><b>Correggi subito, lo stesso giorno.</b> Esercizi 1 e 2 con il correttore qui sopra (sezione 3). Esercizio 3 con la soluzione nel pacco indicato accanto allo scritto; per i due scritti che le hanno, anche con le soluzioni del prof (i PDF Nota12luglio2024 e Nota31gennaio2025).</li>
     <li><b>Una sola versione</b>: le versioni B, C, … di ogni PDF hanno gli stessi numeri aumentati di 2, quindi danno gli stessi alberi e gli stessi scambi. Usa la versione B come <b>seconda passata</b>: una settimana dopo aver fatto uno scritto, rifai la sua versione B. Se ricordi il metodo ma non i numeri, è entrato.</li>
     <li>Uno scritto al giorno, nell'ordine della lista. Gli ultimi quattro sono i più recenti, con le domande più nuove: falli come prove generali, a pochi giorni dall'esame.</li>
   </ol>
@@ -113,11 +165,11 @@ input.es-in, textarea.es-in { width: 100%; max-width: 560px; box-sizing: border-
 <div class="es-card"><label class="es-voce" style="font-weight:700"><input type="checkbox" data-scritto="18settembre2026"> 19. Scritto del 18 settembre 2026</label><ul class="piccolo" style="margin:6px 0 0"><li>Esercizio 1: perfettamente bilanciato e AVL non perfettamente bilanciato, sulle chiavi da 13 a 21.</li><li>Esercizio 2: le tre visite del vettore posizionale e il max-heap.</li><li>Esercizio 3: Floyd–Warshall sulla matrice D.</li><li>Per correggere l'esercizio 3: pacco <a href="22-floyd-warshall.html">22</a>.</li></ul></div>
 </div>
 
-<h2 id="completato"><span class="num">4</span>Fine dello scritto</h2>
+<h2 id="completato"><span class="num">5</span>Fine dello scritto</h2>
 <div id="hub-completato" class="grande-scritta">ESAME SCRITTO COMPLETATO</div>
 <p class="piccolo">Si accende quando hai spuntato tutti i 19 scritti della lista.</p>
 
-<h2 id="orale"><span class="num">5</span>L'esame orale</h2>
+<h2 id="orale"><span class="num">6</span>L'esame orale</h2>
 <div class="box domanda">
   <span class="etichetta">Più avanti</span>
   <p>La preparazione all'orale arriverà dopo lo scritto: le domande che il prof fa più spesso, le definizioni e le dimostrazioni da saper esporre, e come esporle. Per ora la cosa da fare è una sola: lo scritto.</p>
@@ -1303,8 +1355,8 @@ function seqHtml(A) { return "<b>" + A.join(" ") + "</b>"; }
 function ordinaN(A) { return A.slice().sort(function (a, b) { return a - b; }); }
 // ---------------------------------------------------------------- memoria del progresso (solo nel browser di chi studia)
 var MEM = (function () {
-  var K = "asd-allenamento-v1", st = { fatti: {}, parti: {}, griglie: {}, scritti: {} };
-  try { var x = JSON.parse(localStorage.getItem(K) || "null"); if (x && typeof x === "object") { ["fatti", "parti", "griglie", "scritti"].forEach(function (c) { if (x[c] && typeof x[c] === "object") st[c] = x[c]; }); } } catch (e) {}
+  var K = "asd-allenamento-v1", st = { fatti: {}, parti: {}, griglie: {}, scritti: {}, tentativi: {}, e3viste: {} };
+  try { var x = JSON.parse(localStorage.getItem(K) || "null"); if (x && typeof x === "object") { ["fatti", "parti", "griglie", "scritti", "tentativi", "e3viste"].forEach(function (c) { if (x[c] && typeof x[c] === "object") st[c] = x[c]; }); } } catch (e) {}
   function salva() { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} }
   return { st: st, salva: salva };
 })();
@@ -1746,19 +1798,31 @@ TIPI.dp = {
 };
 // mescola le scelte di un quiz in modo fisso (sempre lo stesso ordine per la stessa domanda)
 function mescola(A, seme) { var h = 2166136261; for (var i = 0; i < seme.length; i++) { h ^= seme.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } var B = A.slice(); for (var j = B.length - 1; j > 0; j--) { h = (Math.imul(h, 1103515245) + 12345) >>> 0; var q = h % (j + 1), t = B[j]; B[j] = B[q]; B[q] = t; } return B; }
+// ---------------------------------------------------------------- dove rileggere il metodo (prima di aprire una soluzione)
+var PACCHI = { 1: "01-quanto-costa.html", 3: "03-ricerca.html", 4: "04-ordinamenti-elementari.html", 5: "05-mergesort.html", 6: "06-mergesort-conti.html", 7: "07-divide-et-impera.html", 8: "08-quicksort.html", 11: "11-pile-code.html", 12: "12-alberi-binari.html", 13: "13-heap.html", 14: "14-heapsort-in-loco.html", 15: "15-limite-e-radixsort.html", 16: "16-code-priorita.html", 17: "17-union-find.html", 18: "18-grafi.html", 19: "19-greedy.html", 20: "20-albero-ricoprente-minimo.html", 21: "21-programmazione-dinamica.html", 22: "22-floyd-warshall.html", 23: "23-dijkstra.html", 24: "24-alberi-di-ricerca.html", 25: "25-alberi-avl.html", 26: "26-alberi-2-3.html", 27: "27-tabelle-hash.html", 28: "28-tabelle-hash-rehashing.html", 29: "29-complessita.html", 30: "30-np.html", 31: "31-np-completezza.html" };
+var METODO = { avl: 25, bst: 24, t23: 26, t23e: 26, prop: 25, vp: 12, part: 8, bubble: 4, insertion: 4, heap: 14, hswap: 14, pq: 16, merge: 5, msort: 5, visitaG: 18, dijkstra: 23, kruskal: 20, prim: 20, fw: 22, dp: 21 };
+var METODO_TAG = { "AVL": 25, "perfettamente bilanciati": 25, "alberi di ricerca": 24, "alberi 2-3": 26, "quickSort": 8, "bubbleSort": 4, "insertionSort": 4, "heap": 13, "heapSort": 14, "code con priorità": 16, "merge": 5, "mergeSort": 5, "vettore posizionale": 12, "grafi": 18, "Dijkstra": 23, "Kruskal": 20, "Prim": 20, "Floyd–Warshall": 22, "programmazione dinamica": 21 };
+function linkMetodo(e, p) {
+  var m = p && METODO[p.tipo] ? METODO[p.tipo] : null;
+  if (!m) (e.tag || []).some(function (t) { if (METODO_TAG[t]) { m = METODO_TAG[t]; return true; } return false; });
+  return m && PACCHI[m] ? 'il <a href="' + PACCHI[m] + '">pacco ' + m + '</a>' : "il pacco dell'argomento";
+}
+function testoFreno(e, p, fatti) {
+  return '<span class="etichetta">Prima di guardare</span><p>' + (fatti === 0 ? "Non hai ancora provato a rispondere." : "Hai fatto un solo tentativo.") + " Una soluzione letta subito sembra chiara, ma allo scritto non resta: resta solo quello che hai fatto con le tue mani. Prova così:</p><ol><li>rifai l'esercizio su carta, scrivendo tutti i passaggi;</li><li>se il correttore ti ha detto da quale numero non torna, riparti da lì;</li><li>se non sai da dove cominciare, rileggi il metodo nel" + linkMetodo(e, p).replace(/^il/, "") + ", non la soluzione.</li></ol>";
+}
 // ---------------------------------------------------------------- disegno della pagina di un livello
 function rispostaHtml(r) { return Array.isArray(r) ? r.map(fmtD).join(" ") : String(r); }
 function disegnaEsercizi(lista, cont) {
   cont.innerHTML = lista.map(function (e) {
     var tag = (e.tag || []).map(function (t) { return '<span class="es-tag">' + escE(t) + '</span>'; }).join("") + (e.ripasso ? '<span class="es-tag ripasso">ripasso</span>' : "") + '<span class="es-tag diff">' + "★★★".slice(0, e.diff || 1) + '</span>';
     var corpo;
-    if (e.e3) corpo = '<div class="es-testo">' + e.testo + (e.fig ? figG(e.fig) : "") + '</div><details class="esercizio" data-solfn="' + e.id + '"><summary>La soluzione del correttore</summary><div class="soluzione" id="sole3-' + e.id + '">' + (typeof e.soluzione === "function" ? "" : e.soluzione) + '</div></details>' +
+    if (e.e3) corpo = '<div class="es-testo">' + e.testo + (e.fig ? figG(e.fig) : "") + '</div><div class="box attenzione es-freno" id="freno3-' + e.id + '" style="display:none"><span class="etichetta">Prima di aprire la soluzione</span><p>Hai scritto su carta la tua soluzione completa, punto per punto, con i nomi del testo, lo pseudocodice e i tempi? La soluzione serve per correggere, non per studiare. Se sei bloccato, rileggi il metodo nel' + linkMetodo(e, null).replace(/^il/, "") + ', poi scrivi almeno l\'idea in tre righe e lo pseudocodice.</p><div class="controlli"><button data-e3ok="' + e.id + '">Ho scritto la mia soluzione: mostrala</button></div></div><details class="esercizio" data-solfn="' + e.id + '"><summary>La soluzione del correttore</summary><div class="soluzione" id="sole3-' + e.id + '">' + (typeof e.soluzione === "function" ? "" : e.soluzione) + '</div></details>' +
       '<div class="es-griglia"><p class="piccolo"><b>Griglia di correzione</b>: spunta quello che hai scritto davvero nella tua soluzione.</p>' + e.griglia.map(function (g, i) { return '<label class="es-voce"><input type="checkbox" data-g="' + e.id + '" data-i="' + i + '"> ' + g + '</label>'; }).join("") + '</div><div class="controlli"><button data-fatto="' + e.id + '">Segna come fatto</button></div>';
     else corpo = (e.intro ? '<div class="es-testo">' + e.intro + '</div>' : "") + e.parti.map(function (p, k) {
       var T = TIPI[p.tipo], lett = e.parti.length > 1 ? "(" + "abcdefgh"[k] + ") " : "", inp;
       if (T.scelte || p.tipo === "quiz") inp = (p.tipo === "quiz" ? mescola(p.scelte, e.id + "#" + k) : T.scelte).map(function (s) { return '<label class="es-voce"><input type="radio" name="r-' + e.id + '-' + k + '" value="' + escE(s) + '"> ' + s + '</label>'; }).join("");
       else inp = '<input type="text" class="es-in" id="in-' + e.id + '-' + k + '" placeholder="' + escE(typeof T.formato === "function" ? T.formato(p) : T.formato) + '" autocomplete="off" autocapitalize="off" spellcheck="false">';
-      return '<div class="es-parte"><div class="es-testo">' + lett + T.domanda(p) + '</div>' + inp + '<div class="controlli"><button data-ver="' + e.id + '" data-k="' + k + '">Controlla</button><button data-sol="' + e.id + '" data-k="' + k + '">Mostra la soluzione</button></div><div class="narrazione" id="esito-' + e.id + '-' + k + '" style="display:none"></div><div class="soluzione es-sol" id="sol-' + e.id + '-' + k + '" style="display:none"></div></div>';
+      return '<div class="es-parte"><div class="es-testo">' + lett + T.domanda(p) + '</div>' + inp + '<div class="controlli"><button data-ver="' + e.id + '" data-k="' + k + '">Controlla</button><button data-sol="' + e.id + '" data-k="' + k + '">Mostra la soluzione</button></div><div class="narrazione" id="esito-' + e.id + '-' + k + '" style="display:none"></div><div class="box attenzione es-freno" id="freno-' + e.id + '-' + k + '" style="display:none"></div><div class="soluzione es-sol" id="sol-' + e.id + '-' + k + '" style="display:none"></div></div>';
     }).join("");
     return (e.sezione || "") + '<section class="es-card" id="es-' + e.id + '"><div class="es-testa"><span class="es-num">' + e.n + '</span><span class="es-tit">' + escE(e.titolo) + '</span><span class="es-stato" id="stato-' + e.id + '"></span></div><div class="es-tags">' + tag + '</div>' + corpo + '</section>';
   }).join("");
@@ -1775,16 +1839,29 @@ function disegnaEsercizi(lista, cont) {
       if (T.scelte || p.tipo === "quiz") { var c = cont.querySelector('input[name="r-' + e.id + '-' + k + '"]:checked'); val = c ? c.value : null; if (val === null) { mostraEsito(e, k, { ok: false, msg: "Scegli una risposta." }); return; } }
       else val = $a("in-" + e.id + "-" + k).value;
       var r; try { r = T.verifica(p, val); } catch (err) { r = { ok: false, msg: "Non riesco a leggere la risposta: controlla il formato (" + (typeof T.formato === "function" ? T.formato(p) : T.formato) + ")." }; }
+      if (val !== null && String(val).trim() !== "") { var ch = e.id + "#" + k; MEM.st.tentativi[ch] = (MEM.st.tentativi[ch] || 0) + 1; MEM.salva(); }
       mostraEsito(e, k, r); if (r.ok) segnaParte(e, k);
     };
   });
-  function mostraEsito(e, k, r) { var d = $a("esito-" + e.id + "-" + k); d.style.display = ""; d.innerHTML = r.ok ? '<span class="ok">Giusto!</span> ' + (r.msg || "") : '<span class="errore">Non ancora.</span> ' + (r.msg || "") + " Riprova, oppure apri la soluzione."; }
+  function mostraEsito(e, k, r) { var d = $a("esito-" + e.id + "-" + k); d.style.display = ""; var n = MEM.st.tentativi[e.id + "#" + k] || 0; d.innerHTML = r.ok ? '<span class="ok">Giusto!</span> ' + (r.msg || "") : '<span class="errore">Non ancora.</span> ' + (r.msg || "") + (n < 2 ? " Riprova da quel punto: la soluzione aprila solo dopo due tentativi." : " Puoi aprire la soluzione: leggila fino al tuo primo errore, poi chiudila e finisci da solo."); }
   Array.prototype.forEach.call(cont.querySelectorAll("button[data-sol]"), function (b) {
     b.onclick = function () {
-      var e = perId[b.getAttribute("data-sol")], k = Number(b.getAttribute("data-k")), p = e.parti[k], d = $a("sol-" + e.id + "-" + k);
-      if (d.style.display === "none") { if (!d.innerHTML) { try { d.innerHTML = TIPI[p.tipo].soluzione(p); } catch (err) { d.innerHTML = "<p>Errore nel costruire la soluzione: " + escE(err.message) + "</p>"; } } d.style.display = ""; b.textContent = "Nascondi la soluzione"; }
+      var e = perId[b.getAttribute("data-sol")], k = Number(b.getAttribute("data-k")), p = e.parti[k], d = $a("sol-" + e.id + "-" + k), ch = e.id + "#" + k, fr = $a("freno-" + e.id + "-" + k);
+      var serve = TIPI[p.tipo].scelte || p.tipo === "quiz" ? 1 : 2, fatti = MEM.st.tentativi[ch] || 0;
+      if (d.style.display === "none" && !MEM.st.parti[ch] && fatti < serve && fr.style.display === "none") {
+        fr.innerHTML = testoFreno(e, p, fatti) + '<div class="controlli"><button data-forza="1">Mostra comunque la soluzione</button></div>'; fr.style.display = "";
+        fr.querySelector("button[data-forza]").onclick = function () { fr.innerHTML = "<p>Hai aperto la soluzione prima di riuscirci da solo: segna l'esercizio nel quaderno degli errori e rifallo da zero domani.</p>"; b.click(); };
+        return;
+      }
+      if (d.style.display === "none") { if (fr.querySelector("button[data-forza]")) fr.innerHTML = "<p>Hai aperto la soluzione prima di riuscirci da solo: segna l'esercizio nel quaderno degli errori e rifallo da zero domani.</p>"; if (!d.innerHTML) { try { d.innerHTML = TIPI[p.tipo].soluzione(p); } catch (err) { d.innerHTML = "<p>Errore nel costruire la soluzione: " + escE(err.message) + "</p>"; } } d.style.display = ""; b.textContent = "Nascondi la soluzione"; }
       else { d.style.display = "none"; b.textContent = "Mostra la soluzione"; }
     };
+  });
+  Array.prototype.forEach.call(cont.querySelectorAll("details[data-solfn] > summary"), function (sm) {
+    sm.addEventListener("click", function (ev) { var d = sm.parentElement, id = d.getAttribute("data-solfn"); if (d.open || MEM.st.e3viste[id]) return; ev.preventDefault(); $a("freno3-" + id).style.display = ""; });
+  });
+  Array.prototype.forEach.call(cont.querySelectorAll("button[data-e3ok]"), function (b) {
+    b.onclick = function () { var id = b.getAttribute("data-e3ok"); MEM.st.e3viste[id] = true; MEM.salva(); $a("freno3-" + id).style.display = "none"; var d = cont.querySelector('details[data-solfn="' + id + '"]'); d.open = true; };
   });
   Array.prototype.forEach.call(cont.querySelectorAll("details[data-solfn]"), function (d) {
     d.addEventListener("toggle", function () { var e = perId[d.getAttribute("data-solfn")], box = $a("sole3-" + e.id); if (d.open && typeof e.soluzione === "function" && !box.innerHTML) { try { box.innerHTML = e.soluzione(); } catch (err) { box.innerHTML = "<p>Errore: " + escE(err.message) + "</p>"; } } });
@@ -1798,9 +1875,9 @@ function disegnaEsercizi(lista, cont) {
 }
 
 // ---- elenco.js
-var LIVELLI_IDS = {"1": ["1-01", "1-02", "1-03", "1-04", "1-05", "1-06", "1-07", "1-08", "1-09", "1-10", "1-11", "1-12", "1-13", "1-14", "1-15", "1-16", "1-17", "1-18", "1-19", "1-20", "1-21", "1-22", "1-23", "1-24"], "2": ["2-01", "2-02", "2-03", "2-04", "2-05", "2-06", "2-07", "2-08", "2-09", "2-10", "2-11", "2-12", "2-13", "2-14", "2-15", "2-16", "2-17", "2-18", "2-19", "2-20", "2-21", "2-22"], "3": ["3-01", "3-02", "3-03", "3-04", "3-05", "3-06", "3-07", "3-08", "3-09", "3-10", "3-11", "3-12", "3-13", "3-14", "3-15", "3-16", "3-17", "3-18", "3-19", "3-20", "3-21", "3-22", "3-23", "3-24", "3-25"], "4": ["4-01", "4-02", "4-03", "4-04", "4-05", "4-06", "4-07", "4-08", "4-09", "4-10", "4-11", "4-12", "4-13", "4-14", "4-15", "4-16", "4-17", "4-18", "4-19", "4-20", "4-21", "4-22"], "5": ["5-01", "5-02", "5-03", "5-04", "5-05", "5-06", "5-07", "5-08", "5-09", "5-10", "5-11", "5-12", "5-13", "5-14", "5-15"]};
-var LIVELLI_NUM = {"1": "esercizi 1–24", "2": "esercizi 25–46", "3": "esercizi 47–71", "4": "esercizi 72–93", "5": "esercizi 94–108"};
-var LIVELLI_DESC = {"1": "Una mossa alla volta, con pochi numeri.", "2": "Esercizi interi con pochi numeri, e i primi esercizi 3.", "3": "La forma esatta dello scritto, con tutte le varianti.", "4": "Le trappole, e gli esercizi 3 più difficili.", "5": "Cinque scritti completi da 2 ore."};
+var LIVELLI_IDS = {"1": ["1-01", "1-02", "1-03", "1-04", "1-05", "1-06", "1-07", "1-08", "1-09", "1-10", "1-11", "1-12", "1-13", "1-14", "1-15", "1-16", "1-17", "1-18", "1-19", "1-20", "1-21", "1-22", "1-23", "1-24"], "2": ["2-01", "2-02", "2-03", "2-04", "2-05", "2-06", "2-07", "2-08", "2-09", "2-10", "2-11", "2-12", "2-13", "2-14", "2-15", "2-16", "2-17", "2-18", "2-19", "2-20", "2-21", "2-22"], "3": ["3-01", "3-02", "3-03", "3-04", "3-05", "3-06", "3-07", "3-08", "3-09", "3-10", "3-11", "3-12", "3-13", "3-14", "3-15", "3-16", "3-17", "3-18", "3-19", "3-20", "3-21", "3-22", "3-23", "3-24", "3-25"], "4": ["4-01", "4-02", "4-03", "4-04", "4-05", "4-06", "4-07", "4-08", "4-09", "4-10", "4-11", "4-12", "4-13", "4-14", "4-15", "4-16", "4-17", "4-18", "4-19", "4-20", "4-21", "4-22"], "5": ["5-01", "5-02", "5-03", "5-04", "5-05", "5-06", "5-07", "5-08", "5-09", "5-10", "5-11", "5-12", "5-13", "5-14", "5-15"], "6": ["6-01", "6-02", "6-03", "6-04", "6-05", "6-06", "6-07", "6-08", "6-09", "6-10", "6-11", "6-12", "6-13", "6-14", "6-15", "6-16", "6-17", "6-18", "6-19", "6-20", "6-21"]};
+var LIVELLI_NUM = {"1": "esercizi 1–24", "2": "esercizi 25–46", "3": "esercizi 47–71", "4": "esercizi 72–93", "5": "esercizi 94–108", "6": "esercizi 109–129"};
+var LIVELLI_DESC = {"1": "Una mossa alla volta, con pochi numeri.", "2": "Esercizi interi con pochi numeri, e i primi esercizi 3.", "3": "La forma esatta dello scritto, con tutte le varianti.", "4": "Le trappole, e gli esercizi 3 più difficili.", "5": "Cinque scritti completi da 2 ore.", "6": "Gli argomenti mai usciti allo scritto: hash, Bellman–Ford, union-find, greedy, NP e altri. Facoltativo."};
 
 // ---- w-hub.js
 // La pagina del percorso: progresso dei livelli, correttore, scritti veri in ordine.
@@ -1808,7 +1885,12 @@ var LIVELLI_DESC = {"1": "Una mossa alla volta, con pochi numeri.", "2": "Eserci
   // ---------------------------------------------------------------- progresso dei livelli
   var L = $a("hub-livelli");
   if (L) {
-    var TIT = { 1: "Le mosse di base", 2: "Esercizi interi, numeri piccoli", 3: "Come allo scritto", 4: "Trappole e varianti", 5: "Simulazioni d'esame" }, tot = 0, fatti = 0;
+    var TIT = { 1: "Le mosse di base", 2: "Esercizi interi, numeri piccoli", 3: "Come allo scritto", 4: "Trappole e varianti", 5: "Simulazioni d'esame", 6: "Fuori programma" }, tot = 0, fatti = 0;
+    var X = $a("hub-extra");
+    if (X && LIVELLI_IDS[6]) X.innerHTML = [6].map(function (n) {
+      var ids = LIVELLI_IDS[n], f = ids.filter(function (id) { return MEM.st.fatti[id]; }).length;
+      return '<a class="pacco" href="allenamento-6.html"><div class="n">LIVELLO EXTRA · FACOLTATIVO</div><div class="t">' + TIT[6] + '</div><div class="d">' + (LIVELLI_DESC[6] || "") + '</div><div class="es-barra"><div style="width:' + Math.round(100 * f / ids.length) + '%"></div></div><div class="l">' + f + " fatti su " + ids.length + " esercizi (" + (LIVELLI_NUM[6] || "") + ")</div></a>";
+    }).join("");
     L.innerHTML = [1, 2, 3, 4, 5].map(function (n) {
       var ids = LIVELLI_IDS[n] || [], f = ids.filter(function (id) { return MEM.st.fatti[id]; }).length; tot += ids.length; fatti += f;
       return '<a class="pacco" href="allenamento-' + n + '.html"><div class="n">LIVELLO ' + n + '</div><div class="t">' + TIT[n] + '</div><div class="d">' + (LIVELLI_DESC[n] || "") + '</div><div class="es-barra"><div style="width:' + (ids.length ? Math.round(100 * f / ids.length) : 0) + '%"></div></div><div class="l">' + f + " fatti su " + ids.length + " esercizi (" + (LIVELLI_NUM[n] || "") + ")</div></a>";
