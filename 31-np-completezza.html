@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NP-completezza</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 31 · seconda parte della lezione 33 e lezione 34 (lavagne del 10 e 12 dicembre 2025)</span>
+</div>
+
+<h1>NP-completezza: riduzioni, problemi NP-completi, teorema di Cook</h1>
+<p class="sottotitolo">Come si confronta la difficoltà di due problemi senza saperli risolvere? Con una riduzione: un modo veloce di trasformare le istanze del primo in istanze del secondo, conservando la risposta. Se il primo si riduce al secondo, il secondo è almeno difficile quanto il primo. Questa pagina costruisce due riduzioni (da CLIQUE a INSIEME INDIPENDENTE, da SODD a CLIQUE), definisce i problemi NP-difficili e NP-completi, i «più difficili di NP», e spiega perché basterebbe risolverne uno in tempo polinomiale per avere P = NP.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: «lavagna, pagina N» è la lezione 33 (10 dicembre 2025), dalla pagina 13 in poi; «lavagna 34, pagina N» è la lezione 34 (12 dicembre 2025), che ripete le stesse cose nelle prime 16 pagine e poi presenta altri problemi NP-completi.</li>
+    <li>Le cose dei pacchi 29 e 30 che servono, in breve. Un <b>problema di decisione</b> è una funzione Π : I → {0, 1} (1 = istanza positiva, 0 = negativa). <b>P</b> = problemi di decisione risolubili in tempo polinomiale; <b>NP</b> = problemi di decisione risolubili in tempo polinomiale da algoritmi non deterministici, cioè con un <b>certificato</b> della risposta sì verificabile in tempo polinomiale; P ⊆ NP, e non si sa se P = NP. <b>SODD</b>: data una formula φ in forma normale congiuntiva (AND di clausole, ognuna un OR di letterali x o x̄), esiste un assegnamento che la rende vera? <b>CLIQUE</b>: dato un grafo non orientato G e un intero k, G contiene una cricca (un insieme di vertici collegati tutti con tutti) di k vertici? Entrambi stanno in NP.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">Le lezioni in sei domande</span>
+  <ol>
+    <li><b>Cos'è una riduzione da Π<sub>1</sub> a Π<sub>2</sub>?</b> Una funzione f che trasforma ogni istanza x di Π<sub>1</sub> in un'istanza f(x) di Π<sub>2</sub> con la stessa risposta: Π<sub>1</sub>(x) = Π<sub>2</sub>(f(x)). È polinomiale (Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub>) se f si calcola in tempo polinomiale.</li>
+    <li><b>A cosa serve?</b> Se Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub> e Π<sub>2</sub> ∈ P, allora Π<sub>1</sub> ∈ P: un algoritmo per Π<sub>2</sub> diventa un algoritmo per Π<sub>1</sub>. Le riduzioni si possono anche mettere in fila (proprietà transitiva).</li>
+    <li><b>Quali riduzioni si vedono?</b> Da CLIQUE a INSIEME INDIPENDENTE (si prende il grafo complementare) e da SODD a CLIQUE (un vertice per ogni letterale della formula).</li>
+    <li><b>Cosa vuol dire NP-difficile e NP-completo?</b> Π è NP-difficile se ogni problema di NP si riduce polinomialmente a Π; è NP-completo se in più sta in NP.</li>
+    <li><b>Perché sono importanti?</b> Se un solo problema NP-completo stesse in P, sarebbe P = NP; se uno solo non ci sta, P ≠ NP.</li>
+    <li><b>Qual è il primo?</b> SODD (teorema di Cook). Da lì, per riduzione: CLIQUE, INSIEME INDIPENDENTE, CAMMINO HAMILTONIANO, 3-SODD, PARTIZIONE, COMMESSO VIAGGIATORE…</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#indipendente">INSIEME INDIPENDENTE, e la prima riduzione</a></li>
+    <li><a href="#sodd-clique">Da SODD a CLIQUE</a></li>
+    <li><a href="#usare">A cosa serve una riduzione</a></li>
+    <li><a href="#riducibilita">Riducibilità e riducibilità polinomiale</a></li>
+    <li><a href="#proprieta">Le due proprietà fondamentali</a></li>
+    <li><a href="#npc">Problemi NP-difficili e NP-completi</a></li>
+    <li><a href="#cook">Il teorema di Cook, e CLIQUE è NP-completo</a></li>
+    <li><a href="#altri">Altri problemi NP-completi</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="indipendente"><span class="num">1</span>INSIEME INDIPENDENTE, e la prima riduzione</h2>
+<p class="in-questa"><b>In questa sezione:</b> un problema nuovo (lavagna, pagina 15) e come trasformarlo in CLIQUE e viceversa con il grafo complementare (pagina 16).</p>
+<div class="box def">
+  <span class="etichetta">INSIEME INDIPENDENTE (lavagna, pagina 15)</span>
+  <p><b>Istanza</b>: un grafo non orientato G = (V, E) e un intero k ≥ 0.</p>
+  <p><b>Questione</b>: esiste V′ ⊆ V con #V′ = k tale che i vertici in V′ non hanno archi che li collegano direttamente? Cioè: se u, v ∈ V′ e u ≠ v, allora (u, v) ∉ E.</p>
+</div>
+<p>È il contrario di una cricca: in una cricca tutti sono collegati con tutti, in un insieme indipendente nessuno è collegato con nessuno. (Un esempio concreto: i vertici sono persone, gli archi le antipatie; un insieme indipendente è un gruppo di persone da invitare insieme senza litigi.) La Figura 1 è il grafo della lavagna.</p>
+<div class="figura">
+<svg viewBox="0 0 234 266" width="234" height="266" role="img" aria-label="il grafo della lavagna con evidenziato l'insieme indipendente v2 v4 v6" font-family="system-ui, sans-serif"><path d="M52 85 L182 85" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M49.9 92.7 L184.1 173.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M44.3 98.1 L109.7 215.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M117 52 L117 214" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M189.7 98.1 L124.3 215.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M184.1 92.7 L49.9 173.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="85" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="90" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v1</text><circle cx="117" cy="37" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="117" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v2</text><circle cx="197" cy="85" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="197" y="90" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v3</text><circle cx="197" cy="181" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="197" y="186" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v4</text><circle cx="117" cy="229" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="234" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v5</text><circle cx="37" cy="181" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="186" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v6</text></svg>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagina 15: un grafo con i vertici v1, …, v6 e gli archi v1–v3, v1–v4, v1–v5, v2–v5, v3–v5, v3–v6. In giallo un insieme indipendente di 3 vertici: v2, v4 e v6 non sono collegati tra loro.</div>
+</div>
+<p><b>Da CLIQUE a INSIEME INDIPENDENTE</b> (pagina 16). Il <strong>grafo complementare</strong> G′ di un grafo G ha gli stessi vertici, e ha un arco tra u e v esattamente quando G <em>non</em> ce l'ha. Allora un insieme di vertici collegati tutti con tutti in G è un insieme di vertici non collegati tra loro in G′:</p>
+<div class="formula grande">V′ è una cricca in G   ⇔   V′ è un insieme indipendente in G′</div>
+<p>Per due vertici distinti u, v ∈ V′: (u, v) ∈ E in G se e solo se (u, v) ∉ E′ in G′, per come è costruito G′. «Tutte le coppie sono archi di G» vuol dire quindi «nessuna coppia è un arco di G′».</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) G: {v2, v4, v6} è una cricca</div><svg viewBox="0 0 218 246.8" width="218" height="246.8" role="img" aria-label="il grafo G con la cricca v2 v4 v6" font-family="system-ui, sans-serif"><path d="M49.9 72.5 L96.1 44.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M121.9 44.7 L168.1 72.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M181 95.2 L181 151.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168.1 174.3 L121.9 202.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M96.1 202.1 L49.9 174.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M37 151.6 L37 95.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116.3 50.1 L173.7 153.5" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M101.7 50.1 L44.3 153.5" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M166 166.6 L52 166.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><circle cx="37" cy="80.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="85.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v1</text><circle cx="109" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="109" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v2</text><circle cx="181" cy="80.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="181" y="85.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v3</text><circle cx="181" cy="166.6" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="181" y="171.6" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v4</text><circle cx="109" cy="209.8" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="109" y="214.8" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v5</text><circle cx="37" cy="166.6" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="37" y="171.6" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v6</text></svg></div><div><div class="nome-mat">(b) G′: {v2, v4, v6} è un insieme indipendente</div><svg viewBox="0 0 218 246.8" width="218" height="246.8" role="img" aria-label="il complementare G' con l'insieme indipendente v2 v4 v6" font-family="system-ui, sans-serif"><path d="M52 80.2 L166 80.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M49.9 87.9 L168.1 158.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M44.3 93.3 L101.7 196.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M109 52 L109 194.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M173.7 93.3 L116.3 196.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168.1 87.9 L49.9 158.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="80.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="85.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v1</text><circle cx="109" cy="37" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="109" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v2</text><circle cx="181" cy="80.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="181" y="85.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v3</text><circle cx="181" cy="166.6" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="181" y="171.6" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v4</text><circle cx="109" cy="209.8" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="109" y="214.8" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v5</text><circle cx="37" cy="166.6" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="37" y="171.6" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v6</text></svg></div></div>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagina 16. (a) Il grafo G, e una sua cricca di 3 vertici: v2, v4, v6 (archi verdi). (b) Il complementare G′, che è proprio il grafo della Figura 1: gli stessi tre vertici sono un insieme indipendente. Con k = 3 le due istanze ⟨G, 3⟩ di CLIQUE e ⟨G′, 3⟩ di INSIEME INDIPENDENTE hanno la stessa risposta: sì.</div>
+</div>
+<p>Quindi l'istanza ⟨G, k⟩ di CLIQUE ha risposta sì se e solo se l'istanza ⟨G′, k⟩ di INSIEME INDIPENDENTE ha risposta sì. La trasformazione ⟨G, k⟩ ↦ ⟨G′, k⟩ si calcola in fretta: per ognuna delle n(n − 1)/2 coppie di vertici si controlla se l'arco c'è in G e lo si mette in G′ se non c'è, O(n<sup>2</sup>) con la matrice di adiacenza. È il primo esempio di <strong>riduzione</strong>.</p>
+<div class="widget" id="w-ci">
+  <h4>Cricca in G, insieme indipendente in G′</h4>
+  <div id="ci-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>INSIEME INDIPENDENTE: G, k; esistono k vertici non collegati a due a due?</li>
+    <li>V′ è una cricca in G se e solo se è un insieme indipendente nel complementare G′.</li>
+    <li>⟨G, k⟩ ↦ ⟨G′, k⟩ trasforma CLIQUE in INSIEME INDIPENDENTE, in tempo O(n<sup>2</sup>).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="sodd-clique"><span class="num">2</span>Da SODD a CLIQUE</h2>
+<p class="in-questa"><b>In questa sezione:</b> la riduzione dalla soddisfacibilità alla cricca (lavagna, pagine 17–20), con l'esempio della lavagna e la dimostrazione che funziona.</p>
+<p>Questa riduzione collega due problemi che sembrano non avere niente in comune: formule booleane e grafi. Data una formula φ in forma normale congiuntiva con k clausole, si costruisce un grafo G (lavagna, pagina 18):</p>
+<div class="box def">
+  <span class="etichetta">La costruzione (lavagna, pagina 18)</span>
+  <ul>
+    <li><b>Vertici</b>: le occorrenze di letterali in φ. Se lo stesso letterale compare in due clausole, dà due vertici diversi; si indicano con il numero della clausola in basso (x<sub>1</sub> è la x della prima clausola).</li>
+    <li><b>Archi</b>: (u, v) ∈ E se e solo se u e v stanno in <strong>clausole differenti</strong> e <strong>non sono uno il negato dell'altro</strong>.</li>
+    <li><b>k</b> = numero di clausole di φ. (Alla lavagna è scritto «#clausole di G»: è di φ.)</li>
+  </ul>
+</div>
+<p>L'esempio della lavagna: φ = (x ∨ ȳ ∨ z) ∧ (x̄ ∨ ȳ) ∧ (x̄ ∨ z̄). Ha 3 clausole e 7 occorrenze di letterali, quindi 7 vertici e k = 3 (Figura 3). Gli archi, coppia per coppia di clausole:</p>
+<ul>
+  <li>clausole 1 e 2: x<sub>1</sub>–ȳ<sub>2</sub>, ȳ<sub>1</sub>–x̄<sub>2</sub>, ȳ<sub>1</sub>–ȳ<sub>2</sub>, z<sub>1</sub>–x̄<sub>2</sub>, z<sub>1</sub>–ȳ<sub>2</sub>; manca x<sub>1</sub>–x̄<sub>2</sub>, perché x̄ è il negato di x;</li>
+  <li>clausole 1 e 3: x<sub>1</sub>–z̄<sub>3</sub>, ȳ<sub>1</sub>–x̄<sub>3</sub>, ȳ<sub>1</sub>–z̄<sub>3</sub>, z<sub>1</sub>–x̄<sub>3</sub>; mancano x<sub>1</sub>–x̄<sub>3</sub> e z<sub>1</sub>–z̄<sub>3</sub>;</li>
+  <li>clausole 2 e 3: x̄<sub>2</sub>–x̄<sub>3</sub>, x̄<sub>2</sub>–z̄<sub>3</sub>, ȳ<sub>2</sub>–x̄<sub>3</sub>, ȳ<sub>2</sub>–z̄<sub>3</sub>: ci sono tutti.</li>
+</ul>
+<p>Due occorrenze dello stesso letterale in clausole diverse (come ȳ<sub>1</sub> e ȳ<sub>2</sub>) sono collegate: non sono una il negato dell'altra. In tutto 13 archi; nessun arco tra vertici della stessa clausola.</p>
+<div class="figura">
+<svg viewBox="0 0 338.9 303.9" width="338.9" height="303.9" role="img" aria-label="il grafo costruito dalla formula della lavagna" font-family="system-ui, sans-serif"><path d="M116.9 52.8 L258.8 251.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100.8 54.8 L45.3 195.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M179.7 52.5 L289.6 197.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M176.3 54.6 L261.8 249.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M162.6 54.6 L77 249.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M159.2 52.5 L49.3 197.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M238.1 54.8 L293.6 195.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M234.6 55.8 L265.9 248.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M221.9 52.8 L80.1 251.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M283.3 214.8 L86.7 261" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M282.9 210.9 L56 210.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M251.7 264.9 L87.2 264.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M252.1 261 L55.5 214.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="107" cy="39" r="17" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="107" y="44" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x₁</text><circle cx="169.4" cy="39" r="17" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="169.4" y="44" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₁</text><circle cx="231.8" cy="39" r="17" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="231.8" y="44" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z₁</text><circle cx="299.9" cy="210.9" r="17" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="299.9" y="215.9" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₂</text><circle cx="268.7" cy="264.9" r="17" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="268.7" y="269.9" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₂</text><circle cx="70.2" cy="264.9" r="17" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="70.2" y="269.9" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₃</text><circle cx="39" cy="210.9" r="17" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="39" y="215.9" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z̄₃</text></svg>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 18: il grafo costruito da φ = (x ∨ ȳ ∨ z) ∧ (x̄ ∨ ȳ) ∧ (x̄ ∨ z̄). In alto i tre vertici della prima clausola, in basso a destra quelli della seconda, in basso a sinistra quelli della terza. k = 3.</div>
+</div>
+<p>Ora le cricche di 3 vertici di questo grafo corrispondono agli assegnamenti che soddisfano φ. Nella Figura 4 le tre cricche evidenziate alla lavagna (pagina 19), ognuna con l'assegnamento che si ottiene rendendo veri i suoi letterali.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) x₁, ȳ₂, z̄₃ → x = 1, y = 0, z = 0</div><svg viewBox="0 0 247.9 224.6" width="247.9" height="224.6" role="img" aria-label="la cricca x₁ ȳ₂ z̄₃" font-family="system-ui, sans-serif"><path d="M91.1 49.2 L181.4 175.4" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M76.8 50.9 L42.5 137.6" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M133 48.9 L201.8 139.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M130 50.7 L184.1 173.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M117.9 50.7 L63.8 173.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.9 48.9 L46.1 139.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M171.1 50.9 L205.4 137.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168 51.8 L187.7 172.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M156.8 49.2 L66.5 175.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M196.3 155 L72.4 184.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M195.9 151.6 L52 151.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M175.1 187.6 L72.8 187.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M175.5 184.2 L51.6 155" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><circle cx="82.4" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="82.4" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x₁</text><circle cx="124" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="124" y="42" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₁</text><circle cx="165.6" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="165.6" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z₁</text><circle cx="210.9" cy="151.6" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="210.9" y="156.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₂</text><circle cx="190.1" cy="187.6" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="190.1" y="192.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₂</text><circle cx="57.8" cy="187.6" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="57.8" y="192.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₃</text><circle cx="37" cy="151.6" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="37" y="156.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z̄₃</text></svg></div><div><div class="nome-mat">(b) ȳ₁, ȳ₂, z̄₃ → y = 0, z = 0</div><svg viewBox="0 0 247.9 224.6" width="247.9" height="224.6" role="img" aria-label="la cricca ȳ₁ ȳ₂ z̄₃" font-family="system-ui, sans-serif"><path d="M91.1 49.2 L181.4 175.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M76.8 50.9 L42.5 137.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M133 48.9 L201.8 139.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M130 50.7 L184.1 173.9" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="3.4"/><path d="M117.9 50.7 L63.8 173.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.9 48.9 L46.1 139.6" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="3.4"/><path d="M171.1 50.9 L205.4 137.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168 51.8 L187.7 172.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M156.8 49.2 L66.5 175.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M196.3 155 L72.4 184.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M195.9 151.6 L52 151.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M175.1 187.6 L72.8 187.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M175.5 184.2 L51.6 155" fill="none" class="l-viola" stroke="#6d3fc0" stroke-width="3.4"/><circle cx="82.4" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="82.4" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x₁</text><circle cx="124" cy="37" r="15" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.6"/><text x="124" y="42" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₁</text><circle cx="165.6" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="165.6" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z₁</text><circle cx="210.9" cy="151.6" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="210.9" y="156.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₂</text><circle cx="190.1" cy="187.6" r="15" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.6"/><text x="190.1" y="192.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₂</text><circle cx="57.8" cy="187.6" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="57.8" y="192.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₃</text><circle cx="37" cy="151.6" r="15" class="r-viola" fill="#f1ebfb" stroke="#6d3fc0" stroke-width="1.6"/><text x="37" y="156.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z̄₃</text></svg></div><div><div class="nome-mat">(c) z₁, ȳ₂, x̄₃ → x = 0, y = 0, z = 1</div><svg viewBox="0 0 247.9 224.6" width="247.9" height="224.6" role="img" aria-label="la cricca z₁ ȳ₂ x̄₃" font-family="system-ui, sans-serif"><path d="M91.1 49.2 L181.4 175.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M76.8 50.9 L42.5 137.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M133 48.9 L201.8 139.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M130 50.7 L184.1 173.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M117.9 50.7 L63.8 173.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M114.9 48.9 L46.1 139.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M171.1 50.9 L205.4 137.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M168 51.8 L187.7 172.8" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="3.4"/><path d="M156.8 49.2 L66.5 175.4" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="3.4"/><path d="M196.3 155 L72.4 184.2" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M195.9 151.6 L52 151.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M175.1 187.6 L72.8 187.6" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="3.4"/><path d="M175.5 184.2 L51.6 155" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="82.4" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="82.4" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x₁</text><circle cx="124" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="124" y="42" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₁</text><circle cx="165.6" cy="37" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="165.6" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z₁</text><circle cx="210.9" cy="151.6" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="210.9" y="156.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₂</text><circle cx="190.1" cy="187.6" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="190.1" y="192.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ȳ₂</text><circle cx="57.8" cy="187.6" r="15" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.6"/><text x="57.8" y="192.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">x̄₃</text><circle cx="37" cy="151.6" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="156.6" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">z̄₃</text></svg></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagina 19: tre cricche di k = 3 vertici. (a) x<sub>1</sub>, ȳ<sub>2</sub>, z̄<sub>3</sub>: x = 1, y = 0, z = 0. (b) ȳ<sub>1</sub>, ȳ<sub>2</sub>, z̄<sub>3</sub>: y = 0, z = 0, e x non compare, quindi va bene sia 0 sia 1 (alla lavagna «x = 0 o x = 1»). (c) z<sub>1</sub>, ȳ<sub>2</sub>, x̄<sub>3</sub>: x = 0, y = 0, z = 1. In tutti e tre i casi ogni clausola ha un letterale vero, e φ vale 1.</div>
+</div>
+<div class="dim">
+  <div class="dim-tit">La riduzione funziona (lavagna, pagine 18–20)</div>
+  <p class="enunciato">φ è soddisfacibile se e solo se G contiene una cricca di k vertici, dove k è il numero di clausole di φ.</p>
+  <div class="parte prima">(⇒) Se φ è soddisfacibile, c'è una cricca di k vertici</div>
+  <p>Sia f un assegnamento con φ(f) = 1. Ogni clausola vale 1, quindi in ogni clausola c'è almeno un letterale vero: se ne sceglie uno per clausola, k vertici in tutto. <span class="rif">1</span> Due vertici scelti sono collegati: stanno in clausole differenti (uno per clausola) e non sono uno il negato dell'altro, perché sono entrambi veri sotto f, e un letterale e il suo negato non possono essere veri insieme. Quindi i k vertici sono collegati tutti con tutti: una cricca.</p>
+  <div class="parte">(⇐) Se c'è una cricca di k vertici, φ è soddisfacibile</div>
+  <p>Sia C una cricca di k vertici. Due vertici della stessa clausola non sono mai collegati, quindi C contiene al più un vertice per clausola; siccome i vertici sono k e le clausole k, ne contiene <strong>esattamente uno per clausola</strong>. <span class="rif">2</span> Si definisce f rendendo veri i letterali di C: se x sta in C si pone f(x) = 1, se x̄ sta in C si pone f(x) = 0; le variabili che non compaiono in C prendono un valore qualsiasi. È una definizione coerente: C non contiene mai sia x sia x̄, perché un letterale e il suo negato non sono collegati. <span class="rif">3</span> Sotto f ogni clausola ha un letterale vero (quello di C), quindi φ(f) = 1.</p>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Se in una clausola più letterali sono veri, se ne sceglie uno qualsiasi.</p>
+    <p><span class="rif">2</span>È il principio dei cassetti al contrario: k oggetti in k cassetti, al più uno per cassetto, quindi esattamente uno per cassetto.</p>
+    <p><span class="rif">3</span>Per esempio nella Figura 4b la cricca è ȳ<sub>1</sub>, ȳ<sub>2</sub>, z̄<sub>3</sub>: si pone y = 0 (due volte, in modo coerente) e z = 0, e x si sceglie a piacere.</p>
+  </div>
+</div>
+<p><b>La costruzione è veloce.</b> Se φ ha L occorrenze di letterali, il grafo ha L vertici, e per ognuna delle L(L − 1)/2 coppie si controllano due condizioni semplici: tempo O(L<sup>2</sup>), polinomiale nella lunghezza della formula. In altre parole (lavagna, pagina 20):</p>
+<div class="box def">
+  <span class="etichetta">Da SODD a CLIQUE in altre parole (lavagna, pagina 20)</span>
+  <p>Esiste un algoritmo <strong>RID</strong> che, data in ingresso una formula φ in forma normale congiuntiva, in <strong>tempo polinomiale</strong> restituisce una coppia ⟨G, k⟩ (un grafo e un intero) tale che <strong>φ è soddisfacibile se e solo se G contiene una cricca di k vertici</strong>.</p>
+  <p>RID trasforma un'istanza di SODD in un'istanza di CLIQUE con la stessa risposta.</p>
+</div>
+<div class="widget" id="w-rd">
+  <h4>Da SODD a CLIQUE</h4>
+  <div id="rd-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Da φ (k clausole) a ⟨G, k⟩: un vertice per occorrenza di letterale; un arco tra due vertici di clausole diverse che non sono uno il negato dell'altro.</li>
+    <li>φ soddisfacibile ⇔ G ha una cricca di k vertici: una cricca sceglie un letterale vero per clausola, senza contraddizioni.</li>
+    <li>La costruzione costa O(L<sup>2</sup>): è una riduzione polinomiale.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="usare"><span class="num">3</span>A cosa serve una riduzione</h2>
+<p class="in-questa"><b>In questa sezione:</b> come si usa RID per costruire un algoritmo per SODD a partire da uno per CLIQUE, e cosa se ne deduce (lavagna, pagine 21 e 22).</p>
+<p>Supponiamo di avere un algoritmo A<sub>clique</sub> che risolve CLIQUE: riceve ⟨G, k⟩ e risponde 0 o 1. Mettendo RID prima di A<sub>clique</sub> si ottiene un algoritmo A<sub>sodd</sub> che risolve SODD (Figura 5):</p>
+<div class="figura">
+<svg viewBox="0 0 300.5 106" width="300.5" height="106" role="img" aria-label="RID seguito da un algoritmo per CLIQUE forma un algoritmo per SODD" font-family="system-ui, sans-serif"><rect x="46" y="24" width="218.5" height="58" rx="6" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5" fill-opacity="0.5"/><text x="52" y="19" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f">A<tspan font-size="10" dy="4">sodd</tspan></text><line x1="8" y1="53" x2="50" y2="53" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M54 53 l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/><text x="31" y="46" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">φ</text><rect x="54" y="34" width="54" height="38" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="81" y="58" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">RID</text><text x="81" y="87" font-size="11" text-anchor="middle" class="t-arancio" fill="#b4500f">tempo polinomiale</text><line x1="108" y1="53" x2="164" y2="53" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M168 53 l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/><text x="138" y="46" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">⟨G, k⟩</text><rect x="168" y="34" width="88.5" height="38" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="212.3" y="58" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">A<tspan font-size="10" dy="4">clique</tspan></text><line x1="256.5" y1="53" x2="278.5" y2="39" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><text x="286.5" y="43" font-size="12.5" class="t-testo" fill="#1f2328">0</text><line x1="256.5" y1="53" x2="278.5" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><text x="286.5" y="71" font-size="12.5" class="t-testo" fill="#1f2328">1</text></svg>
+<div class="didascalia"><b>Figura 5.</b> Lavagna, pagina 21: RID trasforma φ in ⟨G, k⟩ in tempo polinomiale; A<sub>clique</sub> risponde 0 o 1 su ⟨G, k⟩. Insieme (il riquadro arancione) formano A<sub>sodd</sub>, che risolve SODD.</div>
+</div>
+<p class="titolo-codice">Lavagna, pagina 21</p>
+<pre class="pseudo"><b>ALGORITMO</b> A<sub>sodd</sub>(formula φ) → boolean
+  ⟨G, k⟩ ← RID(φ)
+  r ← A<sub>clique</sub>(⟨G, k⟩)
+  <b>RETURN</b> r</pre>
+<p>Risponde giusto perché RID conserva la risposta: r = 1 ⇔ G ha una cricca di k vertici ⇔ φ è soddisfacibile. E in più (pagina 22): se A<sub>clique</sub> lavora in tempo polinomiale, anche A<sub>sodd</sub> lavora in tempo polinomiale (RID è polinomiale, e la sezione 4 spiega perché la composizione resta polinomiale). Quindi:</p>
+<div class="formula grande">se CLIQUE ∈ P, allora SODD ∈ P</div>
+<p>Detto al contrario: CLIQUE è <em>almeno difficile</em> quanto SODD. Chi trovasse un algoritmo veloce per CLIQUE ne avrebbe uno anche per SODD, gratis.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>A<sub>sodd</sub>(φ) = A<sub>clique</sub>(RID(φ)): una riduzione più un algoritmo per il secondo problema danno un algoritmo per il primo.</li>
+    <li>Se CLIQUE ∈ P allora SODD ∈ P: CLIQUE è almeno difficile quanto SODD.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="riducibilita"><span class="num">4</span>Riducibilità e riducibilità polinomiale</h2>
+<p class="in-questa"><b>In questa sezione:</b> le definizioni generali (lavagna, pagine 23–26) e il conto del tempo di un algoritmo costruito con una riduzione.</p>
+<div class="box def">
+  <span class="etichetta">Riducibilità (lavagna, pagina 23)</span>
+  <p>Siano Π<sub>1</sub> : I<sub>1</sub> → {0, 1} e Π<sub>2</sub> : I<sub>2</sub> → {0, 1} due problemi di decisione. Π<sub>1</sub> è <strong>riducibile</strong> a Π<sub>2</sub> se esiste una funzione f : I<sub>1</sub> → I<sub>2</sub>, la <strong>riduzione</strong>, tale che</p>
+  <div class="formula">per ogni x ∈ I<sub>1</sub>:   Π<sub>1</sub>(x) = Π<sub>2</sub>(f(x))</div>
+</div>
+<p>f trasforma ogni istanza x del primo problema in un'istanza f(x) del secondo, e la risposta non cambia: istanze positive vanno in istanze positive, negative in negative. Se c'è un algoritmo A<sub>2</sub> per Π<sub>2</sub>, si ottiene un algoritmo A<sub>1</sub> per Π<sub>1</sub> (pagina 24, Figura 6):</p>
+<div class="figura">
+<svg viewBox="0 0 301 106" width="301" height="106" role="img" aria-label="la riduzione f seguita da un algoritmo A2 per il secondo problema forma un algoritmo A1 per il primo" font-family="system-ui, sans-serif"><rect x="60" y="24" width="205" height="58" rx="6" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5" fill-opacity="0.5"/><text x="66" y="19" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f">A₁</text><line x1="8" y1="53" x2="64" y2="53" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M68 53 l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/><text x="38" y="46" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">x ∈ I₁</text><rect x="68" y="34" width="54" height="38" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="95" y="58" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">f</text><line x1="122" y1="53" x2="199" y2="53" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M203 53 l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/><text x="162.5" y="46" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">f(x) ∈ I₂</text><rect x="203" y="34" width="54" height="38" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="230" y="58" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">A₂</text><line x1="257" y1="53" x2="279" y2="39" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><text x="287" y="43" font-size="12.5" class="t-testo" fill="#1f2328">0</text><line x1="257" y1="53" x2="279" y2="67" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><text x="287" y="71" font-size="12.5" class="t-testo" fill="#1f2328">1</text></svg>
+<div class="didascalia"><b>Figura 6.</b> Lavagna, pagina 24: x ∈ I<sub>1</sub> passa per f, poi f(x) ∈ I<sub>2</sub> passa per A<sub>2</sub>. Il tutto è A<sub>1</sub>, un algoritmo per Π<sub>1</sub>.</div>
+</div>
+<pre class="pseudo"><b>ALGORITMO</b> A<sub>1</sub>(x ∈ I<sub>1</sub>) → boolean
+  y ← f(x)
+  r ← A<sub>2</sub>(y)
+  <b>RETURN</b> r</pre>
+<p>Risponde giusto: r = Π<sub>2</sub>(f(x)) = Π<sub>1</sub>(x). Per parlare di tempo polinomiale serve che anche f sia veloce:</p>
+<div class="box def">
+  <span class="etichetta">Riducibilità polinomiale (lavagna, pagina 25)</span>
+  <p>Π<sub>1</sub> è <strong>riducibile polinomialmente</strong> a Π<sub>2</sub>, e si scrive <strong>Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub></strong>, se esiste una riduzione f : I<sub>1</sub> → I<sub>2</sub> calcolabile da un algoritmo A<sub>f</sub> in tempo polinomiale.</p>
+</div>
+<p>Il simbolo ≤<sub>p</sub> si legge come un «minore o uguale» di difficoltà: Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub> vuol dire «Π<sub>1</sub> non è più difficile di Π<sub>2</sub>», a meno di un lavoro polinomiale. Le due riduzioni delle sezioni 1 e 2 dicono: CLIQUE ≤<sub>p</sub> INSIEME INDIPENDENTE e SODD ≤<sub>p</sub> CLIQUE.</p>
+<p><b>Quanto tempo impiega A<sub>1</sub>?</b> (pagina 26). Sia A<sub>f</sub> di tempo p(n) e A<sub>2</sub> di tempo q(n), con p e q polinomi, e sia |x| la lunghezza di x.</p>
+<div class="box idea">
+  <span class="etichetta">Attrezzo matematico: somme e composizioni di polinomi</span>
+  <p>La somma di due polinomi è un polinomio. Anche la <strong>composizione</strong> q(p(n)), cioè mettere p(n) al posto di n dentro q, è un polinomio. Esempio: p(n) = n<sup>2</sup>, q(n) = n<sup>3</sup>: q(p(n)) = (n<sup>2</sup>)<sup>3</sup> = n<sup>6</sup>. In generale un polinomio di grado a dentro uno di grado b dà grado a · b.</p>
+</div>
+<div class="dim">
+  <div class="dim-tit">Il tempo di A<sub>1</sub> è polinomiale (lavagna, pagina 26)</div>
+  <p class="enunciato">Se A<sub>f</sub> lavora in tempo p(n) e A<sub>2</sub> in tempo q(n), con p e q polinomi, A<sub>1</sub> lavora in tempo polinomiale.</p>
+  <p>Il tempo di A<sub>1</sub> è il tempo di A<sub>f</sub> su x più il tempo di A<sub>2</sub> su y = f(x):</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">tempo di A<sub>1</sub></span><span class="rel">=</span><span class="dx">O(p(|x|) + q(|y|))</span><span class="perche"></span><span class="sx"></span><span class="rel">=</span><span class="dx">O(p(|x|) + q(p(|x|)))</span><span class="perche"><span class="rif">1</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">O(poly(|x|))</span><span class="perche"><span class="rif">2</span></span></span></div>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Il punto delicato. Il tempo di A<sub>2</sub> dipende dalla lunghezza di y, non di x. Ma A<sub>f</sub>, in tempo p(n), può scrivere al più O(p(n)) simboli di output: |y| = O(p(|x|)). Quindi q(|y|) = O(q(p(|x|))) (q è crescente).</p>
+    <p><span class="rif">2</span>q(p(n)) è un polinomio (composizione), e la somma di due polinomi è un polinomio.</p>
+  </div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Riduzione: f : I<sub>1</sub> → I<sub>2</sub> con Π<sub>1</sub>(x) = Π<sub>2</sub>(f(x)) per ogni x. Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub> se f si calcola in tempo polinomiale.</li>
+    <li>A<sub>1</sub>(x) = A<sub>2</sub>(f(x)) risolve Π<sub>1</sub>, in tempo O(p(|x|) + q(p(|x|))), polinomiale, perché |f(x)| = O(p(|x|)).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="proprieta"><span class="num">5</span>Le due proprietà fondamentali</h2>
+<p class="in-questa"><b>In questa sezione:</b> le due proprietà della riducibilità polinomiale (lavagna, pagine 27 e 28), quelle che si usano sempre.</p>
+<div class="box def">
+  <span class="etichetta">Proprietà fondamentali (lavagna, pagine 27 e 28)</span>
+  <ol>
+    <li>Se Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub> e Π<sub>2</sub> ∈ P, allora Π<sub>1</sub> ∈ P.</li>
+    <li>Se Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub> e Π<sub>2</sub> ≤<sub>p</sub> Π<sub>3</sub>, allora Π<sub>1</sub> ≤<sub>p</sub> Π<sub>3</sub> (proprietà transitiva).</li>
+  </ol>
+</div>
+<p><b>Proprietà 1</b>: è quello che si è appena dimostrato. Se Π<sub>2</sub> ∈ P c'è un algoritmo polinomiale A<sub>2</sub>; A<sub>1</sub>(x) = A<sub>2</sub>(A<sub>f</sub>(x)) è polinomiale e risolve Π<sub>1</sub>. Esempio della lavagna: SODD ≤<sub>p</sub> CLIQUE, quindi se CLIQUE ∈ P allora SODD ∈ P.</p>
+<p><b>Proprietà 2</b>: le riduzioni si mettono in fila (Figura 7). Se f riduce Π<sub>1</sub> a Π<sub>2</sub> e g riduce Π<sub>2</sub> a Π<sub>3</sub>, la funzione x ↦ g(f(x)) riduce Π<sub>1</sub> a Π<sub>3</sub>: Π<sub>1</sub>(x) = Π<sub>2</sub>(f(x)) = Π<sub>3</sub>(g(f(x))). E si calcola in tempo polinomiale, con lo stesso conto della sezione 4 (A<sub>g</sub> al posto di A<sub>2</sub>).</p>
+<div class="figura">
+<svg viewBox="0 0 367 106" width="367" height="106" role="img" aria-label="due riduzioni in fila formano una riduzione" font-family="system-ui, sans-serif"><rect x="60" y="24" width="205" height="58" rx="6" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5" fill-opacity="0.5"/><text x="66" y="19" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f">riduzione da Π₁ a Π₃</text><line x1="8" y1="53" x2="64" y2="53" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M68 53 l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/><text x="38" y="46" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">x ∈ I₁</text><rect x="68" y="34" width="54" height="38" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="95" y="58" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">A<tspan font-size="10" dy="4">f</tspan></text><line x1="122" y1="53" x2="199" y2="53" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M203 53 l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/><text x="162.5" y="46" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">f(x) ∈ I₂</text><rect x="203" y="34" width="54" height="38" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="230" y="58" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">A<tspan font-size="10" dy="4">g</tspan></text><line x1="257" y1="53" x2="355" y2="53" class="l-muted" stroke="#5b6270" stroke-width="1.5"/><path d="M359 53 l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/><text x="308" y="46" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">g(f(x)) ∈ I₃</text></svg>
+<div class="didascalia"><b>Figura 7.</b> Lavagna, pagina 28: A<sub>f</sub> e poi A<sub>g</sub>. L'output g(f(x)) è un'istanza di Π<sub>3</sub> con la stessa risposta di x.</div>
+</div>
+<p>Esempio della lavagna (pagina 28): SODD ≤<sub>p</sub> CLIQUE e CLIQUE ≤<sub>p</sub> INSIEME INDIPENDENTE, quindi <strong>SODD ≤<sub>p</sub> INSIEME INDIPENDENTE</strong>: da una formula si costruisce il grafo della sezione 2, poi il suo complementare.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>(1) Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub> e Π<sub>2</sub> ∈ P ⇒ Π<sub>1</sub> ∈ P.</li>
+    <li>(2) Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub> e Π<sub>2</sub> ≤<sub>p</sub> Π<sub>3</sub> ⇒ Π<sub>1</sub> ≤<sub>p</sub> Π<sub>3</sub>. Esempio: SODD ≤<sub>p</sub> INSIEME INDIPENDENTE.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="npc"><span class="num">6</span>Problemi NP-difficili e NP-completi</h2>
+<p class="in-questa"><b>In questa sezione:</b> le definizioni (lavagna, pagina 29; lavagna 34, pagina 12) e il teorema che le rende importanti (pagina 30).</p>
+<div class="box def">
+  <span class="etichetta">NP-difficile e NP-completo (lavagna, pagina 29)</span>
+  <ul>
+    <li>Π è <strong>NP-hard</strong> (o <strong>NP-difficile</strong>) se ogni problema Π′ ∈ NP è riducibile polinomialmente a Π: per ogni Π′ ∈ NP, Π′ ≤<sub>p</sub> Π.</li>
+    <li>Π è <strong>NP-completo</strong> se:
+      <ul><li>Π è NP-hard, e</li><li>Π ∈ NP.</li></ul></li>
+  </ul>
+  <p>Un problema NP-completo è un problema «più difficile» tra tutti i problemi in NP.</p>
+</div>
+<p>NP-difficile vuol dire: almeno difficile quanto <em>ogni</em> problema di NP. NP-completo vuol dire: almeno difficile quanto ogni problema di NP, e in più dentro NP. Sono quindi i problemi più difficili <em>di</em> NP. (Un problema NP-difficile potrebbe anche stare fuori da NP ed essere ancora più difficile.)</p>
+<div class="dim">
+  <div class="dim-tit">Teorema (lavagna, pagina 30)</div>
+  <p class="enunciato">Sia Π un problema NP-completo. Se Π ∉ P allora P ≠ NP. Se Π ∈ P allora P = NP.</p>
+  <div class="parte prima">Se Π ∈ P allora P = NP</div>
+  <p>Già si sa che P ⊆ NP; resta da far vedere NP ⊆ P. Sia Π′ un problema qualsiasi di NP. Siccome Π è NP-hard, Π′ ≤<sub>p</sub> Π. Siccome Π ∈ P, per la proprietà 1 anche Π′ ∈ P. Quindi ogni problema di NP sta in P: NP ⊆ P, e P = NP.</p>
+  <div class="parte">Se Π ∉ P allora P ≠ NP</div>
+  <p>Π è NP-completo, quindi Π ∈ NP. Se Π ∉ P, allora Π è un problema di NP che non sta in P: NP contiene qualcosa che P non contiene, quindi P ≠ NP.</p>
+  <p class="qed">□</p>
+</div>
+<p>È per questo che i problemi NP-completi sono così importanti: <strong>basterebbe un algoritmo polinomiale per uno solo di essi per avere P = NP</strong>, e basterebbe dimostrare che uno solo non ne ha per avere P ≠ NP. Siccome nessuno ci è riuscito in nessuna delle due direzioni, quando si scopre che un problema è NP-completo si smette, in pratica, di cercare un algoritmo polinomiale esatto: si cercano algoritmi approssimati, o veloci sui casi che servono.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>NP-hard: ogni problema di NP vi si riduce polinomialmente. NP-completo: NP-hard e in NP.</li>
+    <li>Se un problema NP-completo sta in P, allora P = NP; se non ci sta, P ≠ NP.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="cook"><span class="num">7</span>Il teorema di Cook, e CLIQUE è NP-completo</h2>
+<p class="in-questa"><b>In questa sezione:</b> il primo problema NP-completo (lavagna, pagina 31), e come se ne ottengono altri con una sola riduzione (pagina 32).</p>
+<p>Dimostrare che un problema è NP-hard sembra impossibile: bisogna ridurre a lui <em>tutti</em> i problemi di NP, infiniti. Per il primo problema lo ha fatto Stephen Cook nel 1971.</p>
+<div class="box def">
+  <span class="etichetta">Teorema di Cook (lavagna, pagina 31)</span>
+  <p><strong>SODD è NP-completo.</strong></p>
+  <p>Dimostrazione, nella struttura: [1] SODD ∈ NP; [2] per ogni Π′ ∈ NP, Π′ ≤<sub>p</sub> SODD.</p>
+</div>
+<p>Il punto [1] è il pacco 30: si indovina un assegnamento e lo si verifica. Il punto [2] è la parte difficile, e il corso non la dimostra (l'idea è nell'approfondimento facoltativo). Dal teorema di Cook in poi, invece, basta una riduzione:</p>
+<div class="dim">
+  <div class="dim-tit">CLIQUE è NP-completo (lavagna, pagina 32)</div>
+  <div class="parte prima">[1] CLIQUE ∈ NP</div>
+  <p>Si indovinano k vertici e si verifica che siano collegati a due a due (pacco 30).</p>
+  <div class="parte">[2] CLIQUE è NP-hard</div>
+  <p>Sia Π′ ∈ NP. Siccome SODD è NP-completo, Π′ ≤<sub>p</sub> SODD. <span class="rif">1</span> Inoltre SODD ≤<sub>p</sub> CLIQUE (sezione 2). Per la proprietà transitiva, Π′ ≤<sub>p</sub> CLIQUE. Siccome Π′ era un problema qualsiasi di NP, CLIQUE è NP-hard.</p>
+  <p>[1] e [2] insieme: CLIQUE è NP-completo.</p>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Alla lavagna (pagina 32, e lavagna 34, pagina 15) è scritto «∀Π′ ∈ P, Π′ ≤<sub>p</sub> SODD»: è una svista, deve essere ∀Π′ ∈ NP, come nella definizione di NP-hard.</p>
+  </div>
+</div>
+<div class="box esame">
+  <span class="etichetta">Metodo: dimostrare che un problema Π̃ è NP-completo</span>
+  <ol>
+    <li>Far vedere che <b>Π̃ ∈ NP</b>: dire qual è il certificato e come lo si verifica in tempo polinomiale.</li>
+    <li>Scegliere un problema Π <b>già noto come NP-completo</b> (SODD, CLIQUE…).</li>
+    <li>Costruire una riduzione polinomiale <b>da Π a Π̃</b>: Π ≤<sub>p</sub> Π̃. Attenzione al verso: si trasformano le istanze del problema noto in istanze di quello nuovo, non il contrario.</li>
+    <li>Dimostrare che la riduzione conserva la risposta (sì ⇔ sì) e che si calcola in tempo polinomiale.</li>
+  </ol>
+  <p>La regola generale della lavagna (pagina 32): <strong>se Π è NP-completo e Π ≤<sub>p</sub> Π̃ con Π̃ ∈ NP, allora Π̃ è NP-completo.</strong> Esempio: INSIEME INDIPENDENTE ∈ NP (si indovinano k vertici e si controlla che nessuna coppia sia un arco) e CLIQUE ≤<sub>p</sub> INSIEME INDIPENDENTE, quindi INSIEME INDIPENDENTE è NP-completo.</p>
+</div>
+<p>Se P ≠ NP il quadro è quello della Figura 8 (lavagna, pagina 33): dentro NP, separati da P, i problemi NP-completi.</p>
+<div class="figura">
+<svg viewBox="0 0 440 220" width="440" height="220" role="img" aria-label="se P è diverso da NP, i problemi NP-completi stanno in NP fuori da P" font-family="system-ui, sans-serif"><ellipse cx="220" cy="110" rx="212" ry="102" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.8"/><text x="220" y="26" font-size="13" font-weight="700" class="t-blu" fill="#2f52c4" text-anchor="middle">NP</text><ellipse cx="308" cy="116" rx="106" ry="51" class="l-arancio" fill="none" stroke="#b4500f" stroke-width="1.8"/><text x="308" y="121" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f" text-anchor="middle">P</text><ellipse cx="102" cy="118" rx="64" ry="38" transform="rotate(-14 102 118)" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.8"/><text x="102" y="110" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">SODD, CLIQUE</text><text x="102" y="126" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">INSIEME INDIP.</text><text x="102" y="174" font-size="12.5" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">NP-completi</text></svg>
+<div class="didascalia"><b>Figura 8.</b> Lavagna, pagina 33: se P ≠ NP, i problemi NP-completi (SODD, CLIQUE, INSIEME INDIPENDENTE e gli altri della sezione 8) stanno in NP e non in P. Se invece P = NP, tutto NP coincide con P.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Teorema di Cook: SODD è NP-completo ([1] SODD ∈ NP; [2] ogni problema di NP si riduce a SODD).</li>
+    <li>CLIQUE è NP-completo: CLIQUE ∈ NP, e SODD ≤<sub>p</sub> CLIQUE con la transitività.</li>
+    <li>Regola: Π NP-completo, Π ≤<sub>p</sub> Π̃, Π̃ ∈ NP ⇒ Π̃ NP-completo. Il verso della riduzione conta.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="altri"><span class="num">8</span>Altri problemi NP-completi</h2>
+<p class="in-questa"><b>In questa sezione:</b> i problemi NP-completi della lavagna 34 (pagine 17–22), con una riduzione semplice, e che cosa invece è facile.</p>
+<div class="box def">
+  <span class="etichetta">CAMMINO HAMILTONIANO (lavagna 34, pagina 17)</span>
+  <p><b>Istanza</b>: un grafo G = (V, E). <b>Questione</b>: esiste un cammino che visita tutti i vertici del grafo una e una sola volta?</p>
+</div>
+<div class="box def">
+  <span class="etichetta">CAMMINO PIÙ LUNGO (lavagna 34, pagina 18)</span>
+  <p><b>Istanza</b>: un grafo pesato G = (V, E, w) e un intero k ∈ ℕ. <b>Questione</b>: esiste un cammino semplice in G di lunghezza ≥ k?</p>
+</div>
+<p>La lavagna (pagina 18) mostra la riduzione da CAMMINO HAMILTONIANO a CAMMINO PIÙ LUNGO: dato G = (V, E) con n vertici, si costruisce lo stesso grafo con <strong>peso 1 su ogni arco</strong>, w(x, y) = 1, e <strong>k = n − 1</strong>. Funziona: un cammino semplice con n vertici ha n − 1 archi, quindi lunghezza n − 1; e con pesi 1 un cammino semplice di lunghezza ≥ n − 1 ha almeno n − 1 archi, quindi n vertici distinti, cioè tutti: è hamiltoniano. La costruzione è chiaramente polinomiale. Siccome CAMMINO HAMILTONIANO è NP-completo, anche CAMMINO PIÙ LUNGO lo è (sta in NP: il certificato è il cammino). Curiosità: il cammino più <em>corto</em> (Dijkstra) sta in P, quello più lungo è NP-completo.</p>
+<div class="box def">
+  <span class="etichetta">3-SODD (lavagna 34, pagina 19)</span>
+  <p><b>Istanza</b>: una formula booleana φ in forma normale congiuntiva con clausole di lunghezza 3. <b>Questione</b>: φ è soddisfacibile?</p>
+</div>
+<p><strong>3-SODD è NP-completo.</strong> L'idea per ridurre SODD a 3-SODD (pagina 19): una clausola lunga si spezza in clausole di 3 letterali con variabili nuove. Per esempio</p>
+<div class="formula">x ∨ y ∨ z ∨ w   →   (x ∨ y ∨ a) ∧ (ā ∨ z ∨ w)</div>
+<div class="formula">x ∨ y ∨ z ∨ w ∨ v   →   (x ∨ y ∨ a) ∧ (ā ∨ z ∨ b) ∧ (b̄ ∨ w ∨ v)</div>
+<p>(alla lavagna l'ultima variabile si chiama k). Le nuove a, b fanno da «staffetta». Alla lavagna c'è il simbolo ≡, ma va inteso così: la formula nuova è <em>soddisfacibile se e solo se</em> lo è la vecchia (non sono la stessa formula, quella nuova ha variabili in più). Perché funziona, nel primo esempio. Se l'assegnamento rende vero x o y, si pone a = 0: la prima clausola è vera grazie a x o y, la seconda grazie ad ā. Se invece rende vero z o w, si pone a = 1: la prima clausola è vera grazie ad a, la seconda grazie a z o w. Viceversa, se la formula nuova è vera, x, y, z, w non possono essere tutti falsi: servirebbero a = 1 (per la prima clausola) e ā = 1 (per la seconda), impossibile.</p>
+<p>Le clausole di lunghezza 3 sono il confine. Con clausole di lunghezza 2 il problema diventa facile: <strong>2-SODD ∈ P</strong> (per esempio (x ∨ ȳ) ∧ (x ∨ z̄) ∧ …). E anche le formule in <strong>forma normale disgiuntiva</strong>, OR di AND come (x ∧ ȳ ∧ z) ∨ (x̄ ∧ ȳ) ∨ (x ∧ z̄ ∧ y), sono facili: basta che <em>un</em> termine sia soddisfacibile, e un AND di letterali è soddisfacibile se e solo se non contiene una variabile insieme alla sua negata. Si controlla in tempo lineare: <strong>la soddisfacibilità in forma disgiuntiva è in P</strong>.</p>
+<p>Allora perché non trasformare ogni formula congiuntiva in una disgiuntiva e risolvere tutto in fretta? È la domanda della lavagna: «SODD → DSODD, costo?». Il costo è il problema: moltiplicando le clausole, una formula con m clausole di 2 letterali diventa un OR di 2<sup>m</sup> termini. La trasformazione è esponenziale, quindi non è una riduzione polinomiale.</p>
+<p>Gli ultimi due della lista: <strong>PARTIZIONE</strong> (pagina 20) e il <strong>COMMESSO VIAGGIATORE</strong> nella versione di decisione (pagina 21):</p>
+<div class="box def">
+  <span class="etichetta">COMMESSO VIAGGIATORE (lavagna 34, pagina 21)</span>
+  <p><b>Istanza</b>: un insieme finito di città C = {c<sub>1</sub>, …, c<sub>m</sub>}, le distanze d(c<sub>i</sub>, c<sub>j</sub>) ∈ ℤ<sup>+</sup> tra ogni coppia di città, un numero B ∈ ℤ<sup>+</sup>. <b>Questione</b>: esiste un «tour» che visita tutte le città, di lunghezza al più B?</p>
+</div>
+<p>Sono NP-completi anche questi. In tutto se ne conoscono migliaia, in ogni campo: grafi, logica, numeri, pianificazione. La lavagna (pagina 22) cita il libro classico che li cataloga, di Garey e Johnson, e (pagine 23 e 24) mostra che oltre a P, NP, PSPACE ed EXPTIME i teorici hanno definito centinaia di altre classi di complessità.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>NP-completi: CAMMINO HAMILTONIANO, CAMMINO PIÙ LUNGO (pesi 1, k = n − 1), 3-SODD, PARTIZIONE, COMMESSO VIAGGIATORE.</li>
+    <li>3-SODD: le clausole lunghe si spezzano con variabili nuove, conservando la soddisfacibilità.</li>
+    <li>Facili: 2-SODD e la soddisfacibilità in forma normale disgiuntiva (∈ P); trasformare una congiuntiva in disgiuntiva costa un tempo esponenziale.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="riassunto"><span class="num">9</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Riduzione</b> f : I<sub>1</sub> → I<sub>2</sub> con Π<sub>1</sub>(x) = Π<sub>2</sub>(f(x)); <b>Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub></b> se f si calcola in tempo polinomiale. A<sub>1</sub>(x) = A<sub>2</sub>(f(x)) costa O(p(|x|) + q(p(|x|))).</li>
+    <li><b>Proprietà</b>: (1) Π<sub>1</sub> ≤<sub>p</sub> Π<sub>2</sub>, Π<sub>2</sub> ∈ P ⇒ Π<sub>1</sub> ∈ P; (2) transitività.</li>
+    <li><b>CLIQUE ≤<sub>p</sub> INSIEME INDIPENDENTE</b>: grafo complementare. <b>SODD ≤<sub>p</sub> CLIQUE</b>: un vertice per letterale, archi tra clausole diverse e letterali non opposti, k = numero di clausole.</li>
+    <li><b>NP-hard</b>: ∀Π′ ∈ NP, Π′ ≤<sub>p</sub> Π. <b>NP-completo</b>: NP-hard e in NP. Se un NP-completo sta in P allora P = NP; se non ci sta, P ≠ NP.</li>
+    <li><b>Cook</b>: SODD è NP-completo. Poi per riduzione: CLIQUE, INSIEME INDIPENDENTE, CAMMINO HAMILTONIANO, CAMMINO PIÙ LUNGO, 3-SODD, PARTIZIONE, COMMESSO VIAGGIATORE.</li>
+    <li>Per un problema nuovo: dimostrare che sta in NP e ridurre <em>a lui</em> un problema NP-completo noto.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>L'NP-completezza non è mai stata chiesta negli scritti degli ultimi anni.</li>
+    <li>All'orale: le definizioni di riduzione polinomiale, NP-hard e NP-completo; le due proprietà; il teorema «NP-completo in P ⇒ P = NP» con la dimostrazione; il teorema di Cook (enunciato); la riduzione da SODD a CLIQUE con un esempio e la dimostrazione che funziona; come si dimostra che CLIQUE è NP-completo.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 10 -->
+<h2 id="esercizi"><span class="num">10</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> esercizi sulle riduzioni e sull'NP-completezza. Prova a risolverli, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 1. Costruire il grafo di una riduzione</summary>
+  <p>Costruite il grafo della riduzione da SODD a CLIQUE per φ = (x ∨ y) ∧ (x̄ ∨ ȳ) ∧ (x ∨ ȳ). Trovate le cricche di k vertici e gli assegnamenti corrispondenti.</p>
+  <div class="soluzione">
+    <p>3 clausole, quindi k = 3. Vertici: x<sub>1</sub>, y<sub>1</sub>, x̄<sub>2</sub>, ȳ<sub>2</sub>, x<sub>3</sub>, ȳ<sub>3</sub>. Archi (clausole diverse, letterali non opposti):</p>
+    <ul>
+      <li>tra 1 e 2: x<sub>1</sub>–ȳ<sub>2</sub>, y<sub>1</sub>–x̄<sub>2</sub> (mancano x<sub>1</sub>–x̄<sub>2</sub> e y<sub>1</sub>–ȳ<sub>2</sub>);</li>
+      <li>tra 1 e 3: x<sub>1</sub>–x<sub>3</sub>, x<sub>1</sub>–ȳ<sub>3</sub>, y<sub>1</sub>–x<sub>3</sub> (manca y<sub>1</sub>–ȳ<sub>3</sub>);</li>
+      <li>tra 2 e 3: x̄<sub>2</sub>–ȳ<sub>3</sub>, ȳ<sub>2</sub>–x<sub>3</sub>, ȳ<sub>2</sub>–ȳ<sub>3</sub> (manca x̄<sub>2</sub>–x<sub>3</sub>).</li>
+    </ul>
+    <p>Una cricca di 3 prende un vertice per clausola. Partendo da x<sub>1</sub>: con ȳ<sub>2</sub>, servono un vertice della clausola 3 collegato a entrambi: x<sub>3</sub> (x<sub>1</sub>–x<sub>3</sub>, ȳ<sub>2</sub>–x<sub>3</sub>) e ȳ<sub>3</sub> (x<sub>1</sub>–ȳ<sub>3</sub>, ȳ<sub>2</sub>–ȳ<sub>3</sub>). Partendo da y<sub>1</sub>: con x̄<sub>2</sub>, nella clausola 3 servirebbe un vertice collegato a entrambi, ma x<sub>3</sub> non è collegato a x̄<sub>2</sub> e ȳ<sub>3</sub> non è collegato a y<sub>1</sub>. Le cricche sono quindi due: {x<sub>1</sub>, ȳ<sub>2</sub>, x<sub>3</sub>} e {x<sub>1</sub>, ȳ<sub>2</sub>, ȳ<sub>3</sub>}, entrambe con x = 1, y = 0. È l'unico assegnamento che soddisfa φ: controllalo nel riquadro «Da SODD a CLIQUE».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 2. INSIEME INDIPENDENTE è NP-completo</summary>
+  <p>Dimostrate che INSIEME INDIPENDENTE è NP-completo, seguendo il Metodo della sezione 7.</p>
+  <div class="soluzione">
+    <ol>
+      <li><b>In NP</b>: il certificato è l'insieme V′. Fase non deterministica: per ogni vertice si indovina se metterlo in V′. Verifica: #V′ = k, e per ogni coppia u ≠ v in V′ si controlla che (u, v) ∉ E; O(k<sup>2</sup>) controlli, polinomiale.</li>
+      <li><b>Problema noto</b>: CLIQUE, NP-completo.</li>
+      <li><b>Riduzione</b> CLIQUE ≤<sub>p</sub> INSIEME INDIPENDENTE: ⟨G, k⟩ ↦ ⟨G′, k⟩ con G′ il complementare di G, costruito in O(n<sup>2</sup>).</li>
+      <li><b>Conserva la risposta</b>: V′ è una cricca di k vertici in G se e solo se è un insieme indipendente di k vertici in G′ (sezione 1).</li>
+    </ol>
+    <p>Quindi INSIEME INDIPENDENTE è NP-completo.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 3. Il verso della riduzione</summary>
+  <p>Un compagno vuole dimostrare che un problema nuovo Π̃ è NP-completo. Ha dimostrato che Π̃ ∈ NP e ha costruito una riduzione polinomiale Π̃ ≤<sub>p</sub> SODD. Ha finito?</p>
+  <div class="soluzione">
+    <p>No: la riduzione è nel verso sbagliato. Π̃ ≤<sub>p</sub> SODD dice che Π̃ <em>non è più difficile</em> di SODD, ma questo vale per ogni problema di NP (è proprio il teorema di Cook): non dice niente sulla difficoltà di Π̃. Anche un problema facilissimo, come «un grafo è connesso?», si riduce a SODD. Per l'NP-completezza serve il verso opposto, SODD ≤<sub>p</sub> Π̃ (o un altro problema NP-completo ridotto a Π̃): è quello che dice che Π̃ è almeno difficile quanto SODD.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4. Spezzare una clausola</summary>
+  <p>Trasformate la clausola x ∨ ȳ ∨ z ∨ w̄ ∨ v ∨ u in clausole di 3 letterali, come nella lavagna 34, pagina 19. Quante variabili nuove servono?</p>
+  <div class="soluzione">
+    <p>Si spezza a «staffetta»: (x ∨ ȳ ∨ a) ∧ (ā ∨ z ∨ b) ∧ (b̄ ∨ w̄ ∨ c) ∧ (c̄ ∨ v ∨ u). La clausola ha 6 letterali; la prima e l'ultima clausola nuova ne prendono 2 ciascuna, quelle in mezzo 1 ciascuna, e ogni variabile nuova collega due clausole consecutive. In generale una clausola di ℓ ≥ 4 letterali diventa ℓ − 2 clausole con ℓ − 3 variabili nuove: qui 4 clausole e 3 variabili nuove (a, b, c). La formula cresce di poco: la riduzione è polinomiale.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5. Vero o falso</summary>
+  <p>(a) Se domani qualcuno trova un algoritmo polinomiale per CLIQUE, allora P = NP. (b) Se Π è NP-hard, allora Π ∈ NP. (c) Se SODD ≤<sub>p</sub> Π e Π ∈ NP, allora Π è NP-completo. (d) Si sa che CLIQUE ∉ P.</p>
+  <div class="soluzione">
+    <p><b>(a) Vero</b>: CLIQUE è NP-completo, e un problema NP-completo in P dà P = NP (teorema della sezione 6).</p>
+    <p><b>(b) Falso</b>: NP-hard chiede solo che tutto NP si riduca a Π; Π potrebbe stare fuori da NP. NP-completo = NP-hard e in NP.</p>
+    <p><b>(c) Vero</b>: è la regola generale della lavagna, pagina 32, con SODD NP-completo.</p>
+    <p><b>(d) Falso</b>: non si sa. Se si sapesse, si saprebbe anche che P ≠ NP, e il problema è aperto.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 11 -->
+<h2 id="approfondimenti"><span class="num">11</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per l'esame. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: l'idea della dimostrazione di Cook</summary>
+  <div class="soluzione">
+    <p>Sia Π′ ∈ NP, risolto da un algoritmo non deterministico A in tempo p(n). Data un'istanza x, si costruisce una formula φ<sub>x</sub> che descrive «A, partendo da x, arriva a rispondere 1». Le variabili dicono, per ogni istante t ≤ p(n), quale istruzione si esegue e cosa c'è in ogni cella di memoria; le clausole impongono che la configurazione iniziale sia quella con x, che ogni configurazione segua dalla precedente secondo le regole di A (con le scelte «indovina» lasciate libere), e che alla fine la risposta sia 1. Le configurazioni sono p(n) e ognuna ha dimensione polinomiale, quindi φ<sub>x</sub> ha dimensione polinomiale e si costruisce in tempo polinomiale. E φ<sub>x</sub> è soddisfacibile se e solo se esiste una sequenza di scelte che porta A a rispondere 1, cioè se e solo se Π′(x) = 1. Quindi Π′ ≤<sub>p</sub> SODD.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: i 21 problemi di Karp</summary>
+  <div class="soluzione">
+    <p>Un anno dopo Cook, nel 1972, Richard Karp dimostrò con catene di riduzioni che 21 problemi molto studiati (tra cui CLIQUE, 3-SODD, il ciclo hamiltoniano, la colorazione di grafi, lo zaino e PARTIZIONE) sono tutti NP-completi. Fu la scoperta che rese la domanda P = NP centrale: problemi che sembravano scollegati erano «lo stesso problema» a meno di riduzioni polinomiali.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="30-np.html">← Pacco 30: la classe NP</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="32-scritti-svolti.html">Pacco 32: scritti risolti in aula →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- pesati.js
+// Grafi pesati (pacchi 19, 20, 22, 23): dati della lavagna, disegno con i pesi, Kruskal, Prim.
+// Un grafo pesato: { nome, orientato, V: [...], pos: { v: [x, y] } (in «caselle»), E: [[u, v, w], ...], curve: { indice: k } }
+var GP = {
+  esagono: { nome: "L'esagono pesato della lavagna (A–F)", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    E: [["A", "B", 3], ["A", "C", 2], ["B", "C", 4], ["B", "F", 5], ["C", "F", 5], ["D", "E", 6], ["B", "D", 6], ["E", "F", 1]] },
+  sette: { nome: "Il grafo a 7 vertici della lavagna (Prim)", orientato: false, V: ["A", "B", "C", "D", "E", "F", "G"],
+    pos: { F: [0.6, 0], G: [1.8, 0], C: [0, 1.05], D: [1.2, 1.05], E: [2.4, 1.05], A: [0.6, 2.1], B: [1.8, 2.1] },
+    E: [["F", "G", 20], ["C", "F", 23], ["D", "F", 1], ["D", "G", 4], ["E", "G", 15], ["C", "D", 36], ["D", "E", 9], ["A", "C", 28], ["A", "D", 25], ["B", "D", 16], ["B", "E", 3], ["A", "B", 17]] },
+  orientato: { nome: "Il grafo orientato pesato della lavagna (1–7)", orientato: true, V: [1, 2, 3, 4, 5, 6, 7],
+    pos: { 1: [0, 0], 2: [1.1, 0], 4: [2.2, 0], 7: [3.3, 0], 3: [0.8, 1.1], 5: [2.4, 1.1], 6: [3.4, 1.1] },
+    E: [[1, 2, 5], [2, 4, 3], [4, 7, 2], [3, 1, 7], [1, 3, 6], [4, 3, 9], [3, 5, 4], [7, 5, 3], [5, 6, 2], [6, 7, 2]] },
+  esame14nov: { nome: "Il grafo dello scritto del 14 novembre 2025", orientato: false, V: ["v1", "v2", "v3", "v4", "v5", "v6"],
+    pos: { v1: [0, 1], v2: [0.9, 0], v6: [0.9, 2], v3: [2.3, 0], v4: [3.2, 1], v5: [2.3, 2] },
+    E: [["v1", "v2", 3], ["v1", "v6", 2], ["v2", "v6", 4], ["v2", "v5", 5], ["v5", "v6", 5], ["v3", "v4", 6], ["v2", "v3", 6], ["v4", "v5", 1]] },
+  esame20set: { nome: "Il grafo dello scritto del 20 settembre 2024", orientato: false, V: ["v1", "v2", "v3", "v4"],
+    pos: { v1: [0, 0], v4: [1.6, 0], v2: [0, 1.25], v3: [1.6, 1.25] },
+    E: [["v1", "v4", 2], ["v1", "v2", 5], ["v2", "v4", 4], ["v3", "v4", 2], ["v2", "v3", 7]] }
+};
+function escP(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1p(v) { return Math.round(v * 10) / 10; }
+function chiaveP(u, v, orientato) { return orientato ? u + ">" + v : [String(u), String(v)].sort().join("~"); }
+function cmpV(a, b) { return typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), "it", { numeric: true }); }
+// archi uscenti da u: [[v, w], ...] in ordine di vertice
+function adiacentiP(G, u) {
+  var r = [];
+  G.E.forEach(function (e) { if (e[0] === u) r.push([e[1], e[2]]); else if (!G.orientato && e[1] === u) r.push([e[0], e[2]]); });
+  return r.sort(function (a, b) { return cmpV(a[0], b[0]); });
+}
+function pesoTot(archi) { return archi.reduce(function (t, e) { return t + e[2]; }, 0); }
+var STILE_P = { n: ["r-nodo", "#ffffff", "#2f52c4"], giallo: ["r-giallo", "#fff1a8", "#b4500f"], verde: ["r-verde", "#e6f5ea", "#17803d"], blu: ["r-blu", "#e8edfc", "#2f52c4"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f"], rosso: ["r-rosso", "#fdecea", "#b42318"], viola: ["r-viola", "#f1ebfb", "#6d3fc0"], grigio: ["r-grigio", "#eef0f3", "#5b6270"] };
+var COL_A = { verde: ["l-verde", "#17803d", 3.4], arancio: ["l-arancio", "#b4500f", 3.4], rosso: ["l-rosso", "#b42318", 3.4], blu: ["l-blu", "#2f52c4", 3.4], viola: ["l-viola", "#6d3fc0", 3.4],
+  scartato: ["l-muted", "#5b6270", 1.2, "5 4"], tenue: ["l-muted", "#5b6270", 1, "2 4"] };
+// opz: { cella, r, evNodi: {v: stile}, evArchi: {chiave: colore}, etich: {v: testo}, etichPos: {v: "su"|"giu"|"sx"|"dx"}, numeri: {v: n}, aria, senzaPesi, margine }
+function svgPesato(G, opz) {
+  opz = opz || {};
+  var C = opz.cella || 90, R = opz.r || 15, m = R + (opz.margine || 22), s = [], xs = [], ys = [];
+  G.V.forEach(function (v) { xs.push(G.pos[v][0]); ys.push(G.pos[v][1]); });
+  var W = Math.max.apply(null, xs) * C + 2 * m, H = Math.max.apply(null, ys) * C + 2 * m;
+  function P(v) { return [m + G.pos[v][0] * C, m + G.pos[v][1] * C]; }
+  var esiste = {}; G.E.forEach(function (e) { esiste[e[0] + ">" + e[1]] = true; });
+  s.push('<svg viewBox="0 0 ' + r1p(W) + ' ' + r1p(H) + '" width="' + r1p(W) + '" height="' + r1p(H) + '" role="img" aria-label="' + escP(opz.aria || G.nome) + '" font-family="system-ui, sans-serif">');
+  var etichette = [];
+  G.E.forEach(function (e, k) {
+    var a = P(e[0]), b = P(e[1]), key = chiaveP(e[0], e[1], G.orientato), ev = opz.evArchi && opz.evArchi[key], c = ev ? COL_A[ev] : ["l-muted", "#5b6270", 1.4];
+    var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.sqrt(dx * dx + dy * dy), ux = dx / l, uy = dy / l;
+    var doppio = G.orientato && esiste[e[1] + ">" + e[0]];
+    var curva = (G.curve && G.curve[k]) || (doppio ? 0.2 : 0);
+    var x1 = a[0] + ux * R, y1 = a[1] + uy * R, x2 = b[0] - ux * (R + (G.orientato ? 2 : 0)), y2 = b[1] - uy * (R + (G.orientato ? 2 : 0)), d, ang, mx, my;
+    if (curva) {
+      var cx = (a[0] + b[0]) / 2 - uy * curva * l, cy = (a[1] + b[1]) / 2 + ux * curva * l;
+      var vx = cx - a[0], vy = cy - a[1], vl = Math.sqrt(vx * vx + vy * vy); x1 = a[0] + vx / vl * R; y1 = a[1] + vy / vl * R;
+      var wx = b[0] - cx, wy = b[1] - cy, wl = Math.sqrt(wx * wx + wy * wy); x2 = b[0] - wx / wl * (R + 2); y2 = b[1] - wy / wl * (R + 2);
+      d = "M" + r1p(x1) + " " + r1p(y1) + " Q" + r1p(cx) + " " + r1p(cy) + " " + r1p(x2) + " " + r1p(y2); ang = Math.atan2(wy, wx);
+      mx = 0.25 * a[0] + 0.5 * cx + 0.25 * b[0]; my = 0.25 * a[1] + 0.5 * cy + 0.25 * b[1];
+    } else { d = "M" + r1p(x1) + " " + r1p(y1) + " L" + r1p(x2) + " " + r1p(y2); ang = Math.atan2(dy, dx); mx = (a[0] + b[0]) / 2; my = (a[1] + b[1]) / 2; }
+    s.push('<path d="' + d + '" fill="none" class="' + c[0] + '" stroke="' + c[1] + '" stroke-width="' + c[2] + '"' + (c[3] ? ' stroke-dasharray="' + c[3] + '"' : '') + '/>');
+    if (G.orientato) s.push('<path d="M' + r1p(x2) + ' ' + r1p(y2) + ' l' + r1p(-9 * Math.cos(ang - 0.38)) + ' ' + r1p(-9 * Math.sin(ang - 0.38)) + ' l' + r1p(9 * Math.cos(ang - 0.38) - 9 * Math.cos(ang + 0.38)) + ' ' + r1p(9 * Math.sin(ang - 0.38) - 9 * Math.sin(ang + 0.38)) + ' z" class="' + c[0].replace("l-", "t-") + '" fill="' + c[1] + '"/>');
+    if (!opz.senzaPesi) {
+      // il peso sta un po' di lato rispetto al punto medio, dalla parte «esterna»
+      var nx = -uy, ny = ux, off = curva ? 0 : 10, tx = mx + nx * off, ty = my + ny * off, txt = String(e[2]), bw = 7 * txt.length + 8;
+      etichette.push('<rect x="' + r1p(tx - bw / 2) + '" y="' + r1p(ty - 9) + '" width="' + r1p(bw) + '" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/>' +
+        '<text x="' + r1p(tx) + '" y="' + r1p(ty + 4.5) + '" font-size="12.5" font-weight="700" text-anchor="middle" class="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[0].replace("l-", "t-") : "t-peso") + '" fill="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[1] : "#6d3fc0") + '">' + escP(txt) + '</text>');
+    }
+  });
+  s.push(etichette.join(""));
+  G.V.forEach(function (v) {
+    var p = P(v), st = STILE_P[(opz.evNodi && opz.evNodi[v]) || "n"], lab = escP(v), fs = lab.length > 2 ? 12 : 14;
+    s.push('<circle cx="' + r1p(p[0]) + '" cy="' + r1p(p[1]) + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    s.push('<text x="' + r1p(p[0]) + '" y="' + r1p(p[1] + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + lab + '</text>');
+    if (opz.numeri && opz.numeri[v] !== undefined) {
+      s.push('<circle cx="' + r1p(p[0] + R * 0.85) + '" cy="' + r1p(p[1] - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1p(p[0] + R * 0.85) + '" y="' + r1p(p[1] - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.numeri[v] + '</text>');
+    }
+    if (opz.etich && opz.etich[v] !== undefined && opz.etich[v] !== "") {
+      var pos = (opz.etichPos && opz.etichPos[v]) || (G.pos[v][1] <= 0.01 ? "su" : (G.pos[v][1] >= Math.max.apply(null, ys) - 0.01 ? "giu" : (G.pos[v][0] <= 0.01 ? "sx" : "dx")));
+      var ex = p[0], ey = p[1], an = "middle";
+      if (pos === "su") ey = p[1] - R - 7; else if (pos === "giu") ey = p[1] + R + 15; else if (pos === "sx") { ex = p[0] - R - 5; ey = p[1] - R + 2; an = "end"; } else { ex = p[0] + R + 5; ey = p[1] - R + 2; an = "start"; }
+      s.push('<text x="' + r1p(ex) + '" y="' + r1p(ey) + '" font-size="12" font-weight="700" text-anchor="' + an + '" class="t-arancio" fill="#b4500f">' + escP(opz.etich[v]) + '</text>');
+    }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+// archi scelti -> mappa per evArchi
+function evDa(archi, colore, G) { var r = {}; archi.forEach(function (e) { r[chiaveP(e[0], e[1], G.orientato)] = colore; }); return r; }
+
+// ---------------------------------------------------------------- Kruskal (Codice 11.2, con union-find)
+// spareggio: a parità di peso si segue l'ordine di G.E (come alla lavagna)
+function ordinaArchi(G) { return G.E.map(function (e, k) { return [e[0], e[1], e[2], k]; }).sort(function (a, b) { return a[2] - b[2] || a[3] - b[3]; }); }
+function eventiKruskal(G) {
+  var ord = ordinaArchi(G), padre = {}, ev = [], T = [], scart = [], nFind = 0, nUnion = 0;
+  G.V.forEach(function (v) { padre[v] = v; });
+  function find(x) { nFind++; while (padre[x] !== x) x = padre[x]; return x; }
+  function insiemi() { var g = {}; G.V.forEach(function (v) { var r = v; while (padre[r] !== r) r = padre[r]; (g[r] = g[r] || []).push(v); }); return Object.keys(g).map(function (k) { return g[k]; }); }
+  ev.push({ k: -1, testo: "Gli archi sono ordinati per peso; T non ha archi; ogni vertice è un insieme da solo (MAKESET).", T: [], scart: [], insiemi: insiemi(), nFind: 0, nUnion: 0, ord: ord });
+  ord.forEach(function (e, k) {
+    var tx = find(e[0]), ty = find(e[1]), ok = tx !== ty, testo;
+    if (ok) { padre[ty] = tx; nUnion++; T.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") ≠ FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " non sono connessi in T. UNION dei due insiemi; l'arco entra in T."; }
+    else { scart.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") = FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " sono già connessi in T. L'arco formerebbe un ciclo: si scarta."; }
+    ev.push({ k: k, preso: ok, testo: testo, T: T.slice(), scart: scart.slice(), insiemi: insiemi(), nFind: nFind, nUnion: nUnion, ord: ord });
+  });
+  return ev;
+}
+// ---------------------------------------------------------------- Prim (Codice 11.4, con d e vicino)
+function eventiPrim(G, s) {
+  var d = {}, vic = {}, inT = {}, VT = [], ET = [], ev = [];
+  G.V.forEach(function (v) { d[v] = Infinity; vic[v] = null; });
+  function foto(testo, y, cambiati) { var dd = {}, vv = {}; G.V.forEach(function (v) { dd[v] = d[v]; vv[v] = vic[v]; }); ev.push({ testo: testo, d: dd, vicino: vv, VT: VT.slice(), ET: ET.slice(), y: y, cambiati: cambiati || [] }); }
+  foto("All'inizio la struttura è vuota: d[v] = ∞ per ogni vertice, e vicino non è definito.", null);
+  var primo = true;
+  while (VT.length < G.V.length) {
+    var y = null;
+    if (primo && s !== undefined && s !== null) y = s;
+    else G.V.forEach(function (v) { if (!inT[v] && (y === null || d[v] < d[y])) y = v; });
+    var t;
+    inT[y] = true; VT.push(y);
+    if (d[y] !== Infinity) { ET.push([vic[y], y, d[y]]); t = "Tra i vertici fuori da T, " + y + " ha d minima (" + d[y] + "): entra in T con l'arco (" + vic[y] + ", " + y + ") di peso " + d[y] + "."; }
+    else t = "Prima iterazione: tutte le d valgono ∞, quindi si può prendere un vertice qualsiasi. Si sceglie " + y + ", che entra in T senza archi.";
+    var camb = [];
+    adiacentiP(G, y).forEach(function (p) { var z = p[0], w = p[1]; if (!inT[z] && w < d[z]) { d[z] = w; vic[z] = y; camb.push(z); } });
+    t += camb.length ? " Si guardano gli archi di " + y + ": migliorano " + camb.map(function (z) { return "d[" + z + "] = " + d[z]; }).join(", ") + " (con vicino " + y + ")." : " Nessun vertice fuori da T diventa più vicino passando da " + y + ".";
+    foto(t, y, camb);
+    primo = false;
+  }
+  return ev;
+}
+// tutti gli alberi ricoprenti (per grafi piccoli): restituisce [{archi, peso}]
+function tuttiAlberi(G) {
+  var n = G.V.length, m = G.E.length, r = [];
+  function rec(i, scelti) {
+    if (scelti.length === n - 1) { if (connessoCon(G, scelti)) r.push({ archi: scelti.slice(), peso: pesoTot(scelti) }); return; }
+    if (i >= m || m - i < n - 1 - scelti.length) return;
+    scelti.push(G.E[i]); rec(i + 1, scelti); scelti.pop(); rec(i + 1, scelti);
+  }
+  rec(0, []);
+  return r;
+}
+function connessoCon(G, archi) {
+  var p = {}; G.V.forEach(function (v) { p[v] = v; });
+  function f(x) { while (p[x] !== x) x = p[x]; return x; }
+  var c = G.V.length; archi.forEach(function (e) { var a = f(e[0]), b = f(e[1]); if (a !== b) { p[a] = b; c--; } });
+  return c === 1;
+}
+
+// ---- complessita.js
+// Pacchi 29–31 (complessità, NP, NP-completezza): grafi della lavagna, formule booleane, riduzioni, disegni.
+function escC(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1c(v) { return Math.round(v * 10) / 10; }
+// ---------------------------------------------------------------- grafi non orientati (senza pesi: peso 0)
+function GN(nome, V, pos, archi) { return { nome: nome, orientato: false, V: V, pos: pos, E: archi.map(function (a) { return [a[0], a[1], 0]; }) }; }
+var GC = {
+  esagono: GN("l'esagono della lavagna (A–F)", ["A", "B", "C", "D", "E", "F"], { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "F"], ["C", "F"], ["D", "E"], ["B", "D"], ["E", "F"]]),
+  esagono2: GN("l'esagono con gli archi C–D e D–F in più", ["A", "B", "C", "D", "E", "F"], { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "F"], ["C", "F"], ["D", "E"], ["B", "D"], ["E", "F"], ["C", "D"], ["D", "F"]]),
+  K4: GN("il grafo completo con 4 vertici", ["1", "2", "3", "4"], { 1: [0, 0], 2: [1, 0], 3: [1, 1], 4: [0, 1] }, [["1", "2"], ["1", "3"], ["1", "4"], ["2", "3"], ["2", "4"], ["3", "4"]]),
+  K5: GN("il grafo completo con 5 vertici", ["1", "2", "3", "4", "5"], { 1: [0.95, 0], 2: [1.9, 0.7], 3: [1.55, 1.8], 4: [0.35, 1.8], 5: [0, 0.7] },
+    [["1", "2"], ["1", "3"], ["1", "4"], ["1", "5"], ["2", "3"], ["2", "4"], ["2", "5"], ["3", "4"], ["3", "5"], ["4", "5"]]),
+  quadrato: GN("un quadrato", ["A", "B", "C", "D"], { A: [0, 0], B: [1, 0], C: [1, 1], D: [0, 1] }, [["A", "B"], ["B", "C"], ["C", "D"], ["D", "A"]]),
+  casetta: GN("un grafo con cinque vertici", ["A", "B", "C", "D", "E"], { A: [0, 0], B: [1, 0], C: [0, 1], D: [1.5, 1], E: [1, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "D"], ["C", "D"], ["C", "E"], ["D", "E"]]),
+  // lavagna 33, pagine 15–16: G e il suo complementare
+  sei: GN("il grafo G della lavagna (v1–v6)", ["v1", "v2", "v3", "v4", "v5", "v6"], { v1: [0, 0.6], v2: [1, 0], v3: [2, 0.6], v4: [2, 1.8], v5: [1, 2.4], v6: [0, 1.8] },
+    [["v1", "v2"], ["v2", "v3"], ["v3", "v4"], ["v4", "v5"], ["v5", "v6"], ["v6", "v1"], ["v2", "v4"], ["v2", "v6"], ["v4", "v6"]])
+};
+function complementare(G, nome) {
+  var c = [], es = {};
+  G.E.forEach(function (e) { es[chiaveP(e[0], e[1], false)] = true; });
+  for (var i = 0; i < G.V.length; i++) for (var j = i + 1; j < G.V.length; j++) if (!es[chiaveP(G.V[i], G.V[j], false)]) c.push([G.V[i], G.V[j], 0]);
+  return { nome: nome || "il complementare di " + G.nome, orientato: false, V: G.V, pos: G.pos, E: c };
+}
+GC.seiC = complementare(GC.sei, "il complementare G' (lavagna, pagina 15)");
+function adiacenti(G, u, v) { return G.E.some(function (e) { return (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u); }); }
+function eCricca(G, S) { for (var i = 0; i < S.length; i++) for (var j = i + 1; j < S.length; j++) if (!adiacenti(G, S[i], S[j])) return [S[i], S[j]]; return null; }
+function eIndipendente(G, S) { for (var i = 0; i < S.length; i++) for (var j = i + 1; j < S.length; j++) if (adiacenti(G, S[i], S[j])) return [S[i], S[j]]; return null; }
+function sottoinsiemi(V, k) { var r = []; (function rec(i, S) { if (S.length === k) { r.push(S.slice()); return; } if (i === V.length) return; S.push(V[i]); rec(i + 1, S); S.pop(); rec(i + 1, S); })(0, []); return r; }
+function criccheDi(G, k) { return sottoinsiemi(G.V, k).filter(function (S) { return !eCricca(G, S); }); }
+function criccaMassima(G) { for (var k = G.V.length; k >= 1; k--) { var c = criccheDi(G, k); if (c.length) return { k: k, cricche: c }; } return { k: 0, cricche: [] }; }
+function archiDentro(G, S) { var r = {}; G.E.forEach(function (e) { if (S.indexOf(e[0]) >= 0 && S.indexOf(e[1]) >= 0) r[chiaveP(e[0], e[1], false)] = "verde"; }); return r; }
+function nodiDi(S, stile) { var r = {}; S.forEach(function (v) { r[v] = stile || "verde"; }); return r; }
+
+// ---------------------------------------------------------------- formule in forma normale congiuntiva
+// formula: array di clausole; clausola: array di letterali { v: "x", neg: bool }
+function F(testo) { // "x | -y | z ; -x | -y" -> formula
+  return testo.split(";").map(function (c) { return c.trim().split("|").map(function (l) { l = l.trim(); return l[0] === "-" ? { v: l.slice(1), neg: true } : { v: l, neg: false }; }); });
+}
+function variabili(phi) { var V = []; phi.forEach(function (c) { c.forEach(function (l) { if (V.indexOf(l.v) < 0) V.push(l.v); }); }); return V; }
+function letStr(l, html) { var nome = html ? l.v.replace(/(\d+)$/, "<sub>$1</sub>") : l.v; return l.neg ? (html ? '<span style="text-decoration:overline">' + nome + '</span>' : "¬" + l.v) : nome; }
+function clStr(c, html) { return c.length === 1 ? letStr(c[0], html) : "(" + c.map(function (l) { return letStr(l, html); }).join(" ∨ ") + ")"; }
+function phiStr(phi, html) { return phi.map(function (c) { return clStr(c, html); }).join(" ∧ "); }
+function valLet(l, f) { return l.neg ? 1 - f[l.v] : f[l.v]; }
+function valCl(c, f) { return c.some(function (l) { return valLet(l, f) === 1; }) ? 1 : 0; }
+function valPhi(phi, f) { return phi.every(function (c) { return valCl(c, f) === 1; }) ? 1 : 0; }
+function tuttiAssegnamenti(V) { var r = []; for (var m = 0; m < (1 << V.length); m++) { var f = {}; V.forEach(function (v, i) { f[v] = (m >> (V.length - 1 - i)) & 1; }); r.push(f); } return r; }
+function idLet(v, neg, cl) { return (neg ? v + "\u0304" : v) + String(cl).split("").map(function (d) { return "₀₁₂₃₄₅₆₇₈₉"[Number(d)]; }).join(""); }
+// la riduzione da SODD a CLIQUE (lavagna 33, pagina 18): un vertice per ogni occorrenza di letterale
+function riduzioneSoddClique(phi) {
+  var V = [], info = {}, pos = {}, E = [];
+  phi.forEach(function (c, i) {
+    c.forEach(function (l, j) {
+      var id = idLet(l.v, l.neg, i + 1);
+      V.push(id); info[id] = { l: l, cl: i };
+      var m = phi.length, th = -Math.PI / 2 + 2 * Math.PI * i / m, Rr = m <= 2 ? 1.1 : 1.7, sp = 0.8, off = (j - (c.length - 1) / 2) * sp;
+      pos[id] = m === 1 ? [j * 1.2, 0] : [Rr * Math.cos(th) - off * Math.sin(th), Rr * Math.sin(th) + off * Math.cos(th)];
+    });
+  });
+  for (var a = 0; a < V.length; a++) for (var b = a + 1; b < V.length; b++) {
+    var u = info[V[a]], w = info[V[b]];
+    if (u.cl !== w.cl && !(u.l.v === w.l.v && u.l.neg !== w.l.neg)) E.push([V[a], V[b], 0]);
+  }
+  var mx = Math.min.apply(null, V.map(function (v) { return pos[v][0]; })), my = Math.min.apply(null, V.map(function (v) { return pos[v][1]; }));
+  V.forEach(function (v) { pos[v] = [pos[v][0] - mx, pos[v][1] - my]; });
+  return { G: { nome: "il grafo costruito da φ", orientato: false, V: V, pos: pos, E: E }, k: phi.length, info: info };
+}
+// assegnamento (parziale) letto da una cricca della riduzione
+function assegnamentoDaCricca(rid, S) { var f = {}; S.forEach(function (id) { var l = rid.info[id].l; f[l.v] = l.neg ? 0 : 1; }); return f; }
+
+// ---------------------------------------------------------------- disegni
+// insiemi annidati: [{ nome, stile }] dal più esterno al più interno
+function svgAnnidati(classi, opz) {
+  opz = opz || {};
+  var W = opz.W || 420, H = opz.H || 230, s = [], n = classi.length;
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || classi.map(function (c) { return c.nome; }).join(" contenuto in ")) + '" font-family="system-ui, sans-serif">');
+  var COL = { blu: ["l-blu", "#2f52c4", "t-blu"], verde: ["l-verde", "#17803d", "t-verde"], rosso: ["l-rosso", "#b42318", "t-rosso"], arancio: ["l-arancio", "#b4500f", "t-arancio"], viola: ["l-viola", "#6d3fc0", "t-viola"] };
+  classi.forEach(function (c, i) {
+    var f = c.f || (1 - i * (0.78 / Math.max(1, n))), rx = (W / 2 - 8) * f, ry = (H / 2 - 8) * f, cx = W / 2 + (opz.sposta || 0) * i, cy = H / 2 + (opz.giu || 6) * i, col = COL[c.stile || "blu"];
+    s.push('<ellipse cx="' + r1c(cx) + '" cy="' + r1c(cy) + '" rx="' + r1c(rx) + '" ry="' + r1c(ry) + '" class="' + col[0] + '" fill="none" stroke="' + col[1] + '" stroke-width="1.8"/>');
+    var ultimo = i === n - 1, lx = cx, ly = ultimo ? (c.dentro ? cy - ry + 20 : cy + 5) : cy - ry + 18;
+    s.push('<text x="' + r1c(lx) + '" y="' + r1c(ly) + '" font-size="13" font-weight="700" class="' + col[2] + '" fill="' + col[1] + '" text-anchor="middle">' + escC(c.nome) + '</text>');
+    (c.dentro || []).forEach(function (t, j) { s.push('<text x="' + r1c(cx + (c.dx || 0)) + '" y="' + r1c(cy - ry * 0.55 + 16 * j + (c.dy || 0)) + '" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">' + escC(t) + '</text>'); });
+  });
+  (opz.extra || []).forEach(function (x) { s.push(x); });
+  s.push('</svg>');
+  return s.join("");
+}
+// catena di scatole: pezzi = [{ t: "testo sulla freccia" } | { box: "nome", stile, sotto: "nota" }]; esito: true per le due uscite 0/1
+function svgScatole(pezzi, opz) {
+  opz = opz || {};
+  var x = 8, y = opz.y || (opz.gruppo ? 34 : 24), h = 38, s = [], parti = [], gruppo = opz.gruppo;
+  pezzi.forEach(function (p) {
+    if (p.box) { var w = Math.max(54, 9.5 * p.box.replace(/<[^>]+>/g, "").length + 22); parti.push({ tipo: "b", x: x, w: w, p: p }); x += w; }
+    else { var w2 = Math.max(46, 7 * (p.t || "").length + 18); parti.push({ tipo: "f", x: x, w: w2, p: p }); x += w2; }
+  });
+  var W = x + (opz.esito ? 44 : 8), H = y + h + (opz.alto || 34);
+  s.push('<svg viewBox="0 0 ' + r1c(W) + ' ' + H + '" width="' + r1c(W) + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || "schema") + '" font-family="system-ui, sans-serif">');
+  if (gruppo) {
+    var b0 = parti.filter(function (q) { return q.tipo === "b"; }), gx = b0[0].x - 8, gw = b0[b0.length - 1].x + b0[b0.length - 1].w - gx + 8;
+    s.push('<rect x="' + r1c(gx) + '" y="' + (y - 10) + '" width="' + r1c(gw) + '" height="' + (h + 20) + '" rx="6" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5" fill-opacity="0.5"/>');
+    s.push('<text x="' + r1c(gx + 6) + '" y="' + (y - 15) + '" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f">' + gruppo + '</text>');
+  }
+  parti.forEach(function (q) {
+    if (q.tipo === "b") {
+      s.push('<rect x="' + r1c(q.x) + '" y="' + y + '" width="' + r1c(q.w) + '" height="' + h + '" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/>');
+      s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (y + 24) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">' + q.p.box + '</text>');
+      if (q.p.sotto) s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (y + h + 15) + '" font-size="11" text-anchor="middle" class="t-arancio" fill="#b4500f">' + escC(q.p.sotto) + '</text>');
+    } else {
+      var yy = y + h / 2;
+      s.push('<line x1="' + r1c(q.x) + '" y1="' + yy + '" x2="' + r1c(q.x + q.w - 4) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      s.push('<path d="M' + r1c(q.x + q.w) + ' ' + yy + ' l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/>');
+      if (q.p.t) s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (yy - 7) + '" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">' + q.p.t + '</text>');
+    }
+  });
+  if (opz.esito) {
+    var ex = x, yy2 = y + h / 2;
+    [["0", -14], ["1", 14]].forEach(function (u) {
+      s.push('<line x1="' + r1c(ex) + '" y1="' + yy2 + '" x2="' + r1c(ex + 22) + '" y2="' + (yy2 + u[1]) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      s.push('<text x="' + r1c(ex + 30) + '" y="' + (yy2 + u[1] + 4) + '" font-size="12.5" class="t-testo" fill="#1f2328">' + u[0] + '</text>');
+    });
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// albero di computazione delle scelte indovina per un SODD con variabili V
+function svgComputazione(phi, opz) {
+  opz = opz || {};
+  var V = opz.V || variabili(phi), n = V.length, foglie = 1 << n, dx = opz.dx || 46, dy = opz.dy || 54, W = foglie * dx + 20, H = (n + 1) * dy + 34, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || "albero di computazione") + '" font-family="system-ui, sans-serif">');
+  function X(livello, idx) { var larg = foglie / (1 << livello); return 10 + (idx + 0.5) * larg * dx; }
+  for (var l = 0; l <= n; l++) for (var i = 0; i < (1 << l); i++) {
+    var x = X(l, i), y = 22 + l * dy;
+    if (l < n) [0, 1].forEach(function (b) {
+      var x2 = X(l + 1, 2 * i + b), y2 = y + dy, ev = opz.cammino && opz.cammino.slice(0, l + 1).join("") === (i.toString(2).padStart(l, "0") + b).slice(-(l + 1));
+      s.push('<line x1="' + r1c(x) + '" y1="' + (y + 10) + '" x2="' + r1c(x2) + '" y2="' + (y2 - 12) + '" class="' + (ev ? "l-verde" : "l-muted") + '" stroke="' + (ev ? "#17803d" : "#5b6270") + '" stroke-width="' + (ev ? 3 : 1.4) + '"/>');
+      s.push('<text x="' + r1c((x + x2) / 2 + (b ? 7 : -7)) + '" y="' + r1c((y + y2) / 2) + '" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">' + b + '</text>');
+    });
+    if (l < n) s.push('<text x="' + r1c(x) + '" y="' + (y + 5) + '" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">' + letStr({ v: V[l] }, false) + '</text>');
+    else {
+      var f = {}, bits = n ? i.toString(2).padStart(n, "0") : ""; V.forEach(function (v, k) { f[v] = Number(bits[k]); });
+      var val = valPhi(phi, f);
+      s.push('<rect x="' + r1c(x - 13) + '" y="' + (y - 11) + '" width="26" height="22" rx="4" class="' + (val ? "r-verde" : "r-rosso") + '" fill="' + (val ? "#e6f5ea" : "#fdecea") + '" stroke="' + (val ? "#17803d" : "#b42318") + '" stroke-width="1.4"/>');
+      s.push('<text x="' + r1c(x) + '" y="' + (y + 5) + '" font-size="13" font-weight="700" text-anchor="middle" class="' + (val ? "t-verde" : "t-rosso") + '" fill="' + (val ? "#17803d" : "#b42318") + '">' + val + '</text>');
+      if (opz.etichette !== false) s.push('<text x="' + r1c(x) + '" y="' + (y + 27) + '" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">' + bits + '</text>');
+    }
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// un grafo di 8 vertici con una cricca di 4 nascosta (per i riquadri)
+GC.otto = (function () {
+  var V = ["1", "2", "3", "4", "5", "6", "7", "8"], pos = {};
+  V.forEach(function (v, i) { var a = -Math.PI / 2 + i * 2 * Math.PI / 8; pos[v] = [1.25 + 1.25 * Math.cos(a), 1.25 + 1.25 * Math.sin(a)]; });
+  return GN("un grafo di 8 vertici", V, pos, [["2", "4"], ["2", "5"], ["2", "7"], ["4", "5"], ["4", "7"], ["5", "7"], ["1", "2"], ["1", "3"], ["2", "3"], ["3", "4"], ["5", "6"], ["6", "7"], ["7", "8"], ["8", "1"], ["1", "5"], ["3", "6"], ["4", "8"], ["6", "8"]]);
+})();
+
+// ---- w31.js
+// Riquadri interattivi del pacco 31.
+function $(id) { return document.getElementById(id); }
+
+// ---------------------------------------------------------------- 1. da SODD a CLIQUE
+(function () {
+  if (!$("rd-corpo")) return;
+  var ES = [["lavagna: (x ∨ ȳ ∨ z) ∧ (x̄ ∨ ȳ) ∧ (x̄ ∨ z̄)", "x | -y | z ; -x | -y ; -x | -z"], ["(x ∨ y) ∧ (x̄ ∨ ȳ) ∧ (x ∨ ȳ)", "x | y ; -x | -y ; x | -y"], ["(x ∨ ȳ) ∧ x̄ ∧ y (non soddisfacibile)", "x | -y ; -x ; y"], ["(x ∨ y ∨ z) ∧ (x̄ ∨ ȳ) ∧ (ȳ ∨ z̄) ∧ (x̄ ∨ z)", "x | y | z ; -x | -y ; -y | -z ; -x | z"]];
+  $("rd-corpo").innerHTML = '<div class="controlli"><label>Formula <select id="rd-es" style="width:auto;max-width:100%">' + ES.map(function (e, i) { return '<option value="' + i + '">' + e[0] + '</option>'; }).join("") + '</select></label><button id="rd-cerca">Mostra un\'altra cricca di k vertici</button><button id="rd-vuota">Svuota la scelta</button></div>' +
+    '<p class="piccolo" id="rd-info"></p><p class="piccolo">Tocca i vertici per sceglierli. Ogni vertice è un\'occorrenza di letterale; il numero in basso è la clausola.</p>' +
+    '<div class="figura" id="rd-fig" style="margin:6px 0"></div><div class="controlli" id="rd-bott"></div><div class="narrazione" id="rd-txt"></div>';
+  var S = { e: 0, sel: [], idx: -1 };
+  function R() { return S.rid; }
+  function nuova() { S.phi = F(ES[S.e][1]); S.rid = riduzioneSoddClique(S.phi); S.sel = []; S.idx = -1; S.tutte = criccheDi(S.rid.G, S.rid.k); mostra(); }
+  function mostra() {
+    var r = R(), g = r.G, ev = archiDentro(g, S.sel);
+    $("rd-info").innerHTML = "φ = " + phiStr(S.phi, true) + ". Il grafo ha " + g.V.length + " vertici (uno per occorrenza di letterale) e " + g.E.length + " archi; k = numero di clausole = " + r.k + ".";
+    $("rd-fig").innerHTML = svgPesato(g, { cella: 74, r: 17, senzaPesi: true, evNodi: nodiDi(S.sel), evArchi: ev, aria: "il grafo costruito dalla formula" });
+    var svg = $("rd-fig").querySelector("svg"), cs = svg.querySelectorAll("circle");
+    g.V.forEach(function (v, i) { if (cs[i]) { cs[i].style.cursor = "pointer"; cs[i].addEventListener("click", function () { tocca(v); }); } });
+    $("rd-bott").innerHTML = g.V.map(function (v) { return '<button data-v="' + v + '"' + (S.sel.indexOf(v) >= 0 ? ' style="background:var(--green-soft);border-color:var(--green)"' : '') + '>' + v + '</button>'; }).join("");
+    Array.prototype.forEach.call($("rd-bott").querySelectorAll("button"), function (b) { b.onclick = function () { tocca(b.getAttribute("data-v")); }; });
+    var t;
+    if (!S.sel.length) t = S.tutte.length ? "Ci sono " + S.tutte.length + " cricche di " + r.k + " vertici: φ è soddisfacibile. Scegline una, o premi «Mostra un'altra cricca»." : "Non c'è nessuna cricca di " + r.k + " vertici: φ non è soddisfacibile (prova: ogni scelta di un vertice per clausola contiene un letterale e il suo negato).";
+    else {
+      var manca = eCricca(g, S.sel);
+      if (manca) {
+        var a = r.info[manca[0]], b = r.info[manca[1]];
+        t = manca[0] + " e " + manca[1] + " non sono collegati: " + (a.cl === b.cl ? "stanno nella stessa clausola." : "uno è il negato dell'altro.") + " Non è una cricca.";
+      } else if (S.sel.length < r.k) t = "Per ora è una cricca di " + S.sel.length + " vertici: ne servono " + r.k + ", uno per clausola.";
+      else {
+        var f = assegnamentoDaCricca(r, S.sel), V = variabili(S.phi);
+        V.forEach(function (v) { if (f[v] === undefined) f[v] = 0; });
+        t = "Cricca di " + r.k + " vertici: un letterale per clausola, nessuno il negato di un altro. Rendendo veri questi letterali: " + V.map(function (v) { return v + " = " + f[v]; }).join(", ") + (Object.keys(assegnamentoDaCricca(r, S.sel)).length < V.length ? " (le variabili che non compaiono nella cricca possono valere quello che si vuole; qui 0)" : "") + ". Ogni clausola ha un letterale vero, quindi φ = " + valPhi(S.phi, f) + ".";
+      }
+    }
+    $("rd-txt").textContent = t;
+  }
+  function tocca(v) { var i = S.sel.indexOf(v); if (i >= 0) S.sel.splice(i, 1); else S.sel.push(v); mostra(); }
+  $("rd-es").onchange = function () { S.e = Number($("rd-es").value); nuova(); };
+  $("rd-cerca").onclick = function () { if (!S.tutte.length) { S.sel = []; mostra(); return; } S.idx = (S.idx + 1) % S.tutte.length; S.sel = S.tutte[S.idx].slice(); mostra(); };
+  $("rd-vuota").onclick = function () { S.sel = []; mostra(); };
+  nuova();
+})();
+
+// ---------------------------------------------------------------- 2. cricca in G, insieme indipendente in G'
+(function () {
+  if (!$("ci-corpo")) return;
+  $("ci-corpo").innerHTML = '<p class="piccolo">Tocca i vertici (in uno dei due disegni o nei pulsanti): la stessa scelta compare in G e nel complementare G′.</p>' +
+    '<div class="affianco" id="ci-fig"></div><div class="controlli" id="ci-bott"></div><div class="narrazione" id="ci-txt"></div>';
+  var S = { sel: [] };
+  function mostra() {
+    var A = svgPesato(GC.sei, { cella: 62, senzaPesi: true, evNodi: nodiDi(S.sel), evArchi: archiDentro(GC.sei, S.sel), aria: "G" }),
+      B = svgPesato(GC.seiC, { cella: 62, senzaPesi: true, evNodi: nodiDi(S.sel, "giallo"), evArchi: (function () { var r = {}; GC.seiC.E.forEach(function (e) { if (S.sel.indexOf(e[0]) >= 0 && S.sel.indexOf(e[1]) >= 0) r[chiaveP(e[0], e[1], false)] = "rosso"; }); return r; })(), aria: "G'" });
+    $("ci-fig").innerHTML = '<div><div class="nome-mat">G</div>' + A + '</div><div><div class="nome-mat">G′ (il complementare)</div>' + B + '</div>';
+    Array.prototype.forEach.call($("ci-fig").querySelectorAll("svg"), function (svg) { var cs = svg.querySelectorAll("circle"); GC.sei.V.forEach(function (v, i) { if (cs[i]) { cs[i].style.cursor = "pointer"; cs[i].addEventListener("click", function () { tocca(v); }); } }); });
+    $("ci-bott").innerHTML = GC.sei.V.map(function (v) { return '<button data-v="' + v + '"' + (S.sel.indexOf(v) >= 0 ? ' style="background:var(--green-soft);border-color:var(--green)"' : '') + '>' + v + '</button>'; }).join("");
+    Array.prototype.forEach.call($("ci-bott").querySelectorAll("button"), function (b) { b.onclick = function () { tocca(b.getAttribute("data-v")); }; });
+    var c = eCricca(GC.sei, S.sel), d = eIndipendente(GC.seiC, S.sel), t;
+    if (S.sel.length < 2) t = "Scegli almeno due vertici.";
+    else if (!c) t = "{" + S.sel.join(", ") + "} è una cricca in G (tutte le coppie collegate) e un insieme indipendente in G′ (nessuna coppia collegata): le due cose vanno sempre insieme, perché G′ ha esattamente gli archi che G non ha.";
+    else t = c[0] + " e " + c[1] + " non sono collegati in G, quindi non è una cricca; e proprio per questo sono collegati in G′ (arco rosso), quindi non è nemmeno un insieme indipendente in G′.";
+    $("ci-txt").textContent = t;
+  }
+  function tocca(v) { var i = S.sel.indexOf(v); if (i >= 0) S.sel.splice(i, 1); else S.sel.push(v); mostra(); }
+  mostra();
+})();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La classe NP</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 30 · lezione 32 (5 dicembre 2025), inizio delle lezioni 33 e 34, slide 16</span>
+</div>
+
+<h1>La classe NP: algoritmi non deterministici e certificati</h1>
+<p class="sottotitolo">Alcuni problemi sembrano chiedere di provare un numero esponenziale di possibilità: tutti i sottoinsiemi, tutti gli assegnamenti di verità. Eppure, se qualcuno ci suggerisce la possibilità giusta, controllarla è facile e veloce. Questa pagina presenta tre problemi così (PARTIZIONE, CLIQUE e SODD), gli algoritmi non deterministici, che «indovinano» la scelta giusta, e la classe NP: i problemi di decisione con certificati verificabili in tempo polinomiale. Alla fine, la domanda aperta più famosa dell'informatica: P = NP?</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: «lavagna, pagina N» è la lezione 32 (5 dicembre 2025), dalla pagina 11 in poi; «lavagna 33» e «lavagna 34» sono le lezioni del 10 e del 12 dicembre, che ripetono queste cose e aggiungono NPSPACE. Lo pseudocodice di PARTIZIONE e CLIQUE è quello delle slide 16 («Algoritmi non deterministici», Codici 16.1 e 16.2).</li>
+    <li>Servono due cose del pacco 29, ripetute qui: un <b>problema di decisione</b> è un problema con risposta sì o no, cioè una funzione Π che a ogni istanza x associa Π(x) = 1 (istanza positiva) o Π(x) = 0 (istanza negativa); <b>P</b> è la classe dei problemi di decisione risolubili in tempo polinomiale, O(n<sup>c</sup>) per qualche costante c, nella lunghezza n dell'input. <b>EXPTIME</b> è la classe di quelli risolubili in tempo O(2<sup>n<sup>c</sup></sup>).</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in sei domande</span>
+  <ol>
+    <li><b>Quali problemi sono protagonisti?</b> PARTIZIONE (dividere dei numeri in due gruppi di somma uguale), CLIQUE (c'è una cricca di k vertici?) e SODD (una formula booleana si può rendere vera?).</li>
+    <li><b>Come si risolvono con un algoritmo normale?</b> Provando tutte le possibilità: 2<sup>n</sup> sottoinsiemi o assegnamenti. Tempo esponenziale: SODD ∈ EXPTIME.</li>
+    <li><b>Cos'è un algoritmo non deterministico?</b> Un algoritmo con l'istruzione «indovina b ∈ {0, 1}», che tra le scelte possibili indovina sempre quella giusta, se c'è.</li>
+    <li><b>Cos'è NP?</b> La classe dei problemi di decisione risolubili in tempo polinomiale da algoritmi non deterministici; equivalentemente, quelli con certificati verificabili in tempo polinomiale.</li>
+    <li><b>Che rapporto c'è con P?</b> P ⊆ NP. Se valga P = NP è il problema aperto più famoso dell'informatica.</li>
+    <li><b>E con lo spazio?</b> NPSPACE = PSPACE (teorema di Savitch), quindi P ⊆ NP ⊆ PSPACE ⊆ EXPTIME.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#partizione-clique">Due problemi: PARTIZIONE e CLIQUE</a></li>
+    <li><a href="#sodd">Formule booleane e SODD</a></li>
+    <li><a href="#nondet">Gli algoritmi non deterministici</a></li>
+    <li><a href="#np">La classe NP</a></li>
+    <li><a href="#p-np">P e NP</a></li>
+    <li><a href="#npspace">NPSPACE e il teorema di Savitch</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="partizione-clique"><span class="num">1</span>Due problemi: PARTIZIONE e CLIQUE</h2>
+<p class="in-questa"><b>In questa sezione:</b> i primi due problemi di decisione «difficili» della lezione (lavagna, pagine 11 e 12), e perché l'algoritmo ovvio per risolverli è esponenziale.</p>
+<div class="box def">
+  <span class="etichetta">PARTIZIONE (lavagna, pagina 11)</span>
+  <p><b>Istanza</b>: un insieme finito A di oggetti e una funzione peso s : A → ℕ.</p>
+  <p><b>Questione</b>: esiste A′ ⊆ A tale che Σ<sub>a ∈ A′</sub> s(a) = Σ<sub>a ∈ A ∖ A′</sub> s(a)?</p>
+</div>
+<p>In parole: si possono dividere gli oggetti in due gruppi, A′ e il resto A ∖ A′, con lo stesso peso totale? È come dividere un mucchio di pacchi tra due persone in modo che portino esattamente lo stesso peso. I due esempi della lavagna sono nella Figura 1.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) 22 1 7 12 16</div><svg viewBox="0 0 300 92" width="300" height="92" role="img" aria-label="partizione di 22 1 7 12 16: 22 e 7 da una parte" font-family="system-ui, sans-serif"><rect x="10" y="10" width="42" height="34" rx="6" class="r-verde" stroke-width="1.5"/><text x="31" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">22</text><rect x="60" y="10" width="42" height="34" rx="6" class="r-giallo" stroke-width="1.5"/><text x="81" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">1</text><rect x="110" y="10" width="42" height="34" rx="6" class="r-verde" stroke-width="1.5"/><text x="131" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">7</text><rect x="160" y="10" width="42" height="34" rx="6" class="r-giallo" stroke-width="1.5"/><text x="181" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">12</text><rect x="210" y="10" width="42" height="34" rx="6" class="r-giallo" stroke-width="1.5"/><text x="231" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">16</text><text x="10" y="66" font-size="12.5" class="t-verde">in A′ (verde): somma 29</text><text x="10" y="84" font-size="12.5" class="t-arancio">in A ∖ A′ (giallo): somma 29</text></svg></div><div><div class="nome-mat">(b) 30 44 56 22 15 19 38 77 29</div><svg viewBox="0 0 470 92" width="470" height="92" role="img" aria-label="partizione dei nove numeri della lavagna" font-family="system-ui, sans-serif"><rect x="10" y="10" width="42" height="34" rx="6" class="r-verde" stroke-width="1.5"/><text x="31" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">30</text><rect x="60" y="10" width="42" height="34" rx="6" class="r-giallo" stroke-width="1.5"/><text x="81" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">44</text><rect x="110" y="10" width="42" height="34" rx="6" class="r-verde" stroke-width="1.5"/><text x="131" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">56</text><rect x="160" y="10" width="42" height="34" rx="6" class="r-verde" stroke-width="1.5"/><text x="181" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">22</text><rect x="210" y="10" width="42" height="34" rx="6" class="r-giallo" stroke-width="1.5"/><text x="231" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">15</text><rect x="260" y="10" width="42" height="34" rx="6" class="r-verde" stroke-width="1.5"/><text x="281" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">19</text><rect x="310" y="10" width="42" height="34" rx="6" class="r-verde" stroke-width="1.5"/><text x="331" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">38</text><rect x="360" y="10" width="42" height="34" rx="6" class="r-giallo" stroke-width="1.5"/><text x="381" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">77</text><rect x="410" y="10" width="42" height="34" rx="6" class="r-giallo" stroke-width="1.5"/><text x="431" y="32" font-size="14" font-weight="700" text-anchor="middle" class="t-testo">29</text><text x="10" y="66" font-size="12.5" class="t-verde">in A′ (verde): somma 165</text><text x="10" y="84" font-size="12.5" class="t-arancio">in A ∖ A′ (giallo): somma 165</text></svg></div></div>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagina 11. (a) Con 22, 1, 7, 12, 16 basta mettere 22 e 7 da una parte (29) e 1, 12, 16 dall'altra (29). (b) Con i nove numeri della seconda riga il totale è 330, e 30 + 56 + 22 + 19 + 38 = 165 è esattamente la metà.</div>
+</div>
+<p>Trovare la divisione giusta, con nove numeri, non è immediato; ma <em>controllarla</em>, una volta che qualcuno te la indica, è facilissimo: basta fare due somme. È la situazione tipica di tutta la pagina.</p>
+<div class="box def">
+  <span class="etichetta">CLIQUE (lavagna, pagina 12)</span>
+  <p><b>Istanza</b>: un grafo non orientato G = (V, E) e un intero k ≥ 0.</p>
+  <p><b>Questione</b>: esiste un sottografo completo di G con k vertici?</p>
+</div>
+<p>Ricorda (pacco 29): un sottografo completo, o cricca, è un insieme di vertici collegati tutti con tutti. Alla lavagna c'è un grafo con una decina di vertici e moltissimi archi, e la domanda «k = 7?»: a occhio è impossibile rispondere. Anche qui, se qualcuno indica 7 vertici, controllare che siano collegati a due a due è facile.</p>
+<p><b>Quanto costa provare tutto?</b> L'algoritmo ovvio prova tutte le possibilità:</p>
+<ul>
+  <li>per PARTIZIONE con n oggetti, tutti i sottoinsiemi A′ ⊆ A: sono 2<sup>n</sup>;</li>
+  <li>per CLIQUE con n vertici, tutti i sottoinsiemi di k vertici: sono C(n, k) = n! / (k! (n − k)!), che cresce come n<sup>k</sup> (lavagna, pagina 12). Se k non è fissato ma fa parte dell'input (per esempio k = n/2), sono un numero esponenziale.</li>
+</ul>
+<p>Con n = 60 oggetti, 2<sup>60</sup> è più di un miliardo di miliardi: anche provandone un miliardo al secondo servirebbero più di trent'anni.</p>
+<div class="widget" id="w-pa">
+  <h4>Partizione: scegli tu</h4>
+  <div id="pa-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>PARTIZIONE: si possono dividere gli oggetti in due gruppi di peso uguale? CLIQUE: c'è una cricca di k vertici?</li>
+    <li>Provare tutto costa 2<sup>n</sup> (sottoinsiemi) o C(n, k) ≈ n<sup>k</sup> tentativi: tempo esponenziale.</li>
+    <li>Controllare una soluzione proposta è invece facile e veloce.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="sodd"><span class="num">2</span>Formule booleane e SODD</h2>
+<p class="in-questa"><b>In questa sezione:</b> le formule booleane in forma normale congiuntiva, il problema della soddisfacibilità (SODD) con gli esempi della lavagna, e l'algoritmo che prova tutti gli assegnamenti (lavagna, pagine 13–18).</p>
+<div class="box def">
+  <span class="etichetta">Formule in forma normale congiuntiva (lavagna, pagina 13)</span>
+  <ul>
+    <li><b>V</b>: un insieme finito di variabili (x, y, z, …), che possono valere 0 (falso) o 1 (vero).</li>
+    <li><b>Letterale</b>: una variabile o una variabile negata: x oppure x̄ (x̄ vale 1 quando x vale 0).</li>
+    <li><b>Clausola</b>: una disgiunzione (OR, ∨) di letterali, per esempio x ∨ ȳ ∨ z̄. Vale 1 se <em>almeno un</em> letterale vale 1.</li>
+    <li><b>Formula</b> in forma normale congiuntiva: una congiunzione (AND, ∧) di clausole. Vale 1 se <em>tutte</em> le clausole valgono 1. Esempio: φ(x, y, z) = (x ∨ ȳ ∨ z) ∧ (x̄ ∨ ȳ) ∧ (x̄ ∨ z̄).</li>
+    <li><b>Assegnamento</b>: una funzione f : V → {0, 1}, che dà un valore a ogni variabile. φ(f) è il valore della formula quando a ogni variabile x si assegna f(x).</li>
+  </ul>
+</div>
+<p>L'esempio della pagina 13: f(x) = 0, f(y) = 1, f(z) = 1. Clausola per clausola: x ∨ ȳ ∨ z = 0 ∨ 0 ∨ 1 = 1; x̄ ∨ ȳ = 1 ∨ 0 = 1; x̄ ∨ z̄ = 1 ∨ 0 = 1. Tutte vere: φ(f) = 1.</p>
+<div class="box def">
+  <span class="etichetta">SODDISFACIBILITÀ, SODD (lavagna, pagina 14)</span>
+  <p><b>Istanza</b>: una formula booleana φ in forma normale congiuntiva, con insieme di variabili V.</p>
+  <p><b>Questione</b>: esiste un assegnamento alle variabili in V che rende vera φ, cioè un f tale che φ(f) = 1?</p>
+</div>
+<p>Una formula per cui un tale f esiste si dice <strong>soddisfacibile</strong>. Gli esempi della lavagna:</p>
+<ul>
+  <li>(pagina 15) φ = (x ∨ z) ∧ (x̄ ∨ y ∨ z) ∧ (x ∨ y ∨ z̄). Con x = 1, y = 1, z = 0: 1 ∨ 0 = 1; 0 ∨ 1 ∨ 0 = 1; 1 ∨ 1 ∨ 1 = 1. φ(f) = 1: <strong>soddisfacibile</strong>.</li>
+  <li>(pagina 16) φ = (x ∨ ȳ) ∧ x̄ ∧ y. Le clausole x̄ e y obbligano x = 0 e y = 1; ma allora x ∨ ȳ = 0 ∨ 0 = 0. La tabella della lavagna prova tutti e quattro gli assegnamenti (00, 01, 10, 11): φ vale sempre 0. <strong>Non soddisfacibile</strong>.</li>
+  <li>(pagina 17) φ = (x ∨ ȳ ∨ z ∨ w) ∧ (z̄ ∨ w ∨ y) ∧ (x̄ ∨ w̄ ∨ z̄). Con x = 1, y = 0, w = 1, z = 0: la prima clausola vale 1 grazie a x, la seconda grazie a z̄, la terza grazie a z̄. <strong>Soddisfacibile</strong>.</li>
+</ul>
+<p><b>L'algoritmo che prova tutto</b> (pagina 18). Con n variabili x<sub>1</sub>, …, x<sub>n</sub> gli assegnamenti possibili sono <strong>2<sup>n</sup></strong> (ogni variabile ha 2 valori, indipendentemente dalle altre). Per decidere se φ è soddisfacibile si provano tutti, valutando ogni volta la formula; valutarla costa un tempo proporzionale alla sua lunghezza. Il tempo totale è O(2<sup>n</sup>) volte la lunghezza della formula: esponenziale. Quindi <strong>SODD ∈ EXPTIME</strong>. Nessuno conosce un algoritmo polinomiale per SODD.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Letterale: x o x̄. Clausola: OR di letterali. Formula in forma normale congiuntiva: AND di clausole. Assegnamento f : V → {0, 1}.</li>
+    <li>SODD: esiste f con φ(f) = 1?</li>
+    <li>Provare tutti i 2<sup>n</sup> assegnamenti: SODD ∈ EXPTIME.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="nondet"><span class="num">3</span>Gli algoritmi non deterministici</h2>
+<p class="in-questa"><b>In questa sezione:</b> l'istruzione «indovina», l'algoritmo non deterministico per SODD e il suo albero di computazione (lavagna, pagine 19–21).</p>
+<div class="box def">
+  <span class="etichetta">Algoritmi non deterministici (lavagna, pagina 19)</span>
+  <ul>
+    <li>Hanno un'istruzione in più: <strong>indovina b ∈ {0, 1}</strong>.</li>
+    <li>Tra le possibili scelte, l'algoritmo <strong>indovina sempre quella «giusta»</strong>, se c'è.</li>
+  </ul>
+</div>
+<p>Un algoritmo non deterministico non è un algoritmo che tira a caso. È un modello teorico: si immagina che ogni volta che deve scegliere, scelga la strada che porta alla risposta 1, se una tale strada esiste. Se nessuna scelta porta a 1, la risposta è 0. Non si può costruire un computer così; il modello serve a classificare i problemi.</p>
+<p class="titolo-codice">Lavagna, pagina 20</p>
+<pre class="pseudo"><b>ALGORITMO</b> sodd(formula φ(x<sub>1</sub>, …, x<sub>n</sub>)) → boolean
+  <b>FOR</b> i ← 1 <b>TO</b> n <b>DO</b>
+    z<sub>i</sub> ← indovina un valore in {0, 1}      <span class="com">// indovina</span>
+  r ← φ(z<sub>1</sub>, z<sub>2</sub>, …, z<sub>n</sub>)                  <span class="com">// verifica</span>
+  <b>RETURN</b> r</pre>
+<p>L'algoritmo ha due parti. La prima <em>indovina</em> un assegnamento, un valore per variabile. La seconda lo <em>verifica</em>: calcola il valore della formula. Se φ è soddisfacibile, c'è un assegnamento che dà 1, l'algoritmo lo indovina e risponde true. Se φ non è soddisfacibile, qualunque cosa indovini la verifica dà 0, e risponde false. Quindi risponde true esattamente quando φ è soddisfacibile: risolve SODD.</p>
+<p><b>L'albero di computazione</b> (pagina 21). Tutte le scelte possibili si disegnano come un albero: al primo livello si sceglie x<sub>1</sub> (0 a sinistra, 1 a destra), al secondo x<sub>2</sub>, e così via. Ogni foglia è un assegnamento, e ci si scrive il valore della formula. La Figura 2 è l'esempio della lavagna, φ(x<sub>1</sub>, x<sub>2</sub>, x<sub>3</sub>) = (x<sub>1</sub> ∨ x<sub>2</sub> ∨ x<sub>3</sub>) ∧ (x̄<sub>1</sub> ∨ x̄<sub>3</sub>).</p>
+<div class="figura">
+<svg viewBox="0 0 388 250" width="388" height="250" role="img" aria-label="albero di computazione per la formula della lavagna" font-family="system-ui, sans-serif"><line x1="194" y1="32" x2="102" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="141" y="49" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="194" y1="32" x2="286" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="247" y="49" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="194" y="27" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x₁</text><line x1="102" y1="86" x2="56" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="72" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="102" y1="86" x2="148" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="132" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="102" y="81" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x₂</text><line x1="286" y1="86" x2="240" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="256" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="286" y1="86" x2="332" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="316" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="286" y="81" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x₂</text><line x1="56" y1="140" x2="33" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="37.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="56" y1="140" x2="79" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="74.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="56" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x₃</text><line x1="148" y1="140" x2="125" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="129.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="148" y1="140" x2="171" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="166.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="148" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x₃</text><line x1="240" y1="140" x2="217" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="221.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="240" y1="140" x2="263" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="258.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="240" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x₃</text><line x1="332" y1="140" x2="309" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="313.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="332" y1="140" x2="355" y2="172" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="350.5" y="157" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="332" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x₃</text><rect x="20" y="173" width="26" height="22" rx="4" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.4"/><text x="33" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">0</text><text x="33" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">000</text><rect x="66" y="173" width="26" height="22" rx="4" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.4"/><text x="79" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><text x="79" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">001</text><rect x="112" y="173" width="26" height="22" rx="4" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.4"/><text x="125" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><text x="125" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">010</text><rect x="158" y="173" width="26" height="22" rx="4" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.4"/><text x="171" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><text x="171" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">011</text><rect x="204" y="173" width="26" height="22" rx="4" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.4"/><text x="217" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><text x="217" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">100</text><rect x="250" y="173" width="26" height="22" rx="4" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.4"/><text x="263" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">0</text><text x="263" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">101</text><rect x="296" y="173" width="26" height="22" rx="4" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.4"/><text x="309" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-verde" fill="#17803d">1</text><text x="309" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">110</text><rect x="342" y="173" width="26" height="22" rx="4" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.4"/><text x="355" y="189" font-size="13" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">0</text><text x="355" y="211" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">111</text></svg>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagina 21: l'albero di computazione. Sotto ogni foglia l'assegnamento x<sub>1</sub>x<sub>2</sub>x<sub>3</sub>. 000 dà 0 (la prima clausola è falsa); 101 e 111 danno 0 (la seconda clausola è falsa, x<sub>1</sub> e x<sub>3</sub> sono entrambe 1); tutte le altre danno 1. Ci sono foglie con 1: l'algoritmo risponde true.</div>
+</div>
+<p>L'albero dà un modo preciso di dire cosa fa un algoritmo non deterministico: <strong>risponde 1 se almeno un cammino dalla radice a una foglia porta a 1</strong>. E il suo tempo è la lunghezza di <em>un</em> cammino, non dell'albero intero: qui n scelte più la valutazione della formula, un tempo polinomiale. L'albero intero ha 2<sup>n</sup> foglie: è quello che dovrebbe esplorare un algoritmo deterministico.</p>
+<div class="figura">
+<svg viewBox="0 0 260 196" width="260" height="196" role="img" aria-label="albero di computazione per una formula non soddisfacibile" font-family="system-ui, sans-serif"><line x1="130" y1="32" x2="70" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="93" y="49" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="130" y1="32" x2="190" y2="64" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="167" y="49" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="130" y="27" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">x</text><line x1="70" y1="86" x2="40" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="48" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="70" y1="86" x2="100" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="92" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="70" y="81" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">y</text><line x1="190" y1="86" x2="160" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="168" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">0</text><line x1="190" y1="86" x2="220" y2="118" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><text x="212" y="103" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">1</text><text x="190" y="81" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">y</text><rect x="27" y="119" width="26" height="22" rx="4" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.4"/><text x="40" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">0</text><text x="40" y="157" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">00</text><rect x="87" y="119" width="26" height="22" rx="4" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.4"/><text x="100" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">0</text><text x="100" y="157" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">01</text><rect x="147" y="119" width="26" height="22" rx="4" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.4"/><text x="160" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">0</text><text x="160" y="157" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">10</text><rect x="207" y="119" width="26" height="22" rx="4" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.4"/><text x="220" y="135" font-size="13" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">0</text><text x="220" y="157" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">11</text></svg>
+<div class="didascalia"><b>Figura 3.</b> L'albero per la formula non soddisfacibile della lavagna, pagina 16: φ = (x ∨ ȳ) ∧ x̄ ∧ y. Tutte le foglie valgono 0, quindi non c'è una scelta «giusta» da indovinare, e l'algoritmo risponde false.</div>
+</div>
+<div class="widget" id="w-ac">
+  <h4>L'albero delle scelte</h4>
+  <div id="ac-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Algoritmo non deterministico: ha l'istruzione «indovina b ∈ {0, 1}» e indovina sempre la scelta giusta, se c'è.</li>
+    <li>sodd: indovina z<sub>1</sub>, …, z<sub>n</sub>, poi verifica r ← φ(z<sub>1</sub>, …, z<sub>n</sub>).</li>
+    <li>Albero di computazione: risponde 1 se almeno una foglia vale 1. Il tempo è la lunghezza di un cammino: polinomiale.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="np"><span class="num">4</span>La classe NP</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione di NP nei due modi della lavagna (pagine 22 e 27), il certificato, e gli algoritmi non deterministici per PARTIZIONE e CLIQUE (slide 16).</p>
+<div class="box def">
+  <span class="etichetta">La classe NP (lavagna, pagina 22)</span>
+  <p><strong>NP</strong> = classe dei problemi di decisione risolubili in <strong>tempo polinomiale</strong> da <strong>algoritmi non deterministici</strong>.</p>
+  <p>= classe dei problemi di decisione con <strong>certificati verificabili in tempo polinomiale</strong>.</p>
+  <p>Il nome: N = non deterministico, P = polinomiale.</p>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">NP non vuol dire «non polinomiale»</span>
+  <p>È l'errore più comune: NP sta per «polinomiale non deterministico». Tutti i problemi di P sono anche in NP (sezione 5).</p>
+</div>
+<p>Il <strong>certificato</strong> è quello che l'algoritmo non deterministico indovina: l'assegnamento per SODD, il sottoinsieme A′ per PARTIZIONE, i k vertici per CLIQUE. È una «prova» che l'istanza è positiva, abbastanza corta da scrivere (polinomiale) e facile da controllare (in tempo polinomiale). Per questo le due definizioni sono la stessa cosa (pagina 27):</p>
+<div class="box def">
+  <span class="etichetta">Struttura di un algoritmo per un problema NP (lavagna, pagina 27)</span>
+  <ul>
+    <li><b>Fase non deterministica</b>: costruzione del certificato (le istruzioni «indovina»).</li>
+    <li><b>Fase deterministica</b>: verifica del certificato in tempo polinomiale.</li>
+  </ul>
+</div>
+<p>Per SODD si è già visto tutto: il certificato è l'assegnamento, la verifica è il calcolo di φ, quindi <strong>SODD ∈ NP</strong> (lavagna, pagina 22). Gli altri due:</p>
+<p class="titolo-codice">Codice 16.1 (slide 16; lavagna, pagina 24): stabilisce se si possono scegliere alcuni elementi in modo che la loro somma sia uguale a quella dei non scelti</p>
+<pre class="pseudo"><b>ALGORITMO</b> Partizione(array S[1..n] di interi) → boolean
+  Sia b[1..n] un array
+  <b>FOR</b> i ← 1 <b>TO</b> n <b>DO</b>
+    b[i] ← indovina un valore in {0, 1}       <span class="com">// fase non deterministica</span>
+  sommaScelti ← 0                              <span class="com">// fase deterministica: verifica</span>
+  sommaAltri ← 0
+  <b>FOR</b> i ← 1 <b>TO</b> n <b>DO</b>
+    <b>IF</b> b[i] = 1 <b>THEN</b> sommaScelti ← sommaScelti + S[i]
+    <b>ELSE</b> sommaAltri ← sommaAltri + S[i]
+  <b>RETURN</b> sommaScelti = sommaAltri</pre>
+<p>Gli oggetti sono i pesi S[1], …, S[n]; b[i] = 1 vuol dire «l'oggetto i sta in A′». La verifica è un solo giro: O(n) somme. <strong>PARTIZIONE ∈ NP</strong>.</p>
+<p class="titolo-codice">Codice 16.2 (slide 16; lavagna, pagina 26): dato un grafo G e un intero k stabilisce se G contiene una cricca di k vertici</p>
+<pre class="pseudo"><b>ALGORITMO</b> Clique(grafo G = (V, E), intero k) → boolean
+  V′ ← ∅
+  <b>FOR EACH</b> v ∈ V <b>DO</b>                          <span class="com">// fase non deterministica</span>
+    b ← indovina un valore in {0, 1}
+    <b>IF</b> b = 1 <b>THEN</b> V′ ← V′ ∪ {v}
+  <b>IF</b> #V′ ≠ k <b>THEN RETURN</b> false               <span class="com">// fase deterministica: verifica</span>
+  r ← true
+  <b>FOR EACH</b> v ∈ V′ <b>DO</b>
+    <b>FOR EACH</b> u ∈ V′ <b>DO</b>
+      <b>IF</b> u ≠ v <b>AND</b> (u, v) ∉ E <b>THEN</b> r ← false
+  <b>RETURN</b> r</pre>
+<p>Per ogni vertice si indovina se metterlo in V′. La verifica controlla che V′ abbia k vertici e che ogni coppia di vertici distinti di V′ sia collegata: k<sup>2</sup> coppie, ognuna controllabile in tempo polinomiale (per esempio in O(1) con la matrice di adiacenza). <strong>CLIQUE ∈ NP</strong>. La Figura 4 è un certificato per l'esagono con gli archi C–D e D–F e k = 4.</p>
+<div class="figura">
+<svg viewBox="0 0 298 214" width="298" height="214" role="img" aria-label="il certificato B C D F per CLIQUE con k = 4" font-family="system-ui, sans-serif"><path d="M47 95.9 L90 48.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47 118.1 L90 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 52 L100 162" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M108.6 49.3 L189.4 164.7" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M115 177 L183 177" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M208 48.1 L251 95.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115 37 L183 37" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M251 118.1 L208 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.6 164.7 L189.4 49.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M198 52 L198 162" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><circle cx="37" cy="107" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="100" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="100" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="198" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="198" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="261" cy="107" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="261" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="198" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="198" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg>
+<div class="didascalia"><b>Figura 4.</b> Un certificato per CLIQUE con k = 4: V′ = {B, C, D, F}. La verifica controlla le 6 coppie B–C, B–D, B–F, C–D, C–F, D–F: ci sono tutte (in verde). Quindi la risposta è true.</div>
+</div>
+<div class="widget" id="w-cq">
+  <h4>CLIQUE: verifica il certificato</h4>
+  <div id="cq-corpo"></div>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">Il certificato prova il sì, non il no</span>
+  <p>Un certificato convince che un'istanza è <em>positiva</em>: indicando A′ si dimostra che la partizione esiste. Per un'istanza negativa non c'è niente da indovinare: per convincere che una formula <em>non</em> è soddisfacibile, in generale non si conosce niente di meglio che controllare tutti gli assegnamenti. La definizione di NP chiede solo che le istanze positive abbiano un certificato corto e verificabile in fretta. (Questa osservazione non è scritta alla lavagna.)</p>
+</div>
+<div class="box esame">
+  <span class="etichetta">Metodo: dimostrare che un problema sta in NP</span>
+  <ol>
+    <li>Dire qual è il certificato: l'oggetto che, se esiste, prova che la risposta è sì (un assegnamento, un sottoinsieme, un insieme di vertici, un cammino…).</li>
+    <li>Scrivere la fase non deterministica: indovinare il certificato bit per bit, con «indovina un valore in {0, 1}». Deve avere lunghezza polinomiale.</li>
+    <li>Scrivere la fase deterministica: controllare che il certificato vada bene, e stimare che il controllo costa tempo polinomiale.</li>
+  </ol>
+  <p>Esempio: COLORAZIONE con k colori (si possono colorare i vertici con k colori in modo che vertici adiacenti abbiano colori diversi?). Certificato: un colore tra 1 e k per ogni vertice. Fase non deterministica: per ogni vertice si indovina il suo colore (log<sub>2</sub> k bit). Verifica: per ogni arco (u, v) si controlla che u e v abbiano colori diversi, O(m) controlli. Quindi COLORAZIONE ∈ NP.</p>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>NP: problemi di decisione risolubili in tempo polinomiale da algoritmi non deterministici = con certificati verificabili in tempo polinomiale.</li>
+    <li>Algoritmo NP: fase non deterministica (costruzione del certificato) + fase deterministica (verifica in tempo polinomiale).</li>
+    <li>SODD, PARTIZIONE, CLIQUE ∈ NP (Codici 16.1 e 16.2).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="p-np"><span class="num">5</span>P e NP</h2>
+<p class="in-questa"><b>In questa sezione:</b> perché P ⊆ NP, e la domanda aperta P = NP? (lavagna, pagine 27 e 28; lavagna 33, pagine 10 e 12).</p>
+<p><strong>P ⊆ NP</strong> (lavagna, pagina 27). Un algoritmo deterministico è un caso particolare di algoritmo non deterministico: quello che non usa mai l'istruzione «indovina». Quindi un problema risolubile in tempo polinomiale da un algoritmo deterministico è risolubile in tempo polinomiale anche da uno non deterministico. Nel linguaggio dei certificati: il certificato è vuoto, e la «verifica» risolve direttamente il problema in tempo polinomiale.</p>
+<p>Il contrario è la grande domanda: <strong>P = NP?</strong> Cioè: ogni problema la cui soluzione si <em>verifica</em> in fretta si può anche <em>trovare</em> in fretta? Nessuno lo sa. Quasi tutti pensano che P ≠ NP (che verificare sia davvero più facile che trovare), ma nessuno è mai riuscito a dimostrarlo, né il contrario. È il problema aperto più famoso dell'informatica.</p>
+<p>La lavagna 33 (pagina 12) disegna come sarebbe il mondo se P ≠ NP (Figura 5): dentro P problemi come «il grafo è connesso?» e «c'è un albero ricoprente di peso ≤ k?» (Kruskal e Prim trovano quello minimo in tempo polinomiale); in NP ma fuori da P, CLIQUE, SODD e PARTIZIONE. Questi ultimi sono speciali: sono i problemi <strong>NP-completi</strong>, «i più difficili di NP», l'argomento del pacco 31.</p>
+<div class="figura">
+<svg viewBox="0 0 440 220" width="440" height="220" role="img" aria-label="se P è diverso da NP: CLIQUE, SODD e PARTIZIONE stanno in NP ma non in P" font-family="system-ui, sans-serif"><ellipse cx="220" cy="110" rx="212" ry="102" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.8"/><text x="220" y="26" font-size="13" font-weight="700" class="t-blu" fill="#2f52c4" text-anchor="middle">NP</text><text x="110" y="79.9" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">CLIQUE</text><text x="110" y="95.9" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">SODD</text><text x="110" y="111.9" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">PARTIZIONE</text><ellipse cx="290" cy="116" rx="129.3" ry="62.2" class="l-arancio" fill="none" stroke="#b4500f" stroke-width="1.8"/><text x="290" y="73.8" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f" text-anchor="middle">P</text><text x="290" y="99.8" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">grafo connesso?</text><text x="290" y="115.8" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">albero ricoprente di peso ≤ k?</text><text x="290" y="131.8" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">cammino da s a t?</text></svg>
+<div class="didascalia"><b>Figura 5.</b> Lavagna 33, pagina 12: se P ≠ NP, la classe P è una parte di NP, e CLIQUE, SODD e PARTIZIONE stanno in NP ma non in P. Se invece P = NP, i due insiemi coincidono.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>P ⊆ NP: un algoritmo deterministico è un algoritmo non deterministico che non indovina mai.</li>
+    <li>P = NP? Problema aperto: non si sa.</li>
+    <li>Se P ≠ NP, CLIQUE, SODD e PARTIZIONE non stanno in P.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="npspace"><span class="num">6</span>NPSPACE e il teorema di Savitch</h2>
+<p class="in-questa"><b>In questa sezione:</b> la versione non deterministica di PSPACE, il teorema di Savitch e la catena completa delle inclusioni (lavagna 33, pagina 11).</p>
+<div class="box def">
+  <span class="etichetta">NPSPACE (lavagna 33, pagina 11)</span>
+  <p>Classe dei problemi di decisione risolubili in <strong>spazio polinomiale</strong> da <strong>algoritmi non deterministici</strong>.</p>
+</div>
+<p>Per lo spazio il non determinismo non aiuta: <strong>PSPACE = NPSPACE</strong>, il <em>teorema di Savitch</em> (1970). La lavagna lo enuncia senza dimostrazione. Mettendo insieme le relazioni:</p>
+<ul>
+  <li>P ⊆ NP (sezione 5);</li>
+  <li>NP ⊆ NPSPACE: in tempo polinomiale si usa spazio polinomiale, con lo stesso argomento di P ⊆ PSPACE (ogni istruzione tocca al più k celle, quindi in tempo t si usano al più k · t celle);</li>
+  <li>NPSPACE = PSPACE (Savitch);</li>
+  <li>PSPACE ⊆ EXPTIME (pacco 29: con spazio s, un programma che termina fa al più 2<sup>k·s</sup> · p passi).</li>
+</ul>
+<div class="formula grande">P ⊆ NP ⊆ PSPACE ⊆ EXPTIME</div>
+<div class="figura">
+<svg viewBox="0 0 440 250" width="440" height="250" role="img" aria-label="P contenuto in NP contenuto in PSPACE uguale a NPSPACE contenuto in EXPTIME" font-family="system-ui, sans-serif"><ellipse cx="220" cy="125" rx="212" ry="117" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.8"/><text x="220" y="26" font-size="13" font-weight="700" class="t-blu" fill="#2f52c4" text-anchor="middle">EXPTIME</text><ellipse cx="220" cy="131" rx="170.7" ry="94.2" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.8"/><text x="220" y="54.8" font-size="13" font-weight="700" class="t-verde" fill="#17803d" text-anchor="middle">PSPACE = NPSPACE</text><ellipse cx="220" cy="137" rx="129.3" ry="71.4" class="l-rosso" fill="none" stroke="#b42318" stroke-width="1.8"/><text x="220" y="83.6" font-size="13" font-weight="700" class="t-rosso" fill="#b42318" text-anchor="middle">NP</text><ellipse cx="220" cy="143" rx="88" ry="48.6" class="l-arancio" fill="none" stroke="#b4500f" stroke-width="1.8"/><text x="220" y="148" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f" text-anchor="middle">P</text></svg>
+<div class="didascalia"><b>Figura 6.</b> La catena delle classi. Si sa che P ≠ EXPTIME; non si sa se le altre inclusioni siano strette. In particolare non si sa se P ≠ NP, né se NP ≠ PSPACE.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>NPSPACE: spazio polinomiale con algoritmi non deterministici. Teorema di Savitch: NPSPACE = PSPACE.</li>
+    <li>P ⊆ NP ⊆ PSPACE ⊆ EXPTIME, con P ≠ EXPTIME.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="riassunto"><span class="num">7</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>PARTIZIONE</b>: A, s : A → ℕ; esiste A′ con Σ<sub>A′</sub> s = Σ<sub>A∖A′</sub> s? <b>CLIQUE</b>: G, k; esiste una cricca di k vertici? <b>SODD</b>: φ in forma normale congiuntiva; esiste f con φ(f) = 1?</li>
+    <li>Provare tutto: 2<sup>n</sup> possibilità. SODD ∈ EXPTIME.</li>
+    <li><b>Algoritmo non deterministico</b>: «indovina b ∈ {0, 1}», indovina sempre la scelta giusta se c'è; risponde 1 se un cammino dell'albero di computazione porta a 1; il tempo è quello di un cammino.</li>
+    <li><b>NP</b>: tempo polinomiale con algoritmi non deterministici = certificati verificabili in tempo polinomiale. Fase non deterministica (certificato) + fase deterministica (verifica).</li>
+    <li>SODD, PARTIZIONE (Codice 16.1), CLIQUE (Codice 16.2) ∈ NP.</li>
+    <li><b>P ⊆ NP</b>; P = NP? aperto. <b>NPSPACE = PSPACE</b> (Savitch). <b>P ⊆ NP ⊆ PSPACE ⊆ EXPTIME</b>.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Questi argomenti non sono mai stati chiesti negli scritti degli ultimi anni.</li>
+    <li>All'orale: le definizioni di SODD, PARTIZIONE, CLIQUE; cos'è un algoritmo non deterministico; le due definizioni di NP e perché sono equivalenti; un algoritmo non deterministico per uno dei tre problemi, con le due fasi; P ⊆ NP; la catena P ⊆ NP ⊆ PSPACE ⊆ EXPTIME.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="esercizi"><span class="num">8</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> esercizi sui tre problemi, sugli algoritmi non deterministici e sui certificati. Prova a risolverli, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 1. Tre istanze di PARTIZIONE</summary>
+  <p>Per ognuna delle istanze 3 1 1 2 2 1 · 1 2 4 8 · 5 5 4 3 3, dite se è positiva o negativa; se è positiva date un certificato.</p>
+  <div class="soluzione">
+    <ul>
+      <li><b>3 1 1 2 2 1</b>: totale 10, metà 5. Certificato A′ = {3, 2}: 5 contro 1 + 1 + 2 + 1 = 5. Positiva.</li>
+      <li><b>1 2 4 8</b>: totale 15, dispari. Due gruppi di peso uguale avrebbero un totale pari: impossibile. Negativa.</li>
+      <li><b>5 5 4 3 3</b>: totale 20, metà 10. Certificato A′ = {5, 5}: 10 contro 4 + 3 + 3 = 10. Positiva.</li>
+    </ul>
+    <p>Nel secondo caso il «no» si dimostra con un'osservazione furba (la parità). In generale, però, per un'istanza negativa non si conosce una scorciatoia: con un totale pari bisognerebbe escludere tutti i sottoinsiemi. Puoi provare nel riquadro «Partizione: scegli tu».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 2. Un albero di computazione a mano</summary>
+  <p>Disegnate l'albero di computazione dell'algoritmo sodd per φ = (x ∨ y) ∧ (x̄ ∨ ȳ) ∧ (x ∨ ȳ). Cosa risponde l'algoritmo?</p>
+  <div class="soluzione">
+    <p>Due variabili, quindi 4 foglie: x scelto al primo livello, y al secondo.</p>
+    <ul>
+      <li>x = 0, y = 0: x ∨ y = 0. Foglia 0.</li>
+      <li>x = 0, y = 1: 1, 1, ma x ∨ ȳ = 0 ∨ 0 = 0. Foglia 0.</li>
+      <li>x = 1, y = 0: 1, 1, 1. Foglia 1.</li>
+      <li>x = 1, y = 1: x̄ ∨ ȳ = 0. Foglia 0.</li>
+    </ul>
+    <p>Una foglia vale 1, quindi c'è una scelta giusta da indovinare (x = 1, y = 0): l'algoritmo risponde true. φ è soddisfacibile, con un solo assegnamento buono su 4.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 3. CAMMINO HAMILTONIANO sta in NP</summary>
+  <p>CAMMINO HAMILTONIANO: dato un grafo G = (V, E), esiste un cammino che visita tutti i vertici una e una sola volta? Dimostrate che sta in NP seguendo il Metodo della sezione 4.</p>
+  <div class="soluzione">
+    <ol>
+      <li><b>Certificato</b>: l'ordine in cui il cammino visita i vertici, cioè una sequenza v<sub>1</sub>, …, v<sub>n</sub> dei vertici del grafo.</li>
+      <li><b>Fase non deterministica</b>: per i = 1, …, n si indovina v<sub>i</sub> (log<sub>2</sub> n bit per scegliere uno degli n vertici). Lunghezza n log<sub>2</sub> n bit: polinomiale.</li>
+      <li><b>Fase deterministica</b>: si controlla che ogni vertice compaia esattamente una volta (con un array di marcatori, O(n)) e che ogni coppia consecutiva (v<sub>i</sub>, v<sub>i+1</sub>) sia un arco (n − 1 controlli). Tempo polinomiale.</li>
+    </ol>
+    <p>Quindi CAMMINO HAMILTONIANO ∈ NP.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4. Vero o falso</summary>
+  <p>(a) Un problema in NP non può essere risolto in tempo polinomiale. (b) Se un problema sta in P, sta anche in NP. (c) SODD si risolve in tempo esponenziale. (d) Un algoritmo non deterministico che risolve SODD prova tutti gli assegnamenti.</p>
+  <div class="soluzione">
+    <p><b>(a) Falso</b>: P ⊆ NP, quindi tutti i problemi di P (ordinare, il grafo è connesso…) stanno in NP e si risolvono in tempo polinomiale. NP non vuol dire «non polinomiale».</p>
+    <p><b>(b) Vero</b>: P ⊆ NP.</p>
+    <p><b>(c) Vero</b>: provando i 2<sup>n</sup> assegnamenti; SODD ∈ EXPTIME. (Non si sa se si possa fare meglio in modo polinomiale.)</p>
+    <p><b>(d) Falso</b>: ne indovina uno solo, e lo verifica. È l'algoritmo deterministico che simula quello non deterministico a dover esplorare tutto l'albero.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5. Quanto costa la verifica di CLIQUE</summary>
+  <p>Nel Codice 16.2, quante coppie (u, v) controllano i due FOR EACH annidati, se #V′ = k? Quanto costa la verifica se il grafo è rappresentato con la matrice di adiacenza? E con le liste di adiacenza?</p>
+  <div class="soluzione">
+    <p>I due cicli scorrono V′ × V′: k · k = k<sup>2</sup> coppie, di cui k con u = v (saltate) e k(k − 1) con u ≠ v (ogni coppia non ordinata due volte).</p>
+    <p>Con la matrice di adiacenza «(u, v) ∈ E?» costa O(1): la verifica costa O(k<sup>2</sup>) ⊆ O(n<sup>2</sup>). Con le liste di adiacenza bisogna scorrere la lista di u, lunga al più n − 1: la verifica costa O(k<sup>2</sup> · n) ⊆ O(n<sup>3</sup>). In entrambi i casi polinomiale, che è quello che serve per dire CLIQUE ∈ NP.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 9 -->
+<h2 id="approfondimenti"><span class="num">9</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per l'esame. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: simulare il non determinismo costa caro</summary>
+  <div class="soluzione">
+    <p>Un algoritmo deterministico può simulare uno non deterministico esplorando tutto l'albero di computazione: se ogni cammino ha lunghezza p(n) e fa al più p(n) scelte, le foglie sono al più 2<sup>p(n)</sup>, e si provano tutte. Quindi NP ⊆ EXPTIME, anche senza passare dallo spazio. Il punto della domanda P = NP è se esista un modo radicalmente più furbo di questa esplorazione totale.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: un milione di dollari</summary>
+  <div class="soluzione">
+    <p>La domanda P = NP è uno dei sette «problemi del millennio» scelti nel 2000 dal Clay Mathematics Institute, che offre un milione di dollari per la soluzione di ognuno. Sarebbe una scoperta enorme in entrambi i casi: se P = NP, moltissimi problemi di ottimizzazione e di pianificazione diventerebbero facili, ma anche molta della crittografia che usiamo ogni giorno, che si basa sull'idea che certe cose siano facili da verificare e difficili da trovare, sarebbe a rischio.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="29-complessita.html">← Pacco 29: complessità computazionale</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="31-np-completezza.html">Pacco 31: NP-completezza →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- pesati.js
+// Grafi pesati (pacchi 19, 20, 22, 23): dati della lavagna, disegno con i pesi, Kruskal, Prim.
+// Un grafo pesato: { nome, orientato, V: [...], pos: { v: [x, y] } (in «caselle»), E: [[u, v, w], ...], curve: { indice: k } }
+var GP = {
+  esagono: { nome: "L'esagono pesato della lavagna (A–F)", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    E: [["A", "B", 3], ["A", "C", 2], ["B", "C", 4], ["B", "F", 5], ["C", "F", 5], ["D", "E", 6], ["B", "D", 6], ["E", "F", 1]] },
+  sette: { nome: "Il grafo a 7 vertici della lavagna (Prim)", orientato: false, V: ["A", "B", "C", "D", "E", "F", "G"],
+    pos: { F: [0.6, 0], G: [1.8, 0], C: [0, 1.05], D: [1.2, 1.05], E: [2.4, 1.05], A: [0.6, 2.1], B: [1.8, 2.1] },
+    E: [["F", "G", 20], ["C", "F", 23], ["D", "F", 1], ["D", "G", 4], ["E", "G", 15], ["C", "D", 36], ["D", "E", 9], ["A", "C", 28], ["A", "D", 25], ["B", "D", 16], ["B", "E", 3], ["A", "B", 17]] },
+  orientato: { nome: "Il grafo orientato pesato della lavagna (1–7)", orientato: true, V: [1, 2, 3, 4, 5, 6, 7],
+    pos: { 1: [0, 0], 2: [1.1, 0], 4: [2.2, 0], 7: [3.3, 0], 3: [0.8, 1.1], 5: [2.4, 1.1], 6: [3.4, 1.1] },
+    E: [[1, 2, 5], [2, 4, 3], [4, 7, 2], [3, 1, 7], [1, 3, 6], [4, 3, 9], [3, 5, 4], [7, 5, 3], [5, 6, 2], [6, 7, 2]] },
+  esame14nov: { nome: "Il grafo dello scritto del 14 novembre 2025", orientato: false, V: ["v1", "v2", "v3", "v4", "v5", "v6"],
+    pos: { v1: [0, 1], v2: [0.9, 0], v6: [0.9, 2], v3: [2.3, 0], v4: [3.2, 1], v5: [2.3, 2] },
+    E: [["v1", "v2", 3], ["v1", "v6", 2], ["v2", "v6", 4], ["v2", "v5", 5], ["v5", "v6", 5], ["v3", "v4", 6], ["v2", "v3", 6], ["v4", "v5", 1]] },
+  esame20set: { nome: "Il grafo dello scritto del 20 settembre 2024", orientato: false, V: ["v1", "v2", "v3", "v4"],
+    pos: { v1: [0, 0], v4: [1.6, 0], v2: [0, 1.25], v3: [1.6, 1.25] },
+    E: [["v1", "v4", 2], ["v1", "v2", 5], ["v2", "v4", 4], ["v3", "v4", 2], ["v2", "v3", 7]] }
+};
+function escP(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1p(v) { return Math.round(v * 10) / 10; }
+function chiaveP(u, v, orientato) { return orientato ? u + ">" + v : [String(u), String(v)].sort().join("~"); }
+function cmpV(a, b) { return typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), "it", { numeric: true }); }
+// archi uscenti da u: [[v, w], ...] in ordine di vertice
+function adiacentiP(G, u) {
+  var r = [];
+  G.E.forEach(function (e) { if (e[0] === u) r.push([e[1], e[2]]); else if (!G.orientato && e[1] === u) r.push([e[0], e[2]]); });
+  return r.sort(function (a, b) { return cmpV(a[0], b[0]); });
+}
+function pesoTot(archi) { return archi.reduce(function (t, e) { return t + e[2]; }, 0); }
+var STILE_P = { n: ["r-nodo", "#ffffff", "#2f52c4"], giallo: ["r-giallo", "#fff1a8", "#b4500f"], verde: ["r-verde", "#e6f5ea", "#17803d"], blu: ["r-blu", "#e8edfc", "#2f52c4"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f"], rosso: ["r-rosso", "#fdecea", "#b42318"], viola: ["r-viola", "#f1ebfb", "#6d3fc0"], grigio: ["r-grigio", "#eef0f3", "#5b6270"] };
+var COL_A = { verde: ["l-verde", "#17803d", 3.4], arancio: ["l-arancio", "#b4500f", 3.4], rosso: ["l-rosso", "#b42318", 3.4], blu: ["l-blu", "#2f52c4", 3.4], viola: ["l-viola", "#6d3fc0", 3.4],
+  scartato: ["l-muted", "#5b6270", 1.2, "5 4"], tenue: ["l-muted", "#5b6270", 1, "2 4"] };
+// opz: { cella, r, evNodi: {v: stile}, evArchi: {chiave: colore}, etich: {v: testo}, etichPos: {v: "su"|"giu"|"sx"|"dx"}, numeri: {v: n}, aria, senzaPesi, margine }
+function svgPesato(G, opz) {
+  opz = opz || {};
+  var C = opz.cella || 90, R = opz.r || 15, m = R + (opz.margine || 22), s = [], xs = [], ys = [];
+  G.V.forEach(function (v) { xs.push(G.pos[v][0]); ys.push(G.pos[v][1]); });
+  var W = Math.max.apply(null, xs) * C + 2 * m, H = Math.max.apply(null, ys) * C + 2 * m;
+  function P(v) { return [m + G.pos[v][0] * C, m + G.pos[v][1] * C]; }
+  var esiste = {}; G.E.forEach(function (e) { esiste[e[0] + ">" + e[1]] = true; });
+  s.push('<svg viewBox="0 0 ' + r1p(W) + ' ' + r1p(H) + '" width="' + r1p(W) + '" height="' + r1p(H) + '" role="img" aria-label="' + escP(opz.aria || G.nome) + '" font-family="system-ui, sans-serif">');
+  var etichette = [];
+  G.E.forEach(function (e, k) {
+    var a = P(e[0]), b = P(e[1]), key = chiaveP(e[0], e[1], G.orientato), ev = opz.evArchi && opz.evArchi[key], c = ev ? COL_A[ev] : ["l-muted", "#5b6270", 1.4];
+    var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.sqrt(dx * dx + dy * dy), ux = dx / l, uy = dy / l;
+    var doppio = G.orientato && esiste[e[1] + ">" + e[0]];
+    var curva = (G.curve && G.curve[k]) || (doppio ? 0.2 : 0);
+    var x1 = a[0] + ux * R, y1 = a[1] + uy * R, x2 = b[0] - ux * (R + (G.orientato ? 2 : 0)), y2 = b[1] - uy * (R + (G.orientato ? 2 : 0)), d, ang, mx, my;
+    if (curva) {
+      var cx = (a[0] + b[0]) / 2 - uy * curva * l, cy = (a[1] + b[1]) / 2 + ux * curva * l;
+      var vx = cx - a[0], vy = cy - a[1], vl = Math.sqrt(vx * vx + vy * vy); x1 = a[0] + vx / vl * R; y1 = a[1] + vy / vl * R;
+      var wx = b[0] - cx, wy = b[1] - cy, wl = Math.sqrt(wx * wx + wy * wy); x2 = b[0] - wx / wl * (R + 2); y2 = b[1] - wy / wl * (R + 2);
+      d = "M" + r1p(x1) + " " + r1p(y1) + " Q" + r1p(cx) + " " + r1p(cy) + " " + r1p(x2) + " " + r1p(y2); ang = Math.atan2(wy, wx);
+      mx = 0.25 * a[0] + 0.5 * cx + 0.25 * b[0]; my = 0.25 * a[1] + 0.5 * cy + 0.25 * b[1];
+    } else { d = "M" + r1p(x1) + " " + r1p(y1) + " L" + r1p(x2) + " " + r1p(y2); ang = Math.atan2(dy, dx); mx = (a[0] + b[0]) / 2; my = (a[1] + b[1]) / 2; }
+    s.push('<path d="' + d + '" fill="none" class="' + c[0] + '" stroke="' + c[1] + '" stroke-width="' + c[2] + '"' + (c[3] ? ' stroke-dasharray="' + c[3] + '"' : '') + '/>');
+    if (G.orientato) s.push('<path d="M' + r1p(x2) + ' ' + r1p(y2) + ' l' + r1p(-9 * Math.cos(ang - 0.38)) + ' ' + r1p(-9 * Math.sin(ang - 0.38)) + ' l' + r1p(9 * Math.cos(ang - 0.38) - 9 * Math.cos(ang + 0.38)) + ' ' + r1p(9 * Math.sin(ang - 0.38) - 9 * Math.sin(ang + 0.38)) + ' z" class="' + c[0].replace("l-", "t-") + '" fill="' + c[1] + '"/>');
+    if (!opz.senzaPesi) {
+      // il peso sta un po' di lato rispetto al punto medio, dalla parte «esterna»
+      var nx = -uy, ny = ux, off = curva ? 0 : 10, tx = mx + nx * off, ty = my + ny * off, txt = String(e[2]), bw = 7 * txt.length + 8;
+      etichette.push('<rect x="' + r1p(tx - bw / 2) + '" y="' + r1p(ty - 9) + '" width="' + r1p(bw) + '" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/>' +
+        '<text x="' + r1p(tx) + '" y="' + r1p(ty + 4.5) + '" font-size="12.5" font-weight="700" text-anchor="middle" class="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[0].replace("l-", "t-") : "t-peso") + '" fill="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[1] : "#6d3fc0") + '">' + escP(txt) + '</text>');
+    }
+  });
+  s.push(etichette.join(""));
+  G.V.forEach(function (v) {
+    var p = P(v), st = STILE_P[(opz.evNodi && opz.evNodi[v]) || "n"], lab = escP(v), fs = lab.length > 2 ? 12 : 14;
+    s.push('<circle cx="' + r1p(p[0]) + '" cy="' + r1p(p[1]) + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    s.push('<text x="' + r1p(p[0]) + '" y="' + r1p(p[1] + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + lab + '</text>');
+    if (opz.numeri && opz.numeri[v] !== undefined) {
+      s.push('<circle cx="' + r1p(p[0] + R * 0.85) + '" cy="' + r1p(p[1] - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1p(p[0] + R * 0.85) + '" y="' + r1p(p[1] - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.numeri[v] + '</text>');
+    }
+    if (opz.etich && opz.etich[v] !== undefined && opz.etich[v] !== "") {
+      var pos = (opz.etichPos && opz.etichPos[v]) || (G.pos[v][1] <= 0.01 ? "su" : (G.pos[v][1] >= Math.max.apply(null, ys) - 0.01 ? "giu" : (G.pos[v][0] <= 0.01 ? "sx" : "dx")));
+      var ex = p[0], ey = p[1], an = "middle";
+      if (pos === "su") ey = p[1] - R - 7; else if (pos === "giu") ey = p[1] + R + 15; else if (pos === "sx") { ex = p[0] - R - 5; ey = p[1] - R + 2; an = "end"; } else { ex = p[0] + R + 5; ey = p[1] - R + 2; an = "start"; }
+      s.push('<text x="' + r1p(ex) + '" y="' + r1p(ey) + '" font-size="12" font-weight="700" text-anchor="' + an + '" class="t-arancio" fill="#b4500f">' + escP(opz.etich[v]) + '</text>');
+    }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+// archi scelti -> mappa per evArchi
+function evDa(archi, colore, G) { var r = {}; archi.forEach(function (e) { r[chiaveP(e[0], e[1], G.orientato)] = colore; }); return r; }
+
+// ---------------------------------------------------------------- Kruskal (Codice 11.2, con union-find)
+// spareggio: a parità di peso si segue l'ordine di G.E (come alla lavagna)
+function ordinaArchi(G) { return G.E.map(function (e, k) { return [e[0], e[1], e[2], k]; }).sort(function (a, b) { return a[2] - b[2] || a[3] - b[3]; }); }
+function eventiKruskal(G) {
+  var ord = ordinaArchi(G), padre = {}, ev = [], T = [], scart = [], nFind = 0, nUnion = 0;
+  G.V.forEach(function (v) { padre[v] = v; });
+  function find(x) { nFind++; while (padre[x] !== x) x = padre[x]; return x; }
+  function insiemi() { var g = {}; G.V.forEach(function (v) { var r = v; while (padre[r] !== r) r = padre[r]; (g[r] = g[r] || []).push(v); }); return Object.keys(g).map(function (k) { return g[k]; }); }
+  ev.push({ k: -1, testo: "Gli archi sono ordinati per peso; T non ha archi; ogni vertice è un insieme da solo (MAKESET).", T: [], scart: [], insiemi: insiemi(), nFind: 0, nUnion: 0, ord: ord });
+  ord.forEach(function (e, k) {
+    var tx = find(e[0]), ty = find(e[1]), ok = tx !== ty, testo;
+    if (ok) { padre[ty] = tx; nUnion++; T.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") ≠ FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " non sono connessi in T. UNION dei due insiemi; l'arco entra in T."; }
+    else { scart.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") = FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " sono già connessi in T. L'arco formerebbe un ciclo: si scarta."; }
+    ev.push({ k: k, preso: ok, testo: testo, T: T.slice(), scart: scart.slice(), insiemi: insiemi(), nFind: nFind, nUnion: nUnion, ord: ord });
+  });
+  return ev;
+}
+// ---------------------------------------------------------------- Prim (Codice 11.4, con d e vicino)
+function eventiPrim(G, s) {
+  var d = {}, vic = {}, inT = {}, VT = [], ET = [], ev = [];
+  G.V.forEach(function (v) { d[v] = Infinity; vic[v] = null; });
+  function foto(testo, y, cambiati) { var dd = {}, vv = {}; G.V.forEach(function (v) { dd[v] = d[v]; vv[v] = vic[v]; }); ev.push({ testo: testo, d: dd, vicino: vv, VT: VT.slice(), ET: ET.slice(), y: y, cambiati: cambiati || [] }); }
+  foto("All'inizio la struttura è vuota: d[v] = ∞ per ogni vertice, e vicino non è definito.", null);
+  var primo = true;
+  while (VT.length < G.V.length) {
+    var y = null;
+    if (primo && s !== undefined && s !== null) y = s;
+    else G.V.forEach(function (v) { if (!inT[v] && (y === null || d[v] < d[y])) y = v; });
+    var t;
+    inT[y] = true; VT.push(y);
+    if (d[y] !== Infinity) { ET.push([vic[y], y, d[y]]); t = "Tra i vertici fuori da T, " + y + " ha d minima (" + d[y] + "): entra in T con l'arco (" + vic[y] + ", " + y + ") di peso " + d[y] + "."; }
+    else t = "Prima iterazione: tutte le d valgono ∞, quindi si può prendere un vertice qualsiasi. Si sceglie " + y + ", che entra in T senza archi.";
+    var camb = [];
+    adiacentiP(G, y).forEach(function (p) { var z = p[0], w = p[1]; if (!inT[z] && w < d[z]) { d[z] = w; vic[z] = y; camb.push(z); } });
+    t += camb.length ? " Si guardano gli archi di " + y + ": migliorano " + camb.map(function (z) { return "d[" + z + "] = " + d[z]; }).join(", ") + " (con vicino " + y + ")." : " Nessun vertice fuori da T diventa più vicino passando da " + y + ".";
+    foto(t, y, camb);
+    primo = false;
+  }
+  return ev;
+}
+// tutti gli alberi ricoprenti (per grafi piccoli): restituisce [{archi, peso}]
+function tuttiAlberi(G) {
+  var n = G.V.length, m = G.E.length, r = [];
+  function rec(i, scelti) {
+    if (scelti.length === n - 1) { if (connessoCon(G, scelti)) r.push({ archi: scelti.slice(), peso: pesoTot(scelti) }); return; }
+    if (i >= m || m - i < n - 1 - scelti.length) return;
+    scelti.push(G.E[i]); rec(i + 1, scelti); scelti.pop(); rec(i + 1, scelti);
+  }
+  rec(0, []);
+  return r;
+}
+function connessoCon(G, archi) {
+  var p = {}; G.V.forEach(function (v) { p[v] = v; });
+  function f(x) { while (p[x] !== x) x = p[x]; return x; }
+  var c = G.V.length; archi.forEach(function (e) { var a = f(e[0]), b = f(e[1]); if (a !== b) { p[a] = b; c--; } });
+  return c === 1;
+}
+
+// ---- complessita.js
+// Pacchi 29–31 (complessità, NP, NP-completezza): grafi della lavagna, formule booleane, riduzioni, disegni.
+function escC(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1c(v) { return Math.round(v * 10) / 10; }
+// ---------------------------------------------------------------- grafi non orientati (senza pesi: peso 0)
+function GN(nome, V, pos, archi) { return { nome: nome, orientato: false, V: V, pos: pos, E: archi.map(function (a) { return [a[0], a[1], 0]; }) }; }
+var GC = {
+  esagono: GN("l'esagono della lavagna (A–F)", ["A", "B", "C", "D", "E", "F"], { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "F"], ["C", "F"], ["D", "E"], ["B", "D"], ["E", "F"]]),
+  esagono2: GN("l'esagono con gli archi C–D e D–F in più", ["A", "B", "C", "D", "E", "F"], { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "F"], ["C", "F"], ["D", "E"], ["B", "D"], ["E", "F"], ["C", "D"], ["D", "F"]]),
+  K4: GN("il grafo completo con 4 vertici", ["1", "2", "3", "4"], { 1: [0, 0], 2: [1, 0], 3: [1, 1], 4: [0, 1] }, [["1", "2"], ["1", "3"], ["1", "4"], ["2", "3"], ["2", "4"], ["3", "4"]]),
+  K5: GN("il grafo completo con 5 vertici", ["1", "2", "3", "4", "5"], { 1: [0.95, 0], 2: [1.9, 0.7], 3: [1.55, 1.8], 4: [0.35, 1.8], 5: [0, 0.7] },
+    [["1", "2"], ["1", "3"], ["1", "4"], ["1", "5"], ["2", "3"], ["2", "4"], ["2", "5"], ["3", "4"], ["3", "5"], ["4", "5"]]),
+  quadrato: GN("un quadrato", ["A", "B", "C", "D"], { A: [0, 0], B: [1, 0], C: [1, 1], D: [0, 1] }, [["A", "B"], ["B", "C"], ["C", "D"], ["D", "A"]]),
+  casetta: GN("un grafo con cinque vertici", ["A", "B", "C", "D", "E"], { A: [0, 0], B: [1, 0], C: [0, 1], D: [1.5, 1], E: [1, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "D"], ["C", "D"], ["C", "E"], ["D", "E"]]),
+  // lavagna 33, pagine 15–16: G e il suo complementare
+  sei: GN("il grafo G della lavagna (v1–v6)", ["v1", "v2", "v3", "v4", "v5", "v6"], { v1: [0, 0.6], v2: [1, 0], v3: [2, 0.6], v4: [2, 1.8], v5: [1, 2.4], v6: [0, 1.8] },
+    [["v1", "v2"], ["v2", "v3"], ["v3", "v4"], ["v4", "v5"], ["v5", "v6"], ["v6", "v1"], ["v2", "v4"], ["v2", "v6"], ["v4", "v6"]])
+};
+function complementare(G, nome) {
+  var c = [], es = {};
+  G.E.forEach(function (e) { es[chiaveP(e[0], e[1], false)] = true; });
+  for (var i = 0; i < G.V.length; i++) for (var j = i + 1; j < G.V.length; j++) if (!es[chiaveP(G.V[i], G.V[j], false)]) c.push([G.V[i], G.V[j], 0]);
+  return { nome: nome || "il complementare di " + G.nome, orientato: false, V: G.V, pos: G.pos, E: c };
+}
+GC.seiC = complementare(GC.sei, "il complementare G' (lavagna, pagina 15)");
+function adiacenti(G, u, v) { return G.E.some(function (e) { return (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u); }); }
+function eCricca(G, S) { for (var i = 0; i < S.length; i++) for (var j = i + 1; j < S.length; j++) if (!adiacenti(G, S[i], S[j])) return [S[i], S[j]]; return null; }
+function eIndipendente(G, S) { for (var i = 0; i < S.length; i++) for (var j = i + 1; j < S.length; j++) if (adiacenti(G, S[i], S[j])) return [S[i], S[j]]; return null; }
+function sottoinsiemi(V, k) { var r = []; (function rec(i, S) { if (S.length === k) { r.push(S.slice()); return; } if (i === V.length) return; S.push(V[i]); rec(i + 1, S); S.pop(); rec(i + 1, S); })(0, []); return r; }
+function criccheDi(G, k) { return sottoinsiemi(G.V, k).filter(function (S) { return !eCricca(G, S); }); }
+function criccaMassima(G) { for (var k = G.V.length; k >= 1; k--) { var c = criccheDi(G, k); if (c.length) return { k: k, cricche: c }; } return { k: 0, cricche: [] }; }
+function archiDentro(G, S) { var r = {}; G.E.forEach(function (e) { if (S.indexOf(e[0]) >= 0 && S.indexOf(e[1]) >= 0) r[chiaveP(e[0], e[1], false)] = "verde"; }); return r; }
+function nodiDi(S, stile) { var r = {}; S.forEach(function (v) { r[v] = stile || "verde"; }); return r; }
+
+// ---------------------------------------------------------------- formule in forma normale congiuntiva
+// formula: array di clausole; clausola: array di letterali { v: "x", neg: bool }
+function F(testo) { // "x | -y | z ; -x | -y" -> formula
+  return testo.split(";").map(function (c) { return c.trim().split("|").map(function (l) { l = l.trim(); return l[0] === "-" ? { v: l.slice(1), neg: true } : { v: l, neg: false }; }); });
+}
+function variabili(phi) { var V = []; phi.forEach(function (c) { c.forEach(function (l) { if (V.indexOf(l.v) < 0) V.push(l.v); }); }); return V; }
+function letStr(l, html) { var nome = html ? l.v.replace(/(\d+)$/, "<sub>$1</sub>") : l.v; return l.neg ? (html ? '<span style="text-decoration:overline">' + nome + '</span>' : "¬" + l.v) : nome; }
+function clStr(c, html) { return c.length === 1 ? letStr(c[0], html) : "(" + c.map(function (l) { return letStr(l, html); }).join(" ∨ ") + ")"; }
+function phiStr(phi, html) { return phi.map(function (c) { return clStr(c, html); }).join(" ∧ "); }
+function valLet(l, f) { return l.neg ? 1 - f[l.v] : f[l.v]; }
+function valCl(c, f) { return c.some(function (l) { return valLet(l, f) === 1; }) ? 1 : 0; }
+function valPhi(phi, f) { return phi.every(function (c) { return valCl(c, f) === 1; }) ? 1 : 0; }
+function tuttiAssegnamenti(V) { var r = []; for (var m = 0; m < (1 << V.length); m++) { var f = {}; V.forEach(function (v, i) { f[v] = (m >> (V.length - 1 - i)) & 1; }); r.push(f); } return r; }
+function idLet(v, neg, cl) { return (neg ? v + "\u0304" : v) + String(cl).split("").map(function (d) { return "₀₁₂₃₄₅₆₇₈₉"[Number(d)]; }).join(""); }
+// la riduzione da SODD a CLIQUE (lavagna 33, pagina 18): un vertice per ogni occorrenza di letterale
+function riduzioneSoddClique(phi) {
+  var V = [], info = {}, pos = {}, E = [];
+  phi.forEach(function (c, i) {
+    c.forEach(function (l, j) {
+      var id = idLet(l.v, l.neg, i + 1);
+      V.push(id); info[id] = { l: l, cl: i };
+      var m = phi.length, th = -Math.PI / 2 + 2 * Math.PI * i / m, Rr = m <= 2 ? 1.1 : 1.7, sp = 0.8, off = (j - (c.length - 1) / 2) * sp;
+      pos[id] = m === 1 ? [j * 1.2, 0] : [Rr * Math.cos(th) - off * Math.sin(th), Rr * Math.sin(th) + off * Math.cos(th)];
+    });
+  });
+  for (var a = 0; a < V.length; a++) for (var b = a + 1; b < V.length; b++) {
+    var u = info[V[a]], w = info[V[b]];
+    if (u.cl !== w.cl && !(u.l.v === w.l.v && u.l.neg !== w.l.neg)) E.push([V[a], V[b], 0]);
+  }
+  var mx = Math.min.apply(null, V.map(function (v) { return pos[v][0]; })), my = Math.min.apply(null, V.map(function (v) { return pos[v][1]; }));
+  V.forEach(function (v) { pos[v] = [pos[v][0] - mx, pos[v][1] - my]; });
+  return { G: { nome: "il grafo costruito da φ", orientato: false, V: V, pos: pos, E: E }, k: phi.length, info: info };
+}
+// assegnamento (parziale) letto da una cricca della riduzione
+function assegnamentoDaCricca(rid, S) { var f = {}; S.forEach(function (id) { var l = rid.info[id].l; f[l.v] = l.neg ? 0 : 1; }); return f; }
+
+// ---------------------------------------------------------------- disegni
+// insiemi annidati: [{ nome, stile }] dal più esterno al più interno
+function svgAnnidati(classi, opz) {
+  opz = opz || {};
+  var W = opz.W || 420, H = opz.H || 230, s = [], n = classi.length;
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || classi.map(function (c) { return c.nome; }).join(" contenuto in ")) + '" font-family="system-ui, sans-serif">');
+  var COL = { blu: ["l-blu", "#2f52c4", "t-blu"], verde: ["l-verde", "#17803d", "t-verde"], rosso: ["l-rosso", "#b42318", "t-rosso"], arancio: ["l-arancio", "#b4500f", "t-arancio"], viola: ["l-viola", "#6d3fc0", "t-viola"] };
+  classi.forEach(function (c, i) {
+    var f = c.f || (1 - i * (0.78 / Math.max(1, n))), rx = (W / 2 - 8) * f, ry = (H / 2 - 8) * f, cx = W / 2 + (opz.sposta || 0) * i, cy = H / 2 + (opz.giu || 6) * i, col = COL[c.stile || "blu"];
+    s.push('<ellipse cx="' + r1c(cx) + '" cy="' + r1c(cy) + '" rx="' + r1c(rx) + '" ry="' + r1c(ry) + '" class="' + col[0] + '" fill="none" stroke="' + col[1] + '" stroke-width="1.8"/>');
+    var ultimo = i === n - 1, lx = cx, ly = ultimo ? (c.dentro ? cy - ry + 20 : cy + 5) : cy - ry + 18;
+    s.push('<text x="' + r1c(lx) + '" y="' + r1c(ly) + '" font-size="13" font-weight="700" class="' + col[2] + '" fill="' + col[1] + '" text-anchor="middle">' + escC(c.nome) + '</text>');
+    (c.dentro || []).forEach(function (t, j) { s.push('<text x="' + r1c(cx + (c.dx || 0)) + '" y="' + r1c(cy - ry * 0.55 + 16 * j + (c.dy || 0)) + '" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">' + escC(t) + '</text>'); });
+  });
+  (opz.extra || []).forEach(function (x) { s.push(x); });
+  s.push('</svg>');
+  return s.join("");
+}
+// catena di scatole: pezzi = [{ t: "testo sulla freccia" } | { box: "nome", stile, sotto: "nota" }]; esito: true per le due uscite 0/1
+function svgScatole(pezzi, opz) {
+  opz = opz || {};
+  var x = 8, y = opz.y || (opz.gruppo ? 34 : 24), h = 38, s = [], parti = [], gruppo = opz.gruppo;
+  pezzi.forEach(function (p) {
+    if (p.box) { var w = Math.max(54, 9.5 * p.box.replace(/<[^>]+>/g, "").length + 22); parti.push({ tipo: "b", x: x, w: w, p: p }); x += w; }
+    else { var w2 = Math.max(46, 7 * (p.t || "").length + 18); parti.push({ tipo: "f", x: x, w: w2, p: p }); x += w2; }
+  });
+  var W = x + (opz.esito ? 44 : 8), H = y + h + (opz.alto || 34);
+  s.push('<svg viewBox="0 0 ' + r1c(W) + ' ' + H + '" width="' + r1c(W) + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || "schema") + '" font-family="system-ui, sans-serif">');
+  if (gruppo) {
+    var b0 = parti.filter(function (q) { return q.tipo === "b"; }), gx = b0[0].x - 8, gw = b0[b0.length - 1].x + b0[b0.length - 1].w - gx + 8;
+    s.push('<rect x="' + r1c(gx) + '" y="' + (y - 10) + '" width="' + r1c(gw) + '" height="' + (h + 20) + '" rx="6" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5" fill-opacity="0.5"/>');
+    s.push('<text x="' + r1c(gx + 6) + '" y="' + (y - 15) + '" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f">' + gruppo + '</text>');
+  }
+  parti.forEach(function (q) {
+    if (q.tipo === "b") {
+      s.push('<rect x="' + r1c(q.x) + '" y="' + y + '" width="' + r1c(q.w) + '" height="' + h + '" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/>');
+      s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (y + 24) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">' + q.p.box + '</text>');
+      if (q.p.sotto) s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (y + h + 15) + '" font-size="11" text-anchor="middle" class="t-arancio" fill="#b4500f">' + escC(q.p.sotto) + '</text>');
+    } else {
+      var yy = y + h / 2;
+      s.push('<line x1="' + r1c(q.x) + '" y1="' + yy + '" x2="' + r1c(q.x + q.w - 4) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      s.push('<path d="M' + r1c(q.x + q.w) + ' ' + yy + ' l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/>');
+      if (q.p.t) s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (yy - 7) + '" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">' + q.p.t + '</text>');
+    }
+  });
+  if (opz.esito) {
+    var ex = x, yy2 = y + h / 2;
+    [["0", -14], ["1", 14]].forEach(function (u) {
+      s.push('<line x1="' + r1c(ex) + '" y1="' + yy2 + '" x2="' + r1c(ex + 22) + '" y2="' + (yy2 + u[1]) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      s.push('<text x="' + r1c(ex + 30) + '" y="' + (yy2 + u[1] + 4) + '" font-size="12.5" class="t-testo" fill="#1f2328">' + u[0] + '</text>');
+    });
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// albero di computazione delle scelte indovina per un SODD con variabili V
+function svgComputazione(phi, opz) {
+  opz = opz || {};
+  var V = opz.V || variabili(phi), n = V.length, foglie = 1 << n, dx = opz.dx || 46, dy = opz.dy || 54, W = foglie * dx + 20, H = (n + 1) * dy + 34, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || "albero di computazione") + '" font-family="system-ui, sans-serif">');
+  function X(livello, idx) { var larg = foglie / (1 << livello); return 10 + (idx + 0.5) * larg * dx; }
+  for (var l = 0; l <= n; l++) for (var i = 0; i < (1 << l); i++) {
+    var x = X(l, i), y = 22 + l * dy;
+    if (l < n) [0, 1].forEach(function (b) {
+      var x2 = X(l + 1, 2 * i + b), y2 = y + dy, ev = opz.cammino && opz.cammino.slice(0, l + 1).join("") === (i.toString(2).padStart(l, "0") + b).slice(-(l + 1));
+      s.push('<line x1="' + r1c(x) + '" y1="' + (y + 10) + '" x2="' + r1c(x2) + '" y2="' + (y2 - 12) + '" class="' + (ev ? "l-verde" : "l-muted") + '" stroke="' + (ev ? "#17803d" : "#5b6270") + '" stroke-width="' + (ev ? 3 : 1.4) + '"/>');
+      s.push('<text x="' + r1c((x + x2) / 2 + (b ? 7 : -7)) + '" y="' + r1c((y + y2) / 2) + '" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">' + b + '</text>');
+    });
+    if (l < n) s.push('<text x="' + r1c(x) + '" y="' + (y + 5) + '" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">' + letStr({ v: V[l] }, false) + '</text>');
+    else {
+      var f = {}, bits = n ? i.toString(2).padStart(n, "0") : ""; V.forEach(function (v, k) { f[v] = Number(bits[k]); });
+      var val = valPhi(phi, f);
+      s.push('<rect x="' + r1c(x - 13) + '" y="' + (y - 11) + '" width="26" height="22" rx="4" class="' + (val ? "r-verde" : "r-rosso") + '" fill="' + (val ? "#e6f5ea" : "#fdecea") + '" stroke="' + (val ? "#17803d" : "#b42318") + '" stroke-width="1.4"/>');
+      s.push('<text x="' + r1c(x) + '" y="' + (y + 5) + '" font-size="13" font-weight="700" text-anchor="middle" class="' + (val ? "t-verde" : "t-rosso") + '" fill="' + (val ? "#17803d" : "#b42318") + '">' + val + '</text>');
+      if (opz.etichette !== false) s.push('<text x="' + r1c(x) + '" y="' + (y + 27) + '" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">' + bits + '</text>');
+    }
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// un grafo di 8 vertici con una cricca di 4 nascosta (per i riquadri)
+GC.otto = (function () {
+  var V = ["1", "2", "3", "4", "5", "6", "7", "8"], pos = {};
+  V.forEach(function (v, i) { var a = -Math.PI / 2 + i * 2 * Math.PI / 8; pos[v] = [1.25 + 1.25 * Math.cos(a), 1.25 + 1.25 * Math.sin(a)]; });
+  return GN("un grafo di 8 vertici", V, pos, [["2", "4"], ["2", "5"], ["2", "7"], ["4", "5"], ["4", "7"], ["5", "7"], ["1", "2"], ["1", "3"], ["2", "3"], ["3", "4"], ["5", "6"], ["6", "7"], ["7", "8"], ["8", "1"], ["1", "5"], ["3", "6"], ["4", "8"], ["6", "8"]]);
+})();
+
+// ---- w30.js
+// Riquadri interattivi del pacco 30.
+function $(id) { return document.getElementById(id); }
+var PHI30_W = { p21: F("x₁ | x₂ | x₃ ; -x₁ | -x₃"), p15: F("x | z ; -x | y | z ; x | y | -z"), p16: F("x | -y ; -x ; y"), p17: F("x | -y | z | w ; -z | w | y ; -x | -w | -z"), p13: F("x | -y | z ; -x | -y ; -x | -z") };
+
+// ---------------------------------------------------------------- 1. partizione: scegli tu
+(function () {
+  if (!$("pa-corpo")) return;
+  var ES = [["lavagna: 22 1 7 12 16", [22, 1, 7, 12, 16]], ["lavagna: 30 44 56 22 15 19 38 77 29", [30, 44, 56, 22, 15, 19, 38, 77, 29]], ["3 1 1 2 2 1", [3, 1, 1, 2, 2, 1]], ["1 2 4 8", [1, 2, 4, 8]], ["5 5 4 3 3", [5, 5, 4, 3, 3]]];
+  $("pa-corpo").innerHTML = '<div class="controlli"><label>Istanza <select id="pa-es" style="width:auto;max-width:100%">' + ES.map(function (e, i) { return '<option value="' + i + '">' + e[0] + '</option>'; }).join("") + '</select></label><button id="pa-tutti">Cerca provando tutti i sottoinsiemi</button></div>' +
+    '<p class="piccolo">Tocca un numero per metterlo in A′ (verde) o toglierlo (giallo). La scelta è il certificato; la verifica fa le due somme.</p><div class="controlli" id="pa-num"></div><div class="contatori" id="pa-cont"></div><div class="narrazione" id="pa-txt"></div>';
+  var S = { e: 0, b: [] };
+  function nums() { return ES[S.e][1]; }
+  function reset() { S.b = nums().map(function () { return 0; }); mostra(""); }
+  function mostra(extra) {
+    var A = nums(), sa = 0, so = 0;
+    A.forEach(function (x, i) { if (S.b[i]) sa += x; else so += x; });
+    $("pa-num").innerHTML = A.map(function (x, i) { return '<button data-i="' + i + '" style="min-width:46px;font-weight:700;' + (S.b[i] ? 'background:var(--green-soft);border-color:var(--green)' : 'background:var(--hl);border-color:var(--orange)') + '">' + x + '</button>'; }).join("");
+    Array.prototype.forEach.call($("pa-num").querySelectorAll("button"), function (bt) { bt.onclick = function () { var i = Number(bt.getAttribute("data-i")); S.b[i] = 1 - S.b[i]; mostra(""); }; });
+    $("pa-cont").innerHTML = '<span>sommaScelti: <b>' + sa + '</b></span><span>sommaAltri: <b>' + so + '</b></span><span>totale: <b>' + (sa + so) + '</b></span>';
+    var t = sa === so ? "sommaScelti = sommaAltri: il certificato è valido, l'istanza è positiva. La verifica ha fatto un solo giro sugli n = " + A.length + " numeri." : "Le due somme sono diverse: questo certificato non va bene. Non vuol dire che l'istanza sia negativa: magari un'altra scelta funziona.";
+    if ((sa + so) % 2) t += " Attenzione: il totale è dispari, quindi nessuna scelta può dare due metà uguali. Qui la risposta è no.";
+    $("pa-txt").textContent = t + (extra ? " " + extra : "");
+  }
+  $("pa-es").onchange = function () { S.e = Number($("pa-es").value); reset(); };
+  $("pa-tutti").onclick = function () {
+    var A = nums(), n = A.length, tot = A.reduce(function (a, b) { return a + b; }, 0), trovato = -1, prove = 0;
+    for (var m = 0; m < (1 << n); m++) { prove++; var s = 0; for (var i = 0; i < n; i++) if (m & (1 << i)) s += A[i]; if (2 * s === tot) { trovato = m; break; } }
+    if (trovato >= 0) { S.b = A.map(function (x, i) { return (trovato >> i) & 1; }); mostra("Un algoritmo deterministico che prova i sottoinsiemi uno per uno ne ha provati " + prove + " su 2^" + n + " = " + (1 << n) + " prima di trovarne uno buono."); }
+    else mostra("Provati tutti i 2^" + n + " = " + (1 << n) + " sottoinsiemi: nessuno funziona, la risposta è no. Per dire no non c'è una scorciatoia: bisogna escluderli tutti.");
+  };
+  reset();
+})();
+
+// ---------------------------------------------------------------- 2. l'albero delle scelte (SODD)
+(function () {
+  if (!$("ac-corpo")) return;
+  var ES = [["lavagna, pagina 21: (x₁ ∨ x₂ ∨ x₃) ∧ (x̄₁ ∨ x̄₃)", PHI30_W.p21], ["lavagna, pagina 15", PHI30_W.p15], ["lavagna, pagina 16 (non soddisfacibile)", PHI30_W.p16], ["lavagna, pagina 13", PHI30_W.p13], ["lavagna, pagina 17 (4 variabili)", PHI30_W.p17]];
+  $("ac-corpo").innerHTML = '<div class="controlli"><label>Formula <select id="ac-es" style="width:auto;max-width:100%">' + ES.map(function (e, i) { return '<option value="' + i + '">' + e[0] + '</option>'; }).join("") + '</select></label></div>' +
+    '<p class="piccolo" id="ac-phi"></p><p class="piccolo">Scegli i valori delle variabili, cioè le risposte dei vari «indovina»: il cammino corrispondente si colora di verde.</p><div class="controlli" id="ac-var"></div>' +
+    '<div class="figura" id="ac-fig" style="margin:6px 0;overflow-x:auto"></div><div class="narrazione" id="ac-txt"></div>';
+  var S = { e: 0, f: {} };
+  function phi() { return ES[S.e][1]; }
+  function reset() { S.f = {}; variabili(phi()).forEach(function (v) { S.f[v] = 0; }); mostra(); }
+  function mostra() {
+    var p = phi(), V = variabili(p);
+    $("ac-phi").innerHTML = "φ = " + phiStr(p, true);
+    $("ac-var").innerHTML = V.map(function (v) { return '<button data-v="' + v + '">' + v + ' = ' + S.f[v] + '</button>'; }).join("");
+    Array.prototype.forEach.call($("ac-var").querySelectorAll("button"), function (b) { b.onclick = function () { var v = b.getAttribute("data-v"); S.f[v] = 1 - S.f[v]; mostra(); }; });
+    $("ac-fig").innerHTML = svgComputazione(p, { cammino: V.map(function (v) { return S.f[v]; }), dx: V.length > 3 ? 34 : 46, etichette: V.length <= 3 });
+    var cl = p.map(function (c) { return clStr(c, true) + " = " + valCl(c, S.f); }), val = valPhi(p, S.f), sod = tuttiAssegnamenti(V).filter(function (f) { return valPhi(p, f); }).length;
+    $("ac-txt").innerHTML = "Con questo assegnamento: " + cl.join("; ") + ". Quindi φ = <b>" + val + "</b>. " +
+      (sod ? "Le foglie con 1 sono " + sod + " su " + (1 << V.length) + ": φ è soddisfacibile, e l'algoritmo non deterministico risponde true, perché tra le scelte possibili «indovina» sempre una che porta a una foglia 1." : "Tutte le " + (1 << V.length) + " foglie valgono 0: φ non è soddisfacibile, e l'algoritmo risponde false qualunque cosa indovini.");
+  }
+  $("ac-es").onchange = function () { S.e = Number($("ac-es").value); reset(); };
+  reset();
+})();
+
+// ---------------------------------------------------------------- 3. clique: verifica il certificato
+(function () {
+  if (!$("cq-corpo")) return;
+  var GR = [["l'esagono con C–D e D–F", GC.esagono2], ["un grafo di 8 vertici", GC.otto], ["il grafo v1–v6", GC.sei]];
+  $("cq-corpo").innerHTML = '<div class="controlli"><label>Grafo <select id="cq-g" style="width:auto;max-width:100%">' + GR.map(function (g, i) { return '<option value="' + i + '">' + g[0] + '</option>'; }).join("") + '</select></label><label>k <input type="number" id="cq-k" min="1" max="8" value="4" style="width:60px"></label><button id="cq-ver">Verifica il certificato</button><button id="cq-vuota">Svuota V′</button></div>' +
+    '<p class="piccolo">Tocca i vertici per metterli in V′ (il certificato) o toglierli. Poi «Verifica» esegue la fase deterministica del Codice 16.2.</p>' +
+    '<div class="figura" id="cq-fig" style="margin:6px 0"></div><div class="controlli" id="cq-bott"></div><div class="narrazione" id="cq-txt"></div>';
+  var S = { g: 0, V: [], rosso: null };
+  function G() { return GR[S.g][1]; }
+  function mostra(t) {
+    var g = G(), ev = archiDentro(g, S.V);
+    if (S.rosso) S.rosso.forEach(function (c) { ev[chiaveP(c[0], c[1], false)] = "rosso"; });
+    $("cq-fig").innerHTML = svgPesato(g, { cella: S.g === 1 ? 80 : 70, senzaPesi: true, evNodi: nodiDi(S.V), evArchi: ev, aria: g.nome });
+    var svg = $("cq-fig").querySelector("svg"), cs = svg.querySelectorAll("circle");
+    g.V.forEach(function (v, i) { if (cs[i]) { cs[i].style.cursor = "pointer"; cs[i].addEventListener("click", function () { tocca(v); }); } });
+    $("cq-bott").innerHTML = g.V.map(function (v) { return '<button data-v="' + v + '"' + (S.V.indexOf(v) >= 0 ? ' style="background:var(--green-soft);border-color:var(--green)"' : '') + '>' + v + '</button>'; }).join("");
+    Array.prototype.forEach.call($("cq-bott").querySelectorAll("button"), function (b) { b.onclick = function () { tocca(b.getAttribute("data-v")); }; });
+    $("cq-txt").innerHTML = t || ("V′ = {" + S.V.join(", ") + "}: " + S.V.length + " vertici.");
+  }
+  function tocca(v) { var i = S.V.indexOf(v); if (i >= 0) S.V.splice(i, 1); else S.V.push(v); S.rosso = null; mostra(); }
+  $("cq-ver").onclick = function () {
+    var g = G(), k = Number($("cq-k").value), n = g.V.length;
+    if (S.V.length !== k) { S.rosso = null; mostra("#V′ = " + S.V.length + " ≠ k = " + k + ": RETURN false. (Il certificato deve avere esattamente k vertici.)"); return; }
+    var manca = [], coppie = 0;
+    S.V.forEach(function (v) { S.V.forEach(function (u) { if (u !== v) { coppie++; if (!adiacenti(g, u, v) && !manca.some(function (c) { return c[0] === v && c[1] === u; })) manca.push([u, v]); } }); });
+    S.rosso = manca;
+    mostra(manca.length ? "I due FOR EACH hanno controllato " + coppie + " coppie (u, v) con u ≠ v: mancano gli archi " + manca.map(function (c) { return c[0] + "–" + c[1]; }).join(", ") + " (in rosso), quindi risposta ← false. Questo certificato non va bene; un altro potrebbe." :
+      "#V′ = k = " + k + ", e i due FOR EACH hanno controllato " + coppie + " coppie (u, v): sono tutte collegate. risposta = true: V′ è una cricca di " + k + " vertici. La verifica costa O(k²) controlli, polinomiale. Un algoritmo deterministico che provasse tutti i sottoinsiemi di " + n + " vertici ne dovrebbe guardare fino a 2^" + n + " = " + (1 << n) + ".");
+  };
+  $("cq-vuota").onclick = function () { S.V = []; S.rosso = null; mostra(); };
+  $("cq-g").onchange = function () { S.g = Number($("cq-g").value); S.V = []; S.rosso = null; mostra(); };
+  mostra();
+})();
+})();
+</script>
+</body>
+</html>

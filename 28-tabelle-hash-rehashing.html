@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hash: costi e re-hashing</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 28 · prima parte della lezione 31 (lavagna del 3 dicembre 2025) e slide 15</span>
+</div>
+
+<h1>Tabelle hash: quanto costano, e il re-hashing</h1>
+<p class="sottotitolo">Con l'indirizzamento aperto ricerca e inserimento guardano una sequenza di celle finché trovano quella giusta. Quante? Nel caso peggiore tutte, ma in media pochissime, purché la tabella non sia troppo piena. Questa pagina spiega quanto costano le operazioni, perché il costo dipende da quanto è piena la tabella (il fattore di carico α) e non dal numero di elementi, e cosa si fa quando la tabella si riempie: la si sostituisce con una più grande, il re-hashing. Il re-hashing sembra costosissimo, ma si dimostra che, fatto nel modo giusto, l'inserimento continua a costare O(1) in media.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue la lavagna dell'anno scorso: «lavagna, pagina N» è la lezione 31 (3 dicembre 2025), pagine 2–15. Le pagine 16 e seguenti della stessa lezione aprono la complessità computazionale (pacco 29). La dimostrazione sul costo del re-hashing viene dalle slide 15 («Tabelle hash: re-hashing»).</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in sei domande</span>
+  <ol>
+    <li><b>Da cosa dipende il costo di ricerca, inserimento e cancellazione?</b> Dal numero di celle che la scansione deve guardare.</li>
+    <li><b>Quanto si paga nel caso peggiore?</b> Θ(n): la scansione può dover passare per tutte le n chiavi presenti.</li>
+    <li><b>E in media?</b> Se la funzione hash distribuisce bene le chiavi, il numero medio di celle guardate dipende solo dal fattore di carico α = n/m. Per α = 1/2 o 3/4 è una piccola costante; quando α si avvicina a 1 cresce senza limite.</li>
+    <li><b>Cos'è il re-hashing?</b> Quando α supera una soglia fissata (per esempio 1/2) si crea una tabella più grande, di solito doppia, e ci si trasferiscono tutti gli elementi.</li>
+    <li><b>Quali problemi pone?</b> Serve una funzione hash per la nuova tabella, h<sub>m</sub>(k) = f(k) mod m, e il trasferimento costa tempo: bisogna scorrere tutta la vecchia tabella.</li>
+    <li><b>Quanto costa, alla fine?</b> Con N inserimenti, i re-hashing fanno in tutto meno di 2N inserimenti in più. Quindi il costo ammortizzato di un inserimento resta O(1).</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#ripasso">Ripasso: l'indirizzamento aperto</a></li>
+    <li><a href="#peggiore">Il costo nel caso peggiore</a></li>
+    <li><a href="#medio">Il costo nel caso medio</a></li>
+    <li><a href="#rehashing">Il re-hashing</a></li>
+    <li><a href="#costo-rehash">Quanto costa il re-hashing</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="ripasso"><span class="num">1</span>Ripasso: l'indirizzamento aperto</h2>
+<p class="in-questa"><b>In questa sezione:</b> le cose della lezione precedente che servono qui, ripetute dalla lavagna (pagine 2–8): la funzione ausiliaria, le tre scansioni, lo pseudocodice di inserimento e ricerca, l'esempio dei pesci.</p>
+<p>Una <strong>tabella hash</strong> è un array V[0..m − 1] di m celle, in cui si tengono elementi con una chiave. Una <strong>funzione hash</strong> h dice, per ogni chiave k, la posizione h(k) in cui l'elemento dovrebbe stare. Due chiavi diverse possono avere la stessa posizione: è una <strong>collisione</strong>. Con la <strong>gestione interna delle collisioni</strong>, o <strong>indirizzamento aperto</strong>, tutti gli elementi stanno dentro la tabella: se h(k) è già occupata, si cerca un'altra posizione libera seguendo una strategia fissata (lavagna, pagina 2).</p>
+<p>Due numeri accompagnano sempre una tabella: <strong>n</strong>, quanti elementi contiene, e <strong>m</strong>, quante celle ha. Il loro rapporto è il <strong>fattore di carico</strong></p>
+<div class="formula grande">α = n / m</div>
+<p>e dice quanto è piena la tabella: α = 1/2 vuol dire piena a metà. Con l'indirizzamento aperto n non può superare m, quindi α sta sempre tra 0 (tabella vuota) e 1 (tabella piena).</p>
+<div class="box def">
+  <span class="etichetta">Funzione ausiliaria (lavagna, pagina 3)</span>
+  <p>La strategia è una funzione <strong>c(k, i)</strong>: k è la chiave, i ≥ 0 è il numero del tentativo. Si guardano, in ordine, le posizioni c(k, 0), c(k, 1), c(k, 2), … La funzione deve soddisfare due condizioni:</p>
+  <ul>
+    <li>c(k, 0) = h(k): il primo tentativo è la posizione «naturale» della chiave;</li>
+    <li>{c(k, 0), c(k, 1), …, c(k, m − 1)} = {0, …, m − 1}: nei primi m tentativi si tocca ogni cella esattamente una volta, così se c'è una cella libera la si trova.</li>
+  </ul>
+</div>
+<p>I tre esempi della lavagna (pagina 4):</p>
+<ul>
+  <li><b>scansione lineare</b>: c(k, i) = (h(k) + i) mod m, cioè h(k), poi la cella dopo, poi quella dopo ancora…;</li>
+  <li><b>scansione quadratica</b>: c(k, i) = ⌊h(k) + c<sub>1</sub>·i + c<sub>2</sub>·i<sup>2</sup>⌋ mod m, con costanti c<sub>1</sub>, c<sub>2</sub> opportune (per esempio c<sub>1</sub> = c<sub>2</sub> = 0,5): i salti diventano sempre più lunghi;</li>
+  <li><b>hashing doppio</b>: c(k, i) = (h(k) + i·h'(k)) mod m, dove h' è una seconda funzione hash: il passo dipende dalla chiave.</li>
+</ul>
+<p>(mod m è il resto della divisione per m: quando si supera l'ultima cella si ricomincia dalla 0.) Lo pseudocodice della lavagna (pagine 5 e 6):</p>
+<p class="titolo-codice">Lavagna, pagina 5</p>
+<pre class="pseudo"><b>ALGORITMO</b> Inserimento(elemento e, chiave k)        <span class="com">// V[0..m − 1] è la tabella</span>
+  i ← 0
+  <b>WHILE</b> i &lt; m <b>AND</b> V[c(k, i)] è occupata <b>DO</b>
+    i ← i + 1
+  <b>IF</b> i &lt; m <b>THEN</b> V[c(k, i)] ← (e, k)           <span class="com">// inserisci l'elemento</span>
+  <b>ELSE</b> errore                               <span class="com">// tabella piena</span></pre>
+<p class="titolo-codice">Lavagna, pagina 6</p>
+<pre class="pseudo"><b>ALGORITMO</b> Ricerca(chiave k) → elemento
+  i ← 0
+  <b>WHILE</b> i &lt; m <b>AND</b> V[c(k, i)] è occupata <b>AND</b> V[c(k, i)].chiave ≠ k <b>DO</b>
+    i ← i + 1
+  <b>IF</b> i = m <b>OR</b> V[c(k, i)] è libera <b>THEN RETURN</b> null   <span class="com">// non c'è</span>
+  <b>ELSE RETURN</b> V[c(k, i)].elemento                     <span class="com">// trovato</span></pre>
+<ul>
+  <li>La ricerca si ferma su una cella libera: se k ci fosse, l'inserimento l'avrebbe messa lì o prima.</li>
+  <li>Per questo la <strong>cancellazione</strong> (pagina 7) non può liberare la cella: una ricerca successiva si fermerebbe nel buco. Si fa una <strong>cancellazione logica</strong>: la cella viene marcata come «cancellata»; la ricerca la tratta come occupata e va avanti, l'inserimento la può riusare.</li>
+</ul>
+<p>L'esempio della pagina 8 è la tabella dei pesci: m = 16; una funzione f che dà a ogni lettera un numero da 0 a 15 (a 0, b 1, c 2, d 3, e 4, f 5, g e h 6, i, j, k 7, l 8, m 9, n e o 10, p 11, q e r 12, s e t 13, u e v 14, da w a z 15); h(k) = f(prima lettera di k); come seconda funzione g(k) = il più piccolo numero primo p ≠ 2 con p ≥ f(terza lettera di k); hashing doppio c(k, i) = (h(k) + i·g(k)) mod 16. Inserendo nell'ordine salmone, tonno, rombo, aringa, cernia, aragosta, totano, ostrica, nasello, palombo si ottiene la tabella della Figura 1.</p>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">la tabella dei pesci (hashing doppio)</div><svg viewBox="0 0 200 360" width="200" height="360" role="img" aria-label="tabella dei pesci costruita con l'hashing doppio" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">0</text><rect x="30" y="4" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="19" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aringa</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">cernia</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aragosta</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="107" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">nasello</text><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">5</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">6</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">7</text><rect x="30" y="158" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="173" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ostrica</text><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="30" y="180" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="195" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">tonno</text><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">9</text><rect x="30" y="202" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">10</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="239" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">totano</text><text x="26" y="261" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">11</text><rect x="30" y="246" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="261" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">palombo</text><text x="26" y="283" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">12</text><rect x="30" y="268" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="283" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">rombo</text><text x="26" y="305" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="290" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="305" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">salmone</text><text x="26" y="327" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="312" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="349" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="334" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/></svg></div></div>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagina 8: la tabella dei pesci con l'hashing doppio. Per esempio tonno: h = f(t) = 13, occupata da salmone; g(tonno) = 11 (la terza lettera è n, f(n) = 10, e il primo primo dispari ≥ 10 è 11); il secondo tentativo è (13 + 11) mod 16 = 24 mod 16 = 8, libera.</div>
+</div>
+<p>Sotto la tabella la lavagna scrive in rosso tre pesci da cercare: anguilla, merluzzo e tonno (Figura 2).</p>
+<ul>
+  <li><b>anguilla</b>: h = f(a) = 0; la terza lettera è g, f(g) = 6, quindi g(anguilla) = 7. Si guardano 0 (aringa, chiave diversa), 0 + 7 = 7 (ostrica, diversa), 7 + 7 = 14: libera. <strong>Non c'è</strong>, e sono servite 3 celle.</li>
+  <li><b>merluzzo</b>: h = f(m) = 9: la cella 9 è libera. <strong>Non c'è</strong>, con 1 cella.</li>
+  <li><b>tonno</b>: h = 13 (salmone, diversa), poi 8: tonno. <strong>Trovato</strong> con 2 celle.</li>
+</ul>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) cerco anguilla: celle 0, 7, 14</div><svg viewBox="0 0 200 360" width="200" height="360" role="img" aria-label="ricerca di anguilla: celle 0, 7, 14" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">0</text><rect x="30" y="4" width="140" height="22" class="r-giallo" fill="#fff1a8" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="19" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aringa</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">cernia</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aragosta</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="107" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">nasello</text><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">5</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">6</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">7</text><rect x="30" y="158" width="140" height="22" class="r-giallo" fill="#fff1a8" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="173" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ostrica</text><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="30" y="180" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="195" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">tonno</text><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">9</text><rect x="30" y="202" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">10</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="239" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">totano</text><text x="26" y="261" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">11</text><rect x="30" y="246" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="261" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">palombo</text><text x="26" y="283" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">12</text><rect x="30" y="268" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="283" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">rombo</text><text x="26" y="305" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="290" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="305" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">salmone</text><text x="26" y="327" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="312" width="140" height="22" class="r-giallo" fill="#fff1a8" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="349" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="334" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/></svg></div><div><div class="nome-mat">(b) cerco merluzzo: celle 9</div><svg viewBox="0 0 200 360" width="200" height="360" role="img" aria-label="ricerca di merluzzo: celle 9" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">0</text><rect x="30" y="4" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="19" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aringa</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">cernia</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aragosta</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="107" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">nasello</text><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">5</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">6</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">7</text><rect x="30" y="158" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="173" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ostrica</text><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="30" y="180" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="195" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">tonno</text><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">9</text><rect x="30" y="202" width="140" height="22" class="r-giallo" fill="#fff1a8" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">10</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="239" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">totano</text><text x="26" y="261" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">11</text><rect x="30" y="246" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="261" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">palombo</text><text x="26" y="283" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">12</text><rect x="30" y="268" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="283" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">rombo</text><text x="26" y="305" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="290" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="305" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">salmone</text><text x="26" y="327" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="312" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="349" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="334" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/></svg></div><div><div class="nome-mat">(c) cerco tonno: celle 13, 8</div><svg viewBox="0 0 200 360" width="200" height="360" role="img" aria-label="ricerca di tonno: celle 13, 8" font-family="system-ui, sans-serif"><text x="26" y="19" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">0</text><rect x="30" y="4" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="19" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aringa</text><text x="26" y="41" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">1</text><rect x="30" y="26" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="63" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">2</text><rect x="30" y="48" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="63" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">cernia</text><text x="26" y="85" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">3</text><rect x="30" y="70" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="85" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">aragosta</text><text x="26" y="107" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">4</text><rect x="30" y="92" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="107" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">nasello</text><text x="26" y="129" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">5</text><rect x="30" y="114" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="151" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">6</text><rect x="30" y="136" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="173" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">7</text><rect x="30" y="158" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="173" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">ostrica</text><text x="26" y="195" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">8</text><rect x="30" y="180" width="140" height="22" class="r-verde" fill="#e6f5ea" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="195" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">tonno</text><text x="26" y="217" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">9</text><rect x="30" y="202" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="239" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">10</text><rect x="30" y="224" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="239" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">totano</text><text x="26" y="261" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">11</text><rect x="30" y="246" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="261" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">palombo</text><text x="26" y="283" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">12</text><rect x="30" y="268" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="283" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">rombo</text><text x="26" y="305" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">13</text><rect x="30" y="290" width="140" height="22" class="r-giallo" fill="#fff1a8" stroke="#9aa3b2" stroke-width="1"/><text x="100" y="305" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">salmone</text><text x="26" y="327" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">14</text><rect x="30" y="312" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/><text x="26" y="349" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">15</text><rect x="30" y="334" width="140" height="22" class="r-nodo" fill="#ffffff" stroke="#9aa3b2" stroke-width="1"/></svg></div></div>
+<div class="didascalia"><b>Figura 2.</b> Le tre ricerche della lavagna, pagina 8, nella tabella della Figura 1. In giallo le celle guardate senza trovare la chiave, in verde quella dove la chiave si trova. Con la scansione lineare la ricerca di anguilla avrebbe guardato 5 celle (0, 1, 2, 3, 4) invece di 3.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Indirizzamento aperto: si provano le celle c(k, 0) = h(k), c(k, 1), c(k, 2), …, che nei primi m tentativi toccano tutte le celle.</li>
+    <li>Scansioni: lineare (h(k) + i) mod m, quadratica ⌊h(k) + c<sub>1</sub>i + c<sub>2</sub>i<sup>2</sup>⌋ mod m, hashing doppio (h(k) + i·h'(k)) mod m.</li>
+    <li>Inserimento: fino alla prima cella libera. Ricerca: fino alla chiave o a una cella libera. Cancellazione: logica.</li>
+    <li>Fattore di carico α = n/m, tra 0 e 1.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="peggiore"><span class="num">2</span>Il costo nel caso peggiore</h2>
+<p class="in-questa"><b>In questa sezione:</b> da cosa dipende il costo delle operazioni, e perché nel caso peggiore è Θ(n) (lavagna, pagina 9).</p>
+<p>Inserimento, ricerca e cancellazione fanno tutte la stessa cosa: calcolano c(k, 0), c(k, 1), … e guardano le celle una dopo l'altra. Ogni cella guardata è un passo di tempo costante (calcolare c(k, i) e controllare la cella). Quindi:</p>
+<div class="box def">
+  <span class="etichetta">Il costo delle operazioni (lavagna, pagina 9)</span>
+  <p>I costi di ricerca, inserimento e cancellazione dipendono dal <strong>costo di scansione</strong>, cioè dal numero di posizioni da visitare.</p>
+</div>
+<p>Nel <strong>caso peggiore</strong> la scansione passa per tutte le chiavi presenti nella tabella: <strong>Θ(n) passi</strong>. Succede, per esempio, se tutte le chiavi hanno la stessa posizione h. Nella Figura 3 la tabella ha m = 8 celle e le sei chiavi presenti 8, 16, 24, 32, 40, 48 hanno tutte h(k) = k mod 8 = 0. Con la scansione lineare sono finite in fila nelle celle 0–5. Cercare 56 (h = 0, e non c'è) vuol dire guardare le celle 0, 1, 2, 3, 4, 5, tutte occupate da chiavi diverse, e poi la 6, libera: 7 celle, cioè n + 1.</p>
+<div class="figura">
+<div class="nome-mat">m = 8, h(k) = k mod 8: tutte le chiavi presenti hanno h = 0</div><div class="array"><div class="cella trovata"><div class="v">8</div><div class="i">0</div></div><div class="cella trovata"><div class="v">16</div><div class="i">1</div></div><div class="cella trovata"><div class="v">24</div><div class="i">2</div></div><div class="cella trovata"><div class="v">32</div><div class="i">3</div></div><div class="cella trovata"><div class="v">40</div><div class="i">4</div></div><div class="cella trovata"><div class="v">48</div><div class="i">5</div></div><div class="cella attiva"><div class="v"></div><div class="i">6</div></div><div class="cella"><div class="v"></div><div class="i">7</div></div></div>
+<div class="didascalia"><b>Figura 3.</b> Il caso peggiore: tutte le chiavi presenti hanno la stessa posizione. In verde le n = 6 celle che la ricerca di 56 deve guardare prima di arrivare alla cella libera 6 (in giallo).</div>
+</div>
+<p>Il caso peggiore è lo stesso delle liste di collisione (tutte le chiavi nella stessa lista): una funzione hash che manda tutto nello stesso posto rende la tabella lenta come una lista. Per questo conta il caso medio.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Costo delle operazioni = numero di celle visitate dalla scansione.</li>
+    <li>Caso peggiore: Θ(n), quando la scansione passa per tutte le chiavi presenti.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="medio"><span class="num">3</span>Il costo nel caso medio</h2>
+<p class="in-questa"><b>In questa sezione:</b> la tabella dei passi medi della lavagna (pagine 10 e 11), cosa vuol dire, e la conseguenza più importante: il costo dipende da α, non da n.</p>
+<p>Il caso medio si calcola supponendo che la funzione hash <strong>«sparpagli» bene</strong> le chiavi (lavagna, pagina 10): ogni chiave ha la stessa probabilità di finire in ogni posizione, indipendentemente dalle altre. Sotto questa ipotesi si dimostra (la dimostrazione non fa parte del corso) che il numero medio di passi è quello della tabella seguente, per 0 &lt; α &lt; 1. Ci sono due casi, perché cercare una chiave che c'è e una che non c'è costa diverso: nel primo la ricerca si ferma sulla chiave, nel secondo deve arrivare a una cella libera. L'inserimento si comporta come una ricerca senza successo: anche lui si ferma alla prima cella libera.</p>
+<div class="tabella-wrap"><table>
+  <thead><tr><th>numero medio di passi</th><th>scansione lineare</th><th>scansione quadratica, hashing doppio</th></tr></thead>
+  <tbody>
+    <tr><td>chiave trovata</td><td>1/2 + 1 / (2(1 − α))</td><td>−(1/α) · ln(1 − α)</td></tr>
+    <tr><td>chiave non trovata</td><td>1/2 + 1 / (2(1 − α)<sup>2</sup>)</td><td>1 / (1 − α)</td></tr>
+  </tbody>
+</table></div>
+<p class="piccolo">Lavagna, pagina 10, e slide 15. ln è il logaritmo naturale (in base e ≈ 2,718); alla lavagna è scritto lg<sub>e</sub>. n = numero di chiavi presenti, m = dimensione della tabella, α = n/m.</p>
+<p>Non serve imparare a ricavare queste formule. Serve saperle leggere. Tutte e quattro hanno <strong>1 − α al denominatore</strong>: 1 − α è la frazione di celle ancora libere.</p>
+<ul>
+  <li>Se la tabella è poco piena, 1 − α è vicino a 1 e le frazioni sono piccole: pochi passi.</li>
+  <li>Se la tabella è quasi piena, 1 − α è vicino a 0, le frazioni diventano enormi: per trovare una cella libera bisogna provarne tantissime.</li>
+  <li>La scansione lineare, per le chiavi che non ci sono, ha (1 − α) <em>al quadrato</em> al denominatore: peggiora molto più in fretta. È l'effetto dell'agglomerazione primaria: le chiavi si ammucchiano in blocchi di celle consecutive, e ogni blocco cresce sempre di più, perché ogni chiave che cade nel blocco finisce in fondo al blocco e lo allunga.</li>
+</ul>
+<p>La lavagna (pagina 11) fa i conti per la cella in basso a destra, 1/(1 − α):</p>
+<ul>
+  <li>α = 1/2 (tabella piena a metà): 1/(1 − 1/2) = 1/(1/2) = <strong>2</strong>;</li>
+  <li>α = 3/4 (tabella piena al 75%): 1/(1 − 3/4) = 1/(1/4) = <strong>4</strong>;</li>
+  <li>α → 1: il denominatore tende a 0 e 1/(1 − α) → <strong>∞</strong>.</li>
+</ul>
+<p>Tutte e quattro le formule, per alcuni valori di α:</p>
+<div class="tabella-wrap"><table>
+  <thead><tr><th>α</th><th>lineare, trovata</th><th>lineare, non trovata</th><th>quadr./doppio, trovata</th><th>quadr./doppio, non trovata</th></tr></thead>
+  <tbody>
+    <tr><td>0,5</td><td>1,5</td><td>2,5</td><td>1,39</td><td>2</td></tr>
+    <tr><td>0,75</td><td>2,5</td><td>8,5</td><td>1,85</td><td>4</td></tr>
+    <tr><td>0,9</td><td>5,5</td><td>50,5</td><td>2,56</td><td>10</td></tr>
+    <tr><td>0,99</td><td>50,5</td><td>5000,5</td><td>4,65</td><td>100</td></tr>
+  </tbody>
+</table></div>
+<p>La Figura 4 disegna le curve: tutte partono da circa 1 e restano basse fino a α = 3/4, poi salgono di colpo.</p>
+<div class="figura">
+<div class="affianco"><div><svg viewBox="0 0 330 230" width="330" height="230" role="img" aria-label="chiave trovata: numero medio di passi in funzione di α" font-family="system-ui, sans-serif"><text x="40" y="14" class="etich" font-size="12" font-weight="600" fill="#1f2328">chiave trovata</text><line x1="40" y1="192" x2="318" y2="192" class="asse" stroke="#e4ddcf"/><text x="34" y="196" text-anchor="end" class="tick" font-size="11" fill="#5b6270">0</text><line x1="40" y1="158.8" x2="318" y2="158.8" class="asse" stroke="#e4ddcf"/><text x="34" y="162.8" text-anchor="end" class="tick" font-size="11" fill="#5b6270">2</text><line x1="40" y1="125.6" x2="318" y2="125.6" class="asse" stroke="#e4ddcf"/><text x="34" y="129.6" text-anchor="end" class="tick" font-size="11" fill="#5b6270">4</text><line x1="40" y1="92.4" x2="318" y2="92.4" class="asse" stroke="#e4ddcf"/><text x="34" y="96.4" text-anchor="end" class="tick" font-size="11" fill="#5b6270">6</text><line x1="40" y1="59.2" x2="318" y2="59.2" class="asse" stroke="#e4ddcf"/><text x="34" y="63.2" text-anchor="end" class="tick" font-size="11" fill="#5b6270">8</text><line x1="40" y1="26" x2="318" y2="26" class="asse" stroke="#e4ddcf"/><text x="34" y="30" text-anchor="end" class="tick" font-size="11" fill="#5b6270">10</text><text x="40" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0</text><text x="109.5" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0,25</text><text x="179" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0,5</text><text x="248.5" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0,75</text><text x="318" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">1</text><text x="179" y="224" text-anchor="middle" class="tit-asse" font-size="11.5" fill="#5b6270">fattore di carico α = n/m</text><path d="M40 175.4 L41.4 175.4 L42.8 175.3 L44.2 175.3 L45.6 175.2 L47 175.2 L48.3 175.1 L49.7 175.1 L51.1 175.1 L52.5 175 L53.9 175 L55.3 174.9 L56.7 174.9 L58.1 174.8 L59.5 174.8 L60.9 174.7 L62.2 174.7 L63.6 174.6 L65 174.6 L66.4 174.5 L67.8 174.5 L69.2 174.4 L70.6 174.4 L72 174.3 L73.4 174.3 L74.8 174.2 L76.1 174.2 L77.5 174.1 L78.9 174 L80.3 174 L81.7 173.9 L83.1 173.9 L84.5 173.8 L85.9 173.8 L87.3 173.7 L88.7 173.6 L90 173.6 L91.4 173.5 L92.8 173.5 L94.2 173.4 L95.6 173.3 L97 173.3 L98.4 173.2 L99.8 173.1 L101.2 173.1 L102.6 173 L103.9 172.9 L105.3 172.9 L106.7 172.8 L108.1 172.7 L109.5 172.6 L110.9 172.6 L112.3 172.5 L113.7 172.4 L115.1 172.3 L116.5 172.3 L117.8 172.2 L119.2 172.1 L120.6 172 L122 171.9 L123.4 171.8 L124.8 171.8 L126.2 171.7 L127.6 171.6 L129 171.5 L130.4 171.4 L131.7 171.3 L133.1 171.2 L134.5 171.1 L135.9 171 L137.3 170.9 L138.7 170.8 L140.1 170.7 L141.5 170.6 L142.9 170.5 L144.3 170.4 L145.6 170.3 L147 170.2 L148.4 170.1 L149.8 170 L151.2 169.9 L152.6 169.8 L154 169.6 L155.4 169.5 L156.8 169.4 L158.1 169.3 L159.5 169.1 L160.9 169 L162.3 168.9 L163.7 168.7 L165.1 168.6 L166.5 168.5 L167.9 168.3 L169.3 168.2 L170.7 168 L172 167.9 L173.4 167.7 L174.8 167.6 L176.2 167.4 L177.6 167.3 L179 167.1 L180.4 166.9 L181.8 166.8 L183.2 166.6 L184.6 166.4 L186 166.2 L187.3 166 L188.7 165.9 L190.1 165.7 L191.5 165.5 L192.9 165.3 L194.3 165 L195.7 164.8 L197.1 164.6 L198.5 164.4 L199.9 164.2 L201.2 163.9 L202.6 163.7 L204 163.5 L205.4 163.2 L206.8 163 L208.2 162.7 L209.6 162.4 L211 162.1 L212.4 161.9 L213.8 161.6 L215.1 161.3 L216.5 161 L217.9 160.6 L219.3 160.3 L220.7 160 L222.1 159.6 L223.5 159.3 L224.9 158.9 L226.3 158.5 L227.7 158.2 L229 157.8 L230.4 157.4 L231.8 156.9 L233.2 156.5 L234.6 156 L236 155.6 L237.4 155.1 L238.8 154.6 L240.2 154.1 L241.6 153.5 L242.9 153 L244.3 152.4 L245.7 151.8 L247.1 151.2 L248.5 150.5 L249.9 149.8 L251.3 149.1 L252.7 148.4 L254.1 147.6 L255.5 146.8 L256.8 146 L258.2 145.1 L259.6 144.2 L261 143.2 L262.4 142.2 L263.8 141.1 L265.2 140 L266.6 138.8 L268 137.6 L269.4 136.3 L270.7 134.9 L272.1 133.4 L273.5 131.8 L274.9 130.2 L276.3 128.4 L277.7 126.5 L279.1 124.4 L280.5 122.2 L281.9 119.9 L283.3 117.3 L284.6 114.5 L286 111.5 L287.4 108.2 L288.8 104.7 L290.2 100.7 L291.6 96.3 L293 91.5 L294.4 86.1 L295.8 79.9 L297.2 73 L298.5 65.1 L299.9 56 L301.3 45.4 L302.7 32.8 L304.1 26" class="serie-a" fill="none" stroke="#2a78d6" stroke-width="2"/><path d="M40 175.4 L41.4 175.4 L42.8 175.3 L44.2 175.3 L45.6 175.2 L47 175.2 L48.3 175.1 L49.7 175.1 L51.1 175.1 L52.5 175 L53.9 175 L55.3 174.9 L56.7 174.9 L58.1 174.8 L59.5 174.8 L60.9 174.7 L62.2 174.7 L63.6 174.7 L65 174.6 L66.4 174.6 L67.8 174.5 L69.2 174.5 L70.6 174.4 L72 174.4 L73.4 174.3 L74.8 174.3 L76.1 174.2 L77.5 174.2 L78.9 174.1 L80.3 174.1 L81.7 174 L83.1 174 L84.5 173.9 L85.9 173.9 L87.3 173.8 L88.7 173.8 L90 173.7 L91.4 173.6 L92.8 173.6 L94.2 173.5 L95.6 173.5 L97 173.4 L98.4 173.4 L99.8 173.3 L101.2 173.3 L102.6 173.2 L103.9 173.1 L105.3 173.1 L106.7 173 L108.1 173 L109.5 172.9 L110.9 172.8 L112.3 172.8 L113.7 172.7 L115.1 172.7 L116.5 172.6 L117.8 172.5 L119.2 172.5 L120.6 172.4 L122 172.3 L123.4 172.3 L124.8 172.2 L126.2 172.1 L127.6 172.1 L129 172 L130.4 171.9 L131.7 171.9 L133.1 171.8 L134.5 171.7 L135.9 171.6 L137.3 171.6 L138.7 171.5 L140.1 171.4 L141.5 171.3 L142.9 171.3 L144.3 171.2 L145.6 171.1 L147 171 L148.4 171 L149.8 170.9 L151.2 170.8 L152.6 170.7 L154 170.6 L155.4 170.6 L156.8 170.5 L158.1 170.4 L159.5 170.3 L160.9 170.2 L162.3 170.1 L163.7 170 L165.1 169.9 L166.5 169.9 L167.9 169.8 L169.3 169.7 L170.7 169.6 L172 169.5 L173.4 169.4 L174.8 169.3 L176.2 169.2 L177.6 169.1 L179 169 L180.4 168.9 L181.8 168.8 L183.2 168.7 L184.6 168.6 L186 168.5 L187.3 168.4 L188.7 168.2 L190.1 168.1 L191.5 168 L192.9 167.9 L194.3 167.8 L195.7 167.7 L197.1 167.5 L198.5 167.4 L199.9 167.3 L201.2 167.2 L202.6 167 L204 166.9 L205.4 166.8 L206.8 166.6 L208.2 166.5 L209.6 166.4 L211 166.2 L212.4 166.1 L213.8 165.9 L215.1 165.8 L216.5 165.7 L217.9 165.5 L219.3 165.3 L220.7 165.2 L222.1 165 L223.5 164.9 L224.9 164.7 L226.3 164.5 L227.7 164.4 L229 164.2 L230.4 164 L231.8 163.8 L233.2 163.6 L234.6 163.4 L236 163.3 L237.4 163.1 L238.8 162.9 L240.2 162.7 L241.6 162.4 L242.9 162.2 L244.3 162 L245.7 161.8 L247.1 161.6 L248.5 161.3 L249.9 161.1 L251.3 160.8 L252.7 160.6 L254.1 160.3 L255.5 160 L256.8 159.8 L258.2 159.5 L259.6 159.2 L261 158.9 L262.4 158.6 L263.8 158.3 L265.2 158 L266.6 157.6 L268 157.3 L269.4 156.9 L270.7 156.6 L272.1 156.2 L273.5 155.8 L274.9 155.4 L276.3 155 L277.7 154.5 L279.1 154 L280.5 153.6 L281.9 153.1 L283.3 152.6 L284.6 152 L286 151.4 L287.4 150.8 L288.8 150.2 L290.2 149.5 L291.6 148.8 L293 148.1 L294.4 147.3 L295.8 146.4 L297.2 145.5 L298.5 144.5 L299.9 143.5 L301.3 142.3 L302.7 141.1 L304.1 139.7 L305.5 138.1 L306.9 136.3 L308.3 134.3 L309.7 132 L311.1 129.2 L312.4 125.7" class="serie-b" fill="none" stroke="#eb6834" stroke-width="2"/><circle cx="179" cy="167.1" r="3.8" class="punto-a" fill="#2a78d6"/><circle cx="179" cy="169" r="3.8" class="punto-b" fill="#eb6834"/><circle cx="248.5" cy="150.5" r="3.8" class="punto-a" fill="#2a78d6"/><circle cx="248.5" cy="161.3" r="3.8" class="punto-b" fill="#eb6834"/></svg></div><div><svg viewBox="0 0 330 230" width="330" height="230" role="img" aria-label="chiave non trovata: numero medio di passi in funzione di α" font-family="system-ui, sans-serif"><text x="40" y="14" class="etich" font-size="12" font-weight="600" fill="#1f2328">chiave non trovata</text><line x1="40" y1="192" x2="318" y2="192" class="asse" stroke="#e4ddcf"/><text x="34" y="196" text-anchor="end" class="tick" font-size="11" fill="#5b6270">0</text><line x1="40" y1="158.8" x2="318" y2="158.8" class="asse" stroke="#e4ddcf"/><text x="34" y="162.8" text-anchor="end" class="tick" font-size="11" fill="#5b6270">2</text><line x1="40" y1="125.6" x2="318" y2="125.6" class="asse" stroke="#e4ddcf"/><text x="34" y="129.6" text-anchor="end" class="tick" font-size="11" fill="#5b6270">4</text><line x1="40" y1="92.4" x2="318" y2="92.4" class="asse" stroke="#e4ddcf"/><text x="34" y="96.4" text-anchor="end" class="tick" font-size="11" fill="#5b6270">6</text><line x1="40" y1="59.2" x2="318" y2="59.2" class="asse" stroke="#e4ddcf"/><text x="34" y="63.2" text-anchor="end" class="tick" font-size="11" fill="#5b6270">8</text><line x1="40" y1="26" x2="318" y2="26" class="asse" stroke="#e4ddcf"/><text x="34" y="30" text-anchor="end" class="tick" font-size="11" fill="#5b6270">10</text><text x="40" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0</text><text x="109.5" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0,25</text><text x="179" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0,5</text><text x="248.5" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">0,75</text><text x="318" y="208" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">1</text><text x="179" y="224" text-anchor="middle" class="tit-asse" font-size="11.5" fill="#5b6270">fattore di carico α = n/m</text><path d="M40 175.4 L41.4 175.3 L42.8 175.2 L44.2 175.1 L45.6 175.1 L47 175 L48.3 174.9 L49.7 174.8 L51.1 174.7 L52.5 174.6 L53.9 174.5 L55.3 174.4 L56.7 174.3 L58.1 174.2 L59.5 174.1 L60.9 174 L62.2 173.9 L63.6 173.8 L65 173.7 L66.4 173.6 L67.8 173.5 L69.2 173.3 L70.6 173.2 L72 173.1 L73.4 173 L74.8 172.9 L76.1 172.7 L77.5 172.6 L78.9 172.5 L80.3 172.3 L81.7 172.2 L83.1 172.1 L84.5 171.9 L85.9 171.8 L87.3 171.7 L88.7 171.5 L90 171.4 L91.4 171.2 L92.8 171 L94.2 170.9 L95.6 170.7 L97 170.6 L98.4 170.4 L99.8 170.2 L101.2 170.1 L102.6 169.9 L103.9 169.7 L105.3 169.5 L106.7 169.3 L108.1 169.1 L109.5 168.9 L110.9 168.7 L112.3 168.5 L113.7 168.3 L115.1 168.1 L116.5 167.9 L117.8 167.7 L119.2 167.5 L120.6 167.2 L122 167 L123.4 166.8 L124.8 166.5 L126.2 166.3 L127.6 166 L129 165.8 L130.4 165.5 L131.7 165.2 L133.1 164.9 L134.5 164.6 L135.9 164.4 L137.3 164.1 L138.7 163.7 L140.1 163.4 L141.5 163.1 L142.9 162.8 L144.3 162.5 L145.6 162.1 L147 161.8 L148.4 161.4 L149.8 161 L151.2 160.6 L152.6 160.3 L154 159.9 L155.4 159.4 L156.8 159 L158.1 158.6 L159.5 158.2 L160.9 157.7 L162.3 157.2 L163.7 156.8 L165.1 156.3 L166.5 155.8 L167.9 155.2 L169.3 154.7 L170.7 154.2 L172 153.6 L173.4 153 L174.8 152.4 L176.2 151.8 L177.6 151.2 L179 150.5 L180.4 149.8 L181.8 149.1 L183.2 148.4 L184.6 147.7 L186 146.9 L187.3 146.1 L188.7 145.3 L190.1 144.5 L191.5 143.6 L192.9 142.7 L194.3 141.8 L195.7 140.8 L197.1 139.8 L198.5 138.8 L199.9 137.7 L201.2 136.6 L202.6 135.5 L204 134.3 L205.4 133.1 L206.8 131.8 L208.2 130.5 L209.6 129.1 L211 127.7 L212.4 126.2 L213.8 124.7 L215.1 123.1 L216.5 121.4 L217.9 119.7 L219.3 117.8 L220.7 115.9 L222.1 114 L223.5 111.9 L224.9 109.7 L226.3 107.5 L227.7 105.1 L229 102.6 L230.4 100.1 L231.8 97.3 L233.2 94.5 L234.6 91.5 L236 88.3 L237.4 85 L238.8 81.5 L240.2 77.8 L241.6 73.9 L242.9 69.8 L244.3 65.5 L245.7 60.9 L247.1 56.1 L248.5 50.9 L249.9 45.4 L251.3 39.6 L252.7 33.4 L254.1 26.8 L255.5 26" class="serie-a" fill="none" stroke="#2a78d6" stroke-width="2"/><path d="M40 175.4 L41.4 175.3 L42.8 175.2 L44.2 175.1 L45.6 175.1 L47 175 L48.3 174.9 L49.7 174.8 L51.1 174.7 L52.5 174.6 L53.9 174.5 L55.3 174.4 L56.7 174.3 L58.1 174.2 L59.5 174.2 L60.9 174.1 L62.2 174 L63.6 173.9 L65 173.8 L66.4 173.7 L67.8 173.6 L69.2 173.5 L70.6 173.3 L72 173.2 L73.4 173.1 L74.8 173 L76.1 172.9 L77.5 172.8 L78.9 172.7 L80.3 172.6 L81.7 172.5 L83.1 172.4 L84.5 172.2 L85.9 172.1 L87.3 172 L88.7 171.9 L90 171.8 L91.4 171.6 L92.8 171.5 L94.2 171.4 L95.6 171.3 L97 171.1 L98.4 171 L99.8 170.9 L101.2 170.7 L102.6 170.6 L103.9 170.4 L105.3 170.3 L106.7 170.2 L108.1 170 L109.5 169.9 L110.9 169.7 L112.3 169.6 L113.7 169.4 L115.1 169.3 L116.5 169.1 L117.8 168.9 L119.2 168.8 L120.6 168.6 L122 168.5 L123.4 168.3 L124.8 168.1 L126.2 167.9 L127.6 167.8 L129 167.6 L130.4 167.4 L131.7 167.2 L133.1 167 L134.5 166.8 L135.9 166.7 L137.3 166.5 L138.7 166.3 L140.1 166.1 L141.5 165.9 L142.9 165.7 L144.3 165.4 L145.6 165.2 L147 165 L148.4 164.8 L149.8 164.6 L151.2 164.3 L152.6 164.1 L154 163.9 L155.4 163.6 L156.8 163.4 L158.1 163.1 L159.5 162.9 L160.9 162.6 L162.3 162.4 L163.7 162.1 L165.1 161.8 L166.5 161.5 L167.9 161.3 L169.3 161 L170.7 160.7 L172 160.4 L173.4 160.1 L174.8 159.8 L176.2 159.5 L177.6 159.1 L179 158.8 L180.4 158.5 L181.8 158.1 L183.2 157.8 L184.6 157.4 L186 157.1 L187.3 156.7 L188.7 156.3 L190.1 155.9 L191.5 155.5 L192.9 155.1 L194.3 154.7 L195.7 154.3 L197.1 153.8 L198.5 153.4 L199.9 152.9 L201.2 152.5 L202.6 152 L204 151.5 L205.4 151 L206.8 150.5 L208.2 150 L209.6 149.4 L211 148.9 L212.4 148.3 L213.8 147.7 L215.1 147.1 L216.5 146.5 L217.9 145.9 L219.3 145.2 L220.7 144.6 L222.1 143.9 L223.5 143.2 L224.9 142.4 L226.3 141.7 L227.7 140.9 L229 140.1 L230.4 139.3 L231.8 138.5 L233.2 137.6 L234.6 136.7 L236 135.7 L237.4 134.8 L238.8 133.8 L240.2 132.7 L241.6 131.6 L242.9 130.5 L244.3 129.4 L245.7 128.2 L247.1 126.9 L248.5 125.6 L249.9 124.2 L251.3 122.8 L252.7 121.4 L254.1 119.8 L255.5 118.2 L256.8 116.5 L258.2 114.8 L259.6 113 L261 111 L262.4 109 L263.8 106.9 L265.2 104.6 L266.6 102.3 L268 99.8 L269.4 97.1 L270.7 94.4 L272.1 91.4 L273.5 88.3 L274.9 84.9 L276.3 81.3 L277.7 77.5 L279.1 73.4 L280.5 69 L281.9 64.3 L283.3 59.2 L284.6 53.7 L286 47.7 L287.4 41.1 L288.8 33.9 L290.2 26" class="serie-b" fill="none" stroke="#eb6834" stroke-width="2"/><circle cx="179" cy="150.5" r="3.8" class="punto-a" fill="#2a78d6"/><circle cx="179" cy="158.8" r="3.8" class="punto-b" fill="#eb6834"/><circle cx="248.5" cy="50.9" r="3.8" class="punto-a" fill="#2a78d6"/><circle cx="248.5" cy="125.6" r="3.8" class="punto-b" fill="#eb6834"/></svg></div></div><div class="legenda"><span><span class="k a"></span>scansione lineare</span><span><span class="k b"></span>scansione quadratica e hashing doppio</span></div>
+<div class="didascalia"><b>Figura 4.</b> Il numero medio di celle guardate in funzione di α = n/m, a sinistra per una chiave che c'è, a destra per una che non c'è (le curve che escono dal grafico continuano a salire). I punti sono α = 1/2 e α = 3/4. Fino a 3/4 bastano pochi passi; vicino a 1 i passi esplodono, soprattutto con la scansione lineare.</div>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">La cosa più importante</span>
+  <p>Il numero di passi <strong>dipende da α, cioè da quanto la tabella è piena</strong> (lavagna, pagina 11), e non dal numero n di elementi. Una tabella con n = 100 elementi in m = 200 celle e una con n = 10 000 elementi in m = 20 000 celle hanno lo stesso α = 1/2, e quindi in media lo stesso numero di passi.</p>
+  <p>È la grande differenza con gli altri modi di tenere un dizionario (slide 15): in un array ordinato o in un albero bilanciato la ricerca costa Θ(log n), e cresce con n. In una tabella hash il costo medio resta costante, purché α resti lontano da 1.</p>
+</div>
+<div class="widget" id="w-al">
+  <h4>Quanti passi in media</h4>
+  <div id="al-corpo"></div>
+</div>
+<p>Ne viene la regola pratica della slide 15: per avere buone prestazioni servono una funzione hash veloce da calcolare che distribuisca bene le chiavi, e una tabella che <strong>non si riempia troppo</strong>. Si fissa un valore massimo α<sub>max</sub> del fattore di carico, e quando α lo supera si sostituisce la tabella con una più grande. È il re-hashing.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Caso medio (funzione hash che distribuisce bene): lineare 1/2 + 1/(2(1 − α)) se la chiave c'è, 1/2 + 1/(2(1 − α)<sup>2</sup>) se non c'è; quadratica e doppio −(1/α) ln(1 − α) e 1/(1 − α).</li>
+    <li>Per α = 1/2 o 3/4 sono piccole costanti (per esempio 1/(1 − α) = 2 e 4); per α → 1 vanno all'infinito.</li>
+    <li>Il costo medio dipende da α = n/m, non da n: tenendo α basso resta costante.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="rehashing"><span class="num">4</span>Il re-hashing</h2>
+<p class="in-questa"><b>In questa sezione:</b> cos'è il re-hashing e i suoi due problemi (lavagna, pagine 12 e 13): quale funzione hash usare nella tabella nuova, e quanto costa spostare gli elementi.</p>
+<div class="box def">
+  <span class="etichetta">Re-hashing (lavagna, pagina 12)</span>
+  <p>Quando la tabella viene riempita oltre la soglia stabilita (per esempio α = 1/2), viene creata una tabella più grande, di solito <strong>il doppio</strong>, in cui vengono trasferiti tutti gli elementi.</p>
+</div>
+<p>La lavagna segnala due problemi.</p>
+<p><b>Primo problema: la funzione hash per la nuova tabella.</b> La funzione hash dà posizioni da 0 a m − 1; se m cambia, serve una funzione nuova. La soluzione (lavagna, pagina 13) è definire la funzione hash in modo <strong>parametrico</strong> rispetto alla dimensione della tabella:</p>
+<div class="formula grande">h<sub>m</sub>(k) = f(k) mod m</div>
+<p>dove f è una funzione che restituisce un intero in un intervallo molto grande (per esempio in Java il metodo hashCode, che ogni oggetto possiede). f si calcola una volta per tutte; per cambiare tabella basta cambiare m. E se f distribuisce le chiavi in modo uniforme, anche h<sub>m</sub> lo fa: prendere il resto della divisione per m di numeri sparsi uniformemente su un intervallo molto più grande di m dà resti sparsi uniformemente tra 0 e m − 1.</p>
+<p><b>Secondo problema: il costo in tempo.</b> Per spostare gli elementi bisogna scorrere <em>tutta</em> la vecchia tabella e inserire ogni elemento nella nuova, calcolandone la posizione con la nuova funzione hash e risolvendo le eventuali collisioni. Quindi un re-hashing costa almeno tanti passi quante sono le celle della vecchia tabella. Attenzione: un elemento in genere <em>cambia posizione</em>, perché f(k) mod 8 non è f(k) mod 4. Non si può copiare la vecchia tabella così com'è.</p>
+<p>Un esempio (Figura 5), con f(k) = k, quindi h<sub>m</sub>(k) = k mod m, scansione lineare, soglia α<sub>max</sub> = 1/2 e tabella iniziale di 4 celle:</p>
+<ul>
+  <li>14 → 14 mod 4 = 2; 23 → 23 mod 4 = 3. Ora n = 2 e m = 4: α = 1/2, la soglia è raggiunta.</li>
+  <li>Arriva 9: prima di inserirlo si fa il re-hashing in una tabella di 8 celle. Si scorre la vecchia tabella: 14 → 14 mod 8 = 6, 23 → 23 mod 8 = 7. Poi 9 → 9 mod 8 = 1.</li>
+  <li>40 → 40 mod 8 = 0. Ora n = 4, m = 8: di nuovo α = 1/2.</li>
+  <li>Arriva 31: re-hashing in 16 celle. Si scorre la tabella di 8 celle dalla 0 alla 7: 40 → 40 mod 16 = 8, 9 → 9, 14 → 14, 23 → 23 mod 16 = 7. Poi 31 → 15.</li>
+</ul>
+<div class="figura">
+<div class="nome-mat">(a) T<sub>0</sub>, capacità 4: dopo 14 e 23 è piena a metà</div><div class="array"><div class="cella"><div class="v"></div><div class="i">0</div></div><div class="cella"><div class="v"></div><div class="i">1</div></div><div class="cella"><div class="v">14</div><div class="i">2</div></div><div class="cella"><div class="v">23</div><div class="i">3</div></div></div><div class="nome-mat">(b) arriva 9: re-hashing in T<sub>1</sub>, capacità 8 (14 → 6, 23 → 7), poi 9 → 1</div><div class="array"><div class="cella"><div class="v"></div><div class="i">0</div></div><div class="cella attiva"><div class="v">9</div><div class="i">1</div></div><div class="cella"><div class="v"></div><div class="i">2</div></div><div class="cella"><div class="v"></div><div class="i">3</div></div><div class="cella"><div class="v"></div><div class="i">4</div></div><div class="cella"><div class="v"></div><div class="i">5</div></div><div class="cella trovata"><div class="v">14</div><div class="i">6</div></div><div class="cella trovata"><div class="v">23</div><div class="i">7</div></div></div><div class="nome-mat">(c) dopo 40 (→ 0) T<sub>1</sub> è piena a metà; arriva 31: re-hashing in T<sub>2</sub>, capacità 16, poi 31 → 15</div><div class="array"><div class="cella"><div class="v"></div><div class="i">0</div></div><div class="cella"><div class="v"></div><div class="i">1</div></div><div class="cella"><div class="v"></div><div class="i">2</div></div><div class="cella"><div class="v"></div><div class="i">3</div></div><div class="cella"><div class="v"></div><div class="i">4</div></div><div class="cella"><div class="v"></div><div class="i">5</div></div><div class="cella"><div class="v"></div><div class="i">6</div></div><div class="cella trovata"><div class="v">23</div><div class="i">7</div></div></div><div class="array"><div class="cella trovata"><div class="v">40</div><div class="i">8</div></div><div class="cella trovata"><div class="v">9</div><div class="i">9</div></div><div class="cella"><div class="v"></div><div class="i">10</div></div><div class="cella"><div class="v"></div><div class="i">11</div></div><div class="cella"><div class="v"></div><div class="i">12</div></div><div class="cella"><div class="v"></div><div class="i">13</div></div><div class="cella trovata"><div class="v">14</div><div class="i">14</div></div><div class="cella attiva"><div class="v">31</div><div class="i">15</div></div></div>
+<div class="didascalia"><b>Figura 5.</b> Due re-hashing di seguito. In verde le celle dove sono finiti gli elementi spostati, in giallo l'elemento appena inserito. Nel secondo re-hashing 40 passa dalla cella 0 alla 8 e 23 dalla 7 alla 7: ogni elemento va ricalcolato.</div>
+</div>
+<div class="widget" id="w-rh">
+  <h4>Re-hashing passo passo</h4>
+  <div id="rh-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Re-hashing: oltre la soglia (es. α = 1/2) si crea una tabella più grande, di solito doppia, e ci si trasferiscono tutti gli elementi.</li>
+    <li>Funzione hash parametrica: h<sub>m</sub>(k) = f(k) mod m, con f a valori molto grandi; se f è uniforme lo è anche h<sub>m</sub>.</li>
+    <li>Il trasferimento scorre tutta la vecchia tabella e reinserisce ogni elemento con la nuova funzione: costa almeno la dimensione della vecchia tabella.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="costo-rehash"><span class="num">5</span>Quanto costa il re-hashing</h2>
+<p class="in-questa"><b>In questa sezione:</b> la dimostrazione delle slide 15 che, raddoppiando la tabella, N inserimenti causano meno di 2N inserimenti in più (lavagna, pagine 14 e 15). Quindi l'inserimento costa O(1) in modo ammortizzato.</p>
+<p>Un singolo re-hashing è costoso. Ma non capita spesso: dopo un raddoppio servono tanti inserimenti prima del successivo. Per vedere quanto costa davvero bisogna guardare una <strong>sequenza</strong> di operazioni, non una sola.</p>
+<div class="box def">
+  <span class="etichetta">Costo ammortizzato</span>
+  <p>Il costo ammortizzato di un'operazione è il costo totale di una sequenza di operazioni diviso per il numero di operazioni. Le operazioni care vengono «spalmate» su quelle economiche: se ogni tanto un'operazione costa molto, ma in tutto la sequenza di N operazioni costa O(N), allora ogni operazione costa O(1) in media.</p>
+</div>
+<p>La situazione (lavagna, pagina 14):</p>
+<ul>
+  <li>la tabella è inizialmente vuota, con capacità m;</li>
+  <li>si esegue una sequenza di operazioni, tra cui N inserimenti (N conta gli inserimenti «effettivi», quelli chiesti dall'utente, senza contare quelli dovuti al re-hashing);</li>
+  <li>il re-hashing si fa ogni volta che α supera 1/2, <strong>raddoppiando</strong> la dimensione della tabella. Precisamente (slide 15): α<sub>max</sub> = 1/2, e ogni volta che il fattore di carico raggiunge α<sub>max</sub>, al successivo inserimento si sostituisce la tabella con una di capacità doppia.</li>
+</ul>
+<p>Le tabelle che si succedono si chiamano T<sub>0</sub>, T<sub>1</sub>, T<sub>2</sub>, …: T<sub>0</sub> è quella iniziale, T<sub>i+1</sub> quella creata dal re-hashing di T<sub>i</sub>. Ognuna ha capacità doppia della precedente, e contiene al massimo metà della sua capacità (oltre scatta il re-hashing):</p>
+<div class="tabella-wrap"><table>
+  <thead><tr><th>tabella</th><th>T<sub>0</sub></th><th>T<sub>1</sub></th><th>T<sub>2</sub></th><th>…</th><th>T<sub>i</sub></th><th>…</th><th>T<sub>k</sub></th></tr></thead>
+  <tbody>
+    <tr><td>capacità</td><td>m</td><td>2m</td><td>2<sup>2</sup>m</td><td>…</td><td>2<sup>i</sup>m</td><td>…</td><td>2<sup>k</sup>m</td></tr>
+    <tr><td>numero massimo di elementi</td><td>m/2</td><td>m</td><td>2m</td><td>…</td><td>2<sup>i−1</sup>m</td><td>…</td><td>2<sup>k−1</sup>m</td></tr>
+  </tbody>
+</table></div>
+<p class="piccolo">Slide 15. Il numero massimo di elementi di T<sub>i</sub> è metà della sua capacità: 2<sup>i</sup>m / 2 = 2<sup>i−1</sup>m.</p>
+<p>Il risultato da sapere (lavagna, pagina 15):</p>
+<div class="box esame">
+  <span class="etichetta">Cosa si dimostra</span>
+  <ul>
+    <li>Il numero complessivo di inserimenti dovuti alle operazioni di re-hashing è <strong>O(N)</strong> (più precisamente, meno di 2N).</li>
+    <li>Se ciascun inserimento costa O(1), il <strong>costo ammortizzato</strong> dell'operazione di inserimento <strong>rimane O(1)</strong>.</li>
+  </ul>
+</div>
+<p>Prima della dimostrazione, un esempio con i numeri: m = 4 e N = 20 inserimenti, come nel riquadro «Re-hashing passo passo» con le chiavi di partenza. T<sub>0</sub> ha 4 celle e tiene 2 elementi; T<sub>1</sub> 8 celle, 4 elementi; T<sub>2</sub> 16 celle, 8 elementi; T<sub>3</sub> 32 celle, 16 elementi; T<sub>4</sub> 64 celle, 32 elementi. Per 20 elementi serve T<sub>4</sub>, la prima che ne tiene almeno 20. I re-hashing sono quattro, e spostano 2 + 4 + 8 + 16 = 30 elementi: meno di 2N = 40.</p>
+<div class="box idea">
+  <span class="etichetta">Attrezzo matematico: tre regole sulle potenze di 2</span>
+  <ul>
+    <li><b>Somma di potenze di 2</b>: 2<sup>0</sup> + 2<sup>1</sup> + … + 2<sup>k−1</sup> = 2<sup>k</sup> − 1. Per esempio 1 + 2 + 4 + 8 = 15 = 16 − 1. Il motivo: aggiungendo 1 alla somma, 1 + 1 = 2, 2 + 2 = 4, 4 + 4 = 8, 8 + 8 = 16: ogni volta si raddoppia, e si arriva a 2<sup>k</sup>.</li>
+    <li><b>Potenze e logaritmi</b>: log<sub>2</sub> x è l'esponente a cui elevare 2 per ottenere x, quindi 2<sup>log<sub>2</sub> x</sup> = x. E 2<sup>a + b</sup> = 2<sup>a</sup> · 2<sup>b</sup>.</li>
+    <li><b>Parte intera superiore</b>: ⌈x⌉ è il più piccolo intero ≥ x (⌈2,3⌉ = 3, ⌈4⌉ = 4). Vale sempre ⌈x⌉ &lt; x + 1.</li>
+  </ul>
+</div>
+<div class="dim">
+  <div class="dim-tit">Il costo totale del re-hashing (slide 15)</div>
+  <p class="enunciato">Partendo da una tabella vuota di capacità m, N inserimenti effettivi causano in tutto meno di 2N inserimenti dovuti al re-hashing.</p>
+  <div class="parte prima">Passo 1: quanti elementi sposta ogni re-hashing</div>
+  <p>Il re-hashing da T<sub>i</sub> a T<sub>i+1</sub> avviene quando T<sub>i</sub> è piena a metà, quindi sposta tutti i suoi 2<sup>i−1</sup>m elementi. <span class="rif">1</span> Per arrivare a usare T<sub>k</sub> si fanno i re-hashing da T<sub>0</sub>, T<sub>1</sub>, …, T<sub>k−1</sub>. Il totale degli inserimenti dovuti al re-hashing è:</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i−1</sup>m</span><span class="rel">=</span><span class="dx">m · Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i−1</sup></span><span class="perche"><span class="rif">2</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(m/2) · Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i</sup></span><span class="perche"><span class="rif">3</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(m/2) · (2<sup>k</sup> − 1)</span><span class="perche"><span class="rif">4</span></span></span></div>
+  <p>Questa è la formula (15.1) delle slide.</p>
+  <div class="parte">Passo 2: quanto vale k</div>
+  <p>T<sub>k</sub> è la prima tabella che può contenere tutti gli N elementi, cioè k è il più piccolo intero tale che 2<sup>k−1</sup>m ≥ N. <span class="rif">5</span></p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">2<sup>k−1</sup>m ≥ N</span><span class="rel">⇔</span><span class="dx">2<sup>k−1</sup> ≥ N/m</span><span class="perche"></span><span class="sx"></span><span class="rel">⇔</span><span class="dx">k − 1 ≥ log<sub>2</sub>(N/m)</span><span class="perche"><span class="rif">6</span></span><span class="sx"></span><span class="rel">⇔</span><span class="dx">k ≥ 1 + log<sub>2</sub>(N/m)</span><span class="perche"></span></span></div>
+  <p>Il più piccolo intero che lo soddisfa è k = 1 + ⌈log<sub>2</sub>(N/m)⌉, e quindi</p>
+  <div class="formula">k = 1 + ⌈log<sub>2</sub>(N/m)⌉ &lt; 1 + log<sub>2</sub>(N/m) + 1 = 2 + log<sub>2</sub>(N/m)   <span class="rif">7</span></div>
+  <div class="parte">Passo 3: si mettono insieme</div>
+  <p>La formula del passo 1 cresce con k; mettendo al posto di k qualcosa di più grande si ottiene un limite superiore:</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">(m/2) · (2<sup>k</sup> − 1)</span><span class="rel">&lt;</span><span class="dx">(m/2) · (2<sup>2 + log<sub>2</sub>(N/m)</sup> − 1)</span><span class="perche"><span class="rif">8</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">(m/2) · (4 · N/m − 1)</span><span class="perche"><span class="rif">9</span></span><span class="sx"></span><span class="rel">=</span><span class="dx">2N − m/2</span><span class="perche"><span class="rif">10</span></span><span class="sx"></span><span class="rel">&lt;</span><span class="dx">2N</span><span class="perche"></span></span></div>
+  <p>Questa è la formula (15.2) delle slide.</p>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>T<sub>i</sub> ha capacità 2<sup>i</sup>m e contiene al massimo metà della capacità: 2<sup>i</sup>m/2 = 2<sup>i−1</sup>m. Il re-hashing avviene proprio quando è piena a metà, quindi gli elementi da spostare sono esattamente 2<sup>i−1</sup>m.</p>
+    <p><span class="rif">2</span>m non dipende da i: si porta fuori dalla somma.</p>
+    <p><span class="rif">3</span>2<sup>i−1</sup> = 2<sup>i</sup>/2: anche 1/2 si porta fuori dalla somma.</p>
+    <p><span class="rif">4</span>Somma di potenze di 2: 2<sup>0</sup> + … + 2<sup>k−1</sup> = 2<sup>k</sup> − 1 (attrezzo matematico).</p>
+    <p><span class="rif">5</span>Se N ≤ m/2 non serve nessun re-hashing (k = 0) e il risultato è ovvio: si considera N &gt; m/2.</p>
+    <p><span class="rif">6</span>Si prende il logaritmo in base 2 di entrambi i lati: log<sub>2</sub> 2<sup>k−1</sup> = k − 1, e il logaritmo conserva le disuguaglianze perché è crescente.</p>
+    <p><span class="rif">7</span>⌈x⌉ &lt; x + 1.</p>
+    <p><span class="rif">8</span>2<sup>k</sup> è crescente in k, e k &lt; 2 + log<sub>2</sub>(N/m).</p>
+    <p><span class="rif">9</span>2<sup>2 + log<sub>2</sub>(N/m)</sup> = 2<sup>2</sup> · 2<sup>log<sub>2</sub>(N/m)</sup> = 4 · N/m.</p>
+    <p><span class="rif">10</span>(m/2) · 4 · N/m = 2N, e (m/2) · 1 = m/2.</p>
+  </div>
+</div>
+<p>Controllo sull'esempio: m = 4, N = 20. k = 1 + ⌈log<sub>2</sub>(20/4)⌉ = 1 + ⌈log<sub>2</sub> 5⌉ = 1 + ⌈2,32⌉ = 1 + 3 = 4, come trovato a mano. La formula (15.1) dà (4/2) · (2<sup>4</sup> − 1) = 2 · 15 = 30, e infatti gli spostamenti erano 2 + 4 + 8 + 16 = 30. Il limite (15.2) dà 2N − m/2 = 40 − 2 = 38: 30 &lt; 38 &lt; 40.</p>
+<p><b>La conclusione</b> (slide 15). N inserimenti effettivi causano O(N) inserimenti in più. Se ogni inserimento costa un numero costante di passi (che è vero in media, finché α ≤ 1/2), il numero totale di passi, re-hashing compresi, è O(N) + O(N) = O(N). Diviso per gli N inserimenti effettivi, il <strong>tempo ammortizzato è O(N)/N = O(1)</strong>. Anche con il re-hashing, il costo medio di un inserimento resta costante.</p>
+<p>A rigore, un re-hashing deve anche scorrere le celle libere della vecchia tabella, non solo spostare gli elementi. Ma la vecchia tabella T<sub>i</sub> ha 2<sup>i</sup>m celle, il doppio dei suoi elementi: scorrerla costa al massimo il doppio degli spostamenti, e il totale resta O(N).</p>
+<div class="box attenzione">
+  <span class="etichetta">Perché raddoppiare</span>
+  <p>Il conto funziona perché le capacità crescono come 2<sup>i</sup>: la somma degli elementi spostati è una somma di potenze di 2, che vale meno del doppio del suo ultimo termine. Se invece a ogni re-hashing si aggiungessero sempre le stesse c celle, i re-hashing sarebbero molti di più e il totale degli spostamenti crescerebbe come N<sup>2</sup>: l'esercizio 3 lo fa vedere.</p>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Strategia: α<sub>max</sub> = 1/2; quando la tabella è piena a metà, al successivo inserimento si passa a una tabella di capacità doppia.</li>
+    <li>T<sub>i</sub> ha capacità 2<sup>i</sup>m e al più 2<sup>i−1</sup>m elementi; i re-hashing fino a T<sub>k</sub> spostano Σ<sub>i=0</sub><sup>k−1</sup> 2<sup>i−1</sup>m = (m/2)(2<sup>k</sup> − 1) elementi.</li>
+    <li>Con k = 1 + ⌈log<sub>2</sub>(N/m)⌉ &lt; 2 + log<sub>2</sub>(N/m) si ottiene meno di 2N − m/2 &lt; 2N.</li>
+    <li>Quindi O(N) inserimenti in più per N inserimenti: costo ammortizzato O(1).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="riassunto"><span class="num">6</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Costo</b> di ricerca, inserimento, cancellazione = numero di celle visitate dalla scansione.</li>
+    <li><b>Caso peggiore</b>: Θ(n).</li>
+    <li><b>Caso medio</b> (funzione hash che distribuisce bene), con α = n/m: lineare 1/2 + 1/(2(1 − α)) e 1/2 + 1/(2(1 − α)<sup>2</sup>); quadratica e doppio −(1/α) ln(1 − α) e 1/(1 − α) (chiave trovata e non trovata). Piccole costanti per α = 1/2 o 3/4, infinito per α → 1.</li>
+    <li>Il costo medio <b>dipende da α</b>, non da n: è la differenza con il Θ(log n) di array ordinati e alberi bilanciati.</li>
+    <li><b>Re-hashing</b>: oltre una soglia α<sub>max</sub> si passa a una tabella più grande (doppia) e si reinseriscono tutti gli elementi, con la funzione parametrica h<sub>m</sub>(k) = f(k) mod m.</li>
+    <li><b>Costo del re-hashing</b>: con α<sub>max</sub> = 1/2 e raddoppio, N inserimenti causano meno di 2N inserimenti in più: costo ammortizzato O(1).</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>Le tabelle hash non sono mai state chieste negli scritti degli ultimi anni.</li>
+    <li>All'orale: cos'è il fattore di carico e perché il costo medio dipende da α e non da n; cosa succede quando α → 1; cos'è il re-hashing, perché serve una funzione parametrica, e l'argomento che dà il costo ammortizzato O(1) (somma delle potenze di 2, meno di 2N spostamenti).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="esercizi"><span class="num">7</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> esercizi sui costi medi e sul re-hashing. Prova a risolverli, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 1. Una tabella piena al 90%</summary>
+  <p>Una tabella con indirizzamento aperto ha α = 0,9. Quante celle guarda in media una ricerca, nei quattro casi della tabella dei costi? Con l'hashing doppio, quale soglia α<sub>max</sub> garantisce che una ricerca senza successo guardi in media al più 5 celle?</p>
+  <div class="soluzione">
+    <p>1 − α = 0,1.</p>
+    <ul>
+      <li>Lineare, chiave trovata: 1/2 + 1/(2 · 0,1) = 0,5 + 5 = 5,5.</li>
+      <li>Lineare, chiave non trovata: 1/2 + 1/(2 · 0,01) = 0,5 + 50 = 50,5.</li>
+      <li>Quadratica o doppio, chiave trovata: −(1/0,9) · ln 0,1 ≈ 1,11 · 2,30 ≈ 2,56.</li>
+      <li>Quadratica o doppio, chiave non trovata: 1/0,1 = 10.</li>
+    </ul>
+    <p>Per la soglia: 1/(1 − α) ≤ 5 ⇔ 1 − α ≥ 1/5 ⇔ α ≤ 4/5. Quindi α<sub>max</sub> = 0,8.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 2. Cinquanta inserimenti</summary>
+  <p>Una tabella parte vuota con capacità m = 8; si usa la strategia delle slide (α<sub>max</sub> = 1/2, raddoppio). Si fanno N = 50 inserimenti. Quanti re-hashing avvengono? Qual è la capacità finale? Quanti inserimenti sono dovuti al re-hashing?</p>
+  <div class="soluzione">
+    <p>Le tabelle: T<sub>0</sub> 8 celle (al più 4 elementi), T<sub>1</sub> 16 (8), T<sub>2</sub> 32 (16), T<sub>3</sub> 64 (32), T<sub>4</sub> 128 (64). La prima che tiene 50 elementi è T<sub>4</sub>: k = 4 re-hashing, capacità finale 128. Con la formula: k = 1 + ⌈log<sub>2</sub>(50/8)⌉ = 1 + ⌈log<sub>2</sub> 6,25⌉ = 1 + ⌈2,64⌉ = 4.</p>
+    <p>Spostamenti: 4 + 8 + 16 + 32 = 60 = (8/2) · (2<sup>4</sup> − 1). Il limite: 2N − m/2 = 100 − 4 = 96. Infatti 60 &lt; 96 &lt; 100.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 3. Perché raddoppiare e non aggiungere celle</summary>
+  <p>Invece di raddoppiare, a ogni re-hashing si aggiungono sempre c celle: le capacità sono c, 2c, 3c, …, e si fa il re-hashing quando la tabella è piena a metà. Quanti inserimenti dovuti al re-hashing servono per N inserimenti? Il costo ammortizzato è ancora O(1)?</p>
+  <div class="soluzione">
+    <p>La tabella di capacità j·c tiene al più j·c/2 elementi, e il suo re-hashing li sposta tutti. Per arrivare a contenere N elementi serve una capacità di almeno 2N, cioè circa 2N/c tabelle. Gli spostamenti sono</p>
+    <div class="formula">c/2 + 2c/2 + 3c/2 + … + (t − 1)c/2 = (c/2) · (1 + 2 + … + (t − 1)) = (c/2) · t(t − 1)/2,   con t ≈ 2N/c</div>
+    <p>cioè circa (c/4) · (2N/c)<sup>2</sup> = N<sup>2</sup>/c. Crescono come N<sup>2</sup>: diviso per N, il costo ammortizzato è circa N/c, che cresce con N. Non è più O(1). Con il raddoppio le capacità crescono in modo geometrico, e la somma delle potenze di 2 resta proporzionale all'ultimo termine; con un incremento fisso crescono in modo aritmetico, e la somma 1 + 2 + … + t è proporzionale a t<sup>2</sup>.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4. Perché non aspettare che la tabella sia piena</summary>
+  <p>Perché non si fissa α<sub>max</sub> = 1, cioè non si fa il re-hashing solo quando la tabella è piena?</p>
+  <div class="soluzione">
+    <p>Tutte le formule del caso medio hanno 1 − α al denominatore: quando α si avvicina a 1 i passi medi crescono senza limite (con α = 0,99 una ricerca senza successo con l'hashing doppio guarda in media 100 celle, con la scansione lineare più di 5000). Aspettare la tabella piena vorrebbe dire lavorare a lungo con operazioni lentissime; e con la gestione interna, a tabella piena l'inserimento fallisce proprio. Con α<sub>max</sub> = 1/2 ogni operazione guarda in media al più 2,5 celle.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5. Più elementi, stessa velocità</summary>
+  <p>Una tabella con n = 500 elementi e m = 1000 celle usa l'hashing doppio. Si raddoppiano sia gli elementi sia le celle: n = 1000, m = 2000. Cosa succede al numero medio di celle guardate da una ricerca senza successo? E in un albero AVL, passando da 500 a 1000 elementi?</p>
+  <div class="soluzione">
+    <p>α resta 1/2, quindi il numero medio di celle resta 1/(1 − 1/2) = 2: non cambia. Il costo medio dipende solo dal rapporto n/m (lavagna, pagina 11). In un AVL la ricerca costa Θ(log n): passando da 500 a 1000 elementi l'altezza cresce di circa log<sub>2</sub> 2 = 1 livello, cioè un confronto in più nel caso peggiore. Poco, ma cresce; nella tabella hash invece il costo medio non cresce, finché si tiene basso α.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 6. Un re-hashing a mano</summary>
+  <p>Tabella iniziale di capacità 4, h<sub>m</sub>(k) = k mod m, scansione lineare, strategia delle slide. Si inseriscono nell'ordine 14, 23, 9, 40, 31, 6. Disegna la tabella finale.</p>
+  <div class="soluzione">
+    <p>I primi cinque inserimenti sono quelli della Figura 5: dopo 31 la tabella ha capacità 16 e contiene 23 in 7, 40 in 8, 9 in 9, 14 in 14, 31 in 15. Ora n = 5 e m = 16: α = 5/16 &lt; 1/2, nessun re-hashing. 6 → 6 mod 16 = 6, libera.</p>
+    <p>Tabella finale (capacità 16): 6 in 6, 23 in 7, 40 in 8, 9 in 9, 14 in 14, 31 in 15; le altre celle libere. Puoi controllare nel riquadro «Re-hashing passo passo».</p>
+  </div>
+</details>
+
+<!-- ============================================================ 8 -->
+<h2 id="approfondimenti"><span class="num">8</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per l'esame. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: da dove viene 1/(1 − α)</summary>
+  <div class="soluzione">
+    <p>Un'idea, non una dimostrazione. Con una funzione hash ideale, ogni cella guardata è occupata con probabilità circa α (la frazione di celle occupate). Una ricerca senza successo guarda sempre la prima cella; la seconda solo se la prima era occupata (probabilità α); la terza solo se le prime due erano occupate (circa α<sup>2</sup>); e così via. Il numero medio di celle guardate è quindi circa 1 + α + α<sup>2</sup> + α<sup>3</sup> + …, una serie geometrica che per 0 ≤ α &lt; 1 vale 1/(1 − α). La scansione lineare fa peggio perché le celle occupate non sono sparse a caso ma ammucchiate in blocchi consecutivi: dopo una cella occupata è più probabile trovarne un'altra occupata.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: il re-hashing nelle librerie</summary>
+  <div class="soluzione">
+    <p>Le tabelle hash delle librerie dei linguaggi fanno proprio così. In Java, per esempio, HashMap ha un fattore di carico massimo di 0,75 se non si specifica altro: quando lo supera, raddoppia la capacità e ridistribuisce gli elementi. Per questo un singolo put ogni tanto è lento, ma una lunga sequenza di put costa O(1) ciascuno in media. Se si sa in anticipo quanti elementi arriveranno, conviene creare la tabella già grande abbastanza: si evitano tutti i re-hashing.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="27-tabelle-hash.html">← Pacco 27: tabelle hash</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="29-complessita.html">Pacco 29: complessità computazionale →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- hash.js
+// Tabelle hash (pacco 27): funzioni della lavagna, liste di collisione, indirizzamento aperto.
+var F16 = {}; "a0 b1 c2 d3 e4 f5 g6 h6 i7 j7 k7 l8 m9 n10 o10 p11 q12 r12 s13 t13 u14 v14 w15 x15 y15 z15".split(" ").forEach(function (t) { F16[t[0]] = Number(t.slice(1)); });
+function ordL(c) { return c.toUpperCase().charCodeAt(0) - 65; }
+function primoDispariDa(v) { for (var p = Math.max(3, v); ; p++) { var pr = true; for (var d = 2; d * d <= p; d++) if (p % d === 0) pr = false; if (pr) return p; } }
+// configurazioni: m, h(k), h2(k) per il doppio hashing
+var HCONF = {
+  lavagna16: { m: 16, nome: "m = 16, h(k) = f(prima lettera di k) (lavagna del 1° dicembre, pagina 37)", h: function (k) { return F16[k[0].toLowerCase()]; }, h2: function (k) { return primoDispariDa(F16[(k[2] || "a").toLowerCase()]); }, h2nome: "g(k) = il più piccolo primo p ≠ 2 con p ≥ f(terza lettera di k)" },
+  ord26: { m: 26, nome: "m = 26, h(x) = ord(prima lettera di x) (lavagna del 1° dicembre, pagine 25 e 29)", h: function (k) { return ordL(k[0]); }, h2: function (k) { return 1 + (ordL(k[k.length - 1]) % 25); }, h2nome: "h'(x) = 1 + ord(ultima lettera) mod 25 (scelta nostra)" }
+};
+function sondaggio(conf, metodo, k, i) {
+  var m = conf.m, h = conf.h(k);
+  if (metodo === "lineare") return (h + i) % m;
+  if (metodo === "quadratica") return Math.floor(h + 0.5 * i + 0.5 * i * i) % m;
+  return (h + i * conf.h2(k)) % m;
+}
+// inserisce in sequenza; restituisce stato ed eventi
+function eventiHash(conf, metodo, parole) {
+  var m = conf.m, T = [], ev = [];
+  for (var q = 0; q < m; q++) T.push(metodo === "liste" ? [] : null);
+  parole.forEach(function (k) {
+    var h = conf.h(k), e = { k: k, h: h, seq: [] };
+    if (metodo === "liste") { T[h].push(k); e.pos = h; e.testo = "h(" + k + ") = " + h + ": " + k + " va nella lista della posizione " + h + (T[h].length > 1 ? ", che conteneva già " + T[h].slice(0, -1).join(", ") + " (collisione)." : "."); }
+    else {
+      for (var i = 0; i < m; i++) { var c = sondaggio(conf, metodo, k, i); e.seq.push(c); if (T[c] === null) { T[c] = k; e.pos = c; break; } }
+      e.testo = e.pos === undefined ? "Tabella piena: " + k + " non si può inserire." : "h(" + k + ") = " + h + (metodo === "doppio" ? ", h'(" + k + ") = " + conf.h2(k) : "") + ". Celle provate: " + e.seq.join(", ") + (e.seq.length > 1 ? " (le prime " + (e.seq.length - 1) + " occupate)" : "") + ". " + k + " va in " + e.pos + ".";
+    }
+    e.T = T.map(function (x) { return Array.isArray(x) ? x.slice() : x; }); ev.push(e);
+  });
+  return ev;
+}
+function cercaHash(conf, metodo, T, k) {
+  var h = conf.h(k);
+  if (metodo === "liste") { var L = T[h], p = L.indexOf(k); return { seq: [h], trovato: p >= 0, confronti: p >= 0 ? p + 1 : L.length, testo: "h(" + k + ") = " + h + ": si scorre la lista " + (L.length ? L.join(" → ") : "(vuota)") + ". " + (p >= 0 ? "Trovato al " + (p + 1) + "° confronto." : "Non c'è (" + L.length + " confronti).") }; }
+  var seq = [];
+  for (var i = 0; i < conf.m; i++) { var c = sondaggio(conf, metodo, k, i); seq.push(c); if (T[c] === null) return { seq: seq, trovato: false, testo: "Celle guardate: " + seq.join(", ") + ". La cella " + c + " è libera: " + k + " non c'è." }; if (T[c] === k) return { seq: seq, trovato: true, testo: "Celle guardate: " + seq.join(", ") + ". Trovato in " + c + "." }; }
+  return { seq: seq, trovato: false, testo: "Guardate tutte le m celle: " + k + " non c'è." };
+}
+function svgTabella(T, opz) {
+  opz = opz || {};
+  var m = T.length, rh = 22, W = opz.liste ? 420 : 200, H = m * rh + 8, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + (opz.aria || "una tabella hash") + '" font-family="system-ui, sans-serif">');
+  for (var i = 0; i < m; i++) {
+    var y = 4 + i * rh, ev = opz.evid && opz.evid[i];
+    s.push('<text x="26" y="' + (y + 15) + '" font-size="11" text-anchor="end" class="t-muted" fill="#5b6270">' + i + '</text>');
+    s.push('<rect x="30" y="' + y + '" width="' + (opz.liste ? 26 : 140) + '" height="' + rh + '" class="' + (ev ? (ev === "verde" ? "r-verde" : "r-giallo") : "r-nodo") + '" fill="' + (ev ? (ev === "verde" ? "#e6f5ea" : "#fff1a8") : "#ffffff") + '" stroke="#9aa3b2" stroke-width="1"/>');
+    if (opz.liste) {
+      var L = T[i]; if (!L.length) s.push('<text x="43" y="' + (y + 15) + '" font-size="9" text-anchor="middle" class="t-muted" fill="#5b6270">null</text>');
+      L.forEach(function (k, j) { var x = 70 + j * 88; s.push('<line x1="' + (j ? x - 16 : 50) + '" y1="' + (y + 11) + '" x2="' + (x - 2) + '" y2="' + (y + 11) + '" class="l-verde" stroke="#17803d" stroke-width="1.4"/><rect x="' + x + '" y="' + (y + 2) + '" width="72" height="' + (rh - 4) + '" rx="3" class="r-blu" fill="#e8edfc" stroke="#2f52c4" stroke-width="1.2"/><text x="' + (x + 36) + '" y="' + (y + 15) + '" font-size="11.5" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + k + '</text>'); });
+    } else if (T[i] !== null) s.push('<text x="100" y="' + (y + 15) + '" font-size="12" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + T[i] + '</text>');
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+
+// ---- rehash.js
+// Pacco 28: costi medi dell'indirizzamento aperto e re-hashing.
+function escR(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1r(v) { return Math.round(v * 10) / 10; }
+function fmtR(x, cifre) { if (!isFinite(x)) return "∞"; var p = Math.pow(10, cifre === undefined ? 2 : cifre); return (Math.round(x * p) / p).toString().replace(".", ","); }
+// numero medio di passi (celle guardate) in funzione del fattore di carico α (lavagna, pagina 10; slide 15)
+function costiMedi(a) {
+  return {
+    linT: 0.5 + 1 / (2 * (1 - a)),            // scansione lineare, chiave trovata
+    linN: 0.5 + 1 / (2 * (1 - a) * (1 - a)),  // scansione lineare, chiave non trovata
+    dopT: a === 0 ? 1 : -Math.log(1 - a) / a, // quadratica o doppio, chiave trovata
+    dopN: 1 / (1 - a)                          // quadratica o doppio, chiave non trovata
+  };
+}
+// grafico di due curve in funzione di α: chiavi "linT"/"dopT" oppure "linN"/"dopN"
+function svgCosti(qual, opz) {
+  opz = opz || {};
+  var W = opz.W || 330, H = opz.H || 230, L = 40, R = 12, T = 26, B = 38, ymax = opz.ymax || 10, amax = 0.98;
+  var ka = qual === "T" ? "linT" : "linN", kb = qual === "T" ? "dopT" : "dopN";
+  function X(a) { return L + a / 1 * (W - L - R); }
+  function Y(v) { return T + (1 - Math.min(v, ymax) / ymax) * (H - T - B); }
+  var s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escR(opz.aria || "numero medio di passi in funzione del fattore di carico") + '" font-family="system-ui, sans-serif">');
+  s.push('<text x="' + L + '" y="14" class="etich" font-size="12" font-weight="600" fill="#1f2328">' + (qual === "T" ? "chiave trovata" : "chiave non trovata") + '</text>');
+  for (var v = 0; v <= ymax; v += 2) {
+    s.push('<line x1="' + L + '" y1="' + r1r(Y(v)) + '" x2="' + (W - R) + '" y2="' + r1r(Y(v)) + '" class="asse" stroke="#e4ddcf"/>');
+    s.push('<text x="' + (L - 6) + '" y="' + r1r(Y(v) + 4) + '" text-anchor="end" class="tick" font-size="11" fill="#5b6270">' + v + '</text>');
+  }
+  [0, 0.25, 0.5, 0.75, 1].forEach(function (a) {
+    s.push('<text x="' + r1r(X(a)) + '" y="' + (H - B + 16) + '" text-anchor="middle" class="tick" font-size="11" fill="#5b6270">' + fmtR(a) + '</text>');
+  });
+  s.push('<text x="' + r1r((L + W - R) / 2) + '" y="' + (H - 6) + '" text-anchor="middle" class="tit-asse" font-size="11.5" fill="#5b6270">fattore di carico α = n/m</text>');
+  [[ka, "serie-a"], [kb, "serie-b"]].forEach(function (p) {
+    var d = [], fuori = false;
+    for (var i = 0; i <= 196; i++) {
+      var a = i / 200, y = costiMedi(a)[p[0]];
+      if (y > ymax) { if (!fuori) { var a2 = a; d.push((d.length ? "L" : "M") + r1r(X(a2)) + " " + r1r(Y(ymax))); } fuori = true; break; }
+      d.push((d.length ? "L" : "M") + r1r(X(a)) + " " + r1r(Y(y)));
+    }
+    s.push('<path d="' + d.join(" ") + '" class="' + p[1] + '" fill="none" stroke="' + (p[1] === "serie-a" ? "#2a78d6" : "#eb6834") + '" stroke-width="2"/>');
+  });
+  if (opz.alfa !== undefined) {
+    var a = opz.alfa, c = costiMedi(a);
+    s.push('<line x1="' + r1r(X(a)) + '" y1="' + T + '" x2="' + r1r(X(a)) + '" y2="' + (H - B) + '" class="ora" stroke="#1f2328" stroke-width="1"/>');
+    [[c[ka], "punto-a"], [c[kb], "punto-b"]].forEach(function (p) { if (p[0] <= ymax) s.push('<circle cx="' + r1r(X(a)) + '" cy="' + r1r(Y(p[0])) + '" r="4.5" class="' + p[1] + '" fill="' + (p[1] === "punto-a" ? "#2a78d6" : "#eb6834") + '"/>'); });
+  }
+  (opz.punti || []).forEach(function (a) {
+    var c = costiMedi(a);
+    [[c[ka], "punto-a"], [c[kb], "punto-b"]].forEach(function (p) { if (p[0] <= ymax) s.push('<circle cx="' + r1r(X(a)) + '" cy="' + r1r(Y(p[0])) + '" r="3.8" class="' + p[1] + '" fill="' + (p[1] === "punto-a" ? "#2a78d6" : "#eb6834") + '"/>'); });
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+function legendaCosti() { return '<div class="legenda"><span><span class="k a"></span>scansione lineare</span><span><span class="k b"></span>scansione quadratica e hashing doppio</span></div>'; }
+
+// ---- re-hashing: tabella con scansione lineare, h_m(k) = k mod m (qui f(k) = k)
+// strategia della slide 15: αmax = 1/2; se la tabella ha già raggiunto αmax, al successivo inserimento si raddoppia
+function simRehash(chiavi, m0) {
+  var m = m0, T = vuotaR(m), n = 0, extra = 0, ev = [];
+  ev.push({ tipo: "inizio", T: T.slice(), m: m, n: 0, extra: 0, N: 0, testo: "Tabella vuota di capacità m = " + m + "." });
+  chiavi.forEach(function (k, idx) {
+    var rh = null;
+    if (n >= m / 2) {
+      var vecchia = T, mv = m; m = 2 * m; T = vuotaR(m);
+      var mosse = [];
+      vecchia.forEach(function (x, i) { if (x !== null) { var p = posR(T, x, m); T[p.pos] = x; mosse.push({ k: x, da: i, a: p.pos, prove: p.prove }); } });
+      extra += mosse.length;
+      rh = { da: mv, a: m, mosse: mosse, vecchia: vecchia };
+    }
+    var q = posR(T, k, m); T[q.pos] = k; n++;
+    var testo = "";
+    if (rh) testo += "La tabella era già piena a metà (" + rh.mosse.length + " elementi su " + rh.da + "): prima di inserire " + k + " si fa il re-hashing in una tabella di capacità " + rh.a + ". Si scorre la vecchia tabella dalla posizione 0 alla " + (rh.da - 1) + " e si reinserisce ogni elemento con h(k) = k mod " + rh.a + ": " + rh.mosse.map(function (mv) { return mv.k + " (da " + mv.da + " a " + mv.a + ")"; }).join(", ") + ". Sono " + rh.mosse.length + " inserimenti dovuti al re-hashing. ";
+    testo += k + " mod " + m + " = " + (k % m) + (q.prove.length > 1 ? ", occupata: scansione lineare, celle " + q.prove.join(", ") + "; va in " + q.pos : ": va in " + q.pos) + ".";
+    ev.push({ tipo: rh ? "rehash" : "ins", k: k, rh: rh, T: T.slice(), m: m, n: n, extra: extra, N: idx + 1, pos: q.pos, testo: testo });
+  });
+  return ev;
+}
+function vuotaR(m) { var T = []; for (var i = 0; i < m; i++) T.push(null); return T; }
+function posR(T, k, m) { var prove = []; for (var i = 0; i < m; i++) { var c = (k + i) % m; prove.push(c); if (T[c] === null) return { pos: c, prove: prove }; } return { pos: -1, prove: prove }; }
+// tabella orizzontale a righe di 8 celle (HTML con le classi .array/.cella)
+function htmlTabR(T, opz) {
+  opz = opz || {};
+  var righe = [], per = opz.per || 8;
+  for (var r = 0; r < T.length; r += per) {
+    righe.push('<div class="array">' + T.slice(r, r + per).map(function (x, j) {
+      var i = r + j, cl = "cella" + (opz.nuova === i ? " attiva" : "") + (opz.mosse && opz.mosse.indexOf(i) >= 0 ? " trovata" : "");
+      return '<div class="' + cl + '"><div class="v">' + (x === null ? "" : escR(x)) + '</div><div class="i">' + i + '</div></div>';
+    }).join("") + '</div>');
+  }
+  return righe.join("");
+}
+
+// ---- w28.js
+// Riquadri interattivi del pacco 28.
+function $(id) { return document.getElementById(id); }
+
+// ---------------------------------------------------------------- 1. quanti passi in media
+(function () {
+  if (!$("al-corpo")) return;
+  $("al-corpo").innerHTML = '<div class="controlli"><label>α = <b id="al-v">0,5</b> <input type="range" id="al-a" min="1" max="98" value="50" style="width:220px;max-width:100%"></label>' +
+    '<button id="al-12">α = 1/2</button><button id="al-34">α = 3/4</button><button id="al-9">α = 0,9</button></div>' +
+    '<div class="contatori" id="al-cont"></div><div class="figura" id="al-fig" style="margin:6px 0"></div><div class="narrazione" id="al-txt"></div>';
+  function mostra() {
+    var a = Number($("al-a").value) / 100, c = costiMedi(a), m = 1000, n = Math.round(a * m);
+    $("al-v").textContent = fmtR(a);
+    $("al-cont").innerHTML = '<span>lineare, trovata: <b>' + fmtR(c.linT) + '</b></span><span>lineare, non trovata: <b>' + fmtR(c.linN) + '</b></span>' +
+      '<span>quadratica/doppio, trovata: <b>' + fmtR(c.dopT) + '</b></span><span>quadratica/doppio, non trovata: <b>' + fmtR(c.dopN) + '</b></span>';
+    $("al-fig").innerHTML = '<div class="affianco"><div>' + svgCosti("T", { alfa: a }) + '</div><div>' + svgCosti("N", { alfa: a }) + '</div></div>' + legendaCosti();
+    var t = "Con α = " + fmtR(a) + " la tabella è piena al " + Math.round(a * 100) + "%: per esempio n = " + n + " elementi in m = " + m + " celle, oppure n = " + (n * 10) + " in m = " + (m * 10) + " (stesso rapporto, stessi passi). ";
+    if (a <= 0.5) t += "I passi medi sono una piccola costante: al più " + fmtR(Math.max(c.linN, c.dopN)) + " celle guardate anche per una chiave che non c'è.";
+    else if (a <= 0.8) t += "Ancora costanti, ma la scansione lineare comincia a soffrire per le chiavi che non ci sono: " + fmtR(c.linN) + " celle contro " + fmtR(c.dopN) + ".";
+    else t += "La tabella è troppo piena: le formule hanno 1 − α al denominatore, e quando α si avvicina a 1 il denominatore va a 0 e i passi crescono senza limite. È il momento di fare il re-hashing.";
+    $("al-txt").textContent = t;
+  }
+  $("al-a").oninput = mostra;
+  $("al-12").onclick = function () { $("al-a").value = 50; mostra(); };
+  $("al-34").onclick = function () { $("al-a").value = 75; mostra(); };
+  $("al-9").onclick = function () { $("al-a").value = 90; mostra(); };
+  mostra();
+})();
+
+// ---------------------------------------------------------------- 2. re-hashing passo passo
+(function () {
+  if (!$("rh-corpo")) return;
+  var BASE = [14, 23, 9, 40, 31, 6, 52, 17, 44, 3, 28, 61, 35, 70, 12, 49, 26, 83, 57, 38];
+  $("rh-corpo").innerHTML = '<div class="controlli"><label>Capacità iniziale m <select id="rh-m" style="width:auto"><option>2</option><option selected>4</option><option>8</option></select></label>' +
+    '<button id="rh-uno">Inserisci il prossimo</button><button id="rh-fino">Fino al prossimo re-hashing</button><button id="rh-tutti">Inserisci tutti</button><button id="rh-reset">Ricomincia</button><button id="rh-caso">Altre chiavi a caso</button></div>' +
+    '<p class="piccolo" id="rh-seq"></p><div class="contatori" id="rh-cont"></div><div id="rh-prima"></div><div id="rh-tab"></div><div class="narrazione" id="rh-txt"></div>';
+  var S = { K: BASE.slice(), ev: null, i: 0 };
+  function ricalcola() { S.ev = simRehash(S.K, Number($("rh-m").value)); S.i = 0; mostra(); }
+  function mostra() {
+    var e = S.ev[S.i], N = e.N;
+    $("rh-seq").innerHTML = "Chiavi da inserire, nell'ordine (h(k) = k mod m, scansione lineare): " + S.K.map(function (k, j) { return j < N ? "<s>" + k + "</s>" : (j === N ? "<b>" + k + "</b>" : k); }).join(" ");
+    var rehash = S.ev.slice(1, S.i + 1).filter(function (x) { return x.rh; }).length;
+    $("rh-cont").innerHTML = '<span>inserimenti effettivi N: <b>' + N + '</b></span><span>capacità m: <b>' + e.m + '</b></span><span>α = n/m: <b>' + fmtR(e.n / e.m) + '</b></span>' +
+      '<span>re-hashing fatti: <b>' + rehash + '</b></span><span>inserimenti dovuti al re-hashing: <b>' + e.extra + '</b></span><span>limite 2N: <b>' + (2 * N) + '</b></span>';
+    $("rh-prima").innerHTML = e.rh ? '<div class="nome-mat">la vecchia tabella (capacità ' + e.rh.da + ')</div>' + htmlTabR(e.rh.vecchia) + '<div class="nome-mat">la nuova tabella (capacità ' + e.rh.a + '): in verde le celle dove sono finiti gli elementi spostati, in giallo il nuovo</div>' : '';
+    $("rh-tab").innerHTML = htmlTabR(e.T, { nuova: e.pos, mosse: e.rh ? e.rh.mosse.map(function (mv) { return mv.a; }) : [] });
+    $("rh-txt").textContent = e.testo + (S.i === S.ev.length - 1 && N > 0 ? " Finito: " + N + " inserimenti effettivi hanno causato " + e.extra + " inserimenti dovuti al re-hashing, meno di 2N = " + (2 * N) + "." : "");
+    $("rh-uno").disabled = $("rh-fino").disabled = $("rh-tutti").disabled = S.i >= S.ev.length - 1;
+  }
+  $("rh-uno").onclick = function () { if (S.i < S.ev.length - 1) { S.i++; mostra(); } };
+  $("rh-fino").onclick = function () { while (S.i < S.ev.length - 1) { S.i++; if (S.ev[S.i].rh) break; } mostra(); };
+  $("rh-tutti").onclick = function () { S.i = S.ev.length - 1; mostra(); };
+  $("rh-reset").onclick = function () { S.i = 0; mostra(); };
+  $("rh-m").onchange = ricalcola;
+  $("rh-caso").onclick = function () { var usati = {}, K = []; while (K.length < 20) { var k = 1 + Math.floor(Math.random() * 99); if (!usati[k]) { usati[k] = 1; K.push(k); } } S.K = K; ricalcola(); };
+  ricalcola();
+})();
+})();
+</script>
+</body>
+</html>

@@ -36,6 +36,11 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | 25 · Alberi bilanciati e AVL | perfettamente bilanciati, AVL, alberi di Fibonacci, rotazioni semplici e doppie, gli scritti | 27–28 |
 | 26 · Alberi 2-3 e B-alberi | alberi 2-3, instradamento, split, nodi minimi e massimi, B-alberi e accessi al disco, gli scritti | 28–29 |
 | 27 · Tabelle hash | accesso diretto, fattore di carico, uniformità, divisione e ripiegamento, liste di collisione, indirizzamento aperto | 29–30 |
+| 28 · Tabelle hash: costi e re-hashing | caso peggiore e caso medio in funzione di α, re-hashing e costo ammortizzato O(1) | 31 |
+| 29 · Complessità computazionale | limiti superiori e inferiori, problemi di ricerca, ottimizzazione e decisione, P, PSPACE, EXPTIME | 31–32 |
+| 30 · La classe NP | PARTIZIONE, CLIQUE, SODD, algoritmi non deterministici, certificati, P e NP, NPSPACE | 32–34 |
+| 31 · NP-completezza | riduzioni polinomiali, SODD → CLIQUE, NP-difficili e NP-completi, teorema di Cook, altri problemi NP-completi | 33–34 |
+| 32 · Scritti risolti in aula | tre scritti del 2024 risolti per intero, la programmazione dinamica sulla griglia, allenamento sugli esercizi 1 e 2 | 34–36 |
 
 ## Come si usa
 

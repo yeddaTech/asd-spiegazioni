@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Complessità computazionale</title>
+<link rel="stylesheet" href="stile.css?v=7">
+<script src="leggi.js?v=3" defer></script>
+</head>
+<body>
+<div class="pagina">
+
+<div class="testata">
+  <a href="index.html">← Tutti i pacchi</a>
+  <span>Pacco 29 · seconda parte della lezione 31 e inizio della 32 (lavagne del 3 e 5 dicembre 2025)</span>
+</div>
+
+<h1>Complessità computazionale: problemi, risorse, classi</h1>
+<p class="sottotitolo">Finora si è studiato quanto tempo usa un algoritmo. Ora la domanda cambia: quanto tempo serve per risolvere un <em>problema</em>, con il miglior algoritmo possibile? Questa pagina spiega i limiti superiori e inferiori, cosa vuol dire in modo preciso «problema» (di ricerca, di ottimizzazione, di decisione), e le prime classi di complessità: P, PSPACE ed EXPTIME, con le dimostrazioni di P ⊆ PSPACE ⊆ EXPTIME.</p>
+
+<div class="box idea">
+  <span class="etichetta">Come leggere questa pagina</span>
+  <p>Ogni passaggio è scritto per intero: non devi aprire altri file o altre pagine per capire. Le sezioni vanno lette nell'ordine, perché ognuna usa quello che c'è nelle precedenti.</p>
+  <ul>
+    <li>All'inizio di ogni sezione una riga grigia, <b>«In questa sezione»</b>, dice cosa imparerai.</li>
+    <li>Alla fine di ogni sezione un riquadro verde, <b>«In breve»</b>, riassume quello che conta.</li>
+    <li>Le figure sono numerate (Figura 1, Figura 2…). Quando il testo parla di una figura, la chiama con il suo numero.</li>
+    <li>La lezione di quest'anno non c'è ancora, quindi la pagina segue le lavagne dell'anno scorso: «lavagna, pagina N» è la lezione 31 (3 dicembre 2025), dalla pagina 16 in poi; «lavagna 32, pagina N» è la lezione 32 (5 dicembre 2025), che ripete le stesse cose e aggiunge le relazioni tra spazio e tempo.</li>
+    <li>I riquadri interattivi (con i pulsanti) sono facoltativi da usare, ma aiutano a <em>vedere</em> cosa succede.</li>
+  </ul>
+</div>
+
+<div class="box domanda">
+  <span class="etichetta">La lezione in sei domande</span>
+  <ol>
+    <li><b>Cosa studia la complessità computazionale?</b> Quanta risorsa (tempo, spazio…) è necessaria e sufficiente per risolvere un problema, e classifica i problemi in base a questo.</li>
+    <li><b>Cos'è un limite superiore per un problema?</b> Una quantità f(n) che basta: esiste un algoritmo che su ogni input di lunghezza n usa al più f(n).</li>
+    <li><b>E un limite inferiore?</b> Una quantità g(n) che serve: ogni algoritmo, su qualche input di lunghezza n, usa almeno g(n).</li>
+    <li><b>Cos'è, in modo preciso, un problema?</b> Una relazione Π ⊆ I × S tra istanze e soluzioni. I problemi si dividono in problemi di ricerca, di ottimizzazione e di decisione (risposta sì o no).</li>
+    <li><b>Cosa sono P, PSPACE, EXPTIME?</b> Le classi dei problemi di decisione risolubili in tempo polinomiale, in spazio polinomiale, in tempo esponenziale.</li>
+    <li><b>Come sono legate?</b> P ⊆ PSPACE ⊆ EXPTIME, e P ≠ EXPTIME: almeno una delle due inclusioni è stretta, ma non si sa quale.</li>
+  </ol>
+</div>
+
+<nav class="indice">
+  <strong>In questa pagina</strong>
+  <ol>
+    <li><a href="#risorse">Problemi, algoritmi, risorse</a></li>
+    <li><a href="#limiti">Limiti superiori e inferiori</a></li>
+    <li><a href="#classi">Le classi di complessità: un'anticipazione</a></li>
+    <li><a href="#problema">Che cos'è un problema</a></li>
+    <li><a href="#decisione">Problemi di decisione: esempi, e la cricca</a></li>
+    <li><a href="#time-space">TIME, SPACE, P, PSPACE, EXPTIME</a></li>
+    <li><a href="#relazioni">Le relazioni tra spazio e tempo</a></li>
+    <li><a href="#riassunto">Riassunto</a></li>
+    <li><a href="#esercizi">Esercizi risolti</a></li>
+    <li><a href="#approfondimenti">Approfondimenti facoltativi</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ 1 -->
+<h2 id="risorse"><span class="num">1</span>Problemi, algoritmi, risorse</h2>
+<p class="in-questa"><b>In questa sezione:</b> la differenza tra il costo di un algoritmo e la difficoltà di un problema (lavagna, pagine 16–18).</p>
+<p>La Figura 1 è il disegno con cui la lavagna apre la complessità computazionale (pagina 17, e lavagna 32, pagina 2). Un problema si risolve con un algoritmo, e l'algoritmo usa delle <strong>risorse</strong>: tempo, spazio di memoria, eventualmente altro.</p>
+<div class="figura">
+<svg viewBox="0 0 520 250" width="520" height="250" role="img" aria-label="problema, algoritmo e risorse" font-family="system-ui, sans-serif"><rect x="50" y="14" width="120" height="40" rx="18" class="r-blu" stroke-width="1.6"/><text x="110" y="39" font-size="15" font-weight="700" text-anchor="middle" class="t-blu">Problema</text><rect x="350" y="14" width="120" height="40" rx="18" class="r-viola" stroke-width="1.6"/><text x="410" y="39" font-size="15" font-weight="700" text-anchor="middle" class="t-viola">Algoritmo</text><rect x="190" y="186" width="140" height="40" rx="18" class="r-rosso" stroke-width="1.6"/><text x="260" y="211" font-size="15" font-weight="700" text-anchor="middle" class="t-rosso">Risorse</text><text x="260" y="246" font-size="11.5" text-anchor="middle" class="t-muted">tempo, spazio, …</text><line x1="170" y1="34" x2="346" y2="34" class="l-muted" stroke-width="1.8"/><path d="M346 34 l-9.2 3.9 l0 -7.8 z" class="punta"/><text x="258" y="26" font-size="11" text-anchor="middle" class="t-muted">si risolve con</text><line x1="130" y1="56" x2="228" y2="182" class="l-blu" stroke-width="1.8"/><path d="M228 182 l-8.7 -4.9 l6.1 -4.8 z" class="punta"/><line x1="390" y1="56" x2="292" y2="182" class="l-viola" stroke-width="1.8"/><path d="M292 182 l2.6 -9.7 l6.1 4.8 z" class="punta"/><text x="4" y="104" font-size="11.5" class="t-blu"><tspan x="4">quanta risorsa è</tspan><tspan x="4" dy="15">necessaria e sufficiente</tspan><tspan x="4" dy="15">per risolvere il problema</tspan></text><text x="516" y="104" font-size="11.5" text-anchor="end" class="t-viola"><tspan x="516">quanta risorsa usa</tspan><tspan x="516" dy="15">uno specifico</tspan><tspan x="516" dy="15">algoritmo</tspan></text></svg>
+<div class="didascalia"><b>Figura 1.</b> Lavagna, pagina 17. Si possono stimare le risorse in due modi: quelle usate da uno specifico algoritmo (freccia di destra), che è quello che si è fatto in tutto il corso, oppure quelle necessarie e sufficienti per risolvere il problema, con qualunque algoritmo (freccia di sinistra).</div>
+</div>
+<p>Fino a qui si è sempre seguita la freccia di destra: dato insertionSort, quanti confronti fa? Dato Dijkstra, quanto tempo impiega? La complessità computazionale segue la freccia di sinistra. La domanda della lavagna (pagina 18) è:</p>
+<div class="box def">
+  <span class="etichetta">La domanda (lavagna, pagina 18)</span>
+  <p>Sia r una <strong>risorsa computazionale</strong> (tempo, spazio, …) e Π un <strong>problema</strong> risolubile algoritmicamente. <strong>Quanta risorsa r è necessaria e sufficiente per risolvere Π?</strong></p>
+</div>
+<p>«Sufficiente» vuol dire che con quella quantità ce la si fa; «necessaria» vuol dire che con meno non ce la si fa. Le due metà della domanda sono i limiti superiori e i limiti inferiori della prossima sezione.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Due domande diverse: quante risorse usa un algoritmo; quante risorse servono per risolvere un problema.</li>
+    <li>La complessità computazionale studia la seconda: quanta risorsa è necessaria e sufficiente.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 2 -->
+<h2 id="limiti"><span class="num">2</span>Limiti superiori e inferiori</h2>
+<p class="in-questa"><b>In questa sezione:</b> le definizioni di limite superiore e inferiore per un problema (lavagna, pagine 19 e 20), con attenzione all'ordine di «esiste» e «per ogni», e i due esempi della lavagna: l'ordinamento e il prodotto di matrici (pagine 21 e 22).</p>
+<p>Nelle definizioni compare la <strong>lunghezza dell'input</strong> n: per un array è il numero di elementi, per un grafo il numero di vertici e archi, in generale quanto è grande l'istanza da scrivere. f e g sono funzioni da ℕ in ℕ: a ogni lunghezza n associano una quantità di risorsa.</p>
+<div class="box def">
+  <span class="etichetta">Limite superiore, upper bound (lavagna, pagina 19)</span>
+  <p>f(n) risorsa r è <strong>sufficiente</strong> per risolvere Π se <strong>esiste un algoritmo</strong> A che risolve Π utilizzando, <strong>su ogni input</strong> di lunghezza n, <strong>al più</strong> f(n) risorsa r (per ogni n ≥ 0).</p>
+</div>
+<div class="box def">
+  <span class="etichetta">Limite inferiore, lower bound (lavagna, pagina 20)</span>
+  <p>g(n) risorsa r è <strong>necessaria</strong> per risolvere Π se <strong>per ogni algoritmo</strong> A che risolve Π <strong>esiste un input</strong> di lunghezza n (per ogni n ≥ 0) su cui A utilizza <strong>almeno</strong> g(n) risorsa r.</p>
+</div>
+<p>Le due definizioni sono costruite «a specchio», e la differenza sta tutta nell'ordine di <em>esiste</em> e <em>per ogni</em>. Un modo per ricordarle è pensarle come una sfida tra te e un avversario:</p>
+<div class="tabella-wrap"><table>
+  <thead><tr><th></th><th>chi sceglie l'algoritmo</th><th>chi sceglie l'input</th><th>cosa devi far vedere</th></tr></thead>
+  <tbody>
+    <tr><td><b>limite superiore f(n)</b></td><td>tu: basta trovarne <em>uno</em></td><td>l'avversario: qualunque input</td><td>il tuo algoritmo usa al più f(n) anche sull'input peggiore</td></tr>
+    <tr><td><b>limite inferiore g(n)</b></td><td>l'avversario: <em>qualunque</em> algoritmo</td><td>tu: basta trovarne uno</td><td>c'è sempre un input che lo costringe a usare almeno g(n)</td></tr>
+  </tbody>
+</table></div>
+<p>Per questo i limiti superiori sono «facili»: basta esibire un algoritmo e analizzarlo nel caso peggiore. I limiti inferiori sono difficili: bisogna ragionare su <em>tutti</em> gli algoritmi possibili, anche quelli che nessuno ha ancora inventato.</p>
+<div class="box idea">
+  <span class="etichetta">Attrezzo matematico: O, Ω e Θ</span>
+  <ul>
+    <li>f(n) = O(g(n)): da un certo n in poi f(n) ≤ c · g(n) per una costante c &gt; 0 (f cresce al più come g).</li>
+    <li>f(n) = Ω(g(n)): da un certo n in poi f(n) ≥ c · g(n) (f cresce almeno come g).</li>
+    <li>f(n) = Θ(g(n)): valgono entrambe (f cresce esattamente come g, a meno di costanti).</li>
+  </ul>
+  <p>I limiti superiori si scrivono con O, quelli inferiori con Ω. Quando coincidono, la complessità del problema è nota, e si scrive con Θ.</p>
+</div>
+<p><b>Esempio 1: ordinare</b> (lavagna, pagina 21). Π = ordinare un array, r = numero di confronti.</p>
+<ul>
+  <li><b>Un limite superiore</b>: l'algoritmo insertionSort fa Θ(n<sup>2</sup>) confronti nel caso peggiore. Quindi n<sup>2</sup> confronti (a meno di costanti) bastano: è un limite superiore per il problema.</li>
+  <li><b>Un limite inferiore</b>: ogni algoritmo di ordinamento basato su confronti deve fare, nel caso peggiore, un numero di confronti almeno dell'ordine di n log n: Ω(n log n). È il risultato dell'albero di decisione: un algoritmo che ordina n elementi deve distinguere tra n! ordini possibili, ogni confronto ha due esiti, quindi servono almeno log<sub>2</sub>(n!) confronti, e log<sub>2</sub>(n!) cresce come n log<sub>2</sub> n.</li>
+  <li>Tra n<sup>2</sup> e n log n c'è un <strong>gap</strong> (Figura 2a): con quello che si sa fin qui, la complessità del problema sta da qualche parte nel mezzo.</li>
+  <li><b>Il gap si chiude</b>: heapSort ordina con O(n log n) confronti. È un limite superiore che coincide con quello inferiore. Quindi la complessità dell'ordinamento per confronti è <strong>Θ(n log n)</strong>, e heapSort (come mergeSort) è ottimo.</li>
+</ul>
+<p><b>Esempio 2: il prodotto di matrici</b> (lavagna, pagina 22). Π = moltiplicare due matrici n × n, r = numero di operazioni elementari (il tempo).</p>
+<ul>
+  <li><b>Limiti superiori</b>: Θ(n<sup>3</sup>) con il prodotto righe per colonne; Θ(n<sup>2,81</sup>) con l'algoritmo di Strassen (l'esponente è log<sub>2</sub> 7 ≈ 2,81); Θ(n<sup>2,37…</sup>) con il miglior algoritmo noto.</li>
+  <li><b>Limite inferiore</b>: Ω(n<sup>2</sup>). Il motivo è semplice: il risultato ha n<sup>2</sup> numeri, e ogni algoritmo deve almeno scriverli (e deve leggere i 2n<sup>2</sup> numeri delle due matrici).</li>
+  <li>Tra n<sup>2</sup> e n<sup>2,37…</sup> c'è un gap (Figura 2b), e <strong>nessuno sa chiuderlo</strong>: non si conosce un algoritmo in tempo O(n<sup>2</sup>), e nessuno ha dimostrato che non esiste. Il problema è aperto.</li>
+</ul>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) ordinare con i confronti</div><svg viewBox="0 0 250 170" width="250" height="170" role="img" aria-label="ordinamento: limite superiore n al quadrato con insertionSort, inferiore n log n" font-family="system-ui, sans-serif"><line x1="20" y1="30" x2="110" y2="30" class="l-blu" stroke-width="3"/><text x="118" y="34" font-size="12.5" font-weight="700" class="t-blu">n²</text><text x="118" y="50" font-size="11" class="t-muted">limite superiore</text><line x1="20" y1="130" x2="110" y2="130" class="l-arancio" stroke-width="3"/><text x="118" y="134" font-size="12.5" font-weight="700" class="t-arancio">n log n</text><text x="118" y="150" font-size="11" class="t-muted">limite inferiore</text><line x1="62" y1="38" x2="62" y2="122" class="l-muted" stroke-width="1.4" stroke-dasharray="4 3"/><text x="70" y="86" font-size="12" class="t-verde">gap</text><text x="20" y="166" font-size="11" class="t-verde">heapSort: Θ(n log n), il gap si chiude</text></svg></div><div><div class="nome-mat">(b) prodotto di matrici n × n</div><svg viewBox="0 0 250 170" width="250" height="170" role="img" aria-label="prodotto di matrici: limite superiore n alla 2,37, inferiore n al quadrato" font-family="system-ui, sans-serif"><line x1="20" y1="30" x2="110" y2="30" class="l-blu" stroke-width="3"/><text x="118" y="34" font-size="12.5" font-weight="700" class="t-blu">n<tspan dy="-6" font-size="10">2,37…</tspan></text><text x="118" y="50" font-size="11" class="t-muted">limite superiore</text><line x1="20" y1="130" x2="110" y2="130" class="l-arancio" stroke-width="3"/><text x="118" y="134" font-size="12.5" font-weight="700" class="t-arancio">n²</text><text x="118" y="150" font-size="11" class="t-muted">limite inferiore</text><line x1="62" y1="38" x2="62" y2="122" class="l-muted" stroke-width="1.4" stroke-dasharray="4 3"/><text x="70" y="86" font-size="12" class="t-verde">gap</text><text x="20" y="166" font-size="11" class="t-verde">il gap è ancora aperto</text></svg></div></div>
+<div class="didascalia"><b>Figura 2.</b> Lavagna, pagine 21 e 22. (a) Per ordinare con i confronti il limite superiore di insertionSort (n<sup>2</sup>) e quello inferiore (n log n) lasciano un gap, che heapSort chiude. (b) Per il prodotto di matrici il gap tra n<sup>2</sup> e n<sup>2,37…</sup> è ancora aperto.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Limite superiore f(n): <b>esiste</b> un algoritmo che <b>su ogni input</b> usa al più f(n). Si dimostra esibendo un algoritmo.</li>
+    <li>Limite inferiore g(n): <b>ogni</b> algoritmo, <b>su qualche input</b>, usa almeno g(n). Si dimostra ragionando su tutti gli algoritmi.</li>
+    <li>Ordinamento per confronti: superiore n<sup>2</sup> (insertionSort), inferiore n log n; heapSort chiude il gap: Θ(n log n).</li>
+    <li>Prodotto di matrici: superiore n<sup>3</sup>, n<sup>2,81</sup> (Strassen), n<sup>2,37…</sup>; inferiore n<sup>2</sup>; gap aperto.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 3 -->
+<h2 id="classi"><span class="num">3</span>Le classi di complessità: un'anticipazione</h2>
+<p class="in-questa"><b>In questa sezione:</b> cosa vuol dire classificare i problemi, e una prima idea della classe P (lavagna, pagine 23 e 24).</p>
+<div class="box def">
+  <span class="etichetta">Complessità computazionale e classi (lavagna, pagina 23)</span>
+  <p>La <strong>complessità computazionale</strong> è la classificazione dei problemi in base alle risorse utilizzate per la loro soluzione.</p>
+  <p>Una <strong>classe di complessità</strong> è un insieme di problemi che possono essere risolti utilizzando la stessa quantità di una determinata risorsa.</p>
+</div>
+<p>L'esempio della pagina 24 è la <strong>classe P</strong>: la classe dei problemi risolubili in <strong>tempo polinomiale</strong> rispetto alla lunghezza dell'input, cioè in tempo O(n<sup>c</sup>) per qualche costante c. Ci sono dentro, per esempio:</p>
+<ul>
+  <li>l'ordinamento (O(n log n), e n log n ≤ n<sup>2</sup>);</li>
+  <li>il prodotto di matrici (O(n<sup>3</sup>));</li>
+  <li>i cammini minimi da un vertice a tutti gli altri (Dijkstra, Bellman–Ford);</li>
+  <li>e molti altri problemi visti nel corso.</li>
+</ul>
+<p>E poi la lavagna, in rosso, fa tre domande: la <strong>colorazione di grafi</strong> sta in P? Lo <strong>zaino</strong>? Il <strong>commesso viaggiatore</strong>? Per nessuno dei tre si conosce un algoritmo in tempo polinomiale, ma nessuno ha mai dimostrato che non esista. Sono la porta d'ingresso al prossimo argomento, la classe NP (pacco 30). Prima però serve definire per bene cos'è un problema.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Classe di complessità: i problemi risolubili con la stessa quantità di una risorsa.</li>
+    <li>P: i problemi risolubili in tempo polinomiale nella lunghezza dell'input (ordinamento, prodotto di matrici, cammini minimi…).</li>
+    <li>Colorazione, zaino, commesso viaggiatore: non si sa se stanno in P.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 4 -->
+<h2 id="problema"><span class="num">4</span>Che cos'è un problema</h2>
+<p class="in-questa"><b>In questa sezione:</b> la definizione di problema come relazione tra istanze e soluzioni, e i tre tipi di problemi: ricerca, ottimizzazione, decisione (lavagna, pagine 25–28, e lavagna 32, pagina 6).</p>
+<div class="box def">
+  <span class="etichetta">Problema (lavagna, pagina 25)</span>
+  <p>Un problema è una relazione <strong>Π ⊆ I × S</strong>, dove I è l'universo delle possibili <strong>istanze</strong> (gli input) e S l'universo delle <strong>soluzioni</strong>.</p>
+  <p><strong>(x, s) ∈ Π</strong> se e solo se s è una soluzione di Π sull'input x.</p>
+</div>
+<p>I × S è l'insieme delle coppie (istanza, soluzione candidata); Π sceglie le coppie «giuste». Una stessa istanza può avere molte soluzioni (molte coppie con la stessa x), oppure nessuna.</p>
+<p><b>Esempio: albero ricoprente</b> (pagina 26). I = grafi non orientati, S = alberi, e (x, s) ∈ Π se e solo se s è un albero ricoprente per il grafo x (un albero che tocca tutti i vertici di x usando archi di x). Un grafo connesso ha in genere molti alberi ricoprenti, tutti soluzioni; un grafo non connesso non ne ha nessuno. Chiedere «trova un albero ricoprente» è un <strong>problema di ricerca</strong>.</p>
+<p><b>Esempio: albero ricoprente minimo</b> (pagina 27). I = grafi non orientati pesati, S = alberi, (x, s) ∈ Π come prima. In più c'è un criterio: tra tutti gli alberi s con (x, s) ∈ Π si cerca un s* con peso(s*) ≤ peso(s) per ogni s. È un <strong>problema di ottimizzazione</strong>.</p>
+<div class="box def">
+  <span class="etichetta">Tipologie di problemi (lavagna, pagina 28)</span>
+  <ul>
+    <li><b>Ricerca</b>: data x ∈ I, trovare s ∈ S tale che (x, s) ∈ Π.</li>
+    <li><b>Ottimizzazione</b>: data x ∈ I, trovare s ∈ S tale che (x, s) ∈ Π e che soddisfi un criterio di ottimalità fissato (per esempio minimo o massimo).</li>
+    <li><b>Decisione</b>: S = {0, 1}, la risposta è binaria (no o sì). Le x con (x, 1) ∈ Π sono le <strong>istanze positive</strong>, quelle con (x, 0) ∈ Π le <strong>istanze negative</strong>. Non ci sono contraddizioni: nessuna x è sia positiva sia negativa.</li>
+  </ul>
+</div>
+<p>Siccome ogni istanza di un problema di decisione ha una sola risposta, un problema di decisione si può vedere come una <strong>funzione Π : I → {0, 1}</strong>: Π(x) = 1 se x è un'istanza positiva, Π(x) = 0 se è negativa. Questa notazione tornerà spesso.</p>
+<div class="widget" id="w-tp">
+  <h4>Che tipo di problema è?</h4>
+  <div id="tp-corpo"></div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Problema: Π ⊆ I × S, (x, s) ∈ Π se s è una soluzione per l'istanza x.</li>
+    <li>Ricerca: trovare una soluzione. Ottimizzazione: trovare la migliore secondo un criterio. Decisione: S = {0, 1}, rispondere sì o no.</li>
+    <li>Un problema di decisione è una funzione Π : I → {0, 1}; istanze positive (Π(x) = 1) e negative (Π(x) = 0).</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 5 -->
+<h2 id="decisione"><span class="num">5</span>Problemi di decisione: esempi, e la cricca</h2>
+<p class="in-questa"><b>In questa sezione:</b> esempi di problemi di decisione, come da un problema di ottimizzazione si ottiene la sua versione di decisione, e un problema nuovo che tornerà nei prossimi pacchi: la cricca (lavagna, pagine 29–33).</p>
+<p>Due esempi della lavagna (pagina 29), scritti nel formato <em>istanza / questione</em> che si userà sempre da qui in poi:</p>
+<div class="box def">
+  <span class="etichetta">Grafo connesso (lavagna, pagina 29)</span>
+  <p><b>Istanza</b>: un grafo non orientato x. <b>Questione</b>: x è connesso?</p>
+</div>
+<div class="box def">
+  <span class="etichetta">Albero ricoprente di peso limitato (lavagna, pagina 29 e lavagna 32, pagina 6)</span>
+  <p><b>Istanza</b>: un grafo non orientato pesato x e un intero k (I = grafi non orientati pesati × ℕ). <b>Questione</b>: esiste un albero ricoprente di x di peso ≤ k?</p>
+  <p>In formule: S = {0, 1} e ((x, k), 1) ∈ Π se e solo se il grafo x ha un albero ricoprente di peso ≤ k.</p>
+</div>
+<p>Il secondo è la <strong>versione di decisione</strong> dell'albero ricoprente minimo (pagina 30):</p>
+<ul>
+  <li><b>ottimizzazione</b>: dato G = ⟨V, E, w⟩ grafo non orientato, connesso, pesato, trovare un albero ricoprente di G di peso minimo;</li>
+  <li><b>decisione</b>: dato G = ⟨V, E, w⟩ grafo non orientato, connesso, pesato, e un intero k ∈ ℕ, esiste un albero ricoprente di G di peso ≤ k?</li>
+</ul>
+<p>La ricetta è sempre la stessa: si aggiunge all'istanza una soglia k, e invece di «trova il migliore» si chiede «ce n'è uno almeno così buono?». Perché interessano tanto i problemi di decisione? Perché le classi di complessità della sezione 6 sono definite per problemi di decisione. E la versione di decisione non è più difficile di quella di ottimizzazione: chi sa trovare l'albero di peso minimo sa anche rispondere alla domanda, basta confrontare quel peso con k. (Quest'ultima osservazione non è scritta alla lavagna.)</p>
+<p><b>La cricca</b> (pagine 31–33). In italiano «cricca» è un gruppo di persone molto unite tra loro (dal francese <em>clique</em>, per questo si usa anche la parola inglese clique). In un grafo:</p>
+<div class="box def">
+  <span class="etichetta">Grafo completo e cricca (lavagna, pagina 32)</span>
+  <p>Un grafo non orientato è <strong>completo</strong> se ogni coppia di vertici distinti è collegata da un arco.</p>
+  <p>Una <strong>cricca</strong> (clique) in un grafo è un <strong>sottografo completo</strong>: un insieme di vertici collegati tutti con tutti.</p>
+</div>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">K₄: 4 vertici, tutti collegati</div><svg viewBox="0 0 164 164" width="164" height="164" role="img" aria-label="il grafo completo con 4 vertici" font-family="system-ui, sans-serif"><path d="M52 37 L112 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.6 47.6 L116.4 116.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M37 52 L37 112" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M127 52 L127 112" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M116.4 47.6 L47.6 116.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M112 127 L52 127" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="127" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="127" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="127" cy="127" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="127" y="132" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="37" cy="127" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="132" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text></svg></div><div><div class="nome-mat">K₅: 5 vertici, tutti collegati</div><svg viewBox="0 0 207 200" width="207" height="200" role="img" aria-label="il grafo completo con 5 vertici" font-family="system-ui, sans-serif"><path d="M115.6 45.9 L157.9 77.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.2 51.2 L140.8 148.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M98.8 51.2 L66.2 148.8" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M91.4 45.9 L49.1 77.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M165.5 100.3 L150 148.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M157.8 94.7 L73.7 154.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M155 86 L52 86" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M130.5 163 L76.5 163" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M133.3 154.3 L49.2 94.7" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M57 148.7 L41.5 100.3" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="103.5" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="103.5" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">1</text><circle cx="170" cy="86" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="170" y="91" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">2</text><circle cx="145.5" cy="163" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="145.5" y="168" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">3</text><circle cx="61.5" cy="163" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="61.5" y="168" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">4</text><circle cx="37" cy="86" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="91" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">5</text></svg></div></div>
+<div class="didascalia"><b>Figura 3.</b> Lavagna, pagina 32: due grafi completi. Con 4 vertici gli archi sono 6, con 5 vertici 10: in generale un grafo completo con k vertici ha k(k − 1)/2 archi.</div>
+</div>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) l'esagono: la cricca B, C, F</div><svg viewBox="0 0 298 214" width="298" height="214" role="img" aria-label="esagono con evidenziata la cricca B C F" font-family="system-ui, sans-serif"><path d="M47 95.9 L90 48.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47 118.1 L90 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 52 L100 162" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M108.6 49.3 L189.4 164.7" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M115 177 L183 177" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M208 48.1 L251 95.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115 37 L183 37" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M251 118.1 L208 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="107" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="100" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="100" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="198" cy="37" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="198" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="261" cy="107" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="261" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="198" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="198" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div><div><div class="nome-mat">(b) con C–D e D–F: la cricca B, C, D, F</div><svg viewBox="0 0 298 214" width="298" height="214" role="img" aria-label="esagono con due archi in più, evidenziata la cricca B C D F" font-family="system-ui, sans-serif"><path d="M47 95.9 L90 48.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47 118.1 L90 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M100 52 L100 162" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M108.6 49.3 L189.4 164.7" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M115 177 L183 177" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M208 48.1 L251 95.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M115 37 L183 37" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M251 118.1 L208 165.9" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M108.6 164.7 L189.4 49.3" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M198 52 L198 162" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><circle cx="37" cy="107" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="100" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="100" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="100" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="198" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="198" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="261" cy="107" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="261" y="112" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text><circle cx="198" cy="177" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="198" y="182" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">F</text></svg></div></div>
+<div class="didascalia"><b>Figura 4.</b> Lavagna, pagina 32: cricche nell'esagono. (a) B, C e F sono collegati a due a due (B–C, B–F, C–F): sono una cricca di 3 vertici, un triangolo. (b) Aggiungendo gli archi C–D e D–F, i vertici B, C, D, F sono collegati tutti con tutti: una cricca di 4 vertici.</div>
+</div>
+<p>Anche la cricca ha una versione di ottimizzazione e una di decisione (pagina 33):</p>
+<ul>
+  <li><b>ottimizzazione</b>: dato G = ⟨V, E⟩ grafo non orientato, trovare un sottografo completo con il massimo numero di vertici (Figura 5);</li>
+  <li><b>decisione</b>: dato G = ⟨V, E⟩ grafo non orientato e un intero k ∈ ℕ, stabilire se G contiene una cricca di k vertici. Alla lavagna, in verde: «di almeno k vertici». È lo stesso: se c'è una cricca con più di k vertici, togliendone qualcuno resta una cricca di esattamente k vertici.</li>
+</ul>
+<div class="figura">
+<div class="affianco"><div><div class="nome-mat">(a) un quadrato: la cricca più grande ha 2 vertici</div><svg viewBox="0 0 164 164" width="164" height="164" role="img" aria-label="quadrato con evidenziato un arco" font-family="system-ui, sans-serif"><path d="M52 37 L112 37" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M127 52 L127 112" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M112 127 L52 127" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M37 112 L37 52" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="127" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="127" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="127" cy="127" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="127" y="132" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="37" cy="127" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="132" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text></svg></div><div><div class="nome-mat">(b) la cricca più grande ha 3 vertici</div><svg viewBox="0 0 194 234" width="194" height="234" role="img" aria-label="grafo di cinque vertici con evidenziato il triangolo A B C" font-family="system-ui, sans-serif"><path d="M52 37 L102 37" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M37 52 L37 102" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M106.4 47.6 L47.6 106.4" fill="none" class="l-verde" stroke="#17803d" stroke-width="3.4"/><path d="M123.7 50.4 L150.3 103.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M52 117 L142 117" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M47.6 127.6 L106.4 186.4" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M150.3 130.4 L123.7 183.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><circle cx="37" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="37" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">A</text><circle cx="117" cy="37" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="117" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">B</text><circle cx="37" cy="117" r="15" class="r-verde" fill="#e6f5ea" stroke="#17803d" stroke-width="1.6"/><text x="37" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">C</text><circle cx="157" cy="117" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="157" y="122" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">D</text><circle cx="117" cy="197" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="117" y="202" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">E</text></svg></div></div>
+<div class="didascalia"><b>Figura 5.</b> Lavagna, pagina 33. (a) In un quadrato nessun triangolo: la cricca più grande è un arco, 2 vertici. (b) In questo grafo di 5 vertici ci sono tre triangoli (A, B, C; B, C, D; C, D, E), ma nessuna cricca di 4: per esempio A e D non sono collegati. La cricca massima ha 3 vertici.</div>
+</div>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>Problemi di decisione: si scrivono con istanza e questione (sì o no).</li>
+    <li>Versione di decisione di un problema di ottimizzazione: si aggiunge una soglia k e si chiede se esiste una soluzione almeno così buona.</li>
+    <li>Cricca: insieme di vertici collegati tutti con tutti. Ottimizzazione: la cricca più grande. Decisione: c'è una cricca di k vertici?</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 6 -->
+<h2 id="time-space"><span class="num">6</span>TIME, SPACE, P, PSPACE, EXPTIME</h2>
+<p class="in-questa"><b>In questa sezione:</b> le definizioni precise delle classi di complessità (lavagna, pagine 34–36, e lavagna 32, pagina 7).</p>
+<div class="box def">
+  <span class="etichetta">Classi in tempo e in spazio (lavagna, pagina 34)</span>
+  <p>Siano s, t : ℕ → ℕ funzioni.</p>
+  <ul>
+    <li><strong>TIME(t(n))</strong> = classe dei problemi di decisione risolubili da algoritmi che usano tempo O(t(n)).</li>
+    <li><strong>SPACE(s(n))</strong> = classe dei problemi di decisione risolubili da algoritmi che usano spazio O(s(n)).</li>
+  </ul>
+</div>
+<p>Per esempio TIME(n<sup>2</sup>) contiene tutti i problemi di decisione che qualche algoritmo risolve in tempo O(n<sup>2</sup>) sugli input di lunghezza n. Le classi crescono con la funzione: TIME(n) ⊆ TIME(n<sup>2</sup>) ⊆ TIME(n<sup>3</sup>) ⊆ …, perché un algoritmo che usa tempo O(n) usa anche tempo O(n<sup>2</sup>).</p>
+<div class="box def">
+  <span class="etichetta">Le tre classi (lavagna, pagine 35 e 36)</span>
+  <ul>
+    <li><strong>P = ∪<sub>c ≥ 0</sub> TIME(n<sup>c</sup>)</strong>: i problemi di decisione risolubili in <b>tempo polinomiale</b> rispetto alla lunghezza dell'input.</li>
+    <li><strong>PSPACE = ∪<sub>c ≥ 0</sub> SPACE(n<sup>c</sup>)</strong>: i problemi di decisione risolubili in <b>spazio polinomiale</b>.</li>
+    <li><strong>EXPTIME = ∪<sub>c ≥ 0</sub> TIME(2<sup>n<sup>c</sup></sup>)</strong>: i problemi di decisione risolubili in <b>tempo esponenziale</b>.</li>
+  </ul>
+</div>
+<p>Come si legge l'unione ∪<sub>c ≥ 0</sub>: P è l'unione di TIME(n<sup>0</sup>), TIME(n<sup>1</sup>), TIME(n<sup>2</sup>), …, quindi un problema sta in P se sta in TIME(n<sup>c</sup>) <em>per qualche</em> costante c, cioè se esiste un algoritmo che lo risolve in tempo O(n<sup>c</sup>). La costante c può essere grande (n<sup>100</sup> è polinomiale), ma deve essere fissa: non può dipendere dall'input.</p>
+<p>Una prima relazione si vede subito: <strong>P ⊆ EXPTIME</strong> (lavagna 32, pagina 7). Infatti per ogni c e ogni n ≥ 1 vale n<sup>c</sup> &lt; 2<sup>n<sup>c</sup></sup> (ogni numero x ≥ 1 è minore di 2<sup>x</sup>), quindi un algoritmo che usa tempo O(n<sup>c</sup>) usa anche tempo O(2<sup>n<sup>c</sup></sup>): TIME(n<sup>c</sup>) ⊆ TIME(2<sup>n<sup>c</sup></sup>).</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>TIME(t(n)) e SPACE(s(n)): problemi di decisione risolubili in tempo O(t(n)), in spazio O(s(n)).</li>
+    <li>P = ∪ TIME(n<sup>c</sup>), PSPACE = ∪ SPACE(n<sup>c</sup>), EXPTIME = ∪ TIME(2<sup>n<sup>c</sup></sup>).</li>
+    <li>P ⊆ EXPTIME, perché n<sup>c</sup> &lt; 2<sup>n<sup>c</sup></sup>.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 7 -->
+<h2 id="relazioni"><span class="num">7</span>Le relazioni tra spazio e tempo</h2>
+<p class="in-questa"><b>In questa sezione:</b> le due dimostrazioni della lavagna 32 (pagine 8–10): P ⊆ PSPACE e PSPACE ⊆ EXPTIME. Poi il fatto che P ≠ EXPTIME (lavagna 33, pagina 2).</p>
+<p>Le due dimostrazioni rispondono a due domande «di scambio»: con un certo tempo, quanto spazio si riesce a usare? E con un certo spazio, quanto tempo si può impiegare senza entrare in loop?</p>
+<div class="dim">
+  <div class="dim-tit">P ⊆ PSPACE (lavagna 32, pagina 8)</div>
+  <p class="enunciato">In tempo t un algoritmo usa al più k · t celle di memoria, con k costante. Quindi tempo polinomiale implica spazio polinomiale.</p>
+  <p>Ogni istruzione macchina utilizza al massimo k celle di memoria, con k fissato (dipende dalla macchina, non dall'input). <span class="rif">1</span> In tempo t si eseguono al più t istruzioni, e ognuna tocca al più k celle nuove. Quindi le celle usate sono al più k · t.</p>
+  <p>Se il tempo è polinomiale, t(n) = O(n<sup>c</sup>), lo spazio è al più k · t(n) = O(n<sup>c</sup>): polinomiale. Ogni problema di P sta quindi in PSPACE.</p>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Lo spazio è il numero di celle di memoria usate. Per usare una cella bisogna scriverla almeno una volta, e scrivere costa tempo: non si può usare più memoria di quanta se ne riesca a toccare.</p>
+  </div>
+</div>
+<p>La seconda dimostrazione è più furba. Serve la nozione di <strong>configurazione</strong>: la fotografia completa di un programma in esecuzione in un certo istante, cioè l'istruzione da eseguire e il contenuto di tutta la memoria (Figura 6).</p>
+<div class="figura">
+<svg viewBox="0 0 420 200" width="420" height="200" role="img" aria-label="una memoria di s celle da k bit e un programma di p istruzioni" font-family="system-ui, sans-serif"><rect x="40" y="16" width="120" height="24" class="r-box" stroke-width="1.2"/><text x="52" y="32" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="66" y="32" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="80" y="32" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="94" y="32" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="108" y="32" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="122" y="32" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="136" y="32" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="150" y="32" font-size="11" text-anchor="middle" class="t-testo">1</text><rect x="40" y="42" width="120" height="24" class="r-box" stroke-width="1.2"/><text x="52" y="58" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="66" y="58" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="80" y="58" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="94" y="58" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="108" y="58" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="122" y="58" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="136" y="58" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="150" y="58" font-size="11" text-anchor="middle" class="t-testo">0</text><rect x="40" y="68" width="120" height="24" class="r-box" stroke-width="1.2"/><text x="52" y="84" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="66" y="84" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="80" y="84" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="94" y="84" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="108" y="84" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="122" y="84" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="136" y="84" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="150" y="84" font-size="11" text-anchor="middle" class="t-testo">1</text><rect x="40" y="94" width="120" height="24" class="r-box" stroke-width="1.2"/><text x="52" y="110" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="66" y="110" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="80" y="110" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="94" y="110" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="108" y="110" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="122" y="110" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="136" y="110" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="150" y="110" font-size="11" text-anchor="middle" class="t-testo">0</text><rect x="40" y="120" width="120" height="24" class="r-box" stroke-width="1.2"/><text x="100" y="136" font-size="13" text-anchor="middle" class="t-muted">⋮</text><rect x="40" y="146" width="120" height="24" class="r-box" stroke-width="1.2"/><text x="52" y="162" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="66" y="162" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="80" y="162" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="94" y="162" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="108" y="162" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="122" y="162" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="136" y="162" font-size="11" text-anchor="middle" class="t-testo">1</text><text x="150" y="162" font-size="11" text-anchor="middle" class="t-testo">0</text><text x="30" y="96" font-size="12" text-anchor="end" class="t-blu">s</text><text x="30" y="112" font-size="11" text-anchor="end" class="t-blu">celle</text><text x="100" y="186" font-size="11.5" text-anchor="middle" class="t-blu">k bit per cella</text><rect x="250" y="30" width="150" height="110" rx="6" class="r-viola" stroke-width="1.4"/><text x="325" y="54" font-size="13" font-weight="700" text-anchor="middle" class="t-viola">programma</text><text x="268" y="78" font-size="12" class="t-testo">1: …</text><text x="268" y="94" font-size="12" class="t-testo">2: …</text><text x="268" y="110" font-size="12" class="t-testo">⋮</text><text x="268" y="126" font-size="12" class="t-testo">p: …</text><text x="325" y="162" font-size="11.5" text-anchor="middle" class="t-viola">p istruzioni</text></svg>
+<div class="didascalia"><b>Figura 6.</b> Lavagna 32, pagina 9: un programma di p istruzioni che usa s celle di memoria, ognuna di k bit. Ogni cella può contenere 2<sup>k</sup> valori diversi, quindi la memoria può trovarsi in (2<sup>k</sup>)<sup>s</sup> = 2<sup>k·s</sup> contenuti diversi.</div>
+</div>
+<div class="dim">
+  <div class="dim-tit">PSPACE ⊆ EXPTIME (lavagna 32, pagina 9)</div>
+  <p class="enunciato">Un programma che termina e usa s celle fa al più 2<sup>k·s</sup> · p passi. Quindi spazio polinomiale implica tempo al più esponenziale.</p>
+  <div class="parte prima">Passo 1: quante configurazioni ci sono</div>
+  <p>Una configurazione è una coppia (istruzione da eseguire, contenuto della memoria). Le istruzioni sono p; i contenuti della memoria sono 2<sup>k·s</sup> (Figura 6). Quindi le configurazioni possibili sono al più 2<sup>k·s</sup> · p.</p>
+  <div class="parte">Passo 2: una configurazione ripetuta vuol dire loop infinito</div>
+  <p>Se durante l'esecuzione si torna in una configurazione già vista, cioè si esegue la stessa istruzione con lo stesso contenuto della memoria, il programma rifarà esattamente gli stessi passi di prima, e ci tornerà ancora, per sempre. <span class="rif">1</span> È un loop infinito.</p>
+  <div class="parte">Passo 3: un programma che termina fa pochi passi</div>
+  <p>Se t &gt; 2<sup>k·s</sup> · p, il programma è passato per più configurazioni di quante ne esistano: almeno una si è ripetuta <span class="rif">2</span>, quindi è in loop infinito. Allora un programma che termina fa <strong>t ≤ 2<sup>k·s</sup> · p</strong> passi.</p>
+  <div class="parte">Passo 4: con spazio polinomiale</div>
+  <p>Se s = s(n) = O(n<sup>c</sup>), il tempo è al più 2<sup>k·s(n)</sup> · p, cioè esponenziale in un polinomio di n. <span class="rif">3</span> «Spazio polinomiale ⇒ tempo al più esponenziale»: PSPACE ⊆ EXPTIME.</p>
+  <p class="qed">□</p>
+  <div class="spiega">
+    <div class="spiega-tit">I passaggi spiegati</div>
+    <p><span class="rif">1</span>Un algoritmo deterministico (cioè ogni passo è determinato dalla configurazione: niente scelte a caso) a partire dalla stessa configurazione fa sempre la stessa cosa. Il riquadro «La macchina che si ripete» lo fa vedere su un programma piccolo.</p>
+    <p><span class="rif">2</span>È il principio dei cassetti: se metti più di N oggetti in N cassetti, almeno un cassetto contiene due oggetti. Qui gli oggetti sono i passi e i cassetti le configurazioni.</p>
+    <p><span class="rif">3</span>p e k sono costanti: 2<sup>k·s(n)</sup> · p = 2<sup>k·s(n) + log<sub>2</sub> p</sup>, e k·s(n) + log<sub>2</sub> p è ancora un polinomio in n, minore di n<sup>c+1</sup> per n abbastanza grande. Quindi il tempo è O(2<sup>n<sup>c+1</sup></sup>), e il problema sta in EXPTIME.</p>
+  </div>
+</div>
+<div class="widget" id="w-mc">
+  <h4>La macchina che si ripete</h4>
+  <div id="mc-corpo"></div>
+</div>
+<p>Il programma del riquadro è proprio l'esempio della lavagna: tre variabili booleane x, y, z e un ciclo «while (x ∨ y ≠ z) { … }». Con x = 1, y = 0, z = 0 il ciclo non finisce mai, e dopo 8 passi la configurazione iniziale si ripete. Con x = 1, y = 1, z = 0 invece termina.</p>
+<p>Mettendo insieme le tre relazioni (lavagna 32, pagina 10, e lavagna 33, pagina 2):</p>
+<div class="formula grande">P ⊆ PSPACE ⊆ EXPTIME,   P ≠ EXPTIME</div>
+<div class="figura">
+<svg viewBox="0 0 420 230" width="420" height="230" role="img" aria-label="P contenuto in PSPACE contenuto in EXPTIME" font-family="system-ui, sans-serif"><ellipse cx="210" cy="115" rx="202" ry="107" class="l-blu" fill="none" stroke="#2f52c4" stroke-width="1.8"/><text x="210" y="26" font-size="13" font-weight="700" class="t-blu" fill="#2f52c4" text-anchor="middle">EXPTIME</text><ellipse cx="210" cy="121" rx="149.5" ry="79.2" class="l-verde" fill="none" stroke="#17803d" stroke-width="1.8"/><text x="210" y="59.8" font-size="13" font-weight="700" class="t-verde" fill="#17803d" text-anchor="middle">PSPACE</text><ellipse cx="210" cy="127" rx="97" ry="51.4" class="l-arancio" fill="none" stroke="#b4500f" stroke-width="1.8"/><text x="210" y="132" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f" text-anchor="middle">P</text></svg>
+<div class="didascalia"><b>Figura 7.</b> P è contenuta in PSPACE, che è contenuta in EXPTIME. Si sa che P è diversa da EXPTIME; non si sa se P sia diversa da PSPACE, né se PSPACE sia diversa da EXPTIME.</div>
+</div>
+<p>Che P ≠ EXPTIME, cioè che esistono problemi risolubili in tempo esponenziale ma non in tempo polinomiale, è un teorema (la lavagna lo enuncia senza dimostrarlo). Ne segue che <strong>almeno una delle due inclusioni P ⊆ PSPACE e PSPACE ⊆ EXPTIME è propria</strong>: se fossero entrambe uguaglianze, P sarebbe uguale a EXPTIME. Ma quale delle due sia propria, o se lo siano entrambe, <strong>non si sa</strong>: è un problema aperto.</p>
+<div class="box riassunto">
+  <span class="etichetta">In breve</span>
+  <ul>
+    <li>P ⊆ PSPACE: in tempo t si usano al più k·t celle.</li>
+    <li>PSPACE ⊆ EXPTIME: con s celle da k bit e p istruzioni ci sono al più 2<sup>k·s</sup>·p configurazioni; ripeterne una è un loop infinito; quindi un programma che termina fa t ≤ 2<sup>k·s</sup>·p passi.</li>
+    <li>P ≠ EXPTIME: almeno una delle due inclusioni è propria, non si sa quale.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 8 -->
+<h2 id="riassunto"><span class="num">8</span>Riassunto</h2>
+<div class="box riassunto">
+  <span class="etichetta">Da ricordare</span>
+  <ul>
+    <li><b>Limite superiore</b> f(n) per Π: esiste un algoritmo che su ogni input di lunghezza n usa al più f(n). <b>Limite inferiore</b> g(n): ogni algoritmo, su qualche input di lunghezza n, usa almeno g(n).</li>
+    <li>Ordinamento per confronti: Θ(n log n) (gap chiuso da heapSort). Prodotto di matrici: tra n<sup>2</sup> e n<sup>2,37…</sup> (gap aperto).</li>
+    <li><b>Problema</b>: Π ⊆ I × S. Ricerca, ottimizzazione, decisione (S = {0, 1}, Π : I → {0, 1}).</li>
+    <li><b>Versione di decisione</b>: si aggiunge una soglia k. Albero ricoprente di peso ≤ k; cricca di k vertici.</li>
+    <li><b>Cricca</b>: sottografo completo.</li>
+    <li>TIME(t(n)), SPACE(s(n)); <b>P</b> = ∪ TIME(n<sup>c</sup>), <b>PSPACE</b> = ∪ SPACE(n<sup>c</sup>), <b>EXPTIME</b> = ∪ TIME(2<sup>n<sup>c</sup></sup>).</li>
+    <li><b>P ⊆ PSPACE ⊆ EXPTIME</b> (spazio ≤ k·t; tempo ≤ 2<sup>k·s</sup>·p) e <b>P ≠ EXPTIME</b>.</li>
+  </ul>
+</div>
+<div class="box esame">
+  <span class="etichetta">Per l'esame</span>
+  <ul>
+    <li>La complessità computazionale non è mai stata chiesta negli scritti degli ultimi anni.</li>
+    <li>All'orale: le definizioni di limite superiore e inferiore (con l'ordine giusto di «esiste» e «per ogni») con un esempio; cos'è un problema di decisione; le definizioni di P, PSPACE, EXPTIME e le due dimostrazioni P ⊆ PSPACE e PSPACE ⊆ EXPTIME.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ 9 -->
+<h2 id="esercizi"><span class="num">9</span>Esercizi risolti</h2>
+<p class="in-questa"><b>In questa sezione:</b> esercizi sulle definizioni della pagina. Prova a risolverli, poi apri la soluzione.</p>
+
+<details class="esercizio">
+  <summary>Esercizio 1. Il minimo di un array: limite superiore e inferiore</summary>
+  <p>Π = trovare il minimo di un array di n elementi, r = numero di confronti tra elementi. Trovate un limite superiore e uno inferiore. Coincidono?</p>
+  <div class="soluzione">
+    <p><b>Superiore</b>: l'algoritmo che scorre l'array tenendo il minimo trovato finora fa n − 1 confronti su ogni input. Quindi n − 1 confronti bastano.</p>
+    <p><b>Inferiore</b>: n − 1 confronti servono a ogni algoritmo. Ogni elemento che non è il minimo deve «perdere» almeno un confronto: se un elemento non ha mai perso, l'algoritmo non può sapere che non è lui il minimo. Ogni confronto fa perdere un solo elemento, e gli elementi che devono perdere sono n − 1. Quindi su ogni input servono almeno n − 1 confronti.</p>
+    <p>I due limiti coincidono: la complessità del problema è esattamente n − 1 confronti, e la scansione è ottima.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 2. Le versioni di decisione</summary>
+  <p>Scrivete, nel formato istanza / questione, la versione di decisione di: (a) zaino con valori (sacco del ladro); (b) commesso viaggiatore; (c) colorazione di grafi.</p>
+  <div class="soluzione">
+    <p><b>(a)</b> Istanza: k oggetti di peso p<sub>1</sub>, …, p<sub>k</sub> e valore v<sub>1</sub>, …, v<sub>k</sub>, una capacità P e un intero V. Questione: esiste un sottoinsieme degli oggetti di peso totale ≤ P e valore totale ≥ V?</p>
+    <p><b>(b)</b> Istanza: un insieme finito di città, le distanze tra ogni coppia di città, un intero B. Questione: esiste un giro che visita tutte le città e torna al punto di partenza, di lunghezza totale ≤ B?</p>
+    <p><b>(c)</b> Istanza: un grafo non orientato G e un intero k. Questione: si possono colorare i vertici di G con k colori in modo che vertici adiacenti abbiano colori diversi?</p>
+    <p>Negli esempi (a) e (b) la soglia ha il verso giusto rispetto all'obiettivo: si massimizza il valore, quindi «≥ V»; si minimizza la lunghezza, quindi «≤ B».</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 3. Quante configurazioni</summary>
+  <p>Un programma di p = 100 istruzioni usa s = 10 celle da k = 8 bit. Quanti passi può fare al massimo, se termina? E se le celle diventano 20?</p>
+  <div class="soluzione">
+    <p>Contenuti della memoria: 2<sup>k·s</sup> = 2<sup>80</sup>. Configurazioni: 100 · 2<sup>80</sup>. Un programma che termina non ripete configurazioni, quindi fa al più 100 · 2<sup>80</sup> passi (circa 1,2 · 10<sup>26</sup>).</p>
+    <p>Con 20 celle: 100 · 2<sup>160</sup>. Raddoppiare lo spazio <em>eleva al quadrato</em> il numero di contenuti possibili (2<sup>160</sup> = (2<sup>80</sup>)<sup>2</sup>): per questo da spazio polinomiale si ottiene tempo esponenziale.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 4. Dentro o fuori</summary>
+  <p>Un problema di decisione è risolto da un algoritmo in tempo O(n<sup>3</sup> · 2<sup>n</sup>). Sta in EXPTIME? Sta in P, sapendo solo questo?</p>
+  <div class="soluzione">
+    <p>Sta in EXPTIME: n<sup>3</sup> ≤ 2<sup>n</sup> per n ≥ 10, quindi n<sup>3</sup> · 2<sup>n</sup> ≤ 2<sup>n</sup> · 2<sup>n</sup> = 2<sup>2n</sup> ≤ 2<sup>n<sup>2</sup></sup> per n ≥ 2. Il tempo è O(2<sup>n<sup>2</sup></sup>): il problema sta in TIME(2<sup>n<sup>2</sup></sup>) ⊆ EXPTIME.</p>
+    <p>Sapendo solo questo non si può dire se sta in P. Un algoritmo lento non dimostra che il problema è difficile: potrebbe esistere un altro algoritmo, polinomiale. Per dire «non sta in P» servirebbe un limite inferiore.</p>
+  </div>
+</details>
+
+<details class="esercizio">
+  <summary>Esercizio 5. La cricca più grande</summary>
+  <p>Nell'esagono della Figura 4a, quali sono le cricche di 3 vertici? Ce n'è una di 4?</p>
+  <div class="soluzione">
+    <p>Gli archi dell'esagono sono A–B, A–C, B–C, B–D, B–F, C–F, D–E, E–F. Le cricche di 3 vertici sono i triangoli: A, B, C (A–B, A–C, B–C) e B, C, F (B–C, B–F, C–F). Non ce ne sono altre: per esempio D, E, F non è un triangolo perché manca D–F.</p>
+    <p>Di 4 vertici no. Una cricca di 4 contiene quattro triangoli, quindi dovrebbe contenere sia A, B, C sia B, C, F; ma allora sarebbe {A, B, C, F}, e A–F non c'è.</p>
+  </div>
+</details>
+
+<!-- ============================================================ 10 -->
+<h2 id="approfondimenti"><span class="num">10</span>Approfondimenti facoltativi</h2>
+<p class="in-questa"><b>In questa sezione:</b> cose che non vengono dalla lezione e non servono per l'esame. Si aprono con un clic.</p>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: perché P ≠ EXPTIME</summary>
+  <div class="soluzione">
+    <p>È il <em>teorema di gerarchia per il tempo</em>: con molto più tempo si risolvono strettamente più problemi. L'idea della dimostrazione è la diagonalizzazione: si costruisce un problema che, per ogni algoritmo polinomiale, dà sull'input che descrive quell'algoritmo la risposta opposta alla sua. Nessun algoritmo polinomiale può risolverlo, perché sbaglia almeno su un input; ma in tempo esponenziale lo si risolve simulando gli algoritmi. Lo stesso tipo di argomento dimostra che P ≠ EXPTIME, ma non riesce a separare P da PSPACE.</p>
+  </div>
+</details>
+<details class="esercizio" style="border-style:dashed">
+  <summary>Facoltativo: la lunghezza dell'input e i numeri</summary>
+  <div class="soluzione">
+    <p>La lunghezza dell'input è il numero di simboli che servono per scriverlo. Per un numero P scritto in binario servono circa log<sub>2</sub> P cifre, non P. Per questo l'algoritmo di programmazione dinamica per lo zaino, che fa circa k · P passi (k oggetti, capacità P), <em>non</em> è polinomiale: P può essere esponenziale nella lunghezza log<sub>2</sub> P con cui è scritto. Si dice pseudo-polinomiale.</p>
+  </div>
+</details>
+
+<div class="navfondo">
+  <a href="28-tabelle-hash-rehashing.html">← Pacco 28: hash, costi e re-hashing</a>
+  <a href="index.html">Tutti i pacchi</a>
+  <a href="30-np.html">Pacco 30: la classe NP →</a>
+</div>
+
+</div>
+<script>
+(function () {
+  "use strict";
+// ---- pesati.js
+// Grafi pesati (pacchi 19, 20, 22, 23): dati della lavagna, disegno con i pesi, Kruskal, Prim.
+// Un grafo pesato: { nome, orientato, V: [...], pos: { v: [x, y] } (in «caselle»), E: [[u, v, w], ...], curve: { indice: k } }
+var GP = {
+  esagono: { nome: "L'esagono pesato della lavagna (A–F)", orientato: false, V: ["A", "B", "C", "D", "E", "F"],
+    pos: { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    E: [["A", "B", 3], ["A", "C", 2], ["B", "C", 4], ["B", "F", 5], ["C", "F", 5], ["D", "E", 6], ["B", "D", 6], ["E", "F", 1]] },
+  sette: { nome: "Il grafo a 7 vertici della lavagna (Prim)", orientato: false, V: ["A", "B", "C", "D", "E", "F", "G"],
+    pos: { F: [0.6, 0], G: [1.8, 0], C: [0, 1.05], D: [1.2, 1.05], E: [2.4, 1.05], A: [0.6, 2.1], B: [1.8, 2.1] },
+    E: [["F", "G", 20], ["C", "F", 23], ["D", "F", 1], ["D", "G", 4], ["E", "G", 15], ["C", "D", 36], ["D", "E", 9], ["A", "C", 28], ["A", "D", 25], ["B", "D", 16], ["B", "E", 3], ["A", "B", 17]] },
+  orientato: { nome: "Il grafo orientato pesato della lavagna (1–7)", orientato: true, V: [1, 2, 3, 4, 5, 6, 7],
+    pos: { 1: [0, 0], 2: [1.1, 0], 4: [2.2, 0], 7: [3.3, 0], 3: [0.8, 1.1], 5: [2.4, 1.1], 6: [3.4, 1.1] },
+    E: [[1, 2, 5], [2, 4, 3], [4, 7, 2], [3, 1, 7], [1, 3, 6], [4, 3, 9], [3, 5, 4], [7, 5, 3], [5, 6, 2], [6, 7, 2]] },
+  esame14nov: { nome: "Il grafo dello scritto del 14 novembre 2025", orientato: false, V: ["v1", "v2", "v3", "v4", "v5", "v6"],
+    pos: { v1: [0, 1], v2: [0.9, 0], v6: [0.9, 2], v3: [2.3, 0], v4: [3.2, 1], v5: [2.3, 2] },
+    E: [["v1", "v2", 3], ["v1", "v6", 2], ["v2", "v6", 4], ["v2", "v5", 5], ["v5", "v6", 5], ["v3", "v4", 6], ["v2", "v3", 6], ["v4", "v5", 1]] },
+  esame20set: { nome: "Il grafo dello scritto del 20 settembre 2024", orientato: false, V: ["v1", "v2", "v3", "v4"],
+    pos: { v1: [0, 0], v4: [1.6, 0], v2: [0, 1.25], v3: [1.6, 1.25] },
+    E: [["v1", "v4", 2], ["v1", "v2", 5], ["v2", "v4", 4], ["v3", "v4", 2], ["v2", "v3", 7]] }
+};
+function escP(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1p(v) { return Math.round(v * 10) / 10; }
+function chiaveP(u, v, orientato) { return orientato ? u + ">" + v : [String(u), String(v)].sort().join("~"); }
+function cmpV(a, b) { return typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b), "it", { numeric: true }); }
+// archi uscenti da u: [[v, w], ...] in ordine di vertice
+function adiacentiP(G, u) {
+  var r = [];
+  G.E.forEach(function (e) { if (e[0] === u) r.push([e[1], e[2]]); else if (!G.orientato && e[1] === u) r.push([e[0], e[2]]); });
+  return r.sort(function (a, b) { return cmpV(a[0], b[0]); });
+}
+function pesoTot(archi) { return archi.reduce(function (t, e) { return t + e[2]; }, 0); }
+var STILE_P = { n: ["r-nodo", "#ffffff", "#2f52c4"], giallo: ["r-giallo", "#fff1a8", "#b4500f"], verde: ["r-verde", "#e6f5ea", "#17803d"], blu: ["r-blu", "#e8edfc", "#2f52c4"],
+  arancio: ["r-arancio", "#fdf0e3", "#b4500f"], rosso: ["r-rosso", "#fdecea", "#b42318"], viola: ["r-viola", "#f1ebfb", "#6d3fc0"], grigio: ["r-grigio", "#eef0f3", "#5b6270"] };
+var COL_A = { verde: ["l-verde", "#17803d", 3.4], arancio: ["l-arancio", "#b4500f", 3.4], rosso: ["l-rosso", "#b42318", 3.4], blu: ["l-blu", "#2f52c4", 3.4], viola: ["l-viola", "#6d3fc0", 3.4],
+  scartato: ["l-muted", "#5b6270", 1.2, "5 4"], tenue: ["l-muted", "#5b6270", 1, "2 4"] };
+// opz: { cella, r, evNodi: {v: stile}, evArchi: {chiave: colore}, etich: {v: testo}, etichPos: {v: "su"|"giu"|"sx"|"dx"}, numeri: {v: n}, aria, senzaPesi, margine }
+function svgPesato(G, opz) {
+  opz = opz || {};
+  var C = opz.cella || 90, R = opz.r || 15, m = R + (opz.margine || 22), s = [], xs = [], ys = [];
+  G.V.forEach(function (v) { xs.push(G.pos[v][0]); ys.push(G.pos[v][1]); });
+  var W = Math.max.apply(null, xs) * C + 2 * m, H = Math.max.apply(null, ys) * C + 2 * m;
+  function P(v) { return [m + G.pos[v][0] * C, m + G.pos[v][1] * C]; }
+  var esiste = {}; G.E.forEach(function (e) { esiste[e[0] + ">" + e[1]] = true; });
+  s.push('<svg viewBox="0 0 ' + r1p(W) + ' ' + r1p(H) + '" width="' + r1p(W) + '" height="' + r1p(H) + '" role="img" aria-label="' + escP(opz.aria || G.nome) + '" font-family="system-ui, sans-serif">');
+  var etichette = [];
+  G.E.forEach(function (e, k) {
+    var a = P(e[0]), b = P(e[1]), key = chiaveP(e[0], e[1], G.orientato), ev = opz.evArchi && opz.evArchi[key], c = ev ? COL_A[ev] : ["l-muted", "#5b6270", 1.4];
+    var dx = b[0] - a[0], dy = b[1] - a[1], l = Math.sqrt(dx * dx + dy * dy), ux = dx / l, uy = dy / l;
+    var doppio = G.orientato && esiste[e[1] + ">" + e[0]];
+    var curva = (G.curve && G.curve[k]) || (doppio ? 0.2 : 0);
+    var x1 = a[0] + ux * R, y1 = a[1] + uy * R, x2 = b[0] - ux * (R + (G.orientato ? 2 : 0)), y2 = b[1] - uy * (R + (G.orientato ? 2 : 0)), d, ang, mx, my;
+    if (curva) {
+      var cx = (a[0] + b[0]) / 2 - uy * curva * l, cy = (a[1] + b[1]) / 2 + ux * curva * l;
+      var vx = cx - a[0], vy = cy - a[1], vl = Math.sqrt(vx * vx + vy * vy); x1 = a[0] + vx / vl * R; y1 = a[1] + vy / vl * R;
+      var wx = b[0] - cx, wy = b[1] - cy, wl = Math.sqrt(wx * wx + wy * wy); x2 = b[0] - wx / wl * (R + 2); y2 = b[1] - wy / wl * (R + 2);
+      d = "M" + r1p(x1) + " " + r1p(y1) + " Q" + r1p(cx) + " " + r1p(cy) + " " + r1p(x2) + " " + r1p(y2); ang = Math.atan2(wy, wx);
+      mx = 0.25 * a[0] + 0.5 * cx + 0.25 * b[0]; my = 0.25 * a[1] + 0.5 * cy + 0.25 * b[1];
+    } else { d = "M" + r1p(x1) + " " + r1p(y1) + " L" + r1p(x2) + " " + r1p(y2); ang = Math.atan2(dy, dx); mx = (a[0] + b[0]) / 2; my = (a[1] + b[1]) / 2; }
+    s.push('<path d="' + d + '" fill="none" class="' + c[0] + '" stroke="' + c[1] + '" stroke-width="' + c[2] + '"' + (c[3] ? ' stroke-dasharray="' + c[3] + '"' : '') + '/>');
+    if (G.orientato) s.push('<path d="M' + r1p(x2) + ' ' + r1p(y2) + ' l' + r1p(-9 * Math.cos(ang - 0.38)) + ' ' + r1p(-9 * Math.sin(ang - 0.38)) + ' l' + r1p(9 * Math.cos(ang - 0.38) - 9 * Math.cos(ang + 0.38)) + ' ' + r1p(9 * Math.sin(ang - 0.38) - 9 * Math.sin(ang + 0.38)) + ' z" class="' + c[0].replace("l-", "t-") + '" fill="' + c[1] + '"/>');
+    if (!opz.senzaPesi) {
+      // il peso sta un po' di lato rispetto al punto medio, dalla parte «esterna»
+      var nx = -uy, ny = ux, off = curva ? 0 : 10, tx = mx + nx * off, ty = my + ny * off, txt = String(e[2]), bw = 7 * txt.length + 8;
+      etichette.push('<rect x="' + r1p(tx - bw / 2) + '" y="' + r1p(ty - 9) + '" width="' + r1p(bw) + '" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/>' +
+        '<text x="' + r1p(tx) + '" y="' + r1p(ty + 4.5) + '" font-size="12.5" font-weight="700" text-anchor="middle" class="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[0].replace("l-", "t-") : "t-peso") + '" fill="' + (ev && ev !== "scartato" && ev !== "tenue" ? c[1] : "#6d3fc0") + '">' + escP(txt) + '</text>');
+    }
+  });
+  s.push(etichette.join(""));
+  G.V.forEach(function (v) {
+    var p = P(v), st = STILE_P[(opz.evNodi && opz.evNodi[v]) || "n"], lab = escP(v), fs = lab.length > 2 ? 12 : 14;
+    s.push('<circle cx="' + r1p(p[0]) + '" cy="' + r1p(p[1]) + '" r="' + R + '" class="' + st[0] + '" fill="' + st[1] + '" stroke="' + st[2] + '" stroke-width="1.6"/>');
+    s.push('<text x="' + r1p(p[0]) + '" y="' + r1p(p[1] + 5) + '" font-size="' + fs + '" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">' + lab + '</text>');
+    if (opz.numeri && opz.numeri[v] !== undefined) {
+      s.push('<circle cx="' + r1p(p[0] + R * 0.85) + '" cy="' + r1p(p[1] - R * 0.85) + '" r="8.5" class="t-viola" fill="#6d3fc0"/>');
+      s.push('<text x="' + r1p(p[0] + R * 0.85) + '" y="' + r1p(p[1] - R * 0.85 + 3.6) + '" font-size="10.5" font-weight="700" text-anchor="middle" class="t-su-viola" fill="#ffffff">' + opz.numeri[v] + '</text>');
+    }
+    if (opz.etich && opz.etich[v] !== undefined && opz.etich[v] !== "") {
+      var pos = (opz.etichPos && opz.etichPos[v]) || (G.pos[v][1] <= 0.01 ? "su" : (G.pos[v][1] >= Math.max.apply(null, ys) - 0.01 ? "giu" : (G.pos[v][0] <= 0.01 ? "sx" : "dx")));
+      var ex = p[0], ey = p[1], an = "middle";
+      if (pos === "su") ey = p[1] - R - 7; else if (pos === "giu") ey = p[1] + R + 15; else if (pos === "sx") { ex = p[0] - R - 5; ey = p[1] - R + 2; an = "end"; } else { ex = p[0] + R + 5; ey = p[1] - R + 2; an = "start"; }
+      s.push('<text x="' + r1p(ex) + '" y="' + r1p(ey) + '" font-size="12" font-weight="700" text-anchor="' + an + '" class="t-arancio" fill="#b4500f">' + escP(opz.etich[v]) + '</text>');
+    }
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+// archi scelti -> mappa per evArchi
+function evDa(archi, colore, G) { var r = {}; archi.forEach(function (e) { r[chiaveP(e[0], e[1], G.orientato)] = colore; }); return r; }
+
+// ---------------------------------------------------------------- Kruskal (Codice 11.2, con union-find)
+// spareggio: a parità di peso si segue l'ordine di G.E (come alla lavagna)
+function ordinaArchi(G) { return G.E.map(function (e, k) { return [e[0], e[1], e[2], k]; }).sort(function (a, b) { return a[2] - b[2] || a[3] - b[3]; }); }
+function eventiKruskal(G) {
+  var ord = ordinaArchi(G), padre = {}, ev = [], T = [], scart = [], nFind = 0, nUnion = 0;
+  G.V.forEach(function (v) { padre[v] = v; });
+  function find(x) { nFind++; while (padre[x] !== x) x = padre[x]; return x; }
+  function insiemi() { var g = {}; G.V.forEach(function (v) { var r = v; while (padre[r] !== r) r = padre[r]; (g[r] = g[r] || []).push(v); }); return Object.keys(g).map(function (k) { return g[k]; }); }
+  ev.push({ k: -1, testo: "Gli archi sono ordinati per peso; T non ha archi; ogni vertice è un insieme da solo (MAKESET).", T: [], scart: [], insiemi: insiemi(), nFind: 0, nUnion: 0, ord: ord });
+  ord.forEach(function (e, k) {
+    var tx = find(e[0]), ty = find(e[1]), ok = tx !== ty, testo;
+    if (ok) { padre[ty] = tx; nUnion++; T.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") ≠ FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " non sono connessi in T. UNION dei due insiemi; l'arco entra in T."; }
+    else { scart.push(e); testo = "(" + e[0] + ", " + e[1] + ") peso " + e[2] + ": FIND(" + e[0] + ") = FIND(" + e[1] + "), quindi " + e[0] + " e " + e[1] + " sono già connessi in T. L'arco formerebbe un ciclo: si scarta."; }
+    ev.push({ k: k, preso: ok, testo: testo, T: T.slice(), scart: scart.slice(), insiemi: insiemi(), nFind: nFind, nUnion: nUnion, ord: ord });
+  });
+  return ev;
+}
+// ---------------------------------------------------------------- Prim (Codice 11.4, con d e vicino)
+function eventiPrim(G, s) {
+  var d = {}, vic = {}, inT = {}, VT = [], ET = [], ev = [];
+  G.V.forEach(function (v) { d[v] = Infinity; vic[v] = null; });
+  function foto(testo, y, cambiati) { var dd = {}, vv = {}; G.V.forEach(function (v) { dd[v] = d[v]; vv[v] = vic[v]; }); ev.push({ testo: testo, d: dd, vicino: vv, VT: VT.slice(), ET: ET.slice(), y: y, cambiati: cambiati || [] }); }
+  foto("All'inizio la struttura è vuota: d[v] = ∞ per ogni vertice, e vicino non è definito.", null);
+  var primo = true;
+  while (VT.length < G.V.length) {
+    var y = null;
+    if (primo && s !== undefined && s !== null) y = s;
+    else G.V.forEach(function (v) { if (!inT[v] && (y === null || d[v] < d[y])) y = v; });
+    var t;
+    inT[y] = true; VT.push(y);
+    if (d[y] !== Infinity) { ET.push([vic[y], y, d[y]]); t = "Tra i vertici fuori da T, " + y + " ha d minima (" + d[y] + "): entra in T con l'arco (" + vic[y] + ", " + y + ") di peso " + d[y] + "."; }
+    else t = "Prima iterazione: tutte le d valgono ∞, quindi si può prendere un vertice qualsiasi. Si sceglie " + y + ", che entra in T senza archi.";
+    var camb = [];
+    adiacentiP(G, y).forEach(function (p) { var z = p[0], w = p[1]; if (!inT[z] && w < d[z]) { d[z] = w; vic[z] = y; camb.push(z); } });
+    t += camb.length ? " Si guardano gli archi di " + y + ": migliorano " + camb.map(function (z) { return "d[" + z + "] = " + d[z]; }).join(", ") + " (con vicino " + y + ")." : " Nessun vertice fuori da T diventa più vicino passando da " + y + ".";
+    foto(t, y, camb);
+    primo = false;
+  }
+  return ev;
+}
+// tutti gli alberi ricoprenti (per grafi piccoli): restituisce [{archi, peso}]
+function tuttiAlberi(G) {
+  var n = G.V.length, m = G.E.length, r = [];
+  function rec(i, scelti) {
+    if (scelti.length === n - 1) { if (connessoCon(G, scelti)) r.push({ archi: scelti.slice(), peso: pesoTot(scelti) }); return; }
+    if (i >= m || m - i < n - 1 - scelti.length) return;
+    scelti.push(G.E[i]); rec(i + 1, scelti); scelti.pop(); rec(i + 1, scelti);
+  }
+  rec(0, []);
+  return r;
+}
+function connessoCon(G, archi) {
+  var p = {}; G.V.forEach(function (v) { p[v] = v; });
+  function f(x) { while (p[x] !== x) x = p[x]; return x; }
+  var c = G.V.length; archi.forEach(function (e) { var a = f(e[0]), b = f(e[1]); if (a !== b) { p[a] = b; c--; } });
+  return c === 1;
+}
+
+// ---- complessita.js
+// Pacchi 29–31 (complessità, NP, NP-completezza): grafi della lavagna, formule booleane, riduzioni, disegni.
+function escC(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function r1c(v) { return Math.round(v * 10) / 10; }
+// ---------------------------------------------------------------- grafi non orientati (senza pesi: peso 0)
+function GN(nome, V, pos, archi) { return { nome: nome, orientato: false, V: V, pos: pos, E: archi.map(function (a) { return [a[0], a[1], 0]; }) }; }
+var GC = {
+  esagono: GN("l'esagono della lavagna (A–F)", ["A", "B", "C", "D", "E", "F"], { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "F"], ["C", "F"], ["D", "E"], ["B", "D"], ["E", "F"]]),
+  esagono2: GN("l'esagono con gli archi C–D e D–F in più", ["A", "B", "C", "D", "E", "F"], { A: [0, 1], B: [0.9, 0], C: [0.9, 2], D: [2.3, 0], E: [3.2, 1], F: [2.3, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "F"], ["C", "F"], ["D", "E"], ["B", "D"], ["E", "F"], ["C", "D"], ["D", "F"]]),
+  K4: GN("il grafo completo con 4 vertici", ["1", "2", "3", "4"], { 1: [0, 0], 2: [1, 0], 3: [1, 1], 4: [0, 1] }, [["1", "2"], ["1", "3"], ["1", "4"], ["2", "3"], ["2", "4"], ["3", "4"]]),
+  K5: GN("il grafo completo con 5 vertici", ["1", "2", "3", "4", "5"], { 1: [0.95, 0], 2: [1.9, 0.7], 3: [1.55, 1.8], 4: [0.35, 1.8], 5: [0, 0.7] },
+    [["1", "2"], ["1", "3"], ["1", "4"], ["1", "5"], ["2", "3"], ["2", "4"], ["2", "5"], ["3", "4"], ["3", "5"], ["4", "5"]]),
+  quadrato: GN("un quadrato", ["A", "B", "C", "D"], { A: [0, 0], B: [1, 0], C: [1, 1], D: [0, 1] }, [["A", "B"], ["B", "C"], ["C", "D"], ["D", "A"]]),
+  casetta: GN("un grafo con cinque vertici", ["A", "B", "C", "D", "E"], { A: [0, 0], B: [1, 0], C: [0, 1], D: [1.5, 1], E: [1, 2] },
+    [["A", "B"], ["A", "C"], ["B", "C"], ["B", "D"], ["C", "D"], ["C", "E"], ["D", "E"]]),
+  // lavagna 33, pagine 15–16: G e il suo complementare
+  sei: GN("il grafo G della lavagna (v1–v6)", ["v1", "v2", "v3", "v4", "v5", "v6"], { v1: [0, 0.6], v2: [1, 0], v3: [2, 0.6], v4: [2, 1.8], v5: [1, 2.4], v6: [0, 1.8] },
+    [["v1", "v2"], ["v2", "v3"], ["v3", "v4"], ["v4", "v5"], ["v5", "v6"], ["v6", "v1"], ["v2", "v4"], ["v2", "v6"], ["v4", "v6"]])
+};
+function complementare(G, nome) {
+  var c = [], es = {};
+  G.E.forEach(function (e) { es[chiaveP(e[0], e[1], false)] = true; });
+  for (var i = 0; i < G.V.length; i++) for (var j = i + 1; j < G.V.length; j++) if (!es[chiaveP(G.V[i], G.V[j], false)]) c.push([G.V[i], G.V[j], 0]);
+  return { nome: nome || "il complementare di " + G.nome, orientato: false, V: G.V, pos: G.pos, E: c };
+}
+GC.seiC = complementare(GC.sei, "il complementare G' (lavagna, pagina 15)");
+function adiacenti(G, u, v) { return G.E.some(function (e) { return (e[0] === u && e[1] === v) || (e[0] === v && e[1] === u); }); }
+function eCricca(G, S) { for (var i = 0; i < S.length; i++) for (var j = i + 1; j < S.length; j++) if (!adiacenti(G, S[i], S[j])) return [S[i], S[j]]; return null; }
+function eIndipendente(G, S) { for (var i = 0; i < S.length; i++) for (var j = i + 1; j < S.length; j++) if (adiacenti(G, S[i], S[j])) return [S[i], S[j]]; return null; }
+function sottoinsiemi(V, k) { var r = []; (function rec(i, S) { if (S.length === k) { r.push(S.slice()); return; } if (i === V.length) return; S.push(V[i]); rec(i + 1, S); S.pop(); rec(i + 1, S); })(0, []); return r; }
+function criccheDi(G, k) { return sottoinsiemi(G.V, k).filter(function (S) { return !eCricca(G, S); }); }
+function criccaMassima(G) { for (var k = G.V.length; k >= 1; k--) { var c = criccheDi(G, k); if (c.length) return { k: k, cricche: c }; } return { k: 0, cricche: [] }; }
+function archiDentro(G, S) { var r = {}; G.E.forEach(function (e) { if (S.indexOf(e[0]) >= 0 && S.indexOf(e[1]) >= 0) r[chiaveP(e[0], e[1], false)] = "verde"; }); return r; }
+function nodiDi(S, stile) { var r = {}; S.forEach(function (v) { r[v] = stile || "verde"; }); return r; }
+
+// ---------------------------------------------------------------- formule in forma normale congiuntiva
+// formula: array di clausole; clausola: array di letterali { v: "x", neg: bool }
+function F(testo) { // "x | -y | z ; -x | -y" -> formula
+  return testo.split(";").map(function (c) { return c.trim().split("|").map(function (l) { l = l.trim(); return l[0] === "-" ? { v: l.slice(1), neg: true } : { v: l, neg: false }; }); });
+}
+function variabili(phi) { var V = []; phi.forEach(function (c) { c.forEach(function (l) { if (V.indexOf(l.v) < 0) V.push(l.v); }); }); return V; }
+function letStr(l, html) { var nome = html ? l.v.replace(/(\d+)$/, "<sub>$1</sub>") : l.v; return l.neg ? (html ? '<span style="text-decoration:overline">' + nome + '</span>' : "¬" + l.v) : nome; }
+function clStr(c, html) { return c.length === 1 ? letStr(c[0], html) : "(" + c.map(function (l) { return letStr(l, html); }).join(" ∨ ") + ")"; }
+function phiStr(phi, html) { return phi.map(function (c) { return clStr(c, html); }).join(" ∧ "); }
+function valLet(l, f) { return l.neg ? 1 - f[l.v] : f[l.v]; }
+function valCl(c, f) { return c.some(function (l) { return valLet(l, f) === 1; }) ? 1 : 0; }
+function valPhi(phi, f) { return phi.every(function (c) { return valCl(c, f) === 1; }) ? 1 : 0; }
+function tuttiAssegnamenti(V) { var r = []; for (var m = 0; m < (1 << V.length); m++) { var f = {}; V.forEach(function (v, i) { f[v] = (m >> (V.length - 1 - i)) & 1; }); r.push(f); } return r; }
+function idLet(v, neg, cl) { return (neg ? v + "\u0304" : v) + String(cl).split("").map(function (d) { return "₀₁₂₃₄₅₆₇₈₉"[Number(d)]; }).join(""); }
+// la riduzione da SODD a CLIQUE (lavagna 33, pagina 18): un vertice per ogni occorrenza di letterale
+function riduzioneSoddClique(phi) {
+  var V = [], info = {}, pos = {}, E = [];
+  phi.forEach(function (c, i) {
+    c.forEach(function (l, j) {
+      var id = idLet(l.v, l.neg, i + 1);
+      V.push(id); info[id] = { l: l, cl: i };
+      var m = phi.length, th = -Math.PI / 2 + 2 * Math.PI * i / m, Rr = m <= 2 ? 1.1 : 1.7, sp = 0.8, off = (j - (c.length - 1) / 2) * sp;
+      pos[id] = m === 1 ? [j * 1.2, 0] : [Rr * Math.cos(th) - off * Math.sin(th), Rr * Math.sin(th) + off * Math.cos(th)];
+    });
+  });
+  for (var a = 0; a < V.length; a++) for (var b = a + 1; b < V.length; b++) {
+    var u = info[V[a]], w = info[V[b]];
+    if (u.cl !== w.cl && !(u.l.v === w.l.v && u.l.neg !== w.l.neg)) E.push([V[a], V[b], 0]);
+  }
+  var mx = Math.min.apply(null, V.map(function (v) { return pos[v][0]; })), my = Math.min.apply(null, V.map(function (v) { return pos[v][1]; }));
+  V.forEach(function (v) { pos[v] = [pos[v][0] - mx, pos[v][1] - my]; });
+  return { G: { nome: "il grafo costruito da φ", orientato: false, V: V, pos: pos, E: E }, k: phi.length, info: info };
+}
+// assegnamento (parziale) letto da una cricca della riduzione
+function assegnamentoDaCricca(rid, S) { var f = {}; S.forEach(function (id) { var l = rid.info[id].l; f[l.v] = l.neg ? 0 : 1; }); return f; }
+
+// ---------------------------------------------------------------- disegni
+// insiemi annidati: [{ nome, stile }] dal più esterno al più interno
+function svgAnnidati(classi, opz) {
+  opz = opz || {};
+  var W = opz.W || 420, H = opz.H || 230, s = [], n = classi.length;
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || classi.map(function (c) { return c.nome; }).join(" contenuto in ")) + '" font-family="system-ui, sans-serif">');
+  var COL = { blu: ["l-blu", "#2f52c4", "t-blu"], verde: ["l-verde", "#17803d", "t-verde"], rosso: ["l-rosso", "#b42318", "t-rosso"], arancio: ["l-arancio", "#b4500f", "t-arancio"], viola: ["l-viola", "#6d3fc0", "t-viola"] };
+  classi.forEach(function (c, i) {
+    var f = c.f || (1 - i * (0.78 / Math.max(1, n))), rx = (W / 2 - 8) * f, ry = (H / 2 - 8) * f, cx = W / 2 + (opz.sposta || 0) * i, cy = H / 2 + (opz.giu || 6) * i, col = COL[c.stile || "blu"];
+    s.push('<ellipse cx="' + r1c(cx) + '" cy="' + r1c(cy) + '" rx="' + r1c(rx) + '" ry="' + r1c(ry) + '" class="' + col[0] + '" fill="none" stroke="' + col[1] + '" stroke-width="1.8"/>');
+    var ultimo = i === n - 1, lx = cx, ly = ultimo ? (c.dentro ? cy - ry + 20 : cy + 5) : cy - ry + 18;
+    s.push('<text x="' + r1c(lx) + '" y="' + r1c(ly) + '" font-size="13" font-weight="700" class="' + col[2] + '" fill="' + col[1] + '" text-anchor="middle">' + escC(c.nome) + '</text>');
+    (c.dentro || []).forEach(function (t, j) { s.push('<text x="' + r1c(cx + (c.dx || 0)) + '" y="' + r1c(cy - ry * 0.55 + 16 * j + (c.dy || 0)) + '" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">' + escC(t) + '</text>'); });
+  });
+  (opz.extra || []).forEach(function (x) { s.push(x); });
+  s.push('</svg>');
+  return s.join("");
+}
+// catena di scatole: pezzi = [{ t: "testo sulla freccia" } | { box: "nome", stile, sotto: "nota" }]; esito: true per le due uscite 0/1
+function svgScatole(pezzi, opz) {
+  opz = opz || {};
+  var x = 8, y = opz.y || (opz.gruppo ? 34 : 24), h = 38, s = [], parti = [], gruppo = opz.gruppo;
+  pezzi.forEach(function (p) {
+    if (p.box) { var w = Math.max(54, 9.5 * p.box.replace(/<[^>]+>/g, "").length + 22); parti.push({ tipo: "b", x: x, w: w, p: p }); x += w; }
+    else { var w2 = Math.max(46, 7 * (p.t || "").length + 18); parti.push({ tipo: "f", x: x, w: w2, p: p }); x += w2; }
+  });
+  var W = x + (opz.esito ? 44 : 8), H = y + h + (opz.alto || 34);
+  s.push('<svg viewBox="0 0 ' + r1c(W) + ' ' + H + '" width="' + r1c(W) + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || "schema") + '" font-family="system-ui, sans-serif">');
+  if (gruppo) {
+    var b0 = parti.filter(function (q) { return q.tipo === "b"; }), gx = b0[0].x - 8, gw = b0[b0.length - 1].x + b0[b0.length - 1].w - gx + 8;
+    s.push('<rect x="' + r1c(gx) + '" y="' + (y - 10) + '" width="' + r1c(gw) + '" height="' + (h + 20) + '" rx="6" class="r-arancio" fill="#fdf0e3" stroke="#b4500f" stroke-width="1.5" fill-opacity="0.5"/>');
+    s.push('<text x="' + r1c(gx + 6) + '" y="' + (y - 15) + '" font-size="13" font-weight="700" class="t-arancio" fill="#b4500f">' + gruppo + '</text>');
+  }
+  parti.forEach(function (q) {
+    if (q.tipo === "b") {
+      s.push('<rect x="' + r1c(q.x) + '" y="' + y + '" width="' + r1c(q.w) + '" height="' + h + '" rx="5" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/>');
+      s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (y + 24) + '" font-size="14" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">' + q.p.box + '</text>');
+      if (q.p.sotto) s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (y + h + 15) + '" font-size="11" text-anchor="middle" class="t-arancio" fill="#b4500f">' + escC(q.p.sotto) + '</text>');
+    } else {
+      var yy = y + h / 2;
+      s.push('<line x1="' + r1c(q.x) + '" y1="' + yy + '" x2="' + r1c(q.x + q.w - 4) + '" y2="' + yy + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      s.push('<path d="M' + r1c(q.x + q.w) + ' ' + yy + ' l-8 -4.5 l0 9 z" class="punta" fill="#5b6270"/>');
+      if (q.p.t) s.push('<text x="' + r1c(q.x + q.w / 2) + '" y="' + (yy - 7) + '" font-size="11.5" text-anchor="middle" class="t-testo" fill="#1f2328">' + q.p.t + '</text>');
+    }
+  });
+  if (opz.esito) {
+    var ex = x, yy2 = y + h / 2;
+    [["0", -14], ["1", 14]].forEach(function (u) {
+      s.push('<line x1="' + r1c(ex) + '" y1="' + yy2 + '" x2="' + r1c(ex + 22) + '" y2="' + (yy2 + u[1]) + '" class="l-muted" stroke="#5b6270" stroke-width="1.5"/>');
+      s.push('<text x="' + r1c(ex + 30) + '" y="' + (yy2 + u[1] + 4) + '" font-size="12.5" class="t-testo" fill="#1f2328">' + u[0] + '</text>');
+    });
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// albero di computazione delle scelte indovina per un SODD con variabili V
+function svgComputazione(phi, opz) {
+  opz = opz || {};
+  var V = opz.V || variabili(phi), n = V.length, foglie = 1 << n, dx = opz.dx || 46, dy = opz.dy || 54, W = foglie * dx + 20, H = (n + 1) * dy + 34, s = [];
+  s.push('<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' + escC(opz.aria || "albero di computazione") + '" font-family="system-ui, sans-serif">');
+  function X(livello, idx) { var larg = foglie / (1 << livello); return 10 + (idx + 0.5) * larg * dx; }
+  for (var l = 0; l <= n; l++) for (var i = 0; i < (1 << l); i++) {
+    var x = X(l, i), y = 22 + l * dy;
+    if (l < n) [0, 1].forEach(function (b) {
+      var x2 = X(l + 1, 2 * i + b), y2 = y + dy, ev = opz.cammino && opz.cammino.slice(0, l + 1).join("") === (i.toString(2).padStart(l, "0") + b).slice(-(l + 1));
+      s.push('<line x1="' + r1c(x) + '" y1="' + (y + 10) + '" x2="' + r1c(x2) + '" y2="' + (y2 - 12) + '" class="' + (ev ? "l-verde" : "l-muted") + '" stroke="' + (ev ? "#17803d" : "#5b6270") + '" stroke-width="' + (ev ? 3 : 1.4) + '"/>');
+      s.push('<text x="' + r1c((x + x2) / 2 + (b ? 7 : -7)) + '" y="' + r1c((y + y2) / 2) + '" font-size="11" text-anchor="middle" class="t-blu" fill="#2f52c4">' + b + '</text>');
+    });
+    if (l < n) s.push('<text x="' + r1c(x) + '" y="' + (y + 5) + '" font-size="13" font-weight="700" text-anchor="middle" class="t-testo" fill="#1f2328">' + letStr({ v: V[l] }, false) + '</text>');
+    else {
+      var f = {}, bits = n ? i.toString(2).padStart(n, "0") : ""; V.forEach(function (v, k) { f[v] = Number(bits[k]); });
+      var val = valPhi(phi, f);
+      s.push('<rect x="' + r1c(x - 13) + '" y="' + (y - 11) + '" width="26" height="22" rx="4" class="' + (val ? "r-verde" : "r-rosso") + '" fill="' + (val ? "#e6f5ea" : "#fdecea") + '" stroke="' + (val ? "#17803d" : "#b42318") + '" stroke-width="1.4"/>');
+      s.push('<text x="' + r1c(x) + '" y="' + (y + 5) + '" font-size="13" font-weight="700" text-anchor="middle" class="' + (val ? "t-verde" : "t-rosso") + '" fill="' + (val ? "#17803d" : "#b42318") + '">' + val + '</text>');
+      if (opz.etichette !== false) s.push('<text x="' + r1c(x) + '" y="' + (y + 27) + '" font-size="10" text-anchor="middle" class="t-muted" fill="#5b6270">' + bits + '</text>');
+    }
+  }
+  s.push('</svg>');
+  return s.join("");
+}
+// un grafo di 8 vertici con una cricca di 4 nascosta (per i riquadri)
+GC.otto = (function () {
+  var V = ["1", "2", "3", "4", "5", "6", "7", "8"], pos = {};
+  V.forEach(function (v, i) { var a = -Math.PI / 2 + i * 2 * Math.PI / 8; pos[v] = [1.25 + 1.25 * Math.cos(a), 1.25 + 1.25 * Math.sin(a)]; });
+  return GN("un grafo di 8 vertici", V, pos, [["2", "4"], ["2", "5"], ["2", "7"], ["4", "5"], ["4", "7"], ["5", "7"], ["1", "2"], ["1", "3"], ["2", "3"], ["3", "4"], ["5", "6"], ["6", "7"], ["7", "8"], ["8", "1"], ["1", "5"], ["3", "6"], ["4", "8"], ["6", "8"]]);
+})();
+
+// ---- w29.js
+// Riquadri interattivi del pacco 29.
+function $(id) { return document.getElementById(id); }
+
+// ---------------------------------------------------------------- 1. che tipo di problema è?
+(function () {
+  if (!$("tp-corpo")) return;
+  var DOM = [
+    ["Dato un grafo G e due vertici s e t, trovare un cammino da s a t.", "ricerca", "Si chiede una soluzione qualsiasi (un cammino), senza un criterio per sceglierne una migliore delle altre."],
+    ["Dato un grafo pesato G e due vertici s e t, trovare un cammino da s a t di peso minimo.", "ottimizzazione", "Tra tutti i cammini da s a t (le soluzioni) se ne vuole uno con il peso più piccolo: c'è un criterio di ottimalità."],
+    ["Dato un grafo pesato G, due vertici s e t e un intero k, esiste un cammino da s a t di peso ≤ k?", "decisione", "La risposta è sì o no: S = {0, 1}."],
+    ["Dato un array, trovare una permutazione dei suoi elementi in ordine crescente.", "ricerca", "Si vuole una soluzione (l'array ordinato); non ce n'è una «migliore» delle altre."],
+    ["Dato un grafo non orientato G, trovare il minimo numero di colori con cui colorarne i vertici in modo che vertici adiacenti abbiano colori diversi.", "ottimizzazione", "Tra le colorazioni ammissibili si cerca quella con meno colori."],
+    ["Dato un grafo non orientato G e un intero k, si possono colorare i vertici con k colori in modo che vertici adiacenti abbiano colori diversi?", "decisione", "Sì o no: è la versione di decisione della colorazione."],
+    ["Dato un grafo non orientato G, è connesso?", "decisione", "Sì o no (lavagna, pagina 29)."],
+    ["Dato un grafo non orientato connesso, trovare un suo albero ricoprente.", "ricerca", "Va bene un albero ricoprente qualsiasi (lavagna, pagina 26)."],
+    ["Dato un grafo non orientato, trovare un sottografo completo con il massimo numero di vertici.", "ottimizzazione", "È la cricca massima (lavagna, pagina 33)."],
+    ["Data una formula booleana, esiste un assegnamento delle variabili che la rende vera?", "decisione", "Sì o no: è il problema SODD (pacco 30)."]
+  ];
+  $("tp-corpo").innerHTML = '<p class="piccolo">Per ogni problema scegli il tipo. La risposta compare subito.</p>' + DOM.map(function (d, i) {
+    return '<div style="margin:10px 0"><p style="margin:4px 0"><b>' + (i + 1) + '.</b> ' + d[0] + '</p><div class="controlli">' + ["ricerca", "ottimizzazione", "decisione"].map(function (t) { return '<button data-q="' + i + '" data-t="' + t + '">' + t + '</button>'; }).join("") + '</div><div class="narrazione" id="tp-r' + i + '" style="display:none"></div></div>';
+  }).join("") + '<div class="contatori" id="tp-cont"></div>';
+  var giuste = {};
+  Array.prototype.forEach.call($("tp-corpo").querySelectorAll("button[data-q]"), function (b) {
+    b.onclick = function () {
+      var i = Number(b.getAttribute("data-q")), t = b.getAttribute("data-t"), d = DOM[i], r = $("tp-r" + i), ok = t === d[1];
+      r.style.display = ""; r.innerHTML = (ok ? '<span class="ok">Giusto: ' : '<span class="errore">No: è un problema di ') + d[1] + '.</span> ' + d[2];
+      if (ok) giuste[i] = true; else delete giuste[i];
+      $("tp-cont").innerHTML = '<span>risposte giuste: <b>' + Object.keys(giuste).length + '</b> su ' + DOM.length + '</span>';
+    };
+  });
+})();
+
+// ---------------------------------------------------------------- 2. la macchina che si ripete
+(function () {
+  if (!$("mc-corpo")) return;
+  var COD = ["1: <b>IF</b> (x <b>OR</b> y) = z <b>THEN GOTO</b> 5", "2: x ← <b>NOT</b> x", "3: y ← <b>NOT</b> y", "4: <b>GOTO</b> 1", "5: <b>STOP</b>"];
+  $("mc-corpo").innerHTML = '<p class="piccolo">Il programma qui sotto ha p = 5 istruzioni e una memoria di s = 3 celle (x, y, z) da k = 1 bit: in tutto le configurazioni possibili (istruzione da eseguire, contenuto della memoria) sono p · 2<sup>k·s</sup> = 5 · 2<sup>3</sup> = 40. Scegli i valori iniziali ed esegui.</p>' +
+    '<pre class="pseudo" id="mc-cod"></pre><div class="controlli"><label>x <select id="mc-x"><option>0</option><option selected>1</option></select></label><label>y <select id="mc-y"><option selected>0</option><option>1</option></select></label><label>z <select id="mc-z"><option selected>0</option><option>1</option></select></label>' +
+    '<button id="mc-passo">Un passo</button><button id="mc-tutto">Fino alla fine o alla prima ripetizione</button><button id="mc-reset">Ricomincia</button></div>' +
+    '<div class="contatori" id="mc-cont"></div><div class="tabella-wrap"><table id="mc-tab"></table></div><div class="narrazione" id="mc-txt"></div>';
+  var S;
+  function reset() { S = { pc: 1, x: Number($("mc-x").value), y: Number($("mc-y").value), z: Number($("mc-z").value), storia: [], visti: {}, fine: null }; registra(); mostra(); }
+  function chiave() { return S.pc + "|" + S.x + S.y + S.z; }
+  function registra() { var k = chiave(); if (S.visti[k] !== undefined) { S.fine = { tipo: "loop", prima: S.visti[k] }; } else S.visti[k] = S.storia.length; S.storia.push({ pc: S.pc, x: S.x, y: S.y, z: S.z }); }
+  function passo() {
+    if (S.fine) return;
+    if (S.pc === 1) S.pc = ((S.x | S.y) === S.z) ? 5 : 2;
+    else if (S.pc === 2) { S.x = 1 - S.x; S.pc = 3; }
+    else if (S.pc === 3) { S.y = 1 - S.y; S.pc = 4; }
+    else if (S.pc === 4) S.pc = 1;
+    else if (S.pc === 5) { S.fine = { tipo: "stop" }; return; }
+    registra();
+    if (S.pc === 5 && !S.fine) S.fine = { tipo: "stop" };
+  }
+  function mostra() {
+    $("mc-cod").innerHTML = COD.map(function (r, i) { return '<span class="riga' + (S.pc === i + 1 ? " ora" : "") + '">' + r + '</span>'; }).join("");
+    $("mc-tab").innerHTML = '<thead><tr><th>passo</th><th>istruzione da eseguire</th><th>x</th><th>y</th><th>z</th></tr></thead><tbody>' + S.storia.map(function (c, i) {
+      var rip = S.fine && S.fine.tipo === "loop" && (i === S.fine.prima || i === S.storia.length - 1);
+      return '<tr' + (rip ? ' style="background:var(--hl)"' : '') + '><td>' + i + '</td><td>' + c.pc + '</td><td>' + c.x + '</td><td>' + c.y + '</td><td>' + c.z + '</td></tr>';
+    }).join("") + '</tbody>';
+    $("mc-cont").innerHTML = '<span>passi eseguiti: <b>' + (S.storia.length - 1) + '</b></span><span>configurazioni diverse viste: <b>' + Object.keys(S.visti).length + '</b> su 40</span>';
+    var t;
+    if (!S.fine) t = "Configurazione attuale: istruzione " + S.pc + ", x = " + S.x + ", y = " + S.y + ", z = " + S.z + ".";
+    else if (S.fine.tipo === "stop") t = "Il programma termina dopo " + (S.storia.length - 1) + " passi: tutte le configurazioni attraversate sono diverse, e sono meno di 40.";
+    else t = "La configurazione del passo " + (S.storia.length - 1) + " è uguale a quella del passo " + S.fine.prima + " (righe evidenziate): stessa istruzione e stessa memoria. Il programma è deterministico, quindi da qui in poi rifarà esattamente gli stessi passi, per sempre: è un loop infinito. Un programma che termina, invece, non può mai ripetere una configurazione, quindi fa al più 40 passi.";
+    $("mc-txt").textContent = t;
+    $("mc-passo").disabled = $("mc-tutto").disabled = !!S.fine;
+  }
+  $("mc-passo").onclick = function () { passo(); mostra(); };
+  $("mc-tutto").onclick = function () { var g = 0; while (!S.fine && g++ < 100) passo(); mostra(); };
+  $("mc-reset").onclick = reset; ["mc-x", "mc-y", "mc-z"].forEach(function (id) { $(id).onchange = reset; });
+  reset();
+})();
+})();
+</script>
+</body>
+</html>
