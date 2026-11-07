@@ -53,7 +53,7 @@ Spiegazioni delle lezioni di **Algoritmi e Strutture Dati**. Ogni pagina raccogl
 | Livello 4 · Trappole e varianti | chiavi uguali al perno, scambi tardivi, AVL di altezza massima, 2-3 con il massimo di nodi; costi sui vertici, due sorgenti, grafi non connessi, programmazione dinamica | 72–93 |
 | Livello 5 · Simulazioni d'esame | cinque scritti completi da 2 ore, con la soluzione e la griglia di correzione | 94–108 |
 | Livello extra · Fuori programma | facoltativo: ricerca binaria, teorema fondamentale, conteggio dei confronti, pile e code, radixSort, analisi ammortizzata, union-find, greedy, Prim, Bellman–Ford, tabelle hash e re-hashing, complessità e NP | 109–129 |
-| L'esame orale | come si svolge, il galateo, 120 domande con le risposte (dai resoconti degli orali 2017–2026 e da tutto il programma), gli pseudocodici dei cinque algoritmi sui grafi, le dimostrazioni da lode, il piano dei dieci giorni, «Interrogami» e simulazioni d'orale | — |
+| L'esame orale | come si svolge, il galateo, 129 domande con le risposte (dai resoconti degli orali 2017–2026 e da tutto il programma), gli pseudocodici dei cinque algoritmi sui grafi e degli ordinamenti, le dimostrazioni da lode, il piano dei dieci giorni, «Interrogami» e simulazioni d'orale | — |
 
 ## Come si usa
 
