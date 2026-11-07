@@ -1233,8 +1233,8 @@ function seqHtml(A) { return "<b>" + A.join(" ") + "</b>"; }
 function ordinaN(A) { return A.slice().sort(function (a, b) { return a - b; }); }
 // ---------------------------------------------------------------- memoria del progresso (solo nel browser di chi studia)
 var MEM = (function () {
-  var K = "asd-allenamento-v1", st = { fatti: {}, parti: {}, griglie: {}, scritti: {}, tentativi: {}, e3viste: {} };
-  try { var x = JSON.parse(localStorage.getItem(K) || "null"); if (x && typeof x === "object") { ["fatti", "parti", "griglie", "scritti", "tentativi", "e3viste"].forEach(function (c) { if (x[c] && typeof x[c] === "object") st[c] = x[c]; }); } } catch (e) {}
+  var K = "asd-allenamento-v1", st = { fatti: {}, parti: {}, griglie: {}, scritti: {}, tentativi: {}, e3viste: {}, errori: {} };
+  try { var x = JSON.parse(localStorage.getItem(K) || "null"); if (x && typeof x === "object") { ["fatti", "parti", "griglie", "scritti", "tentativi", "e3viste", "errori"].forEach(function (c) { if (x[c] && typeof x[c] === "object") st[c] = x[c]; }); } } catch (e) {}
   function salva() { try { localStorage.setItem(K, JSON.stringify(st)); } catch (e) {} }
   return { st: st, salva: salva };
 })();
@@ -1387,7 +1387,7 @@ function matHtml(M, V, cambi) {
 // ---------------------------------------------------------------- i tipi di esercizio
 // ogni tipo: domanda(p) → HTML; formato → suggerimento; risposta(p) → testo della risposta giusta; verifica(p, testo) → {ok, msg}; soluzione(p) → HTML
 function confrontoSeq(giusta, data, cosa) {
-  if (!data) return { ok: false, msg: "Scrivi " + cosa + " come numeri separati da spazi." };
+  if (!data) return { ok: false, formato: true, msg: "Scrivi " + cosa + " come numeri separati da spazi." };
   if (data.length !== giusta.length) return { ok: false, msg: "Hai scritto " + data.length + " numeri, ma ne servono " + giusta.length + "." };
   for (var i = 0; i < giusta.length; i++) if (data[i] !== giusta[i]) return { ok: false, msg: "C'è un errore: il " + (i + 1) + "° numero non torna. Ricontrolla da lì." };
   return { ok: true };
@@ -1452,7 +1452,7 @@ TIPI.prop = {
   formato: "la visita anticipata del tuo albero",
   risposta: function (p) { return preordine(esempioProp(p)); },
   verifica: function (p, t) {
-    var v = numeri(t); if (!v) return { ok: false, msg: "Scrivi la visita anticipata come numeri separati da spazi." };
+    var v = numeri(t); if (!v) return { ok: false, formato: true, msg: "Scrivi la visita anticipata come numeri separati da spazi." };
     if (!senzaDoppi(v) || !stessiElementi(v, p.chiavi)) return { ok: false, msg: "La visita deve contenere esattamente le chiavi " + ordinaN(p.chiavi).join(" ") + ", una volta ciascuna." };
     var tt = bstDaPre(v); if (preordine(tt).join(" ") !== v.join(" ")) return { ok: false, msg: "Questa sequenza non è la visita anticipata di un albero binario di ricerca: dopo un nodo, prima vengono tutte le chiavi minori e poi tutte le maggiori." };
     if (p.diverso && preordine(tt).join(" ") === escluso(p)) return { ok: false, msg: "È proprio l'albero del punto precedente: ne serve uno diverso." };
@@ -1688,6 +1688,17 @@ function linkMetodo(e, p) {
 function testoFreno(e, p, fatti) {
   return '<span class="etichetta">Prima di guardare</span><p>' + (fatti === 0 ? "Non hai ancora provato a rispondere." : "Hai fatto un solo tentativo.") + " Una soluzione letta subito sembra chiara, ma allo scritto non resta: resta solo quello che hai fatto con le tue mani. Prova così:</p><ol><li>rifai l'esercizio su carta, scrivendo tutti i passaggi;</li><li>se il correttore ti ha detto da quale numero non torna, riparti da lì;</li><li>se non sai da dove cominciare, rileggi il metodo nel" + linkMetodo(e, p).replace(/^il/, "") + ", non la soluzione.</li></ol>";
 }
+// ---------------------------------------------------------------- il quaderno degli errori (salvato nel browser, letto anche dall'hub)
+function oggi() { var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+function dataIt(x) { var p = String(x || "").split("-"); return p.length === 3 ? Number(p[2]) + "/" + Number(p[1]) : ""; }
+function annota(e, k, motivo) {
+  var ch = e.id + "#" + k, x = MEM.st.errori[ch];
+  if (!x) x = MEM.st.errori[ch] = { id: e.id, k: k, n: e.n, titolo: e.titolo, liv: typeof LIVELLO !== "undefined" ? LIVELLO.n : 0, parte: k !== "e3" && e.parti && e.parti.length > 1 ? "abcdefgh"[k] : "", prima: oggi(), motivi: [], nota: "" };
+  if (x.motivi.indexOf(motivo) < 0) x.motivi.push(motivo);
+  x.stato = "da rifare"; x.ultima = oggi(); delete x.rifatto;
+  MEM.salva();
+}
+function daRifare(id) { var E = MEM.st.errori; return Object.keys(E).filter(function (c) { return E[c].stato === "da rifare" && (!id || E[c].id === id); }); }
 // ---------------------------------------------------------------- disegno della pagina di un livello
 function rispostaHtml(r) { return Array.isArray(r) ? r.map(fmtD).join(" ") : String(r); }
 function disegnaEsercizi(lista, cont) {
@@ -1695,7 +1706,7 @@ function disegnaEsercizi(lista, cont) {
     var tag = (e.tag || []).map(function (t) { return '<span class="es-tag">' + escE(t) + '</span>'; }).join("") + (e.ripasso ? '<span class="es-tag ripasso">ripasso</span>' : "") + '<span class="es-tag diff">' + "★★★".slice(0, e.diff || 1) + '</span>';
     var corpo;
     if (e.e3) corpo = '<div class="es-testo">' + e.testo + (e.fig ? figG(e.fig) : "") + '</div><div class="box attenzione es-freno" id="freno3-' + e.id + '" style="display:none"><span class="etichetta">Prima di aprire la soluzione</span><p>Hai scritto su carta la tua soluzione completa, punto per punto, con i nomi del testo, lo pseudocodice e i tempi? La soluzione serve per correggere, non per studiare. Se sei bloccato, rileggi il metodo nel' + linkMetodo(e, null).replace(/^il/, "") + ', poi scrivi almeno l\'idea in tre righe e lo pseudocodice.</p><div class="controlli"><button data-e3ok="' + e.id + '">Ho scritto la mia soluzione: mostrala</button></div></div><details class="esercizio" data-solfn="' + e.id + '"><summary>La soluzione del correttore</summary><div class="soluzione" id="sole3-' + e.id + '">' + (typeof e.soluzione === "function" ? "" : e.soluzione) + '</div></details>' +
-      '<div class="es-griglia"><p class="piccolo"><b>Griglia di correzione</b>: spunta quello che hai scritto davvero nella tua soluzione.</p>' + e.griglia.map(function (g, i) { return '<label class="es-voce"><input type="checkbox" data-g="' + e.id + '" data-i="' + i + '"> ' + g + '</label>'; }).join("") + '</div><div class="controlli"><button data-fatto="' + e.id + '">Segna come fatto</button></div>';
+      '<div class="es-griglia"><p class="piccolo"><b>Griglia di correzione</b>: spunta quello che hai scritto davvero nella tua soluzione.</p>' + e.griglia.map(function (g, i) { return '<label class="es-voce"><input type="checkbox" data-g="' + e.id + '" data-i="' + i + '"> ' + g + '</label>'; }).join("") + '</div><div class="controlli"><button data-fatto="' + e.id + '">Segna come fatto</button><button data-quad="' + e.id + '">Metti nel quaderno degli errori</button></div><div class="narrazione" id="quad-' + e.id + '" style="display:none"></div>';
     else corpo = (e.intro ? '<div class="es-testo">' + e.intro + '</div>' : "") + e.parti.map(function (p, k) {
       var T = TIPI[p.tipo], lett = e.parti.length > 1 ? "(" + "abcdefgh"[k] + ") " : "", inp;
       if (T.scelte || p.tipo === "quiz") inp = (p.tipo === "quiz" ? mescola(p.scelte, e.id + "#" + k) : T.scelte).map(function (s) { return '<label class="es-voce"><input type="radio" name="r-' + e.id + '-' + k + '" value="' + escE(s) + '"> ' + s + '</label>'; }).join("");
@@ -1706,9 +1717,9 @@ function disegnaEsercizi(lista, cont) {
   }).join("");
   var perId = {}; lista.forEach(function (e) { perId[e.id] = e; });
   function aggiornaStato() {
-    lista.forEach(function (e) { var s = $a("stato-" + e.id); if (s) s.textContent = MEM.st.fatti[e.id] ? "✓ fatto" : ""; });
+    lista.forEach(function (e) { var s = $a("stato-" + e.id); if (s) s.textContent = (MEM.st.fatti[e.id] ? "✓ fatto" : "") + (daRifare(e.id).length ? (MEM.st.fatti[e.id] ? " · " : "") + "nel quaderno" : ""); });
     var f = lista.filter(function (e) { return MEM.st.fatti[e.id]; }).length, b = $a("barra-livello");
-    if (b) b.innerHTML = '<div class="es-barra"><div style="width:' + Math.round(100 * f / lista.length) + '%"></div></div><span class="piccolo">' + f + " esercizi fatti su " + lista.length + "</span>";
+    if (b) b.innerHTML = '<div class="es-barra"><div style="width:' + Math.round(100 * f / lista.length) + '%"></div></div><span class="piccolo">' + f + " esercizi fatti su " + lista.length + "</span>" + (function () { var ids = {}; lista.forEach(function (e) { ids[e.id] = true; }); var q = daRifare().filter(function (c) { return ids[MEM.st.errori[c].id]; }).length; return q ? '<span class="piccolo"> · <a href="allenamento.html#quaderno">quaderno degli errori</a>: ' + q + " da rifare in questo livello</span>" : ""; })();
   }
   function segnaParte(e, k) { MEM.st.parti[e.id + "#" + k] = true; if (e.parti.every(function (p, q) { return MEM.st.parti[e.id + "#" + q]; })) MEM.st.fatti[e.id] = true; MEM.salva(); aggiornaStato(); }
   Array.prototype.forEach.call(cont.querySelectorAll("button[data-ver]"), function (b) {
@@ -1716,9 +1727,13 @@ function disegnaEsercizi(lista, cont) {
       var e = perId[b.getAttribute("data-ver")], k = Number(b.getAttribute("data-k")), p = e.parti[k], T = TIPI[p.tipo], val;
       if (T.scelte || p.tipo === "quiz") { var c = cont.querySelector('input[name="r-' + e.id + '-' + k + '"]:checked'); val = c ? c.value : null; if (val === null) { mostraEsito(e, k, { ok: false, msg: "Scegli una risposta." }); return; } }
       else val = $a("in-" + e.id + "-" + k).value;
-      var r; try { r = T.verifica(p, val); } catch (err) { r = { ok: false, msg: "Non riesco a leggere la risposta: controlla il formato (" + (typeof T.formato === "function" ? T.formato(p) : T.formato) + ")." }; }
+      var r; try { r = T.verifica(p, val); } catch (err) { r = { ok: false, formato: true, msg: "Non riesco a leggere la risposta: controlla il formato (" + (typeof T.formato === "function" ? T.formato(p) : T.formato) + ")." }; }
       if (val !== null && String(val).trim() !== "") { var ch = e.id + "#" + k; MEM.st.tentativi[ch] = (MEM.st.tentativi[ch] || 0) + 1; MEM.salva(); }
-      mostraEsito(e, k, r); if (r.ok) segnaParte(e, k);
+      var qe = MEM.st.errori[e.id + "#" + k];
+      if (!r.ok && !r.formato && val !== null && String(val).trim() !== "") annota(e, k, "risposta sbagliata");
+      else if (r.ok && qe && qe.stato === "da rifare" && qe.ultima !== oggi()) { qe.stato = "rifatto"; qe.rifatto = oggi(); MEM.salva(); r = { ok: true, msg: (r.msg ? r.msg + " " : "") + "Rifatto giusto in un altro giorno: nel quaderno degli errori ora è segnato come rifatto." }; }
+      else if (r.ok && qe && qe.stato === "da rifare") r = { ok: true, msg: (r.msg ? r.msg + " " : "") + "È nel quaderno degli errori: rifallo da zero domani per chiuderlo." };
+      mostraEsito(e, k, r); if (r.ok) segnaParte(e, k); aggiornaStato();
     };
   });
   function mostraEsito(e, k, r) { var d = $a("esito-" + e.id + "-" + k); d.style.display = ""; var n = MEM.st.tentativi[e.id + "#" + k] || 0; d.innerHTML = r.ok ? '<span class="ok">Giusto!</span> ' + (r.msg || "") : '<span class="errore">Non ancora.</span> ' + (r.msg || "") + (n < 2 ? " Riprova da quel punto: la soluzione aprila solo dopo due tentativi." : " Puoi aprire la soluzione: leggila fino al tuo primo errore, poi chiudila e finisci da solo."); }
@@ -1728,10 +1743,10 @@ function disegnaEsercizi(lista, cont) {
       var serve = TIPI[p.tipo].scelte || p.tipo === "quiz" ? 1 : 2, fatti = MEM.st.tentativi[ch] || 0;
       if (d.style.display === "none" && !MEM.st.parti[ch] && fatti < serve && fr.style.display === "none") {
         fr.innerHTML = testoFreno(e, p, fatti) + '<div class="controlli"><button data-forza="1">Mostra comunque la soluzione</button></div>'; fr.style.display = "";
-        fr.querySelector("button[data-forza]").onclick = function () { fr.innerHTML = "<p>Hai aperto la soluzione prima di riuscirci da solo: segna l'esercizio nel quaderno degli errori e rifallo da zero domani.</p>"; b.click(); };
+        fr.querySelector("button[data-forza]").onclick = function () { annota(e, k, "soluzione aperta prima di riuscirci"); aggiornaStato(); fr.innerHTML = "<p>Hai aperto la soluzione prima di riuscirci da solo: l'esercizio è finito nel <a href=\"allenamento.html#quaderno\">quaderno degli errori</a>. Rifallo da zero domani.</p>"; b.click(); };
         return;
       }
-      if (d.style.display === "none") { if (fr.querySelector("button[data-forza]")) fr.innerHTML = "<p>Hai aperto la soluzione prima di riuscirci da solo: segna l'esercizio nel quaderno degli errori e rifallo da zero domani.</p>"; if (!d.innerHTML) { try { d.innerHTML = TIPI[p.tipo].soluzione(p); } catch (err) { d.innerHTML = "<p>Errore nel costruire la soluzione: " + escE(err.message) + "</p>"; } } d.style.display = ""; b.textContent = "Nascondi la soluzione"; }
+      if (d.style.display === "none") { if (fr.querySelector("button[data-forza]")) { annota(e, k, "soluzione aperta prima di riuscirci"); aggiornaStato(); fr.innerHTML = "<p>Hai aperto la soluzione prima di riuscirci da solo: l'esercizio è finito nel <a href=\"allenamento.html#quaderno\">quaderno degli errori</a>. Rifallo da zero domani.</p>"; } if (!d.innerHTML) { try { d.innerHTML = TIPI[p.tipo].soluzione(p); } catch (err) { d.innerHTML = "<p>Errore nel costruire la soluzione: " + escE(err.message) + "</p>"; } } d.style.display = ""; b.textContent = "Nascondi la soluzione"; }
       else { d.style.display = "none"; b.textContent = "Mostra la soluzione"; }
     };
   });
@@ -1748,7 +1763,12 @@ function disegnaEsercizi(lista, cont) {
     var id = c.getAttribute("data-g"), i = Number(c.getAttribute("data-i")); c.checked = !!(MEM.st.griglie[id] && MEM.st.griglie[id][i]);
     c.onchange = function () { MEM.st.griglie[id] = MEM.st.griglie[id] || []; MEM.st.griglie[id][i] = c.checked; MEM.salva(); };
   });
-  Array.prototype.forEach.call(cont.querySelectorAll("button[data-fatto]"), function (b) { b.onclick = function () { var id = b.getAttribute("data-fatto"); MEM.st.fatti[id] = !MEM.st.fatti[id]; MEM.salva(); aggiornaStato(); b.textContent = MEM.st.fatti[id] ? "Fatto ✓ (clic per togliere)" : "Segna come fatto"; }; if (MEM.st.fatti[b.getAttribute("data-fatto")]) b.textContent = "Fatto ✓ (clic per togliere)"; });
+  Array.prototype.forEach.call(cont.querySelectorAll("button[data-quad]"), function (b) { b.onclick = function () { var e = perId[b.getAttribute("data-quad")], m = $a("quad-" + e.id); annota(e, "e3", "messo nel quaderno a mano"); aggiornaStato(); m.style.display = ""; m.innerHTML = 'Fatto: è nel <a href="allenamento.html#quaderno">quaderno degli errori</a>. Scrivi lì che cosa ti mancava, e rifallo fra due o tre giorni.'; }; });
+  Array.prototype.forEach.call(cont.querySelectorAll("button[data-fatto]"), function (b) { b.onclick = function () { var id = b.getAttribute("data-fatto"), e = perId[id]; MEM.st.fatti[id] = !MEM.st.fatti[id];
+    if (MEM.st.fatti[id]) { var g = MEM.st.griglie[id] || [], sp = e.griglia.filter(function (x, i) { return g[i]; }).length, qe = MEM.st.errori[id + "#e3"], m = $a("quad-" + id);
+      if (sp < e.griglia.length) { annota(e, "e3", "griglia incompleta (" + sp + " voci su " + e.griglia.length + ")"); m.style.display = ""; m.innerHTML = "Nella griglia mancano " + (e.griglia.length - sp) + " voci: l'esercizio è nel <a href=\"allenamento.html#quaderno\">quaderno degli errori</a>. Rifallo fra due o tre giorni."; }
+      else if (qe && qe.stato === "da rifare" && qe.ultima !== oggi()) { qe.stato = "rifatto"; qe.rifatto = oggi(); m.style.display = ""; m.innerHTML = "Griglia completa in un altro giorno: nel quaderno degli errori ora è segnato come rifatto."; } }
+    MEM.salva(); aggiornaStato(); b.textContent = MEM.st.fatti[id] ? "Fatto ✓ (clic per togliere)" : "Segna come fatto"; }; if (MEM.st.fatti[b.getAttribute("data-fatto")]) b.textContent = "Fatto ✓ (clic per togliere)"; });
   aggiornaStato();
 }
 
