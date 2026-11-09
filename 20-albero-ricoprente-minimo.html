@@ -6,6 +6,94 @@
 <title>Albero ricoprente minimo</title>
 <link rel="stylesheet" href="stile.css?v=7">
 <script src="leggi.js?v=3" defer></script>
+<style>
+/* visualizzatori del pacco 20 (w20vis.js) */
+.pv-testa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 14px; margin-bottom: 8px; }
+.pv-uso { flex: 1 1 240px; font: 14px/1.4 system-ui, sans-serif; color: var(--muted); margin: 0; }
+.pv-sel { font: 14px system-ui, sans-serif; max-width: 100%; }
+.pv-sel select { width: auto; max-width: 100%; font-size: 14px; padding: 4px 6px; }
+.pv-capitoli { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 10px; }
+.pv-capitoli button { font: 600 12.5px/1.25 system-ui, sans-serif; padding: 5px 9px; border-radius: 999px; }
+.pv-capitoli button.pv-fatto { border-color: var(--accent); color: var(--accent); }
+.pv-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 6px 0 2px; }
+.pv-fila-tit { font: 600 13.5px/1.3 system-ui, sans-serif; color: var(--muted); margin-right: 4px; }
+.pv-c { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 42px; padding: 3px 6px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--card); color: var(--muted); font: 700 14px/1.2 system-ui, sans-serif; }
+.pv-c i { font-style: normal; }
+.pv-c.si { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+.pv-c.no { border-color: var(--red); background: var(--red-soft); color: var(--red); }
+.pv-c.cor { outline: 2.5px solid var(--accent); outline-offset: 1px; }
+.pv-cont { margin: 6px 0 10px; font-size: 14.5px; }
+.pv-pannelli { display: flex; flex-wrap: wrap; gap: 10px; }
+.pv-pannello { flex: 1 1 300px; min-width: 0; border: 1px solid var(--border); border-radius: 10px; padding: 7px 7px 3px; background: var(--bg); }
+.pv-uno .pv-pannello { max-width: 490px; margin: 0 auto; }
+.pv-pannello svg { display: block; width: 100%; height: auto; }
+.pv-tit { font: 700 14px/1.3 system-ui, sans-serif; margin: 1px 4px 3px; min-height: 1.3em; }
+.pv-leg { display: flex; flex-wrap: wrap; gap: 3px 14px; font: 12.5px/1.4 system-ui, sans-serif; color: var(--muted); margin: 7px 2px 0; }
+.pv-leg span { white-space: nowrap; }
+.pv-s { display: inline-block; width: 18px; height: 0; margin-right: 5px; vertical-align: 3px; border-top: 4px solid var(--muted); }
+.pv-s.verde { border-color: var(--green); }
+.pv-s.blu { border-color: var(--accent); }
+.pv-s.arancio { border-color: var(--orange); }
+.pv-s.punti { border-top: 2px dotted var(--muted); }
+.pv-s.zona { height: 11px; width: 14px; vertical-align: -1px; border: 1.5px solid var(--green); border-radius: 4px; background: var(--green-soft); }
+.pv-s.giallo { height: 11px; width: 11px; vertical-align: -1px; border: 1.5px solid var(--orange); border-radius: 50%; background: var(--hl); }
+.pv-testo { font-size: 16.5px; min-height: 5em; margin-top: 8px; box-sizing: border-box; }
+.pv-frase { margin-top: 8px; padding: 7px 12px 8px; border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 8px 8px 0; font-size: 15px; line-height: 1.5; box-sizing: border-box; }
+.pv-frase .lab { display: block; font: 700 12px/1.5 system-ui, sans-serif; color: var(--muted); }
+.pv-comandi { position: sticky; bottom: 0; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px -6px -6px; padding: 8px 6px 6px; background: var(--card); border-top: 1px solid var(--border); }
+.pv-passo { font: 13.5px system-ui, sans-serif; color: var(--muted); margin-left: auto; }
+.pv-cT { color: var(--green); }
+.pv-cT0 { color: var(--accent); }
+.pv-cU { color: var(--red); }
+.pv-cO { color: var(--orange); }
+.pv-bil { display: inline-block; margin: 5px 0; font: 700 16px system-ui, sans-serif; white-space: normal; }
+.pv-bil .a { color: var(--green); }
+.pv-bil .b { color: var(--red); }
+.pv svg .pv-zf { fill: var(--green-soft); stroke: var(--green-soft); stroke-linejoin: round; stroke-linecap: round; }
+.pv svg .pv-zb { fill: var(--green); stroke: var(--green); stroke-linejoin: round; stroke-linecap: round; opacity: .6; }
+.pv svg .pv-a { fill: none; stroke-linecap: round; }
+.pv svg .pv-a-tenue { stroke: var(--muted); stroke-width: 1.3; stroke-dasharray: .5 5; }
+.pv svg .pv-a-verde { stroke: var(--green); stroke-width: 4.6; }
+.pv svg .pv-a-blu { stroke: var(--accent); stroke-width: 4.6; }
+.pv svg .pv-a-cand { stroke: var(--orange); stroke-width: 2.8; }
+.pv svg .pv-a-scelto { stroke: var(--orange); stroke-width: 6; }
+.pv svg .pv-a-escl { stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 5 5; }
+.pv svg .pv-a-fant { stroke: var(--green); stroke-width: 3.4; stroke-dasharray: 8 7; }
+.pv svg .pv-a-cammino { stroke: var(--violet); stroke-width: 6; }
+.pv svg .pv-a-uscita { stroke: var(--red); stroke-width: 6; }
+.pv svg .pv-a-tolto { stroke: var(--red); stroke-width: 2.8; stroke-dasharray: 2 7; }
+.pv svg .pv-a-stac { stroke: var(--orange); stroke-width: 4.6; }
+.pv svg .pv-et rect { fill: var(--card); stroke: currentColor; stroke-width: 1; }
+.pv svg .pv-et text { fill: currentColor; font: 700 12.5px system-ui, sans-serif; text-anchor: middle; }
+.pv-et-verde, .pv-et-fant { color: var(--green); }
+.pv-et-blu { color: var(--accent); }
+.pv-et-cand, .pv-et-stac, .pv-et-scelto { color: var(--orange); }
+.pv-et-cammino { color: var(--violet); }
+.pv-et-uscita, .pv-et-tolto { color: var(--red); }
+.pv-et-escl { color: var(--muted); }
+.pv svg .pv-n { fill: var(--card); stroke: var(--muted); stroke-width: 1.8; }
+.pv svg .pv-n-dentro { stroke: var(--green); }
+.pv svg .pv-n-x { fill: var(--green-soft); stroke: var(--green); stroke-width: 2.4; }
+.pv svg .pv-n-u { fill: var(--red-soft); stroke: var(--red); stroke-width: 2.4; }
+.pv svg .pv-n-mix { fill: var(--violet-soft); stroke: var(--violet); stroke-width: 2.4; }
+.pv svg .pv-n-stac { fill: var(--orange-soft); stroke: var(--orange); stroke-width: 2.2; }
+.pv svg .pv-n-fuoco { fill: var(--hl); stroke: var(--orange); stroke-width: 2.4; }
+.pv svg .pv-tn { fill: var(--fg); font: 700 15px system-ui, sans-serif; text-anchor: middle; }
+.pv svg .pv-tn-x { fill: var(--green); }
+.pv svg .pv-tn-u { fill: var(--red); }
+.pv svg .pv-tn-mix { fill: var(--violet); }
+.pv svg .pv-tn-pic { font-size: 12px; }
+.pv svg .pv-anello { fill: var(--violet); fill-opacity: .16; stroke: var(--violet); stroke-width: 3; transform: translate(var(--x1), var(--y1)); animation: pv-va .55s ease-in-out 1 both; }
+.pv svg .pv-carta rect { fill: var(--card); stroke: var(--muted); stroke-width: 1.2; }
+.pv svg .pv-carta text { fill: var(--fg); font: 600 12.5px system-ui, sans-serif; text-anchor: middle; }
+.pv svg .pv-carta.nuova rect { fill: var(--hl); stroke: var(--orange); stroke-width: 2.2; }
+.pv svg .pv-carta.min rect { fill: var(--orange-soft); stroke: var(--orange); stroke-width: 2.4; }
+.pv-nuovo { animation: pv-lampo 1s ease-out 1 both; }
+@keyframes pv-lampo { 0% { opacity: .1; } 30% { opacity: 1; } 55% { opacity: .3; } 100% { opacity: 1; } }
+@keyframes pv-va { from { transform: translate(var(--x0), var(--y0)); } to { transform: translate(var(--x1), var(--y1)); } }
+@media (prefers-reduced-motion: reduce) { .pv-nuovo { animation: none; } .pv svg .pv-anello { animation: none; } }
+@media (max-width: 560px) { .pv-testo { font-size: 16px; } .widget.pv { padding: 12px; } #w-dv svg .pv-carta text { font-size: 15.5px; } #w-dv svg .pv-tn { font-size: 18px; } #w-dv svg .pv-et text { font-size: 15px; } }
+</style>
 </head>
 <body>
 <div class="pagina">
@@ -341,20 +429,52 @@
   <tr><td>ad ogni passo</td><td>l'arco più leggero tra quelli che non formano cicli</td><td>l'arco più leggero tra quelli che escono dall'albero</td></tr>
 </table></div>
 <p>E<sub>T</sub> ⊆ E ∩ (V<sub>T</sub> × V<sub>T</sub>) vuol dire: gli archi di T sono archi di G con tutti e due gli estremi in V<sub>T</sub>.</p>
-<p>Alla lavagna del 14 novembre (pagina 4) c'è l'enunciato del teorema, senza dimostrazione. La dimostrazione è nelle slide (Teorema 2), ed è «del tutto simile» a quella di Kruskal: cambia solo il motivo per cui w(x, y) ≤ w(u, v).</p>
+<h3 id="prim-corretto">Perché Prim trova sempre il minimo</h3>
+<p>Alla lavagna del 14 novembre (pagina 4) c'è solo l'enunciato del teorema; la dimostrazione è nelle slide (Teorema 2). Conviene prima <strong>vederla succedere su un grafo</strong>, nel riquadro «La dimostrazione di Prim, passo per passo», e poi leggerla scritta: i nomi e l'ordine dei passi sono gli stessi.</p>
+<div class="box idea">
+  <span class="etichetta">L'idea in una frase</span>
+  <p>Si prende un albero minimo T<sub>0</sub> diverso da quello di Prim e gli si cambia un arco: non pesa di più e segue Prim per un passo in più. Andando avanti così si arriva esattamente all'albero di Prim, che quindi è minimo.</p>
+</div>
+<div class="widget pv" id="w-pd">
+  <h4>La dimostrazione di Prim, passo per passo</h4>
+  <div id="pd-corpo"></div>
+</div>
 <div class="dim">
   <div class="dim-tit">Teorema (lavagna del 14 novembre, pagina 4; Teorema 2 delle slide)</div>
   <p class="enunciato">L'algoritmo di Prim trova un albero ricoprente minimo.</p>
-  <p>Sia T l'albero costruito da Prim, e T<sub>0</sub> un albero ricoprente minimo con il maggior numero di archi in comune con T. Per assurdo, T ≠ T<sub>0</sub>.</p>
-  <p>Sia (x, y) il primo arco, nell'ordine in cui Prim sceglie gli archi, che è in T ma non in T<sub>0</sub>. Sia T' = (V', E') l'albero costruito da Prim immediatamente prima di scegliere (x, y): allora x ∈ V', y ∉ V', e <strong>w(x, y) ≤ w(u, v) per ogni arco (u, v) con u ∈ V' e v ∉ V'</strong>. <span class="rif">1</span></p>
-  <p>T<sub>0</sub> è un albero, quindi in T<sub>0</sub> c'è un cammino da x a y. Il cammino parte da x, che è in V', e arriva a y, che non è in V': quindi a un certo punto esce da V', cioè contiene un arco (u, v) con u ∈ V' e v ∉ V'. <span class="rif">2</span> Per quanto appena detto, w(x, y) ≤ w(u, v).</p>
-  <p>Da qui si procede come per Kruskal: T̄ = T<sub>0</sub> − (u, v) + (x, y) è un albero ricoprente con w(T̄) = w(T<sub>0</sub>) − w(u, v) + w(x, y) ≤ w(T<sub>0</sub>), quindi minimo, e con un arco in più di T<sub>0</sub> in comune con T. Assurdo: T = T<sub>0</sub>.</p>
+  <p>Si chiamano:</p>
+  <ul>
+    <li>T l'albero costruito da Prim;</li>
+    <li>T<sub>0</sub> un albero ricoprente minimo che <strong>segue Prim per il maggior numero di passi</strong>. <span class="rif">1</span></li>
+  </ul>
+  <p>Per assurdo, supponiamo T ≠ T<sub>0</sub>.</p>
+  <div class="parte prima">L'arco che non c'è</div>
+  <p>Sia (x, y) il primo arco, nell'ordine in cui Prim sceglie gli archi, che è in T ma non in T<sub>0</sub>. <span class="rif">2</span></p>
+  <p>Sia T′ = (V′, E′) l'albero costruito da Prim immediatamente prima di scegliere (x, y). Allora x ∈ V′, y ∉ V′, e <strong>w(x, y) ≤ w(u, v) per ogni arco (u, v) con u ∈ V′ e v ∉ V′</strong>. <span class="rif">3</span></p>
+  <div class="parte">Il cammino</div>
+  <p>T<sub>0</sub> è un albero, quindi in T<sub>0</sub> c'è un cammino da x a y. Il cammino parte da x, che è in V′, e arriva a y, che non è in V′: quindi a un certo punto esce da V′, cioè contiene un arco (u, v) con u ∈ V′ e v ∉ V′. <span class="rif">4</span></p>
+  <p>Per quanto detto su T′: w(x, y) ≤ w(u, v).</p>
+  <div class="parte">Lo scambio</div>
+  <p>Si toglie da T<sub>0</sub> l'arco (u, v) e si aggiunge (x, y): si ottiene un nuovo albero ricoprente T̄. <span class="rif">5</span> Il suo peso:</p>
+  <div class="mat-blocco"><span class="catena"><span class="sx">w(T̄)</span><span class="rel">=</span><span class="dx">w(T<sub>0</sub>) − w(u, v) + w(x, y)</span><span class="perche"></span><span class="sx"></span><span class="rel">≤</span><span class="dx">w(T<sub>0</sub>)</span><span class="perche"><span class="rif">6</span></span></span></div>
+  <div class="parte">La contraddizione</div>
+  <p>T̄ è un albero ricoprente minimo <span class="rif">7</span> che segue Prim per un passo in più di T<sub>0</sub>. <span class="rif">8</span> Questo contraddice la scelta di T<sub>0</sub>: <strong>assurdo</strong>. Quindi T = T<sub>0</sub>, e T è minimo.</p>
   <p class="qed">□</p>
   <div class="spiega">
     <div class="spiega-tit">I passaggi spiegati</div>
-    <p><span class="rif">1</span>È la regola di Prim: (x, y) è stato scelto perché è l'arco più leggero tra tutti quelli con un estremo in T' e l'altro fuori.</p>
-    <p><span class="rif">2</span>Immagina di camminare lungo il cammino partendo da x: sei dentro V'; alla fine, in y, sei fuori. C'è quindi un passo in cui esci per la prima volta: l'arco di quel passo va da un vertice u di V' a un vertice v fuori da V'. È l'arco che serve.</p>
+    <p><span class="rif">1</span>Gli archi di T hanno un ordine: quello in cui Prim li sceglie. Un albero «segue Prim per k passi» se contiene i primi k archi di quell'ordine. Di alberi ricoprenti minimi ce n'è almeno uno, perché gli alberi ricoprenti sono un numero finito; tra quelli minimi se ne sceglie uno con k il più grande possibile. Nel riquadro, k è il numero di ✓ di fila all'inizio della riga ① ② ….</p>
+    <p><span class="rif">2</span>Un arco così esiste: T e T<sub>0</sub> hanno lo stesso numero di archi, n − 1, quindi se sono diversi T ha almeno un arco che T<sub>0</sub> non ha. Tra questi si prende quello che Prim ha scelto per primo: tutti gli archi scelti prima di (x, y) stanno anche in T<sub>0</sub>.</p>
+    <p><span class="rif">3</span>È la regola di Prim: (x, y) è stato scelto perché è l'arco più leggero tra tutti quelli con un estremo in T′ e l'altro fuori.</p>
+    <p><span class="rif">4</span>Immagina di camminare lungo il cammino partendo da x: sei dentro V′; alla fine, in y, sei fuori. C'è quindi un passo in cui esci: l'arco di quel passo va da un vertice u di V′ a un vertice v fuori da V′.</p>
+    <p><span class="rif">5</span>Togliendo (u, v), T<sub>0</sub> si spezza in due pezzi: in un albero ogni arco è l'unico collegamento tra le sue due parti. x e y finiscono in pezzi diversi, perché (u, v) stava sul cammino tra loro. Aggiungendo (x, y) i due pezzi si riattaccano. Il risultato è connesso e ha n − 1 archi: è un albero ricoprente.</p>
+    <p><span class="rif">6</span>Abbiamo appena visto che w(x, y) ≤ w(u, v), quindi − w(u, v) + w(x, y) ≤ 0.</p>
+    <p><span class="rif">7</span>w(T̄) ≤ w(T<sub>0</sub>) e T<sub>0</sub> è minimo: nessun albero ricoprente pesa meno di T<sub>0</sub>, quindi w(T̄) = w(T<sub>0</sub>) e anche T̄ è minimo.</p>
+    <p><span class="rif">8</span>Gli archi scelti da Prim prima di (x, y) sono quelli di T′ e stanno in T<sub>0</sub>. L'arco tolto (u, v) non è uno di loro: gli archi di T′ hanno tutti e due gli estremi in V′, mentre v non è in V′. Quindi T̄ li contiene ancora tutti, e in più contiene (x, y).</p>
   </div>
+</div>
+<div class="box attenzione">
+  <span class="etichetta">Una differenza dalle slide</span>
+  <p>Le slide scelgono T<sub>0</sub> «con il maggior numero di archi in comune con T» e alla fine dicono che T̄ «ha un arco in più di T<sub>0</sub> in comune con T». Per Kruskal è corretto, perché lì l'arco tolto è scelto tra quelli che non sono in T. Qui invece (u, v) è l'arco con cui il cammino esce da V′, e può essere un arco che Prim sceglie più avanti: allora T̄ ne perde uno in comune e ne guadagna uno, e il numero non sale. Si vede nell'Esempio 2 del riquadro «La dimostrazione di Prim, passo per passo». Contando i passi in cui l'albero segue Prim il ragionamento funziona sempre; tutto il resto della dimostrazione è uguale a quello delle slide.</p>
 </div>
 <div class="box riassunto">
   <span class="etichetta">In breve</span>
@@ -366,14 +486,44 @@
 
 <!-- ============================================================ 8 -->
 <h2 id="prim-dettagli"><span class="num">8</span>Prim nei dettagli: d e vicino</h2>
-<p class="in-questa"><b>In questa sezione:</b> come trovare in fretta l'arco più leggero che esce dall'albero (lavagna del 14 novembre, pagine 6–12, e Codice 11.4): due array, d e vicino, aggiornati a ogni passo. Con l'esempio della lavagna passo per passo.</p>
-<p>Nel Codice 11.3 la riga difficile è «sia (x, y) l'arco di peso minimo con x in T e y non in T» (la lavagna, pagina 6, la evidenzia in giallo). Guardare ogni volta tutti gli archi che attraversano il confine di T sarebbe lento. L'idea (pagine 7 e 8): <strong>ad ogni passo, per ogni vertice v non ancora in T</strong>, si tengono due informazioni.</p>
+<p class="in-questa"><b>In questa sezione:</b> a che cosa servono i due array d e vicino, che cosa c'è scritto dentro e come Prim li usa (lavagna del 14 novembre, pagine 6–12, e Codice 11.4). Con un riquadro da seguire passo per passo e poi l'esempio della lavagna.</p>
+<div class="box idea">
+  <span class="etichetta">L'obiettivo di questa sezione</span>
+  <p>L'algoritmo è sempre quello del Codice 11.3: a ogni giro si aggiunge a T l'arco più leggero che esce da T. Qui non cambia <strong>che cosa</strong> fa Prim. Cambia <strong>come trova quell'arco</strong>: la riga «sia (x, y) l'arco di peso minimo con x in T e y non in T», che la lavagna (pagina 6) evidenzia in giallo, costringerebbe a guardare a ogni giro tutti gli archi che escono da T, ed è lento. d e vicino sono due array che servono solo a questo: trovare quell'arco senza riguardare tutti gli archi.</p>
+</div>
+<p>Prima i nomi, uno per uno.</p>
+<ul>
+  <li><b>T</b> è l'albero che Prim ha costruito <strong>fino a questo momento</strong>. Cresce: a ogni giro prende un vertice in più. «Un vertice in T» vuol dire un vertice già preso.</li>
+  <li><b>v</b> non è un vertice preciso: è il nome di <strong>uno qualsiasi dei vertici non ancora in T</strong>. Per ognuno di loro esistono un valore d[v] e un valore vicino[v].</li>
+  <li><b>I vertici non hanno un peso.</b> Il peso ce l'hanno solo gli archi. Quindi non si confronta «il peso di v» con i vertici di T: si confrontano tra loro i pesi degli archi che partono da v.</li>
+</ul>
+<p>Che cosa c'è scritto in d[v] e vicino[v], per un vertice v fuori da T:</p>
+<ol>
+  <li>si guardano gli archi che vanno da v <strong>direttamente</strong> a un vertice di T;</li>
+  <li>tra questi si prende il più leggero;</li>
+  <li><b>d[v]</b> è <strong>quanto pesa</strong> quell'arco: un numero;</li>
+  <li><b>vicino[v]</b> è <strong>il vertice di T a cui quell'arco arriva</strong>: un vertice.</li>
+</ol>
+<p>Sono due informazioni sullo stesso arco: d dice quanto pesa, vicino dice dove arriva. Un arco ha due estremi: uno è v, che sta fuori da T, e l'altro sta dentro T. Quello dentro è vicino[v]. Il riquadro «d e vicino, passo per passo» mostra tutto su un grafo, un'idea per volta, fino a che cosa se ne fa Prim.</p>
+<div class="widget pv" id="w-dv">
+  <h4>d e vicino, passo per passo</h4>
+  <div id="dv-corpo"></div>
+</div>
+<p>La definizione della lavagna (pagina 8) dice le stesse cose con le formule:</p>
 <div class="box def">
   <span class="etichetta">d e vicino (lavagna del 14 novembre, pagina 8)</span>
   <p><b>d[v]</b> = il minimo peso degli archi tra v e i vertici di T (∞ se non ce ne sono). In formule, con T = (V<sub>T</sub>, E<sub>T</sub>): d[v] = min({ w(u, v) | u ∈ V<sub>T</sub> } ∪ {∞}).</p>
   <p><b>vicino[v]</b> = il vertice u in T tale che d[v] = w(u, v): l'estremo in T dell'arco più leggero tra v e T.</p>
 </div>
-<p>d[v] è la «distanza» di v dall'albero, misurata con un arco solo; vicino[v] dice da dove arriva quel collegamento. La Figura 6 è l'esempio della pagina 7.</p>
+<p>La formula di d[v], pezzo per pezzo:</p>
+<ul>
+  <li>V<sub>T</sub> è l'insieme dei vertici di T, e <b>u</b> è uno qualsiasi di quei vertici. È l'estremo dentro T.</li>
+  <li>w(u, v) è il peso dell'arco tra u e v.</li>
+  <li>{ w(u, v) | u ∈ V<sub>T</sub> } è l'elenco dei pesi di tutti gli archi che collegano v a un vertice di T.</li>
+  <li>∪ {∞} aggiunge ∞ all'elenco, così il minimo esiste anche quando l'elenco è vuoto, cioè quando v non ha nessun arco verso T.</li>
+  <li>min prende il valore più piccolo dell'elenco.</li>
+</ul>
+<p>Nella definizione di vicino[v], «il vertice u in T tale che d[v] = w(u, v)» vuol dire: il vertice u di T il cui arco verso v pesa proprio d[v]. Cioè l'estremo dentro T dell'arco più leggero. La Figura 6 è l'esempio della pagina 7.</p>
 <div class="figura">
 <svg viewBox="0 0 267.2 281" width="267.2" height="281" role="img" aria-label="d e vicino di un vertice fuori dall'albero" font-family="system-ui, sans-serif"><path d="M230.2 52 L230.2 91" fill="none" class="l-rosso" stroke="#b42318" stroke-width="3.4"/><path d="M230.2 121 L230.2 160" fill="none" class="l-rosso" stroke="#b42318" stroke-width="3.4"/><path d="M230.2 190 L230.2 229" fill="none" class="l-rosso" stroke="#b42318" stroke-width="3.4"/><path d="M218.7 46.7 L122.1 128.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M215.7 109.9 L125.1 134.3" fill="none" class="l-arancio" stroke="#b4500f" stroke-width="3.4"/><path d="M215.9 170.6 L124.9 142.6" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M219 234.1 L121.8 148.1" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><path d="M46.4 57.9 L101.2 126.5" fill="none" class="l-muted" stroke="#5b6270" stroke-width="1.4"/><rect x="212.7" y="62.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="220.2" y="76" font-size="12.5" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">1</text><rect x="212.7" y="131.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="220.2" y="145" font-size="12.5" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">2</text><rect x="212.7" y="200.5" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="220.2" y="214" font-size="12.5" font-weight="700" text-anchor="middle" class="t-rosso" fill="#b42318">1</text><rect x="156.4" y="71" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="163.9" y="84.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">4</text><rect x="160.3" y="103.4" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="167.8" y="116.9" font-size="12.5" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">2</text><rect x="165.8" y="138" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="173.3" y="151.5" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">3</text><rect x="169.5" y="174.6" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="177" y="188.1" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">5</text><rect x="58.5" y="89.4" width="15" height="17" rx="4" class="r-peso" fill="#ffffff" stroke="none" opacity="0.92"/><text x="66" y="102.9" font-size="12.5" font-weight="700" text-anchor="middle" class="t-peso" fill="#6d3fc0">1</text><circle cx="230.2" cy="37" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="230.2" y="42" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">a</text><circle cx="230.2" cy="106" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="230.2" y="111" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">b</text><circle cx="230.2" cy="175" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="230.2" y="180" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">c</text><circle cx="230.2" cy="244" r="15" class="r-rosso" fill="#fdecea" stroke="#b42318" stroke-width="1.6"/><text x="230.2" y="249" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">d</text><circle cx="110.6" cy="138.2" r="15" class="r-giallo" fill="#fff1a8" stroke="#b4500f" stroke-width="1.6"/><text x="110.6" y="143.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">v</text><text x="110.6" y="168.2" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">d[v] = 2, vicino[v] = b</text><circle cx="37" cy="46.2" r="15" class="r-nodo" fill="#ffffff" stroke="#2f52c4" stroke-width="1.6"/><text x="37" y="51.2" font-size="14" font-weight="600" text-anchor="middle" class="t-testo" fill="#1f2328">u</text><text x="37" y="24.2" font-size="12" font-weight="700" text-anchor="middle" class="t-arancio" fill="#b4500f">d[u] = ∞</text></svg>
 <div class="didascalia"><b>Figura 6.</b> Lavagna del 14 novembre, pagina 7 (il vertice u è un'aggiunta nostra). L'albero T contiene a, b, c, d (in rosso). Il vertice v è collegato a T con archi di peso 4, 2, 3, 5: il più leggero va a b, quindi d[v] = 2 e vicino[v] = b. L'arco (u, v) pesa 1 ma non conta, perché u non è in T. Il vertice u non ha archi verso T: d[u] = ∞, e vicino[u] non è definito.</div>
@@ -1033,6 +1183,437 @@ function selGrafi(id) { return '<label>Grafo <select id="' + id + '" style="widt
   $("ar-g").onchange = prepara;
   prepara();
 })();
+
+// ---- w20vis.js
+// Due visualizzatori del pacco 20, con lo stesso motore:
+//  #pd-corpo  «La dimostrazione di Prim, passo per passo»
+//  #dv-corpo  «d e vicino, passo per passo»
+var PV_N = ["①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨"];
+function pvK(a, b) { return a < b ? a + "~" + b : b + "~" + a; }
+function pvInvolucro(pti) {
+  var p = pti.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; }), lo = [], up = [], i;
+  if (p.length < 3) return p;
+  function cr(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+  for (i = 0; i < p.length; i++) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p[i]) <= 0) lo.pop(); lo.push(p[i]); }
+  for (i = p.length - 1; i >= 0; i--) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p[i]) <= 0) up.pop(); up.push(p[i]); }
+  lo.pop(); up.pop();
+  return lo.concat(up);
+}
+var PV_RANGO = { tenue: 0, escl: 1, cand: 2, fant: 3, tolto: 3, blu: 4, stac: 4, verde: 5, scelto: 6, cammino: 7, uscita: 8 };
+function pvLarg(t) { var n = 0; for (var i = 0; i < t.length; i++) n += /[①-⑨✓✗✂]/.test(t[i]) ? 12.5 : (t[i] === " " ? 3.5 : 7.4); return n + 9; }
+
+// d = { W, H, pos, E, nomi, Rz, carta }  P = { zona, archi: {k: {s, lab}}, ruoli, nodi, anello: {v, da}, carte: {v: {d, vic, cl}} }
+function pvSvg(d, P, prec, aria) {
+  var s = ['<svg viewBox="0 0 ' + d.W + ' ' + d.H + '" role="img" aria-label="' + aria + '">'], R = d.Rz || 24;
+  if (P.zona && P.zona.length) {
+    var pts = P.zona.map(function (v) { return d.pos[v]; });
+    if (pts.length === 1) s.push('<circle class="pv-zb" cx="' + pts[0][0] + '" cy="' + pts[0][1] + '" r="' + (R + 1.5) + '"/><circle class="pv-zf" cx="' + pts[0][0] + '" cy="' + pts[0][1] + '" r="' + R + '"/>');
+    else {
+      var m = "M" + pvInvolucro(pts).map(function (p) { return p[0] + " " + p[1]; }).join(" L") + " Z";
+      s.push('<path class="pv-zb" d="' + m + '" stroke-width="' + (2 * R + 3) + '"/><path class="pv-zf" d="' + m + '" stroke-width="' + (2 * R) + '"/>');
+    }
+  }
+  var lista = d.E.map(function (e) { var k = pvK(e[0], e[1]); return { e: e, k: k, a: P.archi[k] || { s: "tenue" } }; }), et = [];
+  lista.sort(function (a, b) { return PV_RANGO[a.a.s] - PV_RANGO[b.a.s]; });
+  lista.forEach(function (o) {
+    var p = d.pos[o.e[0]], q = d.pos[o.e[1]], vec = prec && prec.archi[o.k], nuovo = prec && o.a.s !== "tenue" && (!vec || vec.s !== o.a.s);
+    s.push('<line class="pv-a pv-a-' + o.a.s + (nuovo ? " pv-nuovo" : "") + '" x1="' + p[0] + '" y1="' + p[1] + '" x2="' + q[0] + '" y2="' + q[1] + '"/>');
+    if (o.a.lab) {
+      var mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, bw = pvLarg(o.a.lab);
+      et.push('<g class="pv-et pv-et-' + o.a.s + '"><rect x="' + (mx - bw / 2) + '" y="' + (my - 10) + '" width="' + bw + '" height="20" rx="6"/><text x="' + mx + '" y="' + (my + 4.6) + '">' + o.a.lab + '</text></g>');
+    }
+  });
+  s.push(et.join(""));
+  Object.keys(d.pos).forEach(function (v) {
+    var p = d.pos[v], ru = P.ruoli[v], st = P.nodi[v] || "", dentro = P.zona && P.zona.indexOf(v) >= 0, lab = ru || (d.nomi ? v : ""), r = lab ? (lab.length > 1 && !d.nomi ? 17 : 14.5) : 8.5;
+    var cl = "pv-n", clt = "pv-tn";
+    if (st) cl += " pv-n-" + st;
+    else if (ru) { var mis = ru.indexOf("=") >= 0, ros = ru === "u" || ru === "v"; cl += mis ? " pv-n-mix" : (ros ? " pv-n-u" : " pv-n-x"); clt += mis ? " pv-tn-mix" : (ros ? " pv-tn-u" : " pv-tn-x"); }
+    else if (dentro) cl += " pv-n-dentro";
+    var cambiato = prec && (prec.ruoli[v] !== ru || (prec.nodi[v] || "") !== st);
+    s.push('<circle class="' + cl + (cambiato ? " pv-nuovo" : "") + '" cx="' + p[0] + '" cy="' + p[1] + '" r="' + r + '"/>');
+    if (lab) s.push('<text class="' + clt + (lab.length > 1 && !d.nomi ? " pv-tn-pic" : "") + '" x="' + p[0] + '" y="' + (p[1] + 5) + '">' + lab + '</text>');
+  });
+  if (P.anello) {
+    var a1 = d.pos[P.anello.v], a0 = d.pos[P.anello.da || P.anello.v];
+    s.push('<circle class="pv-anello" r="21" cx="0" cy="0" style="--x0:' + a0[0] + 'px;--y0:' + a0[1] + 'px;--x1:' + a1[0] + 'px;--y1:' + a1[1] + 'px"/>');
+  }
+  if (P.carte && d.carta) Object.keys(P.carte).forEach(function (v) {
+    var c = P.carte[v], q = d.carta[v], vc = prec && prec.carte && prec.carte[v], nuova = prec && (!vc || vc.d !== c.d || vc.vic !== c.vic);
+    s.push('<g class="pv-carta ' + (c.cl || "") + (nuova ? " pv-nuovo" : "") + '"><rect x="' + q[0] + '" y="' + q[1] + '" width="86" height="40" rx="6"/>' +
+      '<text x="' + (q[0] + 43) + '" y="' + (q[1] + 16) + '">d = ' + c.d + '</text><text x="' + (q[0] + 43) + '" y="' + (q[1] + 33) + '">vicino = ' + c.vic + '</text></g>');
+  });
+  s.push('</svg>');
+  return s.join("");
+}
+
+// ---------------------------------------------------------------- il motore del riquadro
+function pvMonta(pre, opz) {
+  var c = document.getElementById(pre + "-corpo");
+  if (!c) return;
+  var h = '<div class="pv-testa"><p class="pv-uso">' + opz.uso + '</p>';
+  if (opz.esempi.length > 1) h += '<label class="pv-sel">Esempio <select id="' + pre + '-ex">' + opz.esempi.map(function (e, i) { return '<option value="' + i + '">' + e.nome + '</option>'; }).join("") + '</select></label>';
+  h += '</div>';
+  h += '<div class="pv-capitoli" id="' + pre + '-cap"></div>';
+  if (opz.riga) h += '<div class="pv-fila" id="' + pre + '-riga"></div><div class="contatori pv-cont" id="' + pre + '-cont"></div>';
+  h += '<div class="pv-pannelli' + (opz.due ? '' : ' pv-uno') + '"><div class="pv-pannello"><div class="pv-tit" id="' + pre + '-tsx"></div><div id="' + pre + '-sx"></div></div>' +
+    (opz.due ? '<div class="pv-pannello"><div class="pv-tit" id="' + pre + '-tdx"></div><div id="' + pre + '-dx"></div></div>' : '') + '</div>';
+  h += '<div class="pv-leg">' + opz.legenda + '</div>';
+  h += '<div class="narrazione pv-testo" id="' + pre + '-testo" aria-live="polite"></div><div class="pv-frase"><span class="lab">' + opz.labFrase + '</span><span id="' + pre + '-frase"></span></div>';
+  h += '<div class="pv-comandi"><button id="' + pre + '-prec">← Indietro</button><button class="primario" id="' + pre + '-succ">Avanti →</button><button id="' + pre + '-ric">Da capo</button><span class="pv-passo" id="' + pre + '-passo"></span></div>';
+  c.innerHTML = h;
+  function el(x) { return document.getElementById(pre + "-" + x); }
+  var V = { F: [], k: 0, ex: 0, primi: [] };
+  function mostra(prec) {
+    var f = V.F[V.k];
+    el("cap").innerHTML = opz.capitoli.map(function (t, i) {
+      var ora = f.cap === i, ok = V.primi[i] !== undefined;
+      return '<button data-c="' + i + '"' + (ok ? '' : ' disabled') + (ora ? ' class="primario"' : (f.cap > i ? ' class="pv-fatto"' : '')) + '>' + t + '</button>';
+    }).join("");
+    if (opz.riga) {
+      el("riga").innerHTML = '<span class="pv-fila-tit">Le scelte di Prim, in ordine: T<sub>0</sub> ce l\'ha?</span>' + f.riga.map(function (r, j) {
+        return '<span class="pv-c ' + r + (j === f.cur ? " cor" : "") + '">' + PV_N[j] + '<i>' + (r === "si" ? "✓" : (r === "no" ? "✗" : "?")) + '</i></span>';
+      }).join("");
+      el("cont").innerHTML = f.cont;
+    }
+    el("tsx").innerHTML = f.titS;
+    el("sx").innerHTML = pvSvg(f.dis, f.S, prec && prec.S, opz.ariaS);
+    if (opz.due) { el("tdx").innerHTML = f.titD; el("dx").innerHTML = pvSvg(f.dis, f.D, prec && prec.D, opz.ariaD); }
+    el("testo").innerHTML = f.testo;
+    el("frase").innerHTML = f.frase;
+    el("passo").textContent = "passo " + (V.k + 1) + " di " + V.F.length;
+    el("prec").disabled = V.k === 0;
+    el("succ").disabled = V.k === V.F.length - 1;
+  }
+  function vai(k) { if (k < 0 || k >= V.F.length || k === V.k) return; var prec = k === V.k + 1 ? V.F[V.k] : null; V.k = k; mostra(prec); }
+  function misura() {
+    var t = el("testo"), r = el("frase").parentNode, mt = 0, mr = 0;
+    t.style.minHeight = r.style.minHeight = "";
+    if (c.offsetWidth >= 560) {
+      V.F.forEach(function (f) { t.innerHTML = f.testo; el("frase").innerHTML = f.frase; mt = Math.max(mt, t.offsetHeight); mr = Math.max(mr, r.offsetHeight); });
+      t.style.minHeight = mt + "px"; r.style.minHeight = mr + "px";
+    }
+    t.innerHTML = V.F[V.k].testo; el("frase").innerHTML = V.F[V.k].frase;
+  }
+  function prepara() {
+    V.F = opz.esempi[V.ex].genera(); V.k = 0; V.primi = [];
+    V.F.forEach(function (f, i) { if (V.primi[f.cap] === undefined) V.primi[f.cap] = i; });
+    mostra(null);
+    misura();
+  }
+  var attesa = null;
+  window.addEventListener("resize", function () { clearTimeout(attesa); attesa = setTimeout(misura, 150); });
+  el("succ").onclick = function () { vai(V.k + 1); };
+  el("prec").onclick = function () { vai(V.k - 1); };
+  el("ric").onclick = function () { vai(0); };
+  el("cap").onclick = function (e) { var b = e.target.closest ? e.target.closest("button") : null; if (b && !b.disabled) vai(V.primi[Number(b.getAttribute("data-c"))]); };
+  if (opz.esempi.length > 1) el("ex").onchange = function () { V.ex = Number(el("ex").value); prepara(); };
+  c.addEventListener("keydown", function (e) {
+    if (e.target && e.target.tagName === "SELECT") return;
+    if (e.key === "ArrowRight") { vai(V.k + 1); e.preventDefault(); } else if (e.key === "ArrowLeft") { vai(V.k - 1); e.preventDefault(); }
+  });
+  prepara();
+}
+
+// ---------------------------------------------------------------- 1. la dimostrazione di Prim
+var PV_SCALA = { s: [42, 118], a: [124, 40], b: [124, 196], c: [220, 40], d: [220, 196], e: [316, 40], f: [316, 196] };
+var PV_ESEMPI = [
+  { nome: "1. T₀ minimo", s: "s", minimo: true,
+    E: [["s", "a", 2], ["s", "b", 3], ["a", "b", 6], ["a", "c", 5], ["b", "d", 5], ["a", "d", 8], ["c", "d", 1], ["c", "e", 4], ["d", "f", 4], ["d", "e", 7], ["e", "f", 2]],
+    prim: [["s", "a"], ["s", "b"], ["a", "c"], ["c", "d"], ["c", "e"], ["e", "f"]],
+    t0: [["s", "a"], ["s", "b"], ["b", "d"], ["c", "d"], ["d", "f"], ["e", "f"]] },
+  { nome: "2. L'arco tolto serve anche a Prim", s: "s", minimo: true, comune: true,
+    E: [["s", "a", 2], ["s", "b", 3], ["a", "b", 9], ["a", "c", 5], ["b", "d", 5], ["a", "d", 8], ["c", "d", 5], ["c", "e", 6], ["d", "f", 9], ["d", "e", 8], ["e", "f", 7]],
+    prim: [["s", "a"], ["s", "b"], ["a", "c"], ["b", "d"], ["c", "e"], ["e", "f"]],
+    t0: [["s", "a"], ["s", "b"], ["b", "d"], ["c", "d"], ["c", "e"], ["e", "f"]] },
+  { nome: "3. T₀ non minimo", s: "s", minimo: false,
+    E: [["s", "a", 2], ["s", "b", 3], ["a", "b", 6], ["a", "c", 5], ["b", "d", 5], ["a", "d", 8], ["c", "d", 1], ["c", "e", 4], ["d", "f", 4], ["d", "e", 7], ["e", "f", 2]],
+    prim: [["s", "a"], ["s", "b"], ["a", "c"], ["c", "d"], ["c", "e"], ["e", "f"]],
+    t0: [["s", "a"], ["a", "b"], ["a", "d"], ["d", "e"], ["c", "e"], ["e", "f"]] }
+];
+var PV_CAP_PROVA = ["Due alberi", "La differenza", "La strada", "Chi pesa meno", "Lo scambio", "Si ripete", "Fine"];
+
+function pvProva(ex) {
+  var F = [], n = ex.prim.length, T0 = {}, w = {}, cmp = -1, rivelati = {}, pesoNoto = false;
+  var dis = { W: 358, H: 236, pos: PV_SCALA, E: ex.E, nomi: false, Rz: 25 };
+  var Tn = '<b class="pv-cT">T</b>', T0n = '<b class="pv-cT0">T<sub>0</sub></b>', XY = '<b class="pv-cT">(x, y)</b>', UV = '<b class="pv-cU">(u, v)</b>', TB = '<b class="pv-cT0">T̄</b>', ARA = '<b class="pv-cO">arancioni</b>';
+  var primK = ex.prim.map(function (c) { return pvK(c[0], c[1]); }), ind = {};
+  primK.forEach(function (k, j) { ind[k] = j; });
+  ex.E.forEach(function (e) { w[pvK(e[0], e[1])] = e[2]; });
+  ex.t0.forEach(function (c) { T0[pvK(c[0], c[1])] = true; });
+  var pesoT = primK.reduce(function (t, k) { return t + w[k]; }, 0);
+  function N(j) { return PV_N[j]; }
+  function zona(j) { var z = [ex.s]; for (var h = 0; h < j; h++) z.push(ex.prim[h][1]); return z; }
+  function uscenti(j) { var z = zona(j), r = []; ex.E.forEach(function (e) { if ((z.indexOf(e[0]) >= 0) !== (z.indexOf(e[1]) >= 0)) r.push(pvK(e[0], e[1])); }); return r; }
+  function pesoT0() { var t = 0; Object.keys(T0).forEach(function (k) { t += w[k]; }); return t; }
+  function righe() { var r = []; for (var h = 0; h < n; h++) r.push(h <= cmp || rivelati[h] ? (T0[primK[h]] ? "si" : "no") : "boh"); return r; }
+  function segue() { var c = 0; while (c < n && c <= cmp && T0[primK[c]]) c++; return c; }
+  function comune() { return primK.filter(function (k) { return T0[k]; }).length; }
+  function vuoto() { return { zona: null, archi: {}, ruoli: {}, nodi: {}, anello: null }; }
+  function sx(j) { var P = vuoto(); P.zona = zona(j); for (var h = 0; h < j; h++) P.archi[primK[h]] = { s: "verde", lab: N(h) + " " + w[primK[h]] }; return P; }
+  function dx(j) {
+    var P = vuoto(); P.zona = zona(j);
+    Object.keys(T0).forEach(function (k) { var h = ind[k]; P.archi[k] = h !== undefined && h < j ? { s: "verde", lab: N(h) + " " + w[k] } : { s: "blu", lab: String(w[k]) }; });
+    return P;
+  }
+  function conCand(P, j) { uscenti(j).forEach(function (k) { P.archi[k] = { s: "cand", lab: String(w[k]) }; }); return P; }
+  function ruolo(P, v, r) { P.ruoli[v] = P.ruoli[v] ? P.ruoli[v] + "=" + r : r; }
+  function xy(P, x, y) { ruolo(P, x, "x"); ruolo(P, y, "y"); return P; }
+  function xyuv(P, x, y, u, v) { xy(P, x, y); ruolo(P, u, "u"); ruolo(P, v, "v"); return P; }
+  function cammino(a, b) {
+    var pad = {}, coda = [a]; pad[a] = a;
+    while (coda.length) { var c = coda.shift(); Object.keys(T0).forEach(function (k) { var q = k.split("~"), o = q[0] === c ? q[1] : (q[1] === c ? q[0] : null); if (o && pad[o] === undefined) { pad[o] = c; coda.push(o); } }); }
+    var p = [b]; while (p[0] !== a) p.unshift(pad[p[0]]);
+    return p;
+  }
+  function pezzo(a, tolto) {
+    var vis = {}, pila = [a]; vis[a] = true;
+    while (pila.length) { var c = pila.pop(); Object.keys(T0).forEach(function (k) { if (k === tolto) return; var q = k.split("~"), o = q[0] === c ? q[1] : (q[1] === c ? q[0] : null); if (o && !vis[o]) { vis[o] = true; pila.push(o); } }); }
+    return vis;
+  }
+  function metti(cap, testo, frase, S, D, cur, titS, titD) {
+    var c = '<span>T<sub>0</sub> segue Prim per <b>' + segue() + '</b> ' + (segue() === 1 ? "passo" : "passi") + '</span>';
+    if (ex.comune) c += '<span>archi in comune con T: <b>' + comune() + '</b> di ' + n + '</span>';
+    c += '<span>peso di T<sub>0</sub>: <b>' + pesoT0() + '</b></span>' + (pesoNoto ? '<span>peso di T: <b>' + pesoT + '</b></span>' : '');
+    F.push({ cap: cap, testo: testo, frase: frase, S: S, D: D, cur: cur, riga: righe(), cont: c, dis: dis, titS: titS, titD: titD });
+  }
+  var TIT_T = '<span class="pv-cT">T: l\'albero di Prim</span>', TIT_TP = '<span class="pv-cT">T′: ciò che Prim ha costruito finora</span>';
+  var TIT_0 = '<span class="pv-cT0">T<sub>0</sub>: ' + (ex.minimo ? "un albero minimo" : "un albero qualsiasi") + '</span>';
+  var TIT_B = '<span class="pv-cT0">T̄ = T<sub>0</sub> − (u, v) + (x, y)</span>', TIT_N = '<span class="pv-cT0">T<sub>0</sub>, dopo gli scambi</span>';
+
+  // ---- 1. due alberi
+  function tuttoT() { var P = vuoto(); primK.forEach(function (k, j) { P.archi[k] = { s: "verde", lab: N(j) + " " + w[k] }; }); return P; }
+  function tuttoT0() { var P = vuoto(); Object.keys(T0).forEach(function (k) { P.archi[k] = { s: "blu", lab: String(w[k]) }; }); return P; }
+  var ENUNC = "L'algoritmo di Prim trova un albero ricoprente minimo.";
+  metti(0, "Lo stesso grafo, disegnato due volte: stessi vertici, stessi archi. I puntini sono gli archi che quell'albero non usa.<br><b>A sinistra</b>, in verde, " + Tn + ": l'albero che ha costruito Prim. I numeri ① ② … dicono <b>in che ordine</b> Prim ha scelto gli archi, e accanto c'è il peso.<br><b>A destra</b>, in blu, " + T0n + (ex.minimo ? ": un altro albero ricoprente, che sappiamo essere <b>minimo</b>, cioè uno di quelli che pesano meno di tutti." : ": un altro albero ricoprente, preso a caso. Questo <b>non è minimo</b>: qui serve solo per vedere che cosa succede al peso a ogni scambio."),
+    ENUNC, tuttoT(), tuttoT0(), -1, TIT_T, TIT_0);
+  metti(0, "<b>Che cosa vogliamo far vedere:</b> che " + Tn + " è minimo. Prim sceglie un arco alla volta senza guardare avanti, quindi non è ovvio che il risultato sia il migliore.<br><b>Il piano:</b> trasformare " + T0n + " in " + Tn + " cambiando <b>un arco alla volta</b>, e controllare che a ogni cambio il peso non salga. Se si arriva a " + Tn + " senza mai salire, " + Tn + " pesa al massimo quanto il " + T0n + " di partenza" + (ex.minimo ? ", che è minimo. Quindi anche " + Tn + " è minimo." : "."),
+    ENUNC, tuttoT(), tuttoT0(), -1, TIT_T, TIT_0);
+
+  // ---- 2. si rivede Prim una scelta alla volta
+  var S0 = sx(0), D0 = dx(0);
+  metti(1, "Riavvolgiamo Prim e rivediamolo <b>una scelta alla volta</b>. La <b>zona verde</b> sono i vertici che Prim ha già preso: all'inizio ce n'è uno solo.<br>Dopo ogni scelta di Prim faremo una sola domanda: <b>" + T0n + " ha quell'arco?</b> La risposta si segna nella riga ① ② …. Il contatore «segue Prim» dice per quante scelte di fila, partendo dalla prima, " + T0n + " ha risposto ✓.",
+    "Sia T l'albero costruito da Prim.", S0, D0, -1, TIT_T, TIT_0);
+
+  var giri = 0, j, primoGiro = true;
+  for (j = 0; j < n; j++) {
+    cmp = j;
+    var k = primK[j], W = w[k], pari = uscenti(j).filter(function (q) { return w[q] === W; }).length;
+    var capo = primoGiro ? 1 : 5;
+    var scelta = (primoGiro
+      ? (j === 0 ? "Gli archi " + ARA + " sono quelli che <b>escono dalla zona verde</b>: un estremo dentro, l'altro fuori. Prim prende sempre il più leggero, " : "La zona si è allargata: dentro c'è anche il vertice appena preso. Di nuovo Prim guarda gli archi " + ARA + " che escono dalla zona e prende il più leggero, ") + "che qui pesa <b>" + W + "</b>" + (pari > 1 ? " (ce ne sono due con lo stesso peso: Prim può prendere l'uno o l'altro, e qui ha preso questo)" : "") + ": è la scelta <b>" + N(j) + "</b>."
+      : "Scelta <b>" + N(j) + "</b>: Prim prende l'arco che pesa <b>" + W + "</b>" + (pari > 1 ? " (a pari peso può prendere l'uno o l'altro)" : "") + ".");
+    if (T0[k]) {
+      var Sp = conCand(sx(j), j); Sp.archi[k] = { s: "verde", lab: N(j) + " " + W };
+      var Dp = dx(j); Dp.archi[k] = { s: "verde", lab: N(j) + " ✓" };
+      metti(capo, scelta + " <b>" + T0n + " ce l'ha? Sì ✓</b>" + (primoGiro ? ": a destra quell'arco diventa verde, perché coincide con la scelta di Prim." : "."),
+        "Sia (x, y) il primo arco, nell'ordine in cui Prim sceglie gli archi, che è in T ma non in T<sub>0</sub>: <i>questo non è ancora lui, perché T<sub>0</sub> ce l'ha.</i>", Sp, Dp, j, TIT_T, primoGiro ? TIT_0 : TIT_N);
+      continue;
+    }
+    // la scelta j non è in T0: scambio
+    giri++;
+    var det = primoGiro, x = ex.prim[j][0], y = ex.prim[j][1], kxy = k, z = zona(j), path = cammino(x, y), e = 0;
+    while (z.indexOf(path[e + 1]) >= 0) e++;
+    var u = path[e], v = path[e + 1], kuv = pvK(u, v), Wu = w[kuv], uvT = ind[kuv] !== undefined;
+    var bil = '<span class="pv-bil"><span class="a">(x, y) pesa ' + W + '</span> ≤ <span class="b">(u, v) pesa ' + Wu + '</span></span>';
+    var nota = (u === x ? " Qui la strada esce subito: u è lo stesso vertice di x." : "") + (v === y ? " Qui dopo l'uscita si è già arrivati: v è lo stesso vertice di y." : "");
+    var verdiPrima = ""; for (var q0 = 0; q0 < j; q0++) verdiPrima += (q0 ? " " : "") + N(q0);
+    var FR_XY = "Sia (x, y) il primo arco, nell'ordine in cui Prim sceglie gli archi, che è in T ma non in T<sub>0</sub>.";
+    var FR_TP = "Sia T′ = (V′, E′) l'albero costruito da Prim immediatamente prima di scegliere (x, y): allora x ∈ V′, y ∉ V′.";
+    var FR_CAM = "T<sub>0</sub> è un albero, quindi in T<sub>0</sub> c'è un cammino da x a y.";
+    var FR_ESCE = "Il cammino parte da x, che è in V′, e arriva a y, che non è in V′: quindi a un certo punto esce da V′, cioè contiene un arco (u, v) con u ∈ V′ e v ∉ V′.";
+    var FR_LE = "Prima di scegliere (x, y), Prim guardava tutti gli archi con un estremo in V′ e l'altro fuori, e (x, y) era il più leggero: w(x, y) ≤ w(u, v).";
+    var FR_SC = "T̄ = T<sub>0</sub> − (u, v) + (x, y) è un albero ricoprente.";
+    var FR_P = "w(T̄) = w(T<sub>0</sub>) − w(u, v) + w(x, y) ≤ w(T<sub>0</sub>)" + (ex.minimo ? ": T̄ è minimo." : ".");
+    var FR_S = "T̄ segue Prim per un passo in più di T<sub>0</sub>.";
+    function bSx() { var P = sx(j); P.archi[kxy] = { s: "fant", lab: String(W) }; return P; }
+    function bDx() { var P = dx(j); P.archi[kxy] = { s: "fant", lab: N(j) + " ✗" }; return P; }
+    var titD = primoGiro ? TIT_0 : TIT_N;
+    // la scelta
+    var Sx = conCand(sx(j), j); Sx.archi[kxy] = { s: "verde", lab: N(j) + " " + W };
+    if (det) {
+      metti(capo, scelta + " <b>" + T0n + " ce l'ha? No ✗</b>: a destra è tratteggiato, perché in " + T0n + " non c'è.", FR_XY, Sx, bDx(), j, TIT_T, titD);
+      var Sx2 = conCand(sx(j), j); Sx2.archi[kxy] = { s: "verde", lab: N(j) + " " + W };
+      metti(capo, "È <b>la prima volta</b> che i due alberi non coincidono: è l'arco che cercavamo. Si chiama " + XY + ": <b>x</b> è il vertice già dentro la zona, <b>y</b> quello fuori.", FR_XY, xy(Sx2, x, y), xy(bDx(), x, y), j, TIT_T, titD);
+    } else {
+      metti(capo, scelta + " <b>" + T0n + " ce l'ha? No ✗</b>. Questo è il nuovo " + XY + ".", FR_XY, xy(Sx, x, y), xy(bDx(), x, y), j, TIT_T, titD);
+    }
+    if (det) {
+      metti(1, "Fermiamo il film <b>un istante prima</b> che Prim scelga " + XY + " e diamo un nome a ciò che si vede.<br><b>T′</b> è quello che Prim ha costruito finora: " + (j > 1 ? "gli archi verdi " + verdiPrima : (j === 1 ? "l'arco verde " + verdiPrima : "per ora un vertice solo, senza archi")) + ". <b>V′</b> sono i vertici di T′: quelli dentro la zona verde. <b>x è dentro, y è fuori.</b><br>A destra la zona è identica" + (j > 1 ? ", e gli archi verdi ci sono tutti: fin qui " + T0n + " ha sempre risposto ✓." : (j === 1 ? ", e l'arco verde c'è: fin qui " + T0n + " ha sempre risposto ✓." : ".")),
+        FR_TP, xy(bSx(), x, y), xy(bDx(), x, y), j, TIT_TP, titD);
+    }
+    // il cammino
+    var cap2 = det ? 2 : 5;
+    function dxCam(fino, uscita) {
+      var P = xy(bDx(), x, y);
+      for (var t = 0; t < fino; t++) { var kk = pvK(path[t], path[t + 1]), lab = P.archi[kk].lab; P.archi[kk] = t === e && uscita ? { s: "uscita", lab: String(w[kk]) } : { s: "cammino", lab: lab }; }
+      if (uscita) { ruolo(P, u, "u"); ruolo(P, v, "v"); }
+      return P;
+    }
+    if (det) {
+      var D1 = dxCam(0, false); D1.anello = { v: x };
+      metti(cap2, "Ora guarda solo il disegno di <b>destra</b>. " + T0n + " non ha l'arco " + XY + ", però è un albero: collega tutti i vertici. Quindi da x si arriva a y camminando solo sugli archi di " + T0n + ", e la strada è una sola. Seguiamola con l'anello viola.<br><b>Partenza: x, dentro la zona verde.</b>",
+        FR_CAM, xy(bSx(), x, y), D1, j, TIT_TP, titD);
+      for (var t = 0; t <= e; t++) {
+        var usc = t === e, Dt = dxCam(t + 1, usc); Dt.anello = { v: path[t + 1], da: path[t] };
+        if (usc && uvT) rivelati[ind[kuv]] = true;
+        metti(cap2, usc ? "Questo passo <b>esce dalla zona</b>: parte da un vertice dentro e arriva a uno fuori. Doveva succedere per forza, perché la strada parte dentro (x) e finisce fuori (y). Quest'arco, in rosso, si chiama " + UV + ": <b>u</b> è il vertice dentro, <b>v</b> quello fuori." + nota : "Un passo lungo " + T0n + ": siamo <b>ancora dentro</b> la zona verde.",
+          usc ? FR_ESCE : FR_CAM, xy(bSx(), x, y), Dt, j, TIT_TP, titD);
+      }
+      if (v !== y) {
+        var Df = dxCam(path.length - 1, true); Df.anello = { v: y, da: v };
+        metti(cap2, "Da v si continua, sempre fuori dalla zona, fino ad arrivare a y. La strada di " + T0n + " da x a y è completa, ed esce dalla zona una volta sola: con " + UV + ".",
+          FR_ESCE, xy(bSx(), x, y), Df, j, TIT_TP, titD);
+      }
+    } else {
+      if (uvT) rivelati[ind[kuv]] = true;
+      metti(cap2, "A destra, da x a y " + T0n + " ha una sola strada (in viola). Parte dentro la zona e finisce fuori, quindi a un certo punto esce: l'arco rosso è il nuovo " + UV + "." + nota,
+        FR_ESCE, xy(bSx(), x, y), dxCam(path.length - 1, true), j, TIT_TP, titD);
+    }
+    // chi pesa meno
+    function sxLe() { var P = conCand(sx(j), j); P.archi[kxy] = { s: "fant", lab: String(W) }; P.archi[kuv] = { s: "uscita", lab: String(Wu) }; return xyuv(P, x, y, u, v); }
+    var perche = W === Wu ? (ex.minimo ? " Qui pesano uguale, e non è un caso: " + T0n + " è minimo, quindi lo scambio che stiamo per fare non può alleggerirlo." : " Qui pesano uguale.") : " Qui " + XY + " pesa proprio di meno: lo scambio alleggerirà l'albero.";
+    if (det) {
+      metti(3, "Torna a <b>sinistra</b>, nell'istante in cui Prim doveva scegliere. Gli archi " + ARA + " sono tutti quelli che in quel momento uscivano dalla zona. " + UV + " è uno di loro: ha un estremo dentro (u) e uno fuori (v). Quindi Prim <b>poteva</b> prenderlo.",
+        FR_LE, sxLe(), dxCam(path.length - 1, true), j, TIT_TP, titD);
+      metti(3, "Eppure Prim ha preso " + XY + ", e Prim prende sempre il più leggero tra quelli che escono dalla zona. Quindi " + XY + " non pesa più di " + UV + ":<br>" + bil + "<br>" + perche,
+        FR_LE, sxLe(), dxCam(path.length - 1, true), j, TIT_TP, titD);
+    } else {
+      metti(5, "A sinistra: anche " + UV + " usciva dalla zona quando Prim ha scelto, e Prim ha preferito " + XY + ". Quindi:<br>" + bil, FR_LE, sxLe(), dxCam(path.length - 1, true), j, TIT_TP, titD);
+    }
+    // lo scambio
+    var pz = pezzo(y, kuv);
+    function colora(P) {
+      Object.keys(T0).forEach(function (kk) { if (kk === kuv || kk === kxy) return; var q = kk.split("~"); if (pz[q[0]] && pz[q[1]]) P.archi[kk] = { s: "stac", lab: String(w[kk]) }; });
+      Object.keys(pz).forEach(function (vv) { if (!P.ruoli[vv]) P.nodi[vv] = "stac"; });
+      return P;
+    }
+    var Dcut = colora(xyuv(bDx(), x, y, u, v)); Dcut.archi[kuv] = { s: "tolto", lab: "✂ " + Wu };
+    var cap4 = det ? 4 : 5, tagliato = det ? "<b>Togliamo " + UV + " da " + T0n + ".</b> Un albero non ha collegamenti di riserva: tolto un arco, si spezza in <b>due pezzi</b>. In arancione il pezzo che si è staccato. Guarda x e y: <b>uno per parte</b>, perché " + UV + " stava proprio sulla strada tra loro." : "Si toglie " + UV + ": " + T0n + " si spezza in due pezzi, con x da una parte e y dall'altra (in arancione il pezzo staccato).";
+    metti(cap4, tagliato, FR_SC, xy(bSx(), x, y), Dcut, j, TIT_TP, titD);
+    var peso0 = pesoT0(), c0 = comune();
+    delete T0[kuv]; T0[kxy] = true;
+    primoGiro = false;
+    var pesoNuovo = pesoT0();
+    function dxDopo(zonaDi) { var P = dx(zonaDi); P.zona = zona(j); return P; }
+    var Djoin = colora(xy(dxDopo(j + 1), x, y)); Djoin.archi[kxy] = { s: "verde", lab: N(j) + " " + W };
+ var gap = uvT ? "<b>Attenzione al contatore:</b> " + UV + " era anche la scelta " + N(ind[kuv]) + " di Prim. Si è tolto un arco di " + Tn + " e se n'è messo un altro." + (ex.comune ? " Gli archi in comune con " + Tn + " restano " + c0 + ", non uno di più." : "") + " Però " + TB + " segue Prim <b>più a lungo</b>, ed è questo che conta: la scelta " + N(ind[kuv]) + " si sistemerà con uno scambio successivo." : "";
+    if (det) {
+      metti(4, "<b>Mettiamo " + XY + ".</b> Va da un pezzo all'altro, quindi li riattacca. Tutto è di nuovo collegato, e non si è chiuso nessun giro, perché prima i due pezzi non erano collegati: è ancora un albero ricoprente. Si chiama " + TB + ".",
+        FR_SC, xy(bSx(), x, y), Djoin, j, TIT_TP, TIT_B);
+      metti(4, "Quanto pesa " + TB + "? Il peso di " + T0n + ", meno " + UV + ", più " + XY + ". Si è tolto l'arco che pesa di più (o uguale) e messo quello che pesa di meno (o uguale), quindi " + TB + " <b>non pesa più</b> di " + T0n + ": era " + peso0 + ", ora è " + pesoNuovo + "." + (ex.minimo ? " E " + T0n + " era minimo: anche " + TB + " è minimo." : ""),
+        FR_P, xy(bSx(), x, y), xy(dxDopo(j + 1), x, y), j, TIT_TP, TIT_B);
+      var Dseg = xy(dxDopo(j + 1), x, y); Dseg.archi[kuv] = { s: "tolto" };
+      metti(4, "Guarda la riga: la scelta " + N(j) + " ora è ✓. " + TB + " ha " + XY + (j > 1 ? ", e ha ancora gli archi verdi " + verdiPrima + ": quelli stanno tutti dentro la zona, mentre " + UV + " usciva dalla zona, quindi non era uno di loro" : (j === 1 ? ", e ha ancora l'arco verde " + verdiPrima + ": quello sta dentro la zona, mentre " + UV + " usciva dalla zona, quindi non era lui" : "")) + ". <b>" + TB + " segue Prim per un passo in più.</b>",
+        FR_S, xy(bSx(), x, y), Dseg, j, TIT_TP, TIT_B);
+      if (gap) metti(4, gap, FR_S, xy(bSx(), x, y), Dseg, j, TIT_TP, TIT_B);
+    } else {
+      metti(5, "Si mette " + XY + ": i due pezzi si riattaccano. Il peso era " + peso0 + ", ora è " + pesoNuovo + ": non è salito. Nella riga " + N(j) + " ora è ✓: l'albero segue Prim per un passo in più.",
+        FR_P, xy(bSx(), x, y), Djoin, j, TIT_TP, TIT_B);
+      if (gap) metti(5, gap, FR_S, xy(bSx(), x, y), Djoin, j, TIT_TP, TIT_B);
+    }
+  }
+  // ---- 7. perché è finita
+  pesoNoto = true; cmp = n - 1;
+  var fin1 = tuttoT(), fin2 = tuttoT();
+  var capFin = ex.minimo
+    ? "Tutti ✓: l'albero di destra è diventato <b>identico</b> a " + Tn + ". Si è partiti da un albero minimo e ogni scambio ha dato un albero che non pesa di più, quindi ancora minimo. L'ultimo di questi alberi è proprio " + Tn + ": <b>" + Tn + " è minimo</b>."
+    : "Tutti ✓: l'albero di destra è diventato <b>identico</b> a " + Tn + ". Si è partiti da un albero che pesava " + ex.t0.reduce(function (t, c) { return t + w[pvK(c[0], c[1])]; }, 0) + " e, senza mai salire, si è arrivati a " + pesoT + ". Il ragionamento funziona partendo da <b>qualunque</b> albero ricoprente: nessuno può pesare meno di " + Tn + ".";
+  metti(6, capFin, "Quindi T = T<sub>0</sub>, e T è minimo.", fin1, fin2, -1, TIT_T, TIT_N);
+  if (ex.minimo) {
+    metti(6, "<b>Perché nella dimostrazione scritta c'è un «per assurdo».</b> Dice la stessa cosa, ma fa <b>uno scambio solo</b>. Invece di partire da un albero minimo qualsiasi, prende subito, tra tutti quelli minimi, quello che <b>segue Prim per più passi</b>, e lo chiama " + T0n + ".",
+      "T<sub>0</sub> è un albero ricoprente minimo che segue Prim per il maggior numero di passi.", fin1, fin2, -1, TIT_T, TIT_N);
+    metti(6, "Se quel " + T0n + " fosse ancora diverso da " + Tn + ", nella riga ci sarebbe un ✗. Lo scambio visto in questo riquadro darebbe un albero minimo che segue Prim per un passo in più. Ma " + T0n + " era già quello che lo seguiva più a lungo: <b>assurdo</b>. Quindi di ✗ non ce ne sono, e " + T0n + " = " + Tn + ".",
+      "Per assurdo, T ≠ T<sub>0</sub>. […] Assurdo: T = T<sub>0</sub>, e T è minimo.", fin1, fin2, -1, TIT_T, TIT_N);
+  }
+  return F;
+}
+
+// ---------------------------------------------------------------- 2. d e vicino
+var DV_POS = { C: [110, 182], F: [186, 62], A: [186, 302], D: [262, 182], G: [338, 62], B: [338, 302], E: [414, 182] };
+var DV_CARTA = { F: [143, 6], G: [295, 6], C: [8, 162], A: [143, 322] };
+var PV_CAP_DV = ["L'obiettivo", "Chi sono T e v", "Il bigliettino", "A che cosa serve", "Entra un vertice", "Si ripete"];
+
+function pvVicino() {
+  var E = [["F", "G", 20], ["C", "F", 23], ["D", "F", 1], ["D", "G", 4], ["E", "G", 15], ["C", "D", 36], ["D", "E", 9], ["A", "C", 28], ["A", "D", 25], ["B", "D", 16], ["B", "E", 3], ["A", "B", 17]];
+  var dis = { W: 472, H: 366, pos: DV_POS, E: E, nomi: true, Rz: 28, carta: DV_CARTA };
+  var w = {}; E.forEach(function (e) { w[pvK(e[0], e[1])] = e[2]; });
+  var IN = ["E", "B", "D"], ver = [["E", "B"], ["E", "D"]], dd = {}, vv = {}, F = [];
+  var ORA = '<b class="pv-cO">arancioni</b>', Tz = '<b class="pv-cT">T</b>';
+  function kk(a, b) { return pvK(a, b); }
+  function fuori() { return ["F", "G", "C", "A"].filter(function (v) { return IN.indexOf(v) < 0; }); }
+  function archiDi(v) { return E.filter(function (e) { return e[0] === v || e[1] === v; }).map(function (e) { return e[0] === v ? e[1] : e[0]; }); }
+  function pan() { var P = { zona: IN.slice(), archi: {}, ruoli: {}, nodi: {}, anello: null, carte: null }; ver.forEach(function (c) { P.archi[kk(c[0], c[1])] = { s: "verde", lab: String(w[kk(c[0], c[1])]) }; }); return P; }
+  function conCarte(P, ev) { P.carte = {}; fuori().forEach(function (v) { P.carte[v] = { d: dd[v] === undefined ? "?" : dd[v], vic: vv[v] === undefined ? "?" : vv[v], cl: (ev && ev[v]) || "" }; }); return P; }
+  function escono(P) { fuori().forEach(function (v) { archiDi(v).forEach(function (z) { if (IN.indexOf(z) >= 0) P.archi[kk(v, z)] = { s: "cand", lab: String(w[kk(v, z)]) }; }); }); return P; }
+  // solo gli archi di v: verso T arancioni, verso fuori grigi
+  function diV(P, v, migliore) {
+    archiDi(v).forEach(function (z) {
+      var k = kk(v, z);
+      if (IN.indexOf(z) >= 0) P.archi[k] = { s: migliore === z ? "scelto" : "cand", lab: String(w[k]) };
+      else P.archi[k] = { s: "escl", lab: String(w[k]) };
+    });
+    P.nodi[v] = "fuoco";
+    return P;
+  }
+  function metti(cap, testo, frase, P, tit) { F.push({ cap: cap, testo: testo, frase: frase, S: P, dis: dis, titS: tit || '<span class="pv-cT">T</span>: la zona verde. Fuori: i vertici ancora da prendere' }); }
+  var COD_113 = "Codice 11.3: sia (x, y) l'arco di peso minimo con x in T e y non in T.";
+  var DEF_D = "d[v] = il minimo peso degli archi tra v e i vertici di T (∞ se non ce ne sono).";
+  var DEF_V = "vicino[v] = il vertice u in T tale che d[v] = w(u, v): l'estremo in T dell'arco più leggero tra v e T.";
+
+  metti(0, "Prim è a metà lavoro. La <b>zona verde</b> è " + Tz + ": l'albero costruito <b>fino a questo momento</b>, cioè i vertici già presi (E, B, D) e gli archi già scelti, in verde. F, G, C e A sono ancora fuori.<br>A ogni giro Prim ha <b>una sola domanda</b>: tra gli archi " + ORA + ", quelli che escono dalla zona, <b>qual è il più leggero?</b>", COD_113, escono(pan()));
+  metti(0, "Gli archi " + ORA + " qui sono sei, ma in un grafo grande sono migliaia, e a ogni giro bisognerebbe riguardarli tutti.<br><b>L'obiettivo di d e vicino è uno solo: rispondere alla domanda di Prim senza riguardare tutti gli archi a ogni giro.</b> L'albero che Prim trova resta lo stesso: cambia solo quanto ci mette.", COD_113, escono(pan()));
+  var Pv = pan(); fuori().forEach(function (v) { Pv.nodi[v] = "fuoco"; });
+  metti(1, "<b>v non è un vertice preciso.</b> È il nome che si dà a <b>uno qualsiasi dei vertici fuori dalla zona</b>: qui può essere F, G, C o A, in giallo. Le definizioni vanno lette una volta per ciascuno: «prendi v = G», poi «prendi v = A», e così via.<br><b>I vertici non hanno un peso:</b> il peso ce l'hanno solo gli archi. Quindi non si confronta «il peso di v» con i vertici di T: si guardano i pesi degli archi che partono da v.", "Ad ogni passo, per ogni vertice v non ancora in T, si tengono due informazioni.", Pv);
+  metti(2, "L'idea: ogni vertice fuori si tiene un <b>bigliettino</b> con scritto il suo modo più economico di attaccarsi a T. Sul bigliettino ci sono due cose: <b>d</b> dice quanto costa, <b>vicino</b> dice in quale vertice di T si attacca. Riempiamoli, uno alla volta.", "Ad ogni passo, per ogni vertice v non ancora in T, si tengono due informazioni.", conCarte(pan()));
+  metti(2, "<b>Prendiamo v = G.</b> Quali archi vanno da G <b>direttamente</b> a un vertice dentro la zona? Questi due, in arancione: quello verso D pesa 4, quello verso E pesa 15.<br>L'arco verso F (grigio) non conta, perché F è fuori dalla zona.", DEF_D, conCarte(diV(pan(), "G")));
+  dd.G = 4; vv.G = "D";
+  metti(2, "Il più leggero pesa 4 e arriva in D. Sul bigliettino di G si scrive:<br><b>d[G] = 4</b>: quanto pesa quell'arco. È un <b>numero</b>.<br><b>vicino[G] = D</b>: il vertice di T a cui quell'arco arriva. È un <b>vertice</b>.<br>Sono due informazioni <b>sullo stesso arco</b>. «L'estremo in T» vuol dire questo: un arco ha due estremi, qui G fuori e D dentro; vicino è quello dentro.", DEF_D + "<br>" + DEF_V, conCarte(diV(pan(), "G", "D"), { G: "nuova" }));
+  dd.A = 17; vv.A = "B";
+  metti(2, "<b>Ora v = A.</b> Verso T ha due archi: 17 verso B e 25 verso D. L'arco verso C non conta, perché C è fuori. Il più leggero pesa 17 e arriva in B: <b>d[A] = 17, vicino[A] = B</b>.", DEF_D + "<br>" + DEF_V, conCarte(diV(pan(), "A", "B"), { A: "nuova" }));
+  dd.C = 36; vv.C = "D";
+  metti(2, "<b>Ora v = C.</b> Verso T ha un arco solo, quello verso D, che pesa 36. Costa tanto, ma per ora è l'unico: <b>d[C] = 36, vicino[C] = D</b>. Gli archi verso F e verso A non contano, perché F e A sono fuori.", DEF_D + "<br>" + DEF_V, conCarte(diV(pan(), "C", "D"), { C: "nuova" }));
+  dd.F = 1; vv.F = "D";
+  metti(2, "<b>Ora v = F.</b> Verso T ha un arco solo, quello verso D, che pesa 1: <b>d[F] = 1, vicino[F] = D</b>.<br>Se un vertice non avesse <b>nessun</b> arco verso T, sul bigliettino si scriverebbe d = ∞ e vicino resterebbe vuoto: per ora non si può attaccare.", DEF_D + "<br>" + DEF_V, conCarte(diV(pan(), "F", "D"), { F: "nuova" }));
+  var Pm = conCarte(pan(), { F: "min" }); Pm.archi[kk("D", "F")] = { s: "scelto", lab: "1" }; Pm.nodi.F = "fuoco";
+  metti(3, "<b>Ecco a che cosa serve.</b> La domanda era: qual è l'arco più leggero che esce dalla zona? Basta <b>leggere i bigliettini</b> e prendere il numero più piccolo: è 1, su quello di F. Il bigliettino dice anche dove si attacca: vicino[F] = D. Quindi l'arco è <b>(D, F)</b>, e non si sono dovuti riguardare gli archi.", "y ← elemento di V \\ V<sub>T</sub> con d[y] minima<br>x ← vicino[y]", Pm);
+  IN.push("F"); ver.push(["D", "F"]);
+  metti(4, "F entra in T con l'arco (D, F): la zona si allarga e il bigliettino di F non serve più. Però T è cambiato, quindi qualche bigliettino potrebbe non indicare più il modo migliore.", "V<sub>T</sub> ← V<sub>T</sub> ∪ {y}<br>E<sub>T</sub> ← E<sub>T</sub> ∪ {(x, y)}", conCarte(pan()));
+  var Pa = conCarte(pan()); Pa.archi[kk("F", "G")] = { s: "cand", lab: "20" }; Pa.archi[kk("C", "F")] = { s: "cand", lab: "23" }; Pa.nodi.G = "fuoco"; Pa.nodi.C = "fuoco";
+  metti(4, "<b>Quali bigliettini possono cambiare? Solo quelli dei vertici collegati a F</b>, perché F è l'unico vertice nuovo dentro T: gli unici collegamenti nuovi verso T sono gli archi di F. Verso vertici ancora fuori, F ne ha due: G e C. Il bigliettino di A non si tocca.", "FOR EACH (y, z) ∈ E DO", Pa);
+  var Pg = conCarte(pan(), { G: "min" }); Pg.archi[kk("F", "G")] = { s: "scelto", lab: "20" }; Pg.nodi.G = "fuoco";
+  metti(4, "L'arco (F, G) pesa 20. Il bigliettino di G dice 4. 20 non è più leggero: <b>non cambia nulla</b>, G resta attaccato a D.", "IF z ∉ V<sub>T</sub> AND w(y, z) &lt; d[z] THEN …", Pg);
+  dd.C = 23; vv.C = "F";
+  var Pc = conCarte(pan(), { C: "nuova" }); Pc.archi[kk("C", "F")] = { s: "scelto", lab: "23" }; Pc.nodi.C = "fuoco";
+  metti(4, "L'arco (F, C) pesa 23. Il bigliettino di C diceva 36. 23 è più leggero: ora C si attacca meglio passando da F. Si riscrive: <b>d[C] = 23, vicino[C] = F</b>.", "IF z ∉ V<sub>T</sub> AND w(y, z) &lt; d[z] THEN<br>&nbsp;&nbsp;d[z] ← w(y, z)<br>&nbsp;&nbsp;vicino[z] ← y", Pc);
+  var COD_G = "DO … y ← elemento di V \\ V<sub>T</sub> con d[y] minima … WHILE V \\ V<sub>T</sub> ≠ ∅";
+  var Pgm = conCarte(pan(), { G: "min" }); Pgm.archi[kk("D", "G")] = { s: "scelto", lab: "4" }; Pgm.nodi.G = "fuoco";
+  metti(5, "Un giro è finito, e il prossimo è uguale: si legge il numero più piccolo sui bigliettini. Ora è 4, su quello di G, che si attacca a D: l'arco è <b>(D, G)</b>.", COD_G, Pgm);
+  IN.push("G"); ver.push(["D", "G"]);
+  var Pam = conCarte(pan(), { A: "min" }); Pam.archi[kk("B", "A")] = { s: "scelto", lab: "17" }; Pam.nodi.A = "fuoco";
+  metti(5, "G è entrato. Gli archi di G vanno tutti a vertici già dentro, quindi nessun bigliettino cambia. Il numero più piccolo ora è 17, su quello di A, che si attacca a B: l'arco è <b>(B, A)</b>.", COD_G, Pam);
+  IN.push("A"); ver.push(["B", "A"]);
+  var Pcm = conCarte(pan(), { C: "min" }); Pcm.archi[kk("C", "F")] = { s: "scelto", lab: "23" }; Pcm.nodi.C = "fuoco";
+  metti(5, "A è entrato. L'arco (A, C) pesa 28, e il bigliettino di C dice 23: non cambia nulla. Resta solo C, con 23: si attacca a F, e l'arco è <b>(F, C)</b>.", COD_G, Pcm);
+  IN.push("C"); ver.push(["F", "C"]);
+  metti(5, "Tutti i vertici sono dentro: il ciclo finisce e " + Tz + " è l'albero ricoprente minimo, di peso 3 + 9 + 1 + 4 + 17 + 23 = 57.<br>È l'albero che avrebbe trovato anche il Codice 11.3. <b>d e vicino non cambiano che cosa trova Prim: cambiano solo come trova ogni volta l'arco più leggero</b>, leggendo un bigliettino per vertice invece di riguardare gli archi.", "RETURN T", pan());
+  return F;
+}
+
+// ---------------------------------------------------------------- avvio
+if (typeof document !== "undefined") {
+  pvMonta("pd", {
+    uso: "Premi <b>Avanti</b> (o la freccia →) e guarda che cosa cambia nel disegno.",
+    esempi: PV_ESEMPI.map(function (ex) { return { nome: ex.nome, genera: function () { return pvProva(ex); } }; }),
+    capitoli: PV_CAP_PROVA, riga: true, due: true, labFrase: "Nella dimostrazione scritta questo passo è:", ariaS: "l'albero costruito da Prim sul grafo", ariaD: "l'albero T0 sullo stesso grafo",
+    legenda: '<span><i class="pv-s verde"></i>scelto da Prim</span><span><i class="pv-s blu"></i>di T<sub>0</sub>, da confrontare</span><span><i class="pv-s punti"></i>arco non usato</span><span><i class="pv-s zona"></i>vertici già presi da Prim</span>'
+  });
+  pvMonta("dv", {
+    uso: "Premi <b>Avanti</b> (o la freccia →): un'idea per volta.",
+    esempi: [{ nome: "", genera: pvVicino }], capitoli: PV_CAP_DV, riga: false, due: false, labFrase: "Alla lavagna e nel codice:", ariaS: "il grafo a 7 vertici con l'albero T e i bigliettini",
+    legenda: '<span><i class="pv-s verde"></i>arco già scelto</span><span><i class="pv-s arancio"></i>arco di cui si parla</span><span><i class="pv-s punti"></i>altri archi</span><span><i class="pv-s zona"></i>T</span><span><i class="pv-s giallo"></i>vertice di cui si parla</span>'
+  });
+}
 })();
 </script>
 </body>
